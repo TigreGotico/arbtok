@@ -159,7 +159,7 @@ def test_max_tashkeel_errors_ambiguous():
     total_char_errors = 0
 
     for text, expected, _ in AMBIGUOUS_TESTS[:N_WORDS]:
-        diacritized = tashkeel.diacritize(text, 0.8)
+        diacritized = tashkeel.diacritize(text, pausal=True)
         result = Sentence(diacritized).ipa
 
         expected = expected.strip()
@@ -179,7 +179,7 @@ def test_max_tashkeel_errors_unambiguous():
     total_char_errors = 0
 
     for text, expected, _ in UNAMBIGUOUS_TESTS[:N_WORDS]:
-        diacritized = tashkeel.diacritize(text, 0.8)
+        diacritized = tashkeel.diacritize(text, pausal=True)
         result = Sentence(diacritized).ipa
 
         expected = expected.strip()
@@ -199,7 +199,7 @@ def test_max_tashkeel_errors_unambiguous():
 def test_undiacritized_ipa(arabic_text, expected_ipa, description):
     if not DEBUG:
         return
-    diacritized = tashkeel.diacritize(arabic_text, 0.8)
+    diacritized = tashkeel.diacritize(arabic_text, pausal=True)
     result = Sentence(diacritized).ipa.strip(PUNCT + string.whitespace)
     expected = expected_ipa.strip(PUNCT + string.whitespace)
     assert result == expected, f"Failed {description}: Input '{arabic_text}'"
@@ -210,7 +210,7 @@ def test_undiacritized_ipa(arabic_text, expected_ipa, description):
 def test_undiacritized_ipa_ambiguous(arabic_text, expected_ipa, description):
     if not DEBUG:
         return
-    diacritized = tashkeel.diacritize(arabic_text, 0.8)
+    diacritized = tashkeel.diacritize(arabic_text, pausal=True)
     result = Sentence(diacritized).ipa.strip(PUNCT + string.whitespace)
     expected = expected_ipa.strip(PUNCT + string.whitespace)
     assert result == expected, f"Failed {description}: Input '{arabic_text}'"
@@ -238,7 +238,7 @@ def test_max_lexicon_errors():
     total_char_errors = 0
 
     for text, expected, _ in LEXICON_TESTS:
-        diacritized = tashkeel.diacritize(text, 0.8)
+        diacritized = tashkeel.diacritize(text, pausal=True)
         result = Sentence(diacritized).ipa
         expected = expected.strip()
 

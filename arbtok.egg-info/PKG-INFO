@@ -1,0 +1,99 @@
+Metadata-Version: 2.4
+Name: arbtok
+Version: 0.0.0a1
+Summary: Rule-based Arabic (MSA) text-to-IPA with tashkeel diacritization — an orthography2ipa G2P plugin
+License: Apache-2.0
+Project-URL: Homepage, https://github.com/TigreGotico/arbtok
+Project-URL: Issues, https://github.com/TigreGotico/arbtok/issues
+Keywords: arabic,ipa,g2p,phonemizer,tashkeel,diacritization,tts
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Text Processing :: Linguistic
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: quebra-frases
+Requires-Dist: langcodes
+Requires-Dist: ovos-number-parser>=0.4.0
+Requires-Dist: ovos-date-parser>=0.6.4a1
+Requires-Dist: orthography2ipa>=0.3.0a1
+Requires-Dist: text2tashkeel>=0.1.0
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: pytest-timeout; extra == "test"
+
+# arbtok
+
+Rule-based **Arabic (MSA) text→IPA** with ONNX **tashkeel** diacritization,
+packaged as an [orthography2ipa](https://github.com/TigreGotico/orthography2ipa)
+G2P plugin.
+
+A context-sensitive token tree (sentence → words → characters) implements the
+morpho-phonological rules that table lookups cannot express: sun-letter
+assimilation, hamzat al-waṣl elision, tanwīn pausal forms, tāʾ marbūṭa,
+mater-lectionis vowel lengthening, definite-article waṣl, and idgham/iqlab
+nasal assimilation. Bare (undiacritized) text is diacritized first with the
+bundled [libtashkeel](https://github.com/mush42/libtashkeel) ONNX model.
+
+> Honesty note: the gold IPA reference set was LLM-generated and has not been
+> validated by a native MSA speaker. If you speak MSA, pull requests are very
+> welcome.
+
+## Installation
+
+```bash
+pip install arbtok
+```
+
+## Usage
+
+### Through orthography2ipa (recommended)
+
+Installing arbtok registers it for `ar`/`arb` in the `orthography2ipa.g2p`
+plugin group — the engine dispatches to it automatically:
+
+```python
+import orthography2ipa
+
+orthography2ipa.transcribe("كتاب جميل", "ar")   # 'kitaːb dʒamiːl'
+```
+
+### Direct
+
+```python
+from arbtok.tokenizer import Sentence
+
+Sentence("اَلسَّلَامُ عَلَيْكُمْ").ipa
+```
+
+Bare text is handled by diacritizing first:
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+plugin = ArbtokG2PPlugin()
+plugin.transcribe("كتاب جميل")    # auto-tashkeel + IPA
+```
+
+### Diacritization only
+
+```python
+from arbtok.tashkeel import TashkeelDiacritizer
+
+TashkeelDiacritizer().diacritize("كتاب جميل")
+```
+
+## Quality benchmarks
+
+The test suite pins a gold sentence set (CER target ≤ 5% against the
+reference transcriptions) and benchmarks against espeak-ng. See
+`tests/test_ipa_fuzzy.py` and `docs/` for details.
