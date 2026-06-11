@@ -209,9 +209,19 @@ class CharToken:
             if self.is_first_word and self.is_first_char and s == ALIF:
                 return "i"
 
-            # Medial: Lengthens preceding vowel
+            # Medial: Lengthens preceding vowel (mater lectionis after fatha)
             if self.prev_token and self.prev_token.ipa == "a":
                 return "ː"
+
+            # Medial ALIF after a non-'a' vowel (kasra 'i' or damma 'u') within a word:
+            # this is hamzat al-wasl elision — the alif is a mere writing support and is silent
+            # when preceded by a short vowel in the same orthographic word.
+            # Example: وَبِاسْمِ (wa+bi+ism) → the ا of اسم is silent after 'i' of bi.
+            if (not self.is_first_char
+                    and self.prev_token
+                    and self.prev_token.ipa in {"i", "u"}
+                    and s == ALIF):
+                return ""
 
             # End of word: often silent or long vowel
             if self.is_last_char:
@@ -285,8 +295,9 @@ class CharToken:
             if self.next_token and self.next_token.surface in VOWEL_MAP:
                 return "a"
             # - Else: default long /aː/
+            # After fatha it lengthens the 'a' vowel (ː = IPA length mark U+02D0, not ASCII colon)
             if self.prev_token and self.prev_token.surface == FATHA:
-                return ":"
+                return "ː"
             return "aː"
 
         # --- Vowels ---
@@ -302,6 +313,27 @@ class CharToken:
                 # Sun Letter: Assimilated 'l' (char_idx==1) -> double the sun letter.
                 if self.is_sun:
                     return ARABIC_TO_IPA_CONSONANTS[s] + ARABIC_TO_IPA_CONSONANTS[s]
+
+            # Embedded definite-article LAM assimilation:
+            # In written Arabic, li+al- contracts to لِل- (the ALIF of the article is elided).
+            # Pattern: KASRA + LAM(prep) + LAM(article) + SUN-LETTER(+SHADDA).
+            # When a LAM is preceded by KASRA, which is preceded by another LAM,
+            # and the next significant consonant is a sun letter bearing SHADDA,
+            # this LAM is the article lam and assimilates into the following sun letter.
+            if (s == LAM
+                    and self.prev_token and self.prev_token.surface == KASRA
+                    and self.prev_token.prev_token and self.prev_token.prev_token.surface == LAM):
+                # Next consonant token (skip any intermediate diacritics)
+                nxt = self.next_token
+                while nxt and nxt.surface in {FATHA, DAMMA, KASRA, SUKUN, TANWIN_FATH, TANWIN_DAMM, TANWIN_KASR}:
+                    nxt = nxt.next_token
+                if nxt and nxt.is_sun and nxt.has_shada:
+                    # Article LAM assimilates: silent (sun letter doubles via SHADDA)
+                    return ""
+                elif nxt and nxt.is_moon:
+                    # Article LAM before moon letter: retain 'l'
+                    return "l"
+
             return ARABIC_TO_IPA_CONSONANTS[s]
 
         if s == SHADDA:

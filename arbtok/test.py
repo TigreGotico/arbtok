@@ -94,8 +94,8 @@ HAMZA_TESTS = [
 
     # Clitic + hamza initial nouns (cutting hamza retained)
     ("قِرَاءَتُهُمْ", "qiraːʔatuhum", "Clitic + hamza initial nouns (cutting hamza retained)"),
-    ("مَأْسَاة", "maʔsaːta", "Various final hamza"),  # TODO - failing
-    ("أَبُو الْقُرْآن", "ʔabu lqurʔaːn", "Clitic + hamza initial nouns (cutting hamza retained)"),  # TODO - failing
+    ("مَأْسَاة", "maʔsaːta", "Various final hamza"),  # TODO - failing; gold disputed: ta marbuta is silent in pausal form; connected-form ta requires following vowel
+    ("أَبُو الْقُرْآن", "ʔabu lqurʔaːn", "Clitic + hamza initial nouns (cutting hamza retained)"),  # TODO - failing; gold disputed: أَبُو is long /ʔabuː/ in MSA (DAMMA+WAW = long u), not short ʔabu
 ]
 # Special Exceptions & Divine Names
 # Words with irregular spellings (e.g., hidden vowels or silent letters).
@@ -104,7 +104,7 @@ EXCEPTION_TESTS = [
     ("اللّٰه", "allaːh", "Allah: heavy 'l' and unwritten Alif"),
     ("عَمْرٌو", "ʕamrun", "Silent Waw used to distinguish name 'Amr' from 'Umar"),
     ("مِائَة", "miʔa", "Silent Alif in the word for 'hundred'"),
-    ("الرِّسَالَة", "arrisala", " sun-letter + shadda on r"),  # TODO - failing
+    ("الرِّسَالَة", "arrisala", " sun-letter + shadda on r"),  # TODO - failing; gold disputed: correct MSA is arrisaːla (long a from alif mater lectionis)
 ]
 # Sandhi & Assimilation (N-sounds)
 TANWIN_SANDHI_TESTS = [
@@ -126,9 +126,9 @@ SANDHI_TESTS = [
     ("مِنْ بَيْتِكَ", "mim bajtika", "Iqlab: n becomes 'm' before 'b'"),
     ("مِنْ بَعْد", "mimbaʕd", "Iqlab: n becomes 'm' before 'b'"),
 
-    ("عَلَى الشَّاطِئ", "ʕala ʃʃaːtˤiʔ", "assimilation across word boundaries (sandhi)"),  # TODO - failing
-    ("فِي الضَّوْءِ", "fiː ðˤðˤawʔ", "assimilation across word boundaries (sandhi)"),  # TODO - failing
-    ("إِلَى الرَّجُل", "ʔilaː rradʒul", "assimilation across word boundaries (sandhi)"),  # TODO - failing
+    ("عَلَى الشَّاطِئ", "ʕala ʃʃaːtˤiʔ", "assimilation across word boundaries (sandhi)"),  # TODO - failing; gold disputed: عَلَى has alif maqsura = long /ʕalaː/, inconsistent with إِلَى الرَّجُل gold
+    ("فِي الضَّوْءِ", "fiː ðˤðˤawʔ", "assimilation across word boundaries (sandhi)"),  # TODO - failing; gold disputed: عَلَى ends in alif maqsura = long ʕalaː, not short ʕala
+    ("إِلَى الرَّجُل", "ʔilaː rradʒul", "assimilation across word boundaries (sandhi)"),
 
 ]
 
@@ -153,7 +153,7 @@ WEAK_TESTS = [
     ("انْتِمَاء", "intimaːʔ", "Weak root nouns"),
 
     # Defective Verbs (Final weak radicals)
-    ("رَمَى", "ramaː", "Alif Maqsura as long a"),  # TODO - failing
+    ("رَمَى", "ramaː", "Alif Maqsura as long a"),
     ("دَعَا", "daʕaː", "Alif Mamduda as long a"),
     ("قَاضٍ", "qaːdˤin", "Defective noun with Tanwin Kasra"),
 
@@ -183,7 +183,7 @@ LOANWORD_TESTS = [
     # Loanwords / clusters atypical in CA/MSA
     ("فِلْم", "film", "Loanwords / clusters atypical in CA/MSA"),
 
-    ("تِيكْنُولُوجْيَا", "tiːknuluːdʒjaː", "Loanwords / clusters atypical in CA/MSA"),  # TODO - failing
+    ("تِيكْنُولُوجْيَا", "tiːknuluːdʒjaː", "Loanwords / clusters atypical in CA/MSA"),  # TODO - failing; gold disputed: WAW+DAMMA = long /uː/ in MSA orthography; tiːknuːluːdʒjaː is consistent
 ]
 COMPLEX_MULTI_WORD_TESTS = [
     # Complex multiword assimilation (sun letters, hamza, wasl)
@@ -198,7 +198,7 @@ COMPLEX_MULTI_WORD_TESTS = [
     # TODO - failing
     ("الشَّمْس وَالشَجَرَة", "aʃʃams wa ʃʒajara", "Multiword, mixed assimilation + waṣl + hamza interactions"),
     # TODO - failing
-    ("يَوْمُ الشَّمْس", "jawm ʃʃams", "Multiword, mixed assimilation + waṣl + hamza interactions"),  # TODO - failing
+    ("يَوْمُ الشَّمْس", "jawm ʃʃams", "Multiword, mixed assimilation + waṣl + hamza interactions"),  # TODO - failing; gold disputed: terminal case vowel (damma) drop is inconsistent with الطَّالِبُ keeping its damma
 ]
 HAMZAT_AL_WASL_TESTS = [
     # Hamzat al-waṣl initial forms (istifʿāl, iftiʿāl)
@@ -213,11 +213,11 @@ HAMZAT_AL_WASL_TESTS = [
     ("اِفْعَوَّل", "ifʕawwal", " waṣl-based verb forms"),
     ("اِحْمِرَار", "iħmiraːr", " waṣl-based verb forms"),
 
-    ("اِسْوَدَّ", "iswaddaː", " waṣl-based verb forms"),  # TODO - failing
+    ("اِسْوَدَّ", "iswaddaː", " waṣl-based verb forms"),  # TODO - failing; gold disputed: Form IX اسودّ ends in short fatha, not long aː
     # === Hamzat al-waṣl / proclitic stacking ===
-    ("وَبِاسْمِ", "wabismi", "wa + bi + ism, both join through wasl"),  # TODO - failing
-    ("فَبِالْحَقِّ", "fabilħaqqi", "fa + bi + al-, qamariyya retained"),  # TODO - failing
-    ("وَلِلنَّاس", "walinnaːs", "wa + li + sun-letter"),  # TODO - failing
+    ("وَبِاسْمِ", "wabismi", "wa + bi + ism, both join through wasl"),
+    ("فَبِالْحَقِّ", "fabilħaqqi", "fa + bi + al-, qamariyya retained"),
+    ("وَلِلنَّاس", "walinnaːs", "wa + li + sun-letter"),
 ]
 DEVOICING_TESTS = [
     # Devoicing / syllable-boundary stressors
@@ -237,10 +237,10 @@ LEXICAL_TESTS = [
     ("سَائِق", "saːʔiq", "lexical stressors"),
     ("أَثَاث", "ʔaθaːθ", "lexical stressors"),
 
-    ("دُخَان", "duħaːn", "Miscellaneous lexical fillers"),  # TODO - failing
-    ("سُيوف", "sujuːf", "Miscellaneous lexical fillers"),  # TODO - failing
-    ("أُمُّ الْمُسْلِمِينَ", "ʔummu lmuslimiːn", "lexical stressors"),  # TODO - failing
-    ("أَبْيَض", "ʔabjaðˤ", "lexical stressors"),  # TODO - failing
+    ("دُخَان", "duħaːn", "Miscellaneous lexical fillers"),  # TODO - failing; gold disputed: خ = /x/ in MSA, not /ħ/
+    ("سُيوف", "sujuːf", "Miscellaneous lexical fillers"),  # TODO - failing; gold disputed: deficient spelling without kasra on ي, needs lexical fix
+    ("أُمُّ الْمُسْلِمِينَ", "ʔummu lmuslimiːn", "lexical stressors"),  # TODO - failing; gold disputed: final -na drop inconsistent with يَسْتَخْدِمُونَ gold which keeps final vowel
+    ("أَبْيَض", "ʔabjaðˤ", "lexical stressors"),  # TODO - failing; gold disputed: ض = /dˤ/ in MSA, not /ðˤ/
 ]
 
 VARIANT_TESTS = [
@@ -250,7 +250,7 @@ VARIANT_TESTS = [
     # lam-alif ligature("هٰذَا", "haːðaː", "Dagger Alif (superscript Alif)"),
     ("اللّٰه", "allaːh", "Full spelling of Allah with Dagger Alif"),
 
-    ("الرِّسَالَة", "arrisala", "Sun letter with Shadda and Kasra ordering"),  # TODO - failing
+    ("الرِّسَالَة", "arrisala", "Sun letter with Shadda and Kasra ordering"),  # TODO - failing; gold disputed: correct MSA is arrisaːla
 ]
 HIDDEN_GEMINATION_TESTS = [
     # === Hidden gemination (morphological) ===
@@ -258,8 +258,8 @@ HIDDEN_GEMINATION_TESTS = [
     ("عَمَّ", "ʕamma", "Hidden gemination (morphological)"),
     ("كُلّ", "kull", "Hidden gemination (morphological)"),
 
-    ("حَتَّى", "ħattaː", "Hidden gemination (morphological)"),  # TODO - failing
-    ("إِلَّا", "ʔillaː", "Hidden gemination (morphological)"),  # TODO - failing
+    ("حَتَّى", "ħattaː", "Hidden gemination (morphological)"),
+    ("إِلَّا", "ʔillaː", "Hidden gemination (morphological)"),
 ]
 DIPHTHONG_TESTS = [
     # === Diphthongs vs monophthongization ===
@@ -272,8 +272,8 @@ DIPHTHONG_TESTS = [
 EPHENTESIS_TESTS = [
     # === Epenthesis / phonotactic repair (cluster handling) ===
     ("وِلْد", "wild", "borrowed-like shape, no epenthesis"),  # borrowed-like shape, no epenthesis
-    ("سْتْر", "sitar", "synthetic test of illegal initial cluster"),  # TODO - failing
-    ("مْسَلَّة", "imsallːa", "m + cluster; expected epenthetic i"),  # TODO - failing
+    ("سْتْر", "sitar", "synthetic test of illegal initial cluster"),  # TODO - failing; gold disputed: imsallːa has spurious ː, correct epenthesis gives imsalla
+    ("مْسَلَّة", "imsallːa", "m + cluster; expected epenthetic i"),  # TODO - failing; gold disputed: expected form is imsalla; imsallːa has spurious length mark
 ]
 NUNATION_TESTS = [
     ("كِتَابٌ قَدِيم", "kitaːbun qadiːm", "no assimilation before uvular"),  # no assimilation before uvular
@@ -281,7 +281,7 @@ NUNATION_TESTS = [
 
     ("مِنْ يَوْم", "mijjawm", "idgham w/ ghunna into /j/ (/y/) glide"),
     ("مِنْ لَبَن", "millaban", "idgham into lam"),
-    ("مِنْ تَحْت", "mintˤaħt", "ikhfa: nasalized n before /tˤ/"),  # TODO - failing
+    ("مِنْ تَحْت", "mintˤaħt", "ikhfa: nasalized n before /tˤ/"),  # TODO - failing; gold disputed: the consonant is TEH (ت = /t/) not TA (ط = /tˤ/)
 ]
 MISC_TESTS = [
     # Miscellaneous additions for good coverage
@@ -294,9 +294,9 @@ MISC_TESTS = [
     # Complex narrative sequence
     ("ذَهَبَ الطَّالِبُ إِلَى الْمَكْتَبَةِ لِقِرَاءَةِ كِتَابٍ عَنْ تَارِيخِ الأَنْدَلُس",
      "ðahaba tˤtˤaːlibu ʔilaː almaktabati liqiraːʔati kitaːbin ʕan taːriːxi alʔandalus",
-     "Complex narrative sequence"),  # TODO - failing
+     "Complex narrative sequence"),  # TODO - failing; gold disputed: inconsistent wasl — ʔilaː almaktabati contradicts wasl-elision rule
     ("ذَهَبَ الطَّالِبُ إِلَى الْمَكْتَبَةِ", "ðahaba tˤtˤaːlibu ʔilaː almaktabati",
-     "Alif in Al- is dropped in connected speech"),  # TODO - failing
+     "Alif in Al- is dropped in connected speech"),  # TODO - failing; gold disputed: inconsistent wasl — ʔilaː almaktabati contradicts wasl-elision rule
 
 ]
 STRESS_TESTS = [
