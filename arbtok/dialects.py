@@ -106,6 +106,13 @@ WORD_EXCEPTIONS = {
 
     # TODO - why are these irregular?
     "مُسْتَشْفَى": "mustashfaː",
-    "مَدْرَسَة": "madrasah"
+    "مَدْرَسَة": "madrasah",
+
+    # Particles with genuine hamzat al-qat' (cutting hamza) on ALEF_HAMZA_BELOW.
+    # These must not be confused with Form-IV masdar words whose initial إ is hamzat al-wasl
+    # (e.g. إِيمَان = iːmaːn, no ʔ). The particles below are lexically fixed with ʔ.
+    # Keys stored in _reorder_diacritics-normalized form (shadda precedes vowel):
+    "إِلَّا": "ʔillaː",   # إِلَّا "except/but" — hamzat al-qat'
+    "إِلَى": "ʔilaː",          # إِلَى "to/towards" — hamzat al-qat'
 }
 
