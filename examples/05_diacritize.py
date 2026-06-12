@@ -1,4 +1,4 @@
-"""Restore diacritics with the bundled ONNX model, then phonemize.
+"""Restore diacritics with text2tashkeel, then phonemize.
 
 Run::
 
@@ -9,7 +9,7 @@ from arbtok.tokenizer import Sentence
 
 
 def main() -> None:
-    diac = TashkeelDiacritizer()  # loads the in-tree model.onnx once
+    diac = TashkeelDiacritizer()  # loads the text2tashkeel ensemble once
 
     for raw in ["قال الملك", "ذهب الطالب", "السلام عليكم"]:
         vocalized = diac.diacritize(raw)

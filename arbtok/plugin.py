@@ -1,0 +1,118 @@
+"""arbtok's Arabic G2P engine, on the orthography2ipa base interface.
+
+arbtok *consumes* orthography2ipa — its ``ar`` spec data and the shared
+:class:`~orthography2ipa.g2p_plugin.G2PPlugin`/``WordContext`` types —
+and owns the Arabic pipeline. Use it directly:
+
+    >>> from arbtok.plugin import ArbtokG2PPlugin
+    >>> ArbtokG2PPlugin().transcribe("كتاب جميل")
+    'kitaːb dʒamiːl'
+
+The engine maps arbtok's machinery onto the shared interface:
+
+- ``normalize`` — Unicode/diacritic reordering, number and date
+  expansion, and automatic tashkeel diacritization of bare text via
+  ``text2tashkeel`` (failure degrades gracefully to the undiacritized
+  input).
+- ``transcribe_word`` — the CharToken rule cascade (sun-letter
+  assimilation, hamzat al-waṣl, tanwīn pausal forms, ta marbūṭa, vowel
+  lengthening, idgham/iqlab). Cross-word effects use the orthographic
+  neighbours carried by ``WordContext``: the word is tokenized together
+  with its neighbours so the existing prev/next-token rules fire.
+- ``transcribe`` — full-sentence path with clitic joining, identical to
+  ``Sentence(text).ipa``.
+"""
+from typing import List, Optional
+
+from orthography2ipa.g2p_plugin import G2PPlugin, WordContext
+
+from arbtok.constants import (
+    DAGGER_ALIF,
+    DAMMA,
+    FATHA,
+    KASRA,
+    MADD,
+    SHADDA,
+    SUKUN,
+    TANWIN_DAMM,
+    TANWIN_FATH,
+    TANWIN_KASR,
+)
+from arbtok.tokenizer import Sentence, normalize_unicode
+from arbtok.util import normalize as normalize_speech
+
+_DIACRITICS = {
+    FATHA, DAMMA, KASRA, SHADDA, SUKUN,
+    TANWIN_FATH, TANWIN_DAMM, TANWIN_KASR, DAGGER_ALIF, MADD,
+}
+
+# Bare text below this diacritic-per-letter ratio gets auto-tashkeel.
+_DIACRITIC_DENSITY_THRESHOLD = 0.2
+
+
+def _diacritic_density(text: str) -> float:
+    letters = [c for c in text if "؀" <= c <= "ۿ"]
+    if not letters:
+        return 1.0
+    marks = sum(1 for c in letters if c in _DIACRITICS)
+    return marks / len(letters)
+
+
+class ArbtokG2PPlugin(G2PPlugin):
+    """Arabic (MSA) G2P via arbtok's rule-based token tree."""
+
+    def __init__(self) -> None:
+        self._diacritizer = None
+        self._diacritizer_failed = False
+
+    @property
+    def language_codes(self) -> List[str]:
+        return ["ar", "arb"]
+
+    # ─── lifecycle hooks ─────────────────────────────────────────────
+
+    def normalize(self, text: str) -> str:
+        text = normalize_speech(text, "ar")
+        text = normalize_unicode(text)
+        if _diacritic_density(text) < _DIACRITIC_DENSITY_THRESHOLD:
+            text = self._diacritize(text)
+        return text
+
+    def _diacritize(self, text: str) -> str:
+        if self._diacritizer_failed:
+            return text
+        if self._diacritizer is None:
+            try:
+                from arbtok.tashkeel import TashkeelDiacritizer
+                self._diacritizer = TashkeelDiacritizer()
+            except Exception:
+                self._diacritizer_failed = True
+                return text
+        try:
+            return self._diacritizer.diacritize(text)
+        except Exception:
+            return text
+
+    # ─── transcription ───────────────────────────────────────────────
+
+    def transcribe(self, text: str) -> str:
+        return Sentence(self.normalize(text)).ipa
+
+    def transcribe_word(
+        self, word: str, context: Optional[WordContext] = None
+    ) -> str:
+        if context is None or (context.prev_word is None
+                               and context.next_word is None):
+            return Sentence(word).ipa
+
+        # Tokenize the word with its orthographic neighbours so the
+        # cross-word rules (wasl elision, idgham/iqlab, clitic
+        # attachment) see the same prev/next links as a full sentence.
+        parts = [p for p in (context.prev_word, word, context.next_word)
+                 if p is not None]
+        target = 0 if context.prev_word is None else 1
+        tokens = Sentence(" ".join(parts)).tokens
+        words = [t for t in tokens if t.surface not in ("",)]
+        if target < len(words):
+            return words[target].ipa
+        return Sentence(word).ipa
