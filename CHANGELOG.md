@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a4](https://github.com/TigreGotico/arbtok/tree/0.0.0a4) (2026-06-12)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a3...0.0.0a4)
+
+**Merged pull requests:**
+
+- feat: arabic dialect zones in the rule cascade [\#5](https://github.com/TigreGotico/arbtok/pull/5) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a3](https://github.com/TigreGotico/arbtok/tree/0.0.0a3) (2026-06-12)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a2...0.0.0a3)
