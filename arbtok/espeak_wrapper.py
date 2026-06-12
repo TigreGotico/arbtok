@@ -43,8 +43,8 @@ class EspeakPhonemizer:
                     'fr-ch', 'ka', 'en-gb-x-gbclan', 'ko', 'is', 'ca-nw', 'gn', 'kok', 'la', 'lb', 'am', 'kk', 'ku',
                     'kaa', 'jbo', 'eo', 'uz', 'nci', 'vi-vn-x-south', 'el', 'pl', 'grc', ]
 
-    def __init__(self, taskeen_threshold: Optional[float] = 0.8):
-        self.taskeen_threshold = taskeen_threshold  # arabic only
+    def __init__(self, pausal: bool = True):
+        self.pausal = pausal  # arabic only
         self._tashkeel: Optional[TashkeelDiacritizer] = None
 
     @classmethod
@@ -141,7 +141,7 @@ class EspeakPhonemizer:
 
     def add_diacritics(self, text: str, lang: str= "ar") -> str:
         if lang.startswith("ar"):
-            return self.tashkeel.diacritize(text, self.taskeen_threshold)
+            return self.tashkeel.diacritize(text, pausal=self.pausal)
         return text
 
     def phonemize(self, text: str, lang: str= "ar") -> PhonemizedChunks:
