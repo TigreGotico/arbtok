@@ -19,7 +19,7 @@ Pass a text2tashkeel model name to pick a specific accuracy/speed/size
 trade-off:
 
 ```python
-TashkeelDiacritizer("rawi-v2-int8")   # fastest & smallest
+TashkeelDiacritizer("rawi-v2-int8")   # small int8 variant
 ```
 
 ### `diacritize(text, pausal=False) -> str`
