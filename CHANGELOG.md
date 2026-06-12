@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a3](https://github.com/TigreGotico/arbtok/tree/0.0.0a3) (2026-06-12)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a2...0.0.0a3)
+
+**Merged pull requests:**
+
+- fix: close rule-cascade gaps in wasl, hamza, gemination and cross-word assimilation [\#4](https://github.com/TigreGotico/arbtok/pull/4) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a2](https://github.com/TigreGotico/arbtok/tree/0.0.0a2) (2026-06-12)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/4ddc025772bae1bf000b63cd2cb9eacb01bd9ac5...0.0.0a2)
