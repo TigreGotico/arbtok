@@ -13,7 +13,9 @@ from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WA
                               ALIF_MAKSURA,  ALIF, ALEF_MADDA,
                               HAMZAT_AL_WASL, TA_MARBUTA, SHADDA,
                               SUN_LETTERS, CLITIC_BASES, PUNCT)
-from arbtok.dialects import VOWEL_MAP, ARABIC_TO_IPA_CONSONANTS, DIACRITIC_TO_IPA, TANWIN_TO_IPA, WORD_EXCEPTIONS
+from arbtok.dialects import (VOWEL_MAP, ARABIC_TO_IPA_CONSONANTS, DIACRITIC_TO_IPA,
+                             TANWIN_TO_IPA, WORD_EXCEPTIONS,
+                             ArabicDialect, consonant_ipa, reduce_maghrebi_vowels)
 
 
 def _reorder_diacritics(text: str) -> str:
@@ -84,6 +86,13 @@ class CharToken:
     @property
     def is_punct(self) -> bool:
         return self.surface in PUNCT
+
+    @property
+    def dialect(self) -> 'ArabicDialect':
+        """Zone whose reflexes realize this char (inherited from the word)."""
+        if self.word is not None:
+            return self.word.dialect
+        return ArabicDialect.MSA
 
     @property
     def normalized(self) -> str:
@@ -308,11 +317,16 @@ class CharToken:
 
         # --- Consonants ---
         if s in ARABIC_TO_IPA_CONSONANTS:
+            # Resolve the MSA realization, then let the dialect zone override
+            # it (identity for MSA/CLA). Used by every return below so the
+            # zone's reflex flows through gemination and assimilation alike.
+            cons = consonant_ipa(s, self.dialect, ARABIC_TO_IPA_CONSONANTS[s])
+
             # 3rd position when self.word.has_definite_article -> token to geminate
             if self.char_idx == 2 and self.word.has_definite_article:
                 # Sun Letter: Assimilated 'l' (char_idx==1) -> double the sun letter.
                 if self.is_sun:
-                    return ARABIC_TO_IPA_CONSONANTS[s] + ARABIC_TO_IPA_CONSONANTS[s]
+                    return cons + cons
 
             # Embedded definite-article LAM assimilation:
             # In written Arabic, li+al- contracts to لِل- (the ALIF of the article is elided).
@@ -334,7 +348,7 @@ class CharToken:
                     # Article LAM before moon letter: retain 'l'
                     return "l"
 
-            return ARABIC_TO_IPA_CONSONANTS[s]
+            return cons
 
         if s == SHADDA:
             # Shadda duplicates the previous consonant.
@@ -370,6 +384,7 @@ class WordToken:
     word_idx: int
     prev_word: Optional['WordToken'] = None
     next_word: Optional['WordToken'] = None
+    dialect: 'ArabicDialect' = ArabicDialect.MSA
 
     def __post_init__(self):
         self._tokens_cache: Optional[List[CharToken]] = None
@@ -443,9 +458,17 @@ class WordToken:
         return False
 
     @property
+    def is_reference_register(self) -> bool:
+        """True for MSA/CLA, where reflex overrides are identity."""
+        return self.dialect in (ArabicDialect.MSA, ArabicDialect.CLA)
+
+    @property
     def ipa(self) -> str:
-        # Check dictionary exceptions first
-        if self.surface in WORD_EXCEPTIONS:
+        # Check dictionary exceptions first. These hardcode MSA-register
+        # forms (silent letters, demonstrative long vowels); under a
+        # regional zone they would bypass the reflex cascade, so they only
+        # apply for MSA/CLA. Dialect words fall through to the rule path.
+        if self.is_reference_register and self.surface in WORD_EXCEPTIONS:
             return WORD_EXCEPTIONS[self.surface]
 
         ipa = "".join([tok.ipa for tok in self.tokens])
@@ -458,7 +481,12 @@ class WordToken:
         }
         for k, v in replacements.items():
             ipa = ipa.replace(k, v)
-        return ipa.strip()
+        ipa = ipa.strip()
+        # Maghrebi short-vowel reduction (approximation) runs last, on the
+        # assembled word, where syllable context is visible.
+        if self.dialect == ArabicDialect.MAGHREBI:
+            ipa = reduce_maghrebi_vowels(ipa)
+        return ipa
 
     def __eq__(self, other) -> bool:
         if isinstance(other, str):
@@ -469,6 +497,7 @@ class WordToken:
 @dataclasses.dataclass
 class Sentence:
     surface: str
+    dialect: 'ArabicDialect' = ArabicDialect.MSA
 
     @property
     def normalized(self) -> str:
@@ -494,7 +523,8 @@ class Sentence:
             wt = WordToken(
                 surface=piece,
                 word_idx=idx,
-                prev_word=tokens[idx - 1] if idx > 0 else None
+                prev_word=tokens[idx - 1] if idx > 0 else None,
+                dialect=self.dialect,
             )
             if idx > 0:
                 tokens[idx - 1].next_word = wt
