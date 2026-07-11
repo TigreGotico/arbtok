@@ -40,7 +40,7 @@ from arbtok.constants import (
     TANWIN_KASR,
 )
 from arbtok.dialects import ArabicDialect, WORD_EXCEPTIONS, dialect_for_lang
-from arbtok.lattice import word_ipa
+from arbtok.lattice import defers_to_cascade, word_ipa
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.util import normalize as normalize_speech
 
@@ -136,7 +136,8 @@ class ArbtokG2PPlugin(G2PPlugin):
             # reflex-cascade path (the lattice is MSA-only) as do lexical
             # exceptions, which the cascade hardcodes.
             if (dialect in (ArabicDialect.MSA, ArabicDialect.CLA)
-                    and normalize_unicode(word) not in WORD_EXCEPTIONS):
+                    and normalize_unicode(word) not in WORD_EXCEPTIONS
+                    and not defers_to_cascade(word)):
                 return word_ipa(word)
             return Sentence(word, dialect=dialect).ipa
 

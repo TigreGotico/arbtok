@@ -122,6 +122,58 @@ def test_carrier_and_onset(word, expected):
     assert word_ipa(word) == expected
 
 
+# ─── Regression guards: geminate glides, final glide vowel, ligatures ─────
+
+@pytest.mark.parametrize("word, expected", [
+    ("عُيِّنَ", "ʕujjina"),    # geminate yāʾ (glide) — not dropped
+    ("قَوَّاس", "qawwaːs"),    # geminate wāw in a coda ligature
+    ("اِفْعَوَّل", "ifʕawwal"),  # geminate wāw, form IX
+])
+def test_geminate_glides_not_dropped(word, expected):
+    """Shadda geminates the semivowels ي/و too (Wright I §14; Ryding §2.3)."""
+    assert word_ipa(word) == expected
+
+
+def test_word_final_glide_is_a_long_vowel():
+    """A word-final ي reads as the long vowel, not the consonant /j/."""
+    assert word_ipa("يُصَلِّي") == "jusˤalliː"
+
+
+def test_presentation_ligature_never_empty():
+    """The lam-alif ligature ﻻ decomposes; output is never empty."""
+    assert word_ipa("ﻻ") == "laː"
+
+
+def test_medial_semivowel_onset():
+    """A medial ⟨وَ⟩ after a consonant is the onset /wa/ (أَبْوَاب → ʔabwaːb)."""
+    assert word_ipa("أَبْوَاب") == "ʔabwaːb"
+
+
+# ─── Deferral of cross-word / lexical cases (no public regression) ───────
+
+from arbtok.lattice import defers_to_cascade  # noqa: E402
+
+
+@pytest.mark.parametrize("word", [
+    "إِيْمَان",     # word-initial إ: waṣl vs qaṭʿ is lexical
+    "وَبِاسْمِ",    # proclitic + internal hamzat al-waṣl (cross-word)
+    "فَبِالْحَقِّ",  # proclitic + article
+    "مَرْحَبًا!",   # trailing punctuation → pausal (utterance-level)
+])
+def test_lexical_and_crossword_words_defer(word):
+    """Words needing cross-word/lexical rules route to the cascade, not the
+    word lattice — so the public word path never regresses on them."""
+    assert defers_to_cascade(word) is True
+
+
+@pytest.mark.parametrize("word", [
+    "الشَّمْس", "الْقَمَر", "كِتَاب", "يَوْم", "عُيِّنَ", "أَبْوَاب",
+])
+def test_flagship_words_do_not_defer(word):
+    """The lattice-handled words are not needlessly deferred."""
+    assert defers_to_cascade(word) is False
+
+
 def test_rescorers_are_pure_no_ops_off_target():
     """Each flagship rescorer leaves an unrelated word byte-identical."""
     base = PhonetokTokenizer(get("ar")).ipa_lattice("قَلَم")
