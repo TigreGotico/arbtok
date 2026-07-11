@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a7](https://github.com/TigreGotico/arbtok/tree/0.0.0a7) (2026-07-11)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a6...0.0.0a7)
+
+**Merged pull requests:**
+
+- refactor: consume o2i 1.70 native fixes + sentence-context seam \(drop compensating rescorers, migrate waṣl/pausal\) [\#8](https://github.com/TigreGotico/arbtok/pull/8) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a6](https://github.com/TigreGotico/arbtok/tree/0.0.0a6) (2026-07-11)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a5...0.0.0a6)
