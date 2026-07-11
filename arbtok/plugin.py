@@ -14,11 +14,12 @@ The engine maps arbtok's machinery onto the shared interface:
   expansion, and automatic tashkeel diacritization of bare text via
   ``text2tashkeel`` (failure degrades gracefully to the undiacritized
   input).
-- ``transcribe_word`` — the CharToken rule cascade (sun-letter
-  assimilation, hamzat al-waṣl, tanwīn pausal forms, ta marbūṭa, vowel
-  lengthening, idgham/iqlab). Cross-word effects use the orthographic
+- ``transcribe_word`` — for an isolated MSA word (no context), the
+  orthography2ipa shared lattice with arbtok's rescorers (sun-letter
+  assimilation, hamzat al-waṣl, gemination, mater lectionis; see
+  :mod:`arbtok.lattice`). Cross-word effects use the orthographic
   neighbours carried by ``WordContext``: the word is tokenized together
-  with its neighbours so the existing prev/next-token rules fire.
+  with its neighbours so the prev/next-token cross-word rules fire.
 - ``transcribe`` — full-sentence path with clitic joining, identical to
   ``Sentence(text).ipa``.
 """
@@ -38,7 +39,8 @@ from arbtok.constants import (
     TANWIN_FATH,
     TANWIN_KASR,
 )
-from arbtok.dialects import ArabicDialect, dialect_for_lang
+from arbtok.dialects import ArabicDialect, WORD_EXCEPTIONS, dialect_for_lang
+from arbtok.lattice import word_ipa
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.util import normalize as normalize_speech
 
@@ -129,6 +131,13 @@ class ArbtokG2PPlugin(G2PPlugin):
         dialect = self._resolve_dialect(context)
         if context is None or (context.prev_word is None
                                and context.next_word is None):
+            # Isolated word: the MSA register runs on the orthography2ipa
+            # shared lattice + rescorers. Regional zones still take the
+            # reflex-cascade path (the lattice is MSA-only) as do lexical
+            # exceptions, which the cascade hardcodes.
+            if (dialect in (ArabicDialect.MSA, ArabicDialect.CLA)
+                    and normalize_unicode(word) not in WORD_EXCEPTIONS):
+                return word_ipa(word)
             return Sentence(word, dialect=dialect).ipa
 
         # Tokenize the word with its orthographic neighbours so the
