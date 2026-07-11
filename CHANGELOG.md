@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a5](https://github.com/TigreGotico/arbtok/tree/0.0.0a5) (2026-07-11)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a4...0.0.0a5)
+
+**Merged pull requests:**
+
+- refactor: build on the orthography2ipa shared lattice \(tokenizer + sun-letter/waṣl rescorers\) [\#6](https://github.com/TigreGotico/arbtok/pull/6) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a4](https://github.com/TigreGotico/arbtok/tree/0.0.0a4) (2026-06-12)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a3...0.0.0a4)
