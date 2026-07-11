@@ -30,7 +30,7 @@ version = {attr = "arbtok.version.VERSION_STR"}
 dependencies = {file = ["requirements.txt"]}
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-timeout"]
+test = ["pytest", "pytest-timeout", "jiwer"]
 
 [project.urls]
 Homepage = "https://github.com/TigreGotico/arbtok"

@@ -3,5 +3,5 @@ quebra-frases
 langcodes
 ovos-number-parser>=0.4.0
 ovos-date-parser>=0.6.4a1
-orthography2ipa>=0.3.0a1
+orthography2ipa>=1.58.1a1
 text2tashkeel>=0.1.0
