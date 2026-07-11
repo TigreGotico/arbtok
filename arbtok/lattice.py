@@ -30,14 +30,17 @@ over the per-position lattice
   carrier's baked-in vowel only when an explicit harakah follows.
 - :class:`AccusativeAlifRescorer` — the otiose alif after tanwīn al-fatḥ
   (accusative ``-an``) contributes no segment (مَرْحَبًا → ``marħaban``).
-- :class:`MaterLectionisRescorer` — a short vowel plus a bare alif or
-  alif maksūra is the length mater lectionis; the ``ar`` engine merges
-  ⟨َا⟩ into one long vowel but leaves a preceding fatḥa unmerged before a
-  standalone ى (حَتَّى → ``ħattaː``, not ``ħattaaː``).
-- :class:`GlideCodaRescorer` — a word-final ي/و directly after a
-  sukūn-bearing consonant is a coda glide, not the mater-lectionis long
-  vowel the ``ar`` positional rule assigns (ظَبْي → ``ðˤabj``, not
-  ``ðˤabiː``).
+
+As of orthography2ipa 1.70 (upstream #251) the ``ar`` engine also natively
+produces the two forms arbtok once patched with private rescorers, so those
+rescorers are gone:
+
+- a fatḥa before a standalone alif maksūra ى collapses to one long vowel
+  (حَتَّى → ``ħattaː``, رَمَى → ``ramaː``) — the former
+  ``MaterLectionisRescorer``;
+- a word-final ي/و directly after a sukūn-bearing consonant is a coda glide,
+  not a mater-lectionis long vowel (رَمْي → ``ramj``, ظَبْي → ``ðˤabj``,
+  while فِي still → ``fiː``) — the former ``GlideCodaRescorer``.
 
 The rescorers are pure, word-local, and composable. Cross-word sandhi —
 clitic joining, cross-word waṣl elision, idghām/iqlāb, pausal forms — is
@@ -206,77 +209,10 @@ class AccusativeAlifRescorer(LatticeRescorer):
         return slot.candidates
 
 
-class MaterLectionisRescorer(LatticeRescorer):
-    """Collapse a short vowel + bare alif/alif-maksura into length.
-
-    A bare alif or alif maksūra after its homorganic short vowel is the
-    length mater lectionis, not a segment of its own (Wright I §4). The
-    ``ar`` engine merges the ⟨َا⟩ (fatḥa+alif) ligature into a single long
-    vowel, but a fatḥa followed by a *standalone* alif maksūra ى is left
-    unmerged (حَتَّى tokenises as ``…a`` + ``aː``); this collapses the
-    trailing alif/maksūra to the length mark ``ː`` after a short vowel
-    (``ħattaː``, not ``ħattaaː``) and drops it entirely after an existing
-    long vowel (stacked length).
-    """
-
-    def rescore(
-        self, slot: SegmentSlot, context: RescoreContext,
-    ) -> Sequence[Candidate]:
-        if slot.grapheme not in (ALIF, ALIF_MAKSURA) or context.is_word_initial:
-            return slot.candidates
-        # Scan back past any slot an earlier rescorer emptied.
-        prev = None
-        for cand in reversed(context.slots[:context.index]):
-            if cand.candidates:
-                prev = cand
-                break
-        if prev is None or prev.grapheme == "ً":
-            # After tanwīn al-fatḥ the alif is otiose (AccusativeAlifRescorer).
-            return slot.candidates
-        prev_ipa = prev.top.ipa
-        if prev_ipa.endswith("ː"):
-            # Already a long vowel (plural ⟨وا⟩, stacked length): silent.
-            return (Candidate(ipa="", cost=0.0),)
-        if prev_ipa.endswith(("a", "i", "u")):
-            # Short vowel + alif/maksūra = the length mater lectionis.
-            return (Candidate(ipa="ː", cost=0.0),)
-        return slot.candidates
-
-
-class GlideCodaRescorer(LatticeRescorer):
-    """Keep a word-final ي/و after a sukūn as a coda glide, not a long vowel.
-
-    The ``ar`` engine's positional rule reads a word-final ي/و as the long
-    vowel ``iː``/``uː`` (the mater lectionis of فِي → ``fiː``). That is
-    wrong when the glide directly follows a sukūn-bearing consonant: with
-    no vowel between them the glide is a true coda consonant (ظَبْي →
-    ``ðˤabj``, رَمْي → ``ramj``), not ``ðˤabiː``. This restores /j/, /w/ in
-    exactly that position (Wright I §4: length requires a homorganic short
-    vowel). A ي/و that carries its own vowel (the ⟨ِي⟩/⟨ُو⟩ ligature) or
-    follows a vowel is untouched.
-    """
-
-    def rescore(
-        self, slot: SegmentSlot, context: RescoreContext,
-    ) -> Sequence[Candidate]:
-        if slot.grapheme not in ("ي", "و") or not context.is_word_final:
-            return slot.candidates
-        if slot.top.ipa not in ("iː", "uː"):
-            return slot.candidates
-        prev = context.prev_slot
-        if prev is not None and prev.grapheme == SUKUN:
-            glide = "j" if slot.grapheme == "ي" else "w"
-            return (Candidate(ipa=glide, cost=0.0),)
-        return slot.candidates
-
-
-# Rescorer pipeline: the alif rules first (accusative-alif silencing before
-# mater-lectionis length), then the mutually independent
-# article/waṣl/hamza/glide-coda rules.
+# Rescorer pipeline: the accusative-alif rule first, then the mutually
+# independent article/waṣl/hamza rules.
 DEFAULT_RESCORERS: List[LatticeRescorer] = [
     AccusativeAlifRescorer(),
-    MaterLectionisRescorer(),
-    GlideCodaRescorer(),
     SunLetterRescorer(),
     WaslRescorer(),
     HamzaCarrierRescorer(),
