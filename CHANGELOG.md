@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a6](https://github.com/TigreGotico/arbtok/tree/0.0.0a6) (2026-07-11)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a5...0.0.0a6)
+
+**Merged pull requests:**
+
+- refactor: rely on o2i 1.64 native gemination/ligature/glide handling, drop redundant rescorers [\#7](https://github.com/TigreGotico/arbtok/pull/7) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a5](https://github.com/TigreGotico/arbtok/tree/0.0.0a5) (2026-07-11)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a4...0.0.0a5)
