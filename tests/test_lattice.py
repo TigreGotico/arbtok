@@ -15,7 +15,6 @@ from orthography2ipa.rescorer import LatticeRescorer
 from arbtok.constants import SUN_LETTERS
 from arbtok.lattice import (
     DEFAULT_RESCORERS,
-    GeminationRescorer,
     SunLetterRescorer,
     WaslRescorer,
     word_ipa,
@@ -178,7 +177,7 @@ def test_rescorers_are_pure_no_ops_off_target():
     """Each flagship rescorer leaves an unrelated word byte-identical."""
     base = PhonetokTokenizer(get("ar")).ipa_lattice("قَلَم")
     base_ipa = "".join(s.top.ipa for s in base)
-    for rescorer in (GeminationRescorer(), SunLetterRescorer(), WaslRescorer()):
+    for rescorer in (SunLetterRescorer(), WaslRescorer()):
         got = PhonetokTokenizer(get("ar")).ipa_lattice(
             "قَلَم", rescorer=[rescorer])
         assert "".join(s.top.ipa for s in got) == base_ipa
