@@ -2,13 +2,21 @@
 
 arbtok builds on orthography2ipa's language-agnostic grapheme tokenizer
 (:class:`~orthography2ipa.phonetok.PhonetokTokenizer`) and its ``ar``
-spec grapheme table, rather than a private char-token tree. The Arabic
-morpho-phonology that a plain table lookup cannot express is layered on
-as :class:`~orthography2ipa.rescorer.LatticeRescorer`\\ s over the shared
-per-position lattice (:meth:`~orthography2ipa.phonetok.PhonetokTokenizer.ipa_lattice`):
+spec grapheme table, rather than a private char-token tree. As of
+orthography2ipa 1.64 the ``ar`` engine natively handles the segment-local
+Arabic phonology arbtok once expressed as rescorers — gemination
+(shadda ّ doubling a consonant, glides included), presentation-form /
+lam-alif ligature normalisation (ﻻ → لا → ``laː``), onset glides
+(يَ → ``ja``, وَ → ``wa``), the bare glottal stop of a hamza carrier
+before an explicit harakah (أَمِير → ``ʔamiːr``), the word-final glide as
+a long vowel, and pausal tāʾ marbūṭa (مَدِينَة → ``madiːna``). Those
+private rescorers are gone.
 
-- :class:`GeminationRescorer` — shadda (ّ, tashdīd) doubles the preceding
-  consonant instead of the spec's default length-mark realisation.
+What remains are the phenomena the shared ``ar`` table still cannot
+express, layered on as :class:`~orthography2ipa.rescorer.LatticeRescorer`\\ s
+over the per-position lattice
+(:meth:`~orthography2ipa.phonetok.PhonetokTokenizer.ipa_lattice`):
+
 - :class:`SunLetterRescorer` — sun-letter assimilation (idghām
   ash-shamsiyya): the lām of the definite article ⟨ال⟩ assimilates into a
   following coronal (sun) consonant — ``al-šams`` → ``aš-šams`` — while a
@@ -16,17 +24,25 @@ per-position lattice (:meth:`~orthography2ipa.phonetok.PhonetokTokenizer.ipa_lat
 - :class:`WaslRescorer` — hamzat al-waṣl (the prosthetic connecting
   vowel): word-initial bare alif is silent, its following short vowel
   carrying the onset (``istiqbāl`` from اِسْتِقْبَال).
-- :class:`HamzaCarrierRescorer` — a hamza-bearing alif/wāw/yāʾ realises
-  as the bare glottal stop /ʔ/ when an explicit harakah follows, so the
-  written vowel is not doubled (``ʔamīr`` from أَمِير, not ``ʔaamīr``).
-- :class:`SemivowelOnsetRescorer` — a word-initial ⟨يَ⟩/⟨وَ⟩ is the
-  consonantal onset /ja/, /wa/ (``jawm``), not the /aj/, /aw/ diphthong
-  the spec lists (which is the *coda* grapheme ⟨َي⟩/⟨َو⟩).
+- :class:`HamzaCarrierRescorer` — a hamza-bearing carrier before a sukūn
+  or at a word edge is the bare glottal stop /ʔ/ with no vowel
+  (تَأْثِير → ``taʔθīr``, نَبَأ → ``nabaʔ``); the ``ar`` engine strips the
+  carrier's baked-in vowel only when an explicit harakah follows.
+- :class:`AccusativeAlifRescorer` — the otiose alif after tanwīn al-fatḥ
+  (accusative ``-an``) contributes no segment (مَرْحَبًا → ``marħaban``).
+- :class:`MaterLectionisRescorer` — a short vowel plus a bare alif or
+  alif maksūra is the length mater lectionis; the ``ar`` engine merges
+  ⟨َا⟩ into one long vowel but leaves a preceding fatḥa unmerged before a
+  standalone ى (حَتَّى → ``ħattaː``, not ``ħattaaː``).
+- :class:`GlideCodaRescorer` — a word-final ي/و directly after a
+  sukūn-bearing consonant is a coda glide, not the mater-lectionis long
+  vowel the ``ar`` positional rule assigns (ظَبْي → ``ðˤabj``, not
+  ``ðˤabiː``).
 
-The rescorers are pure, word-local, and composable (applied in the order
-above). Cross-word sandhi — clitic joining, cross-word waṣl elision,
-idghām/iqlāb, pausal forms — is orthogonal to the word lattice and lives
-in the sentence-level orchestration (the sanctioned
+The rescorers are pure, word-local, and composable. Cross-word sandhi —
+clitic joining, cross-word waṣl elision, idghām/iqlāb, pausal forms — is
+orthogonal to the word lattice and lives in the sentence-level
+orchestration (the sanctioned
 :meth:`orthography2ipa.g2p_plugin.G2PPlugin.post_process` seam), not here.
 
 Sources for the rescored rules:
@@ -35,7 +51,10 @@ Sources for the rescored rules:
   *A Grammar of the Arabic Language*, 3rd ed., I §17; K. Ryding,
   *A Reference Grammar of Modern Standard Arabic* (CUP 2005) §2.6.
 - Hamzat al-waṣl as a silent prosthetic vowel: Ryding §2.4; Wright I §19.
-- Shadda / tashdīd = gemination: Ryding §2.3.
+- Mater lectionis (a glide/alif after its homorganic short vowel is
+  length, not a segment): Wright I §4.
+- Otiose accusative alif after tanwīn al-fatḥ: Wright I §4 note;
+  Ryding §5.3.1.1.
 """
 from __future__ import annotations
 
@@ -59,9 +78,6 @@ from arbtok.constants import (
     PUNCT,
     SUKUN,
     SUN_LETTERS,
-    TANWIN_DAMM,
-    TANWIN_FATH,
-    TANWIN_KASR,
     WAW_HAMZA,
     YA_HAMZA,
 )
@@ -77,156 +93,14 @@ _SHORT_HARAKAT = {FATHA, DAMMA, KASRA}
 # Hamza carriers whose spec grapheme bakes in a default vowel (ʔa / ʔi).
 _HAMZA_CARRIERS = {ALEF_HAMZA_ABOVE, ALEF_HAMZA_BELOW, WAW_HAMZA, YA_HAMZA}
 
-# Word-initial semivowel-plus-fatha graphemes the spec maps to a *coda*
-# diphthong; as an onset they are the plain consonant + /a/.
-_ONSET_SEMIVOWELS = {"يَ": "ja", "وَ": "wa"}
+# The full set of harakāt (vowel/sukūn diacritic slots), used to strip a
+# word down to its bare consonantal skeleton in :func:`defers_to_cascade`.
+_HARAKAT = _SHORT_HARAKAT | {"ً", "ٌ", "ٍ", "ْ"}
 
 
 def _is_consonant_ipa(ipa: str) -> bool:
     """True for an IPA string that starts a consonant (not a vowel/length)."""
     return bool(ipa) and ipa[0] not in "aiueoɑəː"
-
-
-# Harakāt (vowel/sukun diacritic slots) that Unicode canonical ordering
-# places *between* a consonant and its shadda. Because NFC sorts combining
-# marks by canonical combining class, a geminated, vowelled consonant
-# always tokenises as ``C  harakah  ّ`` — the shadda never precedes the
-# vowel. A per-slot rescorer cannot reorder slots, so gemination is
-# realised on the consonant slot (doubling it) with the shadda slot
-# deleted, keeping the geminate *before* the nucleus (aʃʃams, not aʃaʃ).
-_HARAKAT = _SHORT_HARAKAT | {"ً", "ٌ", "ٍ", "ْ"}
-
-# Short-vowel value of a harakah, for reconstructing a glide ligature's
-# vowel when the glide is geminated.
-_HARAKA_VOWEL = {FATHA: "a", DAMMA: "u", KASRA: "i"}
-
-
-def _geminate_form(slot: SegmentSlot) -> str:
-    """The doubled realisation of a shadda-bearing consonant slot, or ``""``.
-
-    Shadda geminates *any* consonant, semivowels included (Wright I §14;
-    Ryding §2.3). A plain consonant simply doubles (``m`` → ``mm``). A
-    glide the spec merged into a ligature needs the glide itself doubled:
-    an onset glide+vowel ligature (يِ, وَ …) becomes glide·glide·vowel
-    (``يِ`` → ``jji``); a coda vowel+glide ligature (َو, َي) appends the
-    glide (``aw`` → ``aww``).
-    """
-    top = slot.top.ipa
-    g = slot.grapheme
-    if _is_consonant_ipa(top):
-        return top + top
-    if g and g[0] in ("ي", "و"):  # onset glide (+ optional ligature vowel)
-        glide = "j" if g[0] == "ي" else "w"
-        vowel = "".join(_HARAKA_VOWEL.get(ch, "") for ch in g[1:])
-        return glide + glide + vowel
-    if "و" in g:  # coda vowel+glide ligature (َو)
-        return top + "w"
-    if "ي" in g:  # coda vowel+glide ligature (َي)
-        return top + "j"
-    return ""
-
-
-class GeminationRescorer(LatticeRescorer):
-    """Realise shadda (ّ) as gemination of its consonant (tashdīd).
-
-    The ar spec maps the shadda grapheme to the length mark ``ː``; in
-    Arabic tashdīd doubles the consonant it sits on — including the
-    semivowels ي/و (عُيِّنَ → ``ʕujjina``). Unicode canonical ordering
-    places the shadda slot *after* the consonant's harakah, so this doubles
-    the owning consonant slot (scanning forward past the harakah) and
-    deletes the shadda slot, keeping the geminate before the nucleus vowel
-    (Ryding §2.3).
-    """
-
-    def rescore(
-        self, slot: SegmentSlot, context: RescoreContext,
-    ) -> Sequence[Candidate]:
-        if slot.grapheme == SHADDA:
-            return ()  # gemination is emitted on the consonant slot below
-        # Look forward past this slot's harakah for an owning shadda.
-        for nxt in context.slots[context.index + 1:]:
-            if nxt.grapheme == SHADDA:
-                doubled = _geminate_form(slot)
-                if doubled:
-                    return (Candidate(ipa=doubled, cost=slot.top.cost),)
-                return slot.candidates
-            if nxt.grapheme in _HARAKAT:
-                continue
-            break
-        return slot.candidates
-
-
-class GlideVowelRescorer(LatticeRescorer):
-    """Read a non-onset ي/و as a long vowel rather than the consonant.
-
-    A bare ي/و the spec ranks as the consonant /j/, /w/ is really a vowel
-    when it is not a syllable onset: after its homorganic short vowel it is
-    the length mater lectionis (يُصَلِّي → ``jusˤalliː``: kasra + ي → ``ː``),
-    and word-final after a consonant it is the long vowel ``iː``/``uː``
-    (Wright I §4). An onset ي/و (with a following harakah) keeps the
-    consonant reading (:class:`SemivowelOnsetRescorer` handles the ⟨يَ⟩/⟨وَ⟩
-    ligatures).
-    """
-
-    def rescore(
-        self, slot: SegmentSlot, context: RescoreContext,
-    ) -> Sequence[Candidate]:
-        if slot.grapheme not in ("ي", "و") or context.is_word_initial:
-            return slot.candidates
-        # An onset glide is followed by its own harakah → keep /j/, /w/.
-        nxt = context.next_slot
-        if nxt is not None and nxt.grapheme in _HARAKAT and nxt.grapheme != "ْ":
-            return slot.candidates
-        long_vowel = "iː" if slot.grapheme == "ي" else "uː"
-        short = "i" if slot.grapheme == "ي" else "u"
-        prev = None
-        for cand in reversed(context.slots[:context.index]):
-            if cand.candidates:
-                prev = cand
-                break
-        if prev is not None and prev.top.ipa.endswith(short):
-            return (Candidate(ipa="ː", cost=0.0),)  # lengthen the short vowel
-        if context.is_word_final and prev is not None \
-                and _is_consonant_ipa(prev.top.ipa):
-            return (Candidate(ipa=long_vowel, cost=0.0),)
-        return slot.candidates
-
-
-class MaterLectionisRescorer(LatticeRescorer):
-    """Lengthen a bare alif that a shadda split from its fatha (mater lectionis).
-
-    The ar spec merges ⟨َا⟩ (fatha+alif) into the single long-vowel
-    grapheme ``aː``; when a shadda intervenes (النَّار → ن ّ ا) the merge
-    is broken and the bare alif falls back to its ``ʔ``/``aː`` candidates.
-    A bare alif whose preceding vowel is short ``a`` is the length mater
-    lectionis, realised as ``ː`` (Wright I §4) — annaːr, not annaːʔr.
-    """
-
-    def rescore(
-        self, slot: SegmentSlot, context: RescoreContext,
-    ) -> Sequence[Candidate]:
-        if slot.grapheme not in (ALIF, ALIF_MAKSURA) or context.is_word_initial:
-            return slot.candidates
-        # Scan back past slots an earlier rescorer emptied (a deleted shadda
-        # sits between a geminated consonant and a bare alif: تّ + ا).
-        prev = None
-        for cand in reversed(context.slots[:context.index]):
-            if cand.candidates:
-                prev = cand
-                break
-        if prev is None or prev.grapheme == "ً":
-            # After tanwīn al-fatḥ the alif is otiose (AccusativeAlifRescorer).
-            return slot.candidates
-        prev_ipa = prev.top.ipa
-        if prev_ipa.endswith("ː"):
-            # Already a long vowel (plural ⟨وا⟩, stacked length): silent.
-            return (Candidate(ipa="", cost=0.0),)
-        if prev_ipa.endswith(("a", "i", "u")):
-            # Short vowel + alif = the length mater lectionis.
-            return (Candidate(ipa="ː", cost=0.0),)
-        # Bare medial/final alif with no vowel carrier reads as long /aː/,
-        # not the rare glottal candidate.
-        return (Candidate(ipa="aː", cost=0.0),)
 
 
 class SunLetterRescorer(LatticeRescorer):
@@ -236,9 +110,9 @@ class SunLetterRescorer(LatticeRescorer):
     the lām assimilates and drops, leaving the article as bare ``a``
     (``al-šams`` → ``aš-šams``); before a *moon* letter the lām is kept
     (``al-qamar`` → ``al-qamar``). The following sun consonant's gemination
-    is carried by the written shadda and handled by
-    :class:`GeminationRescorer`. The 14 sun letters are the coronal
-    obstruents and sonorants ت ث د ذ ر ز س ش ص ض ط ظ ل ن (Wright I §17).
+    is carried by the written shadda, which the ``ar`` engine geminates
+    natively. The 14 sun letters are the coronal obstruents and sonorants
+    ت ث د ذ ر ز س ش ص ض ط ظ ل ن (Wright I §17).
     """
 
     def rescore(
@@ -285,16 +159,16 @@ class WaslRescorer(LatticeRescorer):
 
 
 class HamzaCarrierRescorer(LatticeRescorer):
-    """Strip the baked-in vowel of a hamza carrier (أ إ ؤ ئ → /ʔ/).
+    """Strip a hamza carrier's baked vowel before a sukūn or word edge.
 
-    The ar spec maps أ→``ʔa`` and إ→``ʔi`` (the letter form implies a
-    vowel). In fully-diacritized text the harakah is written explicitly, so
-    the carrier is the bare consonant /ʔ/ and the following diacritic
-    supplies the vowel: before a short harakah the built-in vowel would be
-    doubled (أَمِير → ``ʔaamīr``), and before a sukūn or at word edge there
-    is no vowel at all (تَأْثِير → ``taʔθīr``, نَبَأ → ``nabaʔ``). The
-    word-initial alif-hamza-below إ is left to :class:`WaslRescorer`-free
-    lexical handling and keeps its ``ʔi`` reading here.
+    The ar spec maps أ→``ʔa`` and إ→``ʔi``; the ``ar`` engine (1.64) drops
+    the baked vowel when an explicit harakah follows the carrier, so
+    أَمِير → ``ʔamīr`` needs no help here. It does *not* drop it before a
+    sukūn or at a word edge, where the carrier is the bare consonant /ʔ/
+    with no vowel: تَأْثِير → ``taʔθīr`` (carrier + sukūn), نَبَأ →
+    ``nabaʔ`` (word-final). This restores the bare /ʔ/ in exactly those
+    positions. The word-initial إ (alif-hamza-below) is left to
+    :func:`defers_to_cascade` (its waṣl-vs-qaṭʿ reading is lexical).
     """
 
     def rescore(
@@ -306,33 +180,9 @@ class HamzaCarrierRescorer(LatticeRescorer):
         if not (top.startswith("ʔ") and len(top) > 1):
             return slot.candidates
         nxt = context.next_slot
-        vowel_follows = nxt is not None and nxt.grapheme in _SHORT_HARAKAT
-        no_vowel = nxt is None or nxt.grapheme == "ْ"  # word-final or sukūn
-        # A following long-vowel/ligature slot (إِيمَان → إ + ⟨ِي⟩) also
-        # carries its own vowel, so the carrier's baked vowel would double.
-        vowel_slot_follows = nxt is not None and bool(nxt.top.ipa) \
-            and not _is_consonant_ipa(nxt.top.ipa)
-        if vowel_follows or no_vowel or vowel_slot_follows:
+        if nxt is None or nxt.grapheme == SUKUN:  # word-final or sukūn
             return (Candidate(ipa="ʔ", cost=0.0),)
         return slot.candidates
-
-
-class TaMarbutaRescorer(LatticeRescorer):
-    """Silence a word-final tāʾ marbūṭa in pausal (isolated) form.
-
-    ة is realised as /t/ only in connected speech (when a following word
-    or case vowel continues); in pausal position — a word transcribed in
-    isolation — it is silent, the preceding fatḥa carrying the syllable
-    (مَدِينَة → ``madīna``). Connected /t/ is a cross-word effect handled by
-    the sentence orchestration, not the word lattice (Ryding §2.1.2).
-    """
-
-    def rescore(
-        self, slot: SegmentSlot, context: RescoreContext,
-    ) -> Sequence[Candidate]:
-        if slot.grapheme != "ة" or not context.is_word_final:
-            return slot.candidates
-        return (Candidate(ipa="", cost=0.0),)
 
 
 class AccusativeAlifRescorer(LatticeRescorer):
@@ -356,46 +206,81 @@ class AccusativeAlifRescorer(LatticeRescorer):
         return slot.candidates
 
 
-class SemivowelOnsetRescorer(LatticeRescorer):
-    """Realise a word-initial ⟨يَ⟩/⟨وَ⟩ as the onset /ja/, /wa/.
+class MaterLectionisRescorer(LatticeRescorer):
+    """Collapse a short vowel + bare alif/alif-maksura into length.
 
-    The ar spec maps these ligature graphemes to the *coda* diphthongs
-    /aj/, /aw/, but a semivowel + fatḥa is always a consonantal onset —
-    the glide precedes the vowel — whether word-initial (يَوْم → ``jawm``)
-    or medial after a consonant (أَبْوَاب → ``ʔabwaːb``). The coda diphthong
-    is the distinct vowel-first ⟨َي⟩/⟨َو⟩ grapheme and is unaffected.
+    A bare alif or alif maksūra after its homorganic short vowel is the
+    length mater lectionis, not a segment of its own (Wright I §4). The
+    ``ar`` engine merges the ⟨َا⟩ (fatḥa+alif) ligature into a single long
+    vowel, but a fatḥa followed by a *standalone* alif maksūra ى is left
+    unmerged (حَتَّى tokenises as ``…a`` + ``aː``); this collapses the
+    trailing alif/maksūra to the length mark ``ː`` after a short vowel
+    (``ħattaː``, not ``ħattaaː``) and drops it entirely after an existing
+    long vowel (stacked length).
     """
 
     def rescore(
         self, slot: SegmentSlot, context: RescoreContext,
     ) -> Sequence[Candidate]:
-        onset = _ONSET_SEMIVOWELS.get(slot.grapheme)
-        # Only rewrite the raw diphthong candidate; if an earlier rescorer
-        # (gemination) already re-costed this slot, leave it be.
-        if onset is None or slot.top.ipa not in ("aw", "aj"):
+        if slot.grapheme not in (ALIF, ALIF_MAKSURA) or context.is_word_initial:
             return slot.candidates
-        return (Candidate(ipa=onset, cost=0.0),)
+        # Scan back past any slot an earlier rescorer emptied.
+        prev = None
+        for cand in reversed(context.slots[:context.index]):
+            if cand.candidates:
+                prev = cand
+                break
+        if prev is None or prev.grapheme == "ً":
+            # After tanwīn al-fatḥ the alif is otiose (AccusativeAlifRescorer).
+            return slot.candidates
+        prev_ipa = prev.top.ipa
+        if prev_ipa.endswith("ː"):
+            # Already a long vowel (plural ⟨وا⟩, stacked length): silent.
+            return (Candidate(ipa="", cost=0.0),)
+        if prev_ipa.endswith(("a", "i", "u")):
+            # Short vowel + alif/maksūra = the length mater lectionis.
+            return (Candidate(ipa="ː", cost=0.0),)
+        return slot.candidates
 
 
-# Rescorer pipeline order: gemination first (so a later rescorer sees a
-# geminated neighbour), then the article/waṣl/hamza/semivowel rules which
-# are mutually independent.
+class GlideCodaRescorer(LatticeRescorer):
+    """Keep a word-final ي/و after a sukūn as a coda glide, not a long vowel.
+
+    The ``ar`` engine's positional rule reads a word-final ي/و as the long
+    vowel ``iː``/``uː`` (the mater lectionis of فِي → ``fiː``). That is
+    wrong when the glide directly follows a sukūn-bearing consonant: with
+    no vowel between them the glide is a true coda consonant (ظَبْي →
+    ``ðˤabj``, رَمْي → ``ramj``), not ``ðˤabiː``. This restores /j/, /w/ in
+    exactly that position (Wright I §4: length requires a homorganic short
+    vowel). A ي/و that carries its own vowel (the ⟨ِي⟩/⟨ُو⟩ ligature) or
+    follows a vowel is untouched.
+    """
+
+    def rescore(
+        self, slot: SegmentSlot, context: RescoreContext,
+    ) -> Sequence[Candidate]:
+        if slot.grapheme not in ("ي", "و") or not context.is_word_final:
+            return slot.candidates
+        if slot.top.ipa not in ("iː", "uː"):
+            return slot.candidates
+        prev = context.prev_slot
+        if prev is not None and prev.grapheme == SUKUN:
+            glide = "j" if slot.grapheme == "ي" else "w"
+            return (Candidate(ipa=glide, cost=0.0),)
+        return slot.candidates
+
+
+# Rescorer pipeline: the alif rules first (accusative-alif silencing before
+# mater-lectionis length), then the mutually independent
+# article/waṣl/hamza/glide-coda rules.
 DEFAULT_RESCORERS: List[LatticeRescorer] = [
-    GeminationRescorer(),
-    SemivowelOnsetRescorer(),
     AccusativeAlifRescorer(),
     MaterLectionisRescorer(),
-    GlideVowelRescorer(),
-    TaMarbutaRescorer(),
+    GlideCodaRescorer(),
     SunLetterRescorer(),
     WaslRescorer(),
     HamzaCarrierRescorer(),
 ]
-
-# Arabic presentation-form ligatures the ``ar`` spec does not tokenise;
-# decomposed to their base letters before the lattice runs so they never
-# fall through to an empty transcription (ﻻ → laː).
-_LIGATURES = {"ﻻ": "لا", "ﻼ": "لا", "ﯼ": "ى"}
 
 _tokenizer = PhonetokTokenizer(get("ar"))
 
@@ -403,9 +288,6 @@ _tokenizer = PhonetokTokenizer(get("ar"))
 def word_lattice(word: str) -> List[SegmentSlot]:
     """Return the rescored shared lattice for a single diacritized *word*."""
     text = normalize_unicode(word)
-    for lig, base in _LIGATURES.items():
-        if lig in text:
-            text = text.replace(lig, base)
     return _tokenizer.ipa_lattice(text, rescorer=DEFAULT_RESCORERS)
 
 

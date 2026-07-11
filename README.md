@@ -6,19 +6,24 @@ downstream Arabic engine built on
 
 Word phonology is built on the **orthography2ipa shared lattice**: the
 language-agnostic grapheme tokenizer (`PhonetokTokenizer`) over the `ar`
-spec grapheme table produces a per-position candidate lattice, and the
-Arabic morpho-phonology that a plain table lookup cannot express is layered
-on as composable `LatticeRescorer`s (`arbtok/lattice.py`) rather than a
-private tokenizer fork:
+spec grapheme table produces a per-position candidate lattice. The `ar`
+engine (orthography2ipa ≥ 1.64) handles the segment-local phonology
+natively — gemination (shadda ّ, glides included), lam-alif / presentation
+ligatures (ﻻ → `laː`), onset glides (يَ → `ja`), a hamza carrier's bare
+/ʔ/ before an explicit harakah, the word-final glide as a long vowel, and
+pausal tāʾ marbūṭa. The Arabic morpho-phonology that the shared table still
+cannot express is layered on as composable `LatticeRescorer`s
+(`arbtok/lattice.py`) rather than a private tokenizer fork:
 
 - **sun-letter assimilation** (idghām ash-shamsiyya) — the lām of the
   definite article ⟨ال⟩ assimilates into a following coronal (sun) letter
   (`al-šams` → `aš-šams`); moon letters keep the lām (`al-qamar`);
 - **hamzat al-waṣl** elision — a word-initial prosthetic alif is silent,
   its harakah carrying the vowel (`istiqbāl`);
-- **gemination** (shadda / tashdīd), **mater-lectionis** vowel
-  lengthening, hamza-carrier vowel de-duplication, and semivowel onset
-  disambiguation.
+- **accusative-alif** silencing after tanwīn al-fatḥ (`marħaban`),
+  **mater-lectionis** length for a fatḥa + standalone alif maksūra
+  (`ħattaː`), a sukūn-final **coda glide** (ظَبْي → `ðˤabj`), and the bare
+  glottal stop of a hamza carrier before a sukūn or word edge (`taʔθīr`).
 
 Emphatic (pharyngealization) spreading rides on the `ar` spec's own B8
 `allophone_rules`. Cross-word sandhi — clitic joining, cross-word waṣl
