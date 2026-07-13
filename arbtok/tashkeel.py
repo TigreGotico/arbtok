@@ -4,23 +4,19 @@ arbtok delegates diacritization to ``text2tashkeel`` — a model picker
 over bundled ONNX diacritization models (no PyTorch, offline by
 default). ``TashkeelDiacritizer`` is a thin convenience wrapper.
 
-``pausal=True`` rewrites the word-final case vowels
-(fatha/damma/kasra and the damm/kasr tanwīn) to sukūn — the pausal
-form used when citing isolated words, which is also how dictionary
-lexicons transcribe them.
+``pausal=True`` drops the word-final case and mood endings (iʿrāb),
+leaving the pausal form that is actually spoken — the models restore the
+full endings, which is right for a pedagogical text and stilted for
+speech. The transform is text2tashkeel's own (:func:`text2tashkeel.pausal`),
+so the two libraries cannot drift: it also lengthens tanwīn al-fatḥ rather
+than dropping it, keeps a shadda's gemination, and leaves a lexical final
+vowel (a pronoun's) alone.
 """
-import re
 from typing import Optional
 
-from text2tashkeel import Diacritizer
+from text2tashkeel import Diacritizer, pausal as _pausal
 
 __all__ = ["TashkeelDiacritizer", "TashkeelError"]
-
-# word-final short case vowels and damm/kasr tanwin → sukun (pausal);
-# the fath tanwin (ً) keeps its pausal long-a reading and is left alone
-_PAUSAL_RE = re.compile(r"[ٌٍَُِ](?=\s|$)")
-_SUKUN = "ْ"
-
 
 class TashkeelError(Exception):
     """Error raised when diacritization fails."""
@@ -44,12 +40,13 @@ class TashkeelDiacritizer:
     def diacritize(self, text: str, pausal: bool = False) -> str:
         """Return *text* with diacritics restored.
 
-        ``pausal=True`` turns word-final case vowels into sukūn.
+        ``pausal=True`` drops the case and mood endings, leaving the form
+        that is spoken (:func:`text2tashkeel.pausal`).
         """
         try:
             diacritized = self._diacritizer.diacritize(text)
         except Exception as exc:
             raise TashkeelError(str(exc)) from exc
         if pausal:
-            diacritized = _PAUSAL_RE.sub(_SUKUN, diacritized)
+            diacritized = _pausal(diacritized)
         return diacritized
