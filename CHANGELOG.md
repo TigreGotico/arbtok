@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.0a8](https://github.com/TigreGotico/arbtok/tree/0.0.0a8) (2026-07-13)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a7...0.0.0a8)
+
+**Merged pull requests:**
+
+- feat!: varieties are orthography2ipa specs, not five hardcoded zones [\#10](https://github.com/TigreGotico/arbtok/pull/10) ([JarbasAl](https://github.com/JarbasAl))
+- fix: read prevocalic and geminated glides as consonants, not vowel length [\#9](https://github.com/TigreGotico/arbtok/pull/9) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a7](https://github.com/TigreGotico/arbtok/tree/0.0.0a7) (2026-07-11)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a6...0.0.0a7)
