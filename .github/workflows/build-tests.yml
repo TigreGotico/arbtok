@@ -12,3 +12,6 @@ jobs:
       python_versions: '["3.10", "3.11", "3.12", "3.13"]'
       install_extras: 'test'
       test_path: 'tests'
+      # tests/test_ipa_fuzzy.py::test_better_than_espeak drives the real
+      # espeak-ng binary as the comparison baseline
+      system_deps: 'espeak-ng'

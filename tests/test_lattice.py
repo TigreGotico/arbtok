@@ -133,6 +133,33 @@ def test_geminate_glides_not_dropped(word, expected):
     assert word_ipa(word) == expected
 
 
+# ─── Consonantal glide vs mater lectionis (ConsonantalGlideRescorer) ──────
+
+@pytest.mark.parametrize("word, expected", [
+    ("أَتْشِيُوت", "ʔatʃijuːt"),   # ⟨ـِيُو⟩: yāʾ bears its own ḍamma → onset /j/
+    ("أَبْخَازِيَا", "ʔabxaːzijaː"),  # ⟨ـِيَا⟩: yāʾ before /aː/ → onset /j/
+    ("أَحُوَل", "ʔaħuwal"),       # ⟨ـُوَ⟩: wāw before fatḥa → onset /w/
+])
+def test_prevocalic_glide_is_a_consonant(word, expected):
+    """A yāʾ/wāw after its homorganic vowel is length only when it CLOSES
+    the syllable; before another vowel it retains its consonantal power
+    and is the onset (Wright I §4; Watson 2002 §2.6.1: onsets are
+    obligatory, so /i/ + V resolves as i.jV, never *iː.V)."""
+    assert word_ipa(word) == expected
+
+
+@pytest.mark.parametrize("word, expected", [
+    ("أَشُورِيّ", "ʔaʃuːrijj"),    # nisba ـِيّ = doubled /-ijj/ (Ryding §5.4.1)
+    ("أَرْمِيَّة", "ʔarmijja"),    # feminine nisba ـِيَّة = /-ijja/
+    ("أُبُوَّة", "ʔubuwwa"),      # ـُوَّة = /-uwwa/: geminate wāw, not /uːwa/
+])
+def test_geminated_glide_after_homorganic_vowel(word, expected):
+    """Shadda doubles the semivowels too (Wright I §14), so ⟨ِي⟩ before the
+    yāʾ's geminate copy is /ij/ + /j/ — the nisba suffix -iyy (Ryding,
+    Reference Grammar of MSA, §5.4.1) — never the long vowel *iːiː/*iːja."""
+    assert word_ipa(word) == expected
+
+
 def test_word_final_glide_is_a_long_vowel():
     """A word-final ي reads as the long vowel, not the consonant /j/."""
     assert word_ipa("يُصَلِّي") == "jusˤalliː"
