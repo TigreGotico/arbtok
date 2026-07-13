@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a9](https://github.com/TigreGotico/arbtok/tree/0.0.0a9) (2026-07-13)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a8...0.0.0a9)
+
+**Merged pull requests:**
+
+- feat: the diacritizer proposes, the lattice disposes [\#11](https://github.com/TigreGotico/arbtok/pull/11) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a8](https://github.com/TigreGotico/arbtok/tree/0.0.0a8) (2026-07-13)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a7...0.0.0a8)
