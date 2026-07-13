@@ -40,13 +40,13 @@ SUN_CASES = [
     ("الذَّهَب", "aððahab", "ذ dhāl"),
     ("الرَّجُل", "arradʒul", "ر rāʾ"),
     ("الزَّيْت", "azzajt", "ز zāy"),
-    ("الطَّعَام", "atˤtˤaʕaːm", "ط ṭāʾ"),
-    ("الظَّبْي", "aðˤðˤabj", "ظ ẓāʾ"),
+    ("الطَّعَام", "ɑtˤtˤɑʕaːm", "ط ṭāʾ"),
+    ("الظَّبْي", "ɑðˤðˤɑbj", "ظ ẓāʾ"),
     ("اللَّوْن", "allawn", "ل lām"),
     ("النَّار", "annaːr", "ن nūn"),
-    ("الصَّوْت", "asˤsˤawt", "ص ṣād"),
+    ("الصَّوْت", "ɑsˤsˤɑwt", "ص ṣād"),
     ("الدَّار", "addaːr", "د dāl"),
-    ("الضَّوْء", "adˤdˤawʔ", "ض ḍād"),
+    ("الضَّوْء", "ɑdˤdˤɑwʔ", "ض ḍād"),
 ]
 
 
@@ -89,7 +89,7 @@ def test_sun_letter_rescorer_only_touches_the_article():
     ("اِسْتِقْبَال", "istiqbaːl"),
     ("اِجْتِمَاع", "idʒtimaːʕ"),
     ("اِعْتِمَاد", "iʕtimaːd"),
-    ("اِنْقَطَع", "inqatˤaʕ"),
+    ("اِنْقَطَع", "inqɑtˤɑʕ"),
 ])
 def test_hamzat_al_wasl_elision(word, expected):
     """Word-initial hamzat al-waṣl is silent; the harakah carries the vowel."""
@@ -101,7 +101,7 @@ def test_hamzat_al_wasl_elision(word, expected):
 @pytest.mark.parametrize("word, expected", [
     ("عَمَّ", "ʕamma"),
     ("كُلّ", "kull"),
-    ("ظَلَّ", "ðˤalla"),
+    ("ظَلَّ", "ðˤɑlla"),
     ("حَتَّى", "ħattaː"),
 ])
 def test_gemination(word, expected):
@@ -162,7 +162,7 @@ def test_geminated_glide_after_homorganic_vowel(word, expected):
 
 def test_word_final_glide_is_a_long_vowel():
     """A word-final ي reads as the long vowel, not the consonant /j/."""
-    assert word_ipa("يُصَلِّي") == "jusˤalliː"
+    assert word_ipa("يُصَلِّي") == "jusˤɑlliː"
 
 
 def test_presentation_ligature_never_empty():

@@ -1,108 +1,57 @@
-# Dialect zones
+# Varieties
 
-`arbtok` reads **diacritized MSA orthography** and can realize it with the
-reflexes of a broad regional zone instead of the standard register. This is
-*zone realization*, not micro-dialect modelling: the cascade swaps the sounds a
-grapheme maps to (and applies a few context-conditioned rules), but it does not
-model the lexical, morphological, or syntactic differences that spoken
-varieties actually carry.
-
-> The reflex data here is **model-generated from documented reflexes and is
-> pending native-speaker validation**, in the same spirit as the rest of the
-> repo's gold data. Passing tests is not a guarantee of linguistic accuracy.
-
-## Zones
-
-| Zone | Enum | Region tags |
-| --- | --- | --- |
-| Modern Standard Arabic | `MSA` (default) | `ar`, `arb` |
-| Classical Arabic | `CLA` | — |
-| Egyptian | `EGYPTIAN` | `ar-EG` |
-| Levantine | `LEVANTINE` | `ar-SY`, `ar-LB`, `ar-JO`, `ar-PS` |
-| Gulf | `GULF` | `ar-AE`, `ar-BH`, `ar-KW`, `ar-OM`, `ar-QA`, `ar-SA` |
-| Maghrebi | `MAGHREBI` | `ar-MA`, `ar-DZ`, `ar-TN`, `ar-LY` |
-
-`MSA` and `CLA` are the reference registers: they apply **no** reflex
-overrides, so their output is byte-identical to the standard rule cascade.
-
-## Reflex table
-
-Cells show the IPA each grapheme is realized as; a dash means the MSA
-realization is kept unchanged.
-
-| Grapheme | MSA | Egyptian | Levantine | Gulf | Maghrebi |
-| --- | --- | --- | --- | --- | --- |
-| ق (qāf) | q | ʔ | ʔ | g | q (kept) |
-| ج (jīm) | dʒ | g | ʒ | j | ʒ |
-| ث (thāʾ) | θ | t | t | — (θ) | t |
-| ذ (dhāl) | ð | d | d | — (ð) | d |
-| ظ (ẓāʾ) | ðˤ | dˤ | dˤ | — (ðˤ) | dˤ |
-
-Worked examples:
-
-| Word | MSA | Egyptian | Levantine | Gulf | Maghrebi |
-| --- | --- | --- | --- | --- | --- |
-| قَلْب (heart) | qalb | ʔalb | ʔalb | galb | qalb |
-| جَمِيل (beautiful) | dʒamiːl | gamiːl | ʒamiːl | jamiːl | ʒamiːl |
-| ثَلَاثَة (three) | θalaːθa | talaːta | talaːta | θalaːθa | talaːta |
-| ظُهْر (noon) | ðˤuhr | dˤuhr | dˤuhr | ðˤuhr | dˤuhr |
-
-## Usage
-
-```python
-from arbtok.tokenizer import Sentence
-from arbtok.dialects import ArabicDialect
-
-Sentence("قَلْب جَمِيل", dialect=ArabicDialect.GULF).ipa      # 'galb jamiːl'
-Sentence("قَلْب جَمِيل", dialect=ArabicDialect.EGYPTIAN).ipa  # 'ʔalb gamiːl'
-Sentence("قَلْب جَمِيل").ipa                                  # 'qalb dʒamiːl' (MSA)
-```
-
-Through the G2P plugin, a BCP-47 tag picks the zone (per call or as a default):
+A variety is an **orthography2ipa spec**, named by its code:
 
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
-from orthography2ipa.g2p_plugin import WordContext
 
-ArbtokG2PPlugin(dialect=ArabicDialect.LEVANTINE).transcribe("قلب")  # 'ʔalb'
-ArbtokG2PPlugin().transcribe_word("قلب", WordContext(lang="ar-SA")) # 'galb'
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")   # 'ɡahawa'
+ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت")    # 'beːt'
+ArbtokG2PPlugin().transcribe_word("قَهْوَة")                      # 'qahwa'  (MSA)
 ```
 
-A per-call `context.lang` region subtag takes precedence over the construction
-default; bare `ar` or an unmapped region resolves to MSA.
+The variety may also ride on `WordContext.lang` per call, which overrides the
+instance default. A tag that names no Arabic spec narrows a subtag at a time
+(`ar-SA-x-najd` → `ar-SA` → `ar`) and ultimately falls back to the `ar` leaf, so
+an unknown region is MSA rather than an error.
 
-## What is approximated
+Any Arabic spec orthography2ipa carries can be named — `ar`, `arb` (Classical),
+the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
+`ar-x-maghrebi`, `ar-x-mashriqi`), and the leaves (`ar-SA-x-najd`,
+`ar-SA-x-hejaz`, `ar-EG`, `ar-IQ`, `ar-MA`, …).
 
-- **Maghrebi short-vowel reduction.** Maghrebi's signature reduction and
-  elision of short vowels operates below the orthography the cascade reads —
-  CVCVC spellings carry no stress or syllable cues. `arbtok` applies a
-  conservative stand-in: a short `a`/`i`/`u` in a *non-initial, non-final, open*
-  syllable is centralized to schwa (e.g. بَقَرَة `baqara` → `baqəra`). Long
-  vowels and vowels in closed or word-edge syllables are left untouched. This is
-  an approximation of the pattern, not a syllabifier or stress model.
+## Where a variety's phonology comes from
 
-- **Competing reflexes.** Where a grapheme has more than one common
-  realization, the override commits to the most widely cited urban default and
-  records the variability:
-  - Egyptian ث/ذ/ظ → inherited stops `t`/`d`/`dˤ` (ظ merges with ض). The
-    sibilant reflexes (ث→`s`, ذ→`z`, ظ→`zˤ`) are the borrowed/literary forms and
-    are lexically conditioned, so they are not modelled from orthography.
-  - Levantine ث/ذ → stops `t`/`d` (the sibilant reflexes `s`/`z` surface in
-    learned vocabulary); ظ → `dˤ` is inferred to match that merger.
-  - Gulf ج → `j` for the zone label (yodization); the affricate `dʒ` is the
-    broader pan-Gulf default and remains common.
-  - Maghrebi ق → `q` kept (the `g` reflex also occurs).
+Two layers, both read from the spec:
 
-## Out of scope
+**The grapheme table** gives each letter its realization — the qāf reflex
+(MSA /q/, Najdi and Hejazi /ɡ/, Cairene /ʔ/), the interdental treatment, the
+jīm. Both the word lattice and the sentence cascade read this.
 
-- **Sub-zone variation.** Each zone is one broad default; it does not branch
-  into city/rural/Bedouin sub-dialects (e.g. Druze qāf retention, Cairene vs.
-  Saʿidi Egyptian, Najdi vs. coastal Gulf).
-- **Lexically conditioned reflexes.** Learned/loaned words that take a different
-  reflex from the zone default (Egyptian ث→s, ذ→z) are not modelled — they are
-  unknowable from orthography alone.
-- **Phonological processes beyond consonant reflexes and the Maghrebi schwa
-  approximation:** Gulf kashkasha/affrication, gahawa epenthesis, imāla, full
-  vowel-quality shifts, and code-switching.
-- **Lexical and morphological dialect content.** The input is and remains MSA
-  orthography; only its *realization* changes.
+**The `allophone_rules`** give the context-conditioned phonology, and they fire
+in the word lattice, where arbtok's structural rescorers run first (they resolve
+*which segment* a slot is) and the rule-compiled rescorer then realizes those
+segments in context:
+
+| variety | rule | example |
+|---|---|---|
+| Najdi | velar affrication /k/ → [ts] by a front vowel (Ingham 1994) | كِتَاب → `tsitaːb` |
+| Najdi | gahawa-syndrome epenthesis after a guttural coda (Ingham 1994) | قَهْوَة → `ɡahawa` |
+| Hejazi | monophthongization /aj/ → [eː] (Omar 1975; Abdoh 2010) | بَيْت → `beːt` |
+| Gulf | kashkasha /k/ → [tʃ] by a high front vowel | كِتَاب → `tʃitaːb` |
+| all Peninsular | emphatic spreading (Watson 2002) | صَبْر → `sˤɑbr` |
+
+Saudi is not one variety, and it is not Gulf: Najdi affricates /k/ to **[ts]**,
+Gulf to **[tʃ]**, and Hejazi keeps **/k/**.
+
+## Known limits
+
+- The **sentence cascade has no allophone pass** — it reads the grapheme layer
+  only. Word-level transcription (`transcribe_word`, `arbtok.lattice.word_ipa`)
+  is where a variety's rules fire.
+- A diphthong **split across slots** is not one segment, so a rule targeting it
+  cannot see it: يَوْم tokenizes as يَ|وْ|م = `ja|w|m`, and Hejazi
+  monophthongization targets an /aw/ atom, so it does not fire (بَيْت works —
+  ⟨َي⟩ is a single digraph slot).
+- Spec `quality` is `research`, not `production`, for the Arabic varieties, and
+  their gold has not been validated by a native speaker.

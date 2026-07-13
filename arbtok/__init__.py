@@ -10,7 +10,8 @@ if you speak MSA pull requests welcome!
 - test.py contains a reference dataset to benchmark the code against, IPA transcriptions have been LLM generated
 - main logic is in tokenizer.py
 - see tests folder for some benchmarks and comparison against pre existing (low quality) datasets
-- dialect zones (Egyptian, Levantine, Gulf, Maghrebi) realize MSA orthography
-  with a region's reflexes; their reflex data and gold set (test_dialects.py)
-  are model-generated and pending native-speaker validation — see docs/dialects.md
+- varieties are orthography2ipa specs, named by code (ar, ar-SA-x-najd,
+  ar-SA-x-hejaz, ar-EG, ar-x-gulf, …): the spec supplies the grapheme table and
+  the allophone rules, so a variety's phonology comes from cited spec data.
+  Pass `lang=` — see docs/dialects.md
 """

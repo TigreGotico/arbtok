@@ -61,9 +61,10 @@ Sources for the rescored rules:
 """
 from __future__ import annotations
 
-from typing import List, Sequence
+from typing import Dict, List, Sequence, Tuple
 
 from orthography2ipa import get
+from orthography2ipa.allophony import compile_allophone_rescorer
 from orthography2ipa.phonetok import Candidate, PhonetokTokenizer, SegmentSlot
 from orthography2ipa.rescorer import LatticeRescorer, RescoreContext
 
@@ -287,23 +288,57 @@ DEFAULT_RESCORERS: List[LatticeRescorer] = [
     ConsonantalGlideRescorer(),
 ]
 
-_tokenizer = PhonetokTokenizer(get("ar"))
+#: The spec code used when a caller names no variety.
+DEFAULT_LANG = "ar"
+
+#: One tokenizer + rescorer chain per orthography2ipa spec code.
+_ENGINES: Dict[str, Tuple[PhonetokTokenizer, List[LatticeRescorer]]] = {}
 
 
-def word_lattice(word: str) -> List[SegmentSlot]:
-    """Return the rescored shared lattice for a single diacritized *word*."""
+def _engine(lang: str) -> Tuple[PhonetokTokenizer, List[LatticeRescorer]]:
+    """Build (and cache) the tokenizer + rescorer chain for a spec code.
+
+    The chain is arbtok's structural rescorers followed by the rescorer
+    compiled from the spec's own ``allophone_rules``. Order matters: the
+    structural rules resolve *which segment* a slot is (silencing the
+    otiose alif, assimilating the article's lām, stripping a hamza
+    carrier's baked-in vowel), and the allophone pass then realizes those
+    resolved segments in context (emphatic backing, Najdi affrication and
+    gahawa epenthesis, Hejazi monophthongization). Realization must see
+    the final segments, so it runs last.
+    """
+    engine = _ENGINES.get(lang)
+    if engine is None:
+        spec = get(lang)
+        rescorers = list(DEFAULT_RESCORERS)
+        allophones = compile_allophone_rescorer(spec.allophone_rules)
+        if allophones is not None:
+            rescorers.append(allophones)
+        engine = (PhonetokTokenizer(spec), rescorers)
+        _ENGINES[lang] = engine
+    return engine
+
+
+def word_lattice(word: str, lang: str = DEFAULT_LANG) -> List[SegmentSlot]:
+    """Return the rescored shared lattice for a single diacritized *word*.
+
+    *lang* is an orthography2ipa spec code — ``ar`` (MSA), ``ar-SA-x-najd``,
+    ``ar-SA-x-hejaz``, ``ar-EG``, … — and selects both the grapheme table
+    and the allophone rules the variety declares.
+    """
     text = normalize_unicode(word)
-    return _tokenizer.ipa_lattice(text, rescorer=DEFAULT_RESCORERS)
+    tokenizer, rescorers = _engine(lang)
+    return tokenizer.ipa_lattice(text, rescorer=rescorers)
 
 
-def word_ipa(word: str) -> str:
+def word_ipa(word: str, lang: str = DEFAULT_LANG) -> str:
     """Transcribe one diacritized *word* via the shared lattice + rescorers.
 
     Concatenates the best (lowest-cost) candidate of each rescored slot.
     Input must be diacritized (tashkeel) — the same contract the ar spec
-    and arbtok share.
+    and arbtok share. *lang* selects the variety; see :func:`word_lattice`.
     """
-    return "".join(slot.top.ipa for slot in word_lattice(word))
+    return "".join(slot.top.ipa for slot in word_lattice(word, lang))
 
 
 _ALL_DIACRITICS = _HARAKAT | {SHADDA, "ٰ", "ٓ"}
