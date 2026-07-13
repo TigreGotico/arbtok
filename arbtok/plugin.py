@@ -46,23 +46,6 @@ from arbtok.lattice import defers_to_cascade, word_ipa
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.util import normalize as normalize_speech
 
-_DIACRITICS = {
-    FATHA, DAMMA, KASRA, SHADDA, SUKUN,
-    TANWIN_FATH, TANWIN_DAMM, TANWIN_KASR, DAGGER_ALIF, MADD,
-}
-
-# Bare text below this diacritic-per-letter ratio gets auto-tashkeel.
-_DIACRITIC_DENSITY_THRESHOLD = 0.2
-
-
-def _diacritic_density(text: str) -> float:
-    letters = [c for c in text if "؀" <= c <= "ۿ"]
-    if not letters:
-        return 1.0
-    marks = sum(1 for c in letters if c in _DIACRITICS)
-    return marks / len(letters)
-
-
 class ArbtokG2PPlugin(G2PPlugin):
     """Arabic G2P via the orthography2ipa shared lattice.
 
@@ -80,11 +63,15 @@ class ArbtokG2PPlugin(G2PPlugin):
     subtag at a time and ultimately falls back to the ``ar`` leaf.
     """
 
-    def __init__(self, lang: str = DEFAULT_LANG) -> None:
+    def __init__(self, lang: str = DEFAULT_LANG, diacritize: bool = True) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
         #: The variety: any orthography2ipa Arabic spec code.
         self.lang = spec_for_lang(lang)
+        #: Restore the marks the writing omits before transcribing. The engine's
+        #: input contract is diacritized text; without this, an unmarked word is
+        #: transcribed from a default reading, which is a guess.
+        self.diacritize = diacritize
 
     @property
     def language_codes(self) -> List[str]:
@@ -104,17 +91,30 @@ class ArbtokG2PPlugin(G2PPlugin):
     def normalize(self, text: str) -> str:
         text = normalize_speech(text, "ar")
         text = normalize_unicode(text)
-        if _diacritic_density(text) < _DIACRITIC_DENSITY_THRESHOLD:
+        if self.diacritize:
             text = self._diacritize(text)
         return text
 
     def _diacritize(self, text: str) -> str:
+        """Restore the omitted marks, word by word, under the lattice's guard.
+
+        Each word is diacritized only if the writing leaves it underdetermined,
+        and the model's proposal is kept only if it preserves the skeleton and
+        the variety's grapheme table licenses it — see
+        :mod:`arbtok.diacritize`. A word whose proposal is refused is left as
+        written, which orthography2ipa will then report as underdetermined,
+        rather than transcribed from a confident hallucination.
+
+        Diacritization is a model, and a model can be absent (no onnxruntime, no
+        weights). That is a degraded mode, not an error: the text passes through
+        and the reading is a guess.
+        """
         if self._diacritizer_failed:
             return text
         if self._diacritizer is None:
             try:
-                from arbtok.tashkeel import TashkeelDiacritizer
-                self._diacritizer = TashkeelDiacritizer()
+                from arbtok.diacritize import LatticeDiacritizer
+                self._diacritizer = LatticeDiacritizer(lang=self.lang)
             except Exception:
                 self._diacritizer_failed = True
                 return text
