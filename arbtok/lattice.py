@@ -188,6 +188,74 @@ class HamzaCarrierRescorer(LatticeRescorer):
         return slot.candidates
 
 
+#: Slots the ar spec emits for a yāʾ that continues a glide sequence — a
+#: bare geminate copy or a yāʾ fused with its own harakah. Any of these
+#: directly after a ⟨ِي⟩ mater-lectionis slot proves the yāʾ is consonantal.
+_YA_ONSETS = {"ي", "يَ", "يِ", "يُ"}
+#: Same for wāw (including the wāw+fatḥa+alif coda ligature).
+_WAW_ONSETS = {"و", "وَ", "وِ", "وُ", "وَا"}
+
+#: IPA vowel onsets: a following slot starting in one of these means the
+#: glide sits between two vowels (so it must be a consonant, not length).
+_VOWEL_ONSETS = "aiueoɑə"
+
+
+class ConsonantalGlideRescorer(LatticeRescorer):
+    """Read a prevocalic/geminated glide as a consonant, not vowel length.
+
+    The ar spec's mater-lectionis digraphs ⟨ِي⟩ → ``iː`` and ⟨ُو⟩ → ``uː``
+    are correct only when the glide letter is *quiescent* (bears no vowel
+    of its own): a yāʾ/wāw after its homorganic short vowel is length
+    solely "when it closes the syllable" — otherwise it "retains its
+    consonantal power" and syllabifies as the onset of the next vowel
+    (Wright, *A Grammar of the Arabic Language*, 3rd ed., I §4; Watson,
+    *The Phonology and Morphology of Arabic*, OUP 2002, §2.6.1: onsets are
+    obligatory, so a high vowel before another vowel resolves as V.GV).
+    The spec matches the digraph greedily, so it swallows a consonantal
+    glide too; this rescorer restores the consonant in exactly the two
+    contexts that prove it:
+
+    - the next slot begins with a vowel (⟨ـِيُو⟩ ``ijuː`` in أَتْشِيُوت,
+      ⟨ـِيَا⟩ ``ijaː`` in أَبْخَازِيَا, ⟨ـُوَ⟩ ``uwa`` in أَحُوَل) —
+      length before a vowel would leave that vowel onsetless;
+    - the next slot is the glide's own geminate copy from a shadda
+      (Wright I §14: shadda doubles the semivowels too), covering the
+      nisba suffixes ـِيّ ``-ijj`` and ـِيَّة ``-ijja`` (Ryding,
+      *A Reference Grammar of Modern Standard Arabic*, CUP 2005, §5.4.1:
+      the relative adjective ends in doubled -iyy) and ـُوَّة ``-uwwa``
+      (أُبُوَّة → ``ʔubuwwa``), where the first half of the geminate is
+      consonantal by definition.
+
+    The short vowel of the digraph is kept (``ij`` / ``uw``), and a bare
+    geminate copy slot after the rescored digraph is forced to its
+    consonant reading so ⟨ـِيّ⟩ ends in ``ijj`` and not ``ijiː``. A truly
+    quiescent glide — word-final فِي → ``fiː``, preconsonantal — is left
+    to the spec's long-vowel reading.
+    """
+
+    def rescore(
+        self, slot: SegmentSlot, context: RescoreContext,
+    ) -> Sequence[Candidate]:
+        nxt = context.next_slot
+        if slot.grapheme == KASRA + "ي" and nxt is not None and (
+                nxt.grapheme in _YA_ONSETS
+                or nxt.top.ipa[:1] in _VOWEL_ONSETS):
+            return (Candidate(ipa="ij", cost=0.0),)
+        if slot.grapheme == DAMMA + "و" and nxt is not None and (
+                nxt.grapheme in _WAW_ONSETS
+                or nxt.top.ipa[:1] in _VOWEL_ONSETS):
+            return (Candidate(ipa="uw", cost=0.0),)
+        # The bare geminate copy after a rescored ⟨ِي⟩/⟨ُو⟩: force the
+        # consonant so the shadda yields ``ijj``/``uww``, not ``ijiː``.
+        prev = context.prev_slot
+        if prev is not None:
+            if slot.grapheme == "ي" and prev.grapheme == KASRA + "ي":
+                return (Candidate(ipa="j", cost=0.0),)
+            if slot.grapheme == "و" and prev.grapheme == DAMMA + "و":
+                return (Candidate(ipa="w", cost=0.0),)
+        return slot.candidates
+
+
 class AccusativeAlifRescorer(LatticeRescorer):
     """Silence the otiose alif after tanwīn al-fatḥ (accusative -an).
 
@@ -216,6 +284,7 @@ DEFAULT_RESCORERS: List[LatticeRescorer] = [
     SunLetterRescorer(),
     WaslRescorer(),
     HamzaCarrierRescorer(),
+    ConsonantalGlideRescorer(),
 ]
 
 _tokenizer = PhonetokTokenizer(get("ar"))
