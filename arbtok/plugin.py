@@ -14,16 +14,18 @@ The engine maps arbtok's machinery onto the shared interface:
   expansion, and automatic tashkeel diacritization of bare text via
   ``text2tashkeel`` (failure degrades gracefully to the undiacritized
   input).
-- ``transcribe_word`` — for an isolated MSA word (no context), the
-  orthography2ipa shared lattice with arbtok's rescorers (sun-letter
-  assimilation, hamzat al-waṣl, gemination, mater lectionis; see
-  :mod:`arbtok.lattice`). Cross-word effects use the orthographic
-  neighbours carried by ``WordContext``: the word is tokenized together
-  with its neighbours so the prev/next-token cross-word rules fire.
+- ``transcribe_word`` — for an isolated word (no context), the
+  orthography2ipa shared lattice: the variety's grapheme table, arbtok's
+  structural rescorers (sun-letter assimilation, hamzat al-waṣl, hamza
+  carriers, accusative alif; see :mod:`arbtok.lattice`), then the rescorer
+  compiled from the variety's own ``allophone_rules``. Cross-word effects
+  use the orthographic neighbours carried by ``WordContext``: the word is
+  tokenized together with its neighbours so the prev/next-token cross-word
+  rules fire.
 - ``transcribe`` — full-sentence path with clitic joining, identical to
   ``Sentence(text).ipa``.
 """
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from orthography2ipa.g2p_plugin import G2PPlugin, WordContext
 
@@ -39,7 +41,7 @@ from arbtok.constants import (
     TANWIN_FATH,
     TANWIN_KASR,
 )
-from arbtok.dialects import ArabicDialect, WORD_EXCEPTIONS, dialect_for_lang
+from arbtok.dialects import DEFAULT_LANG, WORD_EXCEPTIONS, spec_for_lang
 from arbtok.lattice import defers_to_cascade, word_ipa
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.util import normalize as normalize_speech
@@ -62,39 +64,40 @@ def _diacritic_density(text: str) -> float:
 
 
 class ArbtokG2PPlugin(G2PPlugin):
-    """Arabic G2P via arbtok's rule-based token tree.
+    """Arabic G2P via the orthography2ipa shared lattice.
 
-    Output defaults to Modern Standard Arabic. Pass *dialect* to realize the
-    MSA orthography with a regional zone's reflexes (Egyptian, Levantine,
-    Gulf, Maghrebi); see :mod:`arbtok.dialects`. The zone may also be
-    inferred per call from a region-bearing language tag carried on
-    ``WordContext.lang`` (``ar-EG`` → Egyptian, …), which overrides the
-    instance default; bare ``ar`` or an unmapped region keeps MSA.
+    Output defaults to Modern Standard Arabic. Pass *lang* — any
+    orthography2ipa Arabic spec code — to transcribe a variety, which reads
+    the variety's own grapheme table *and* its declared ``allophone_rules``::
+
+        >>> ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")
+        'ɡahawa'
+        >>> ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت")
+        'beːt'
+
+    The variety may also be carried per call on ``WordContext.lang``, which
+    overrides the instance default. A tag naming no Arabic spec narrows a
+    subtag at a time and ultimately falls back to the ``ar`` leaf.
     """
 
-    def __init__(
-        self, dialect: Union[ArabicDialect, str, None] = None
-    ) -> None:
+    def __init__(self, lang: str = DEFAULT_LANG) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
-        self.dialect = (
-            ArabicDialect(dialect) if dialect is not None else ArabicDialect.MSA
-        )
+        #: The variety: any orthography2ipa Arabic spec code.
+        self.lang = spec_for_lang(lang)
 
     @property
     def language_codes(self) -> List[str]:
         return ["ar", "arb"]
 
-    def _resolve_dialect(
-        self, context: Optional[WordContext] = None
-    ) -> ArabicDialect:
-        """Pick the zone for a call: a region-bearing ``context.lang`` wins,
-        otherwise the instance default (``MSA`` unless configured)."""
+    def _resolve_lang(self, context: Optional[WordContext] = None) -> str:
+        """Pick the variety for a call: ``context.lang`` wins when it names one,
+        otherwise the instance default."""
         if context is not None and context.lang:
-            zone = dialect_for_lang(context.lang)
-            if zone is not ArabicDialect.MSA:
-                return zone
-        return self.dialect
+            code = spec_for_lang(context.lang)
+            if code != DEFAULT_LANG:
+                return code
+        return self.lang
 
     # ─── lifecycle hooks ─────────────────────────────────────────────
 
@@ -123,23 +126,24 @@ class ArbtokG2PPlugin(G2PPlugin):
     # ─── transcription ───────────────────────────────────────────────
 
     def transcribe(self, text: str) -> str:
-        return Sentence(self.normalize(text), dialect=self.dialect).ipa
+        return Sentence(self.normalize(text), lang=self.lang).ipa
 
     def transcribe_word(
         self, word: str, context: Optional[WordContext] = None
     ) -> str:
-        dialect = self._resolve_dialect(context)
+        lang = self._resolve_lang(context)
         if context is None or (context.prev_word is None
                                and context.next_word is None):
-            # Isolated word: the MSA register runs on the orthography2ipa
-            # shared lattice + rescorers. Regional zones still take the
-            # reflex-cascade path (the lattice is MSA-only) as do lexical
-            # exceptions, which the cascade hardcodes.
-            if (dialect in (ArabicDialect.MSA, ArabicDialect.CLA)
-                    and normalize_unicode(word) not in WORD_EXCEPTIONS
+            # Isolated word: every variety runs on the orthography2ipa shared
+            # lattice, which reads the grapheme table and allophone rules of
+            # the variety's own spec. Only the two things the word lattice
+            # genuinely cannot do fall back to the cascade — lexical
+            # exceptions, which it hardcodes, and the words needing cross-word
+            # or lexical context (see `defers_to_cascade`).
+            if (normalize_unicode(word) not in WORD_EXCEPTIONS
                     and not defers_to_cascade(word)):
-                return word_ipa(word)
-            return Sentence(word, dialect=dialect).ipa
+                return word_ipa(word, lang)
+            return Sentence(word, lang=lang).ipa
 
         # Tokenize the word with its orthographic neighbours so the
         # cross-word rules (wasl elision, idgham/iqlab, clitic
@@ -147,8 +151,8 @@ class ArbtokG2PPlugin(G2PPlugin):
         parts = [p for p in (context.prev_word, word, context.next_word)
                  if p is not None]
         target = 0 if context.prev_word is None else 1
-        tokens = Sentence(" ".join(parts), dialect=dialect).tokens
+        tokens = Sentence(" ".join(parts), lang=lang).tokens
         words = [t for t in tokens if t.surface not in ("",)]
         if target < len(words):
             return words[target].ipa
-        return Sentence(word, dialect=dialect).ipa
+        return Sentence(word, lang=lang).ipa

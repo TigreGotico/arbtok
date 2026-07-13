@@ -1,29 +1,21 @@
-"""Dialect phonology for the arbtok rule cascade.
+"""Arabic lexical exceptions and the variety→spec bridge for the cascade.
 
-The cascade reads diacritized MSA-orthography text. "Dialect support"
-therefore means *realizing that orthography with a regional zone's
-reflexes* — the consonant sound a grapheme maps to, plus a few
-context-conditioned rules — rather than modelling micro-dialects or the
-lexical/morphological differences spoken varieties actually carry.
+A variety is not a hardcoded bucket of consonant swaps: it is an
+orthography2ipa **spec** (``ar``, ``ar-SA-x-najd``, ``ar-EG``, …) that declares
+its own grapheme table and ``allophone_rules``. :func:`spec_for_lang` resolves a
+language tag to one, and :func:`consonant_ipa` reads a consonant's realization
+straight out of that spec — so the qāf reflex, the interdental treatment and the
+jīm all come from cited spec data rather than a table in this file.
 
-Five zones sit alongside the reference registers:
-
-- ``MSA`` / ``CLA`` — the reference. No reflex overrides; output is
-  byte-identical to the rule cascade's standard transcription.
-- ``EGYPTIAN`` — Cairene reflexes.
-- ``LEVANTINE`` — urban Levantine (Damascus/Beirut) defaults.
-- ``GULF`` — Gulf proper, interdentals retained.
-- ``MAGHREBI`` — North-African defaults, with a conservative short-vowel
-  reduction approximation (see :func:`reduce_maghrebi_vowels`).
-
-The data here is *model-generated from documented reflexes* and is
-pending native-speaker validation, in the same spirit as the rest of the
-repo's gold data. Where a grapheme has competing realizations, the
-override picks the most widely cited urban default and the variability is
-noted in comments — never silently chosen.
+The word lattice (:mod:`arbtok.lattice`) additionally compiles the spec's
+``allophone_rules``, so context-conditioned phonology — Najdi affrication and
+gahawa epenthesis, Hejazi monophthongization, emphatic spreading — fires there.
+The sentence cascade below reads the spec's grapheme layer only; it has no
+allophone pass yet.
 """
+
 from enum import Enum
-from typing import Dict
+from typing import Dict, Optional
 
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
                               FATHA, DAMMA, KASRA, DAGGER_ALIF, MADD,
@@ -35,17 +27,6 @@ from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WA
 THEH = 'ث'   # ث
 THAL = 'ذ'   # ذ
 ZAH = 'ظ'    # ظ (emphatic interdental)
-
-
-class ArabicDialect(str, Enum):
-    # Reference registers (no reflex overrides — see DIALECT_CONSONANT_OVERRIDES).
-    CLA = "CLA"          # Classical Arabic
-    MSA = "MSA"          # Modern Standard Arabic (default)
-    # Regional zones (broad, not micro-dialects).
-    EGYPTIAN = "EGYPTIAN"
-    LEVANTINE = "LEVANTINE"
-    GULF = "GULF"
-    MAGHREBI = "MAGHREBI"
 
 
 ARABIC_TO_IPA_CONSONANTS = {
@@ -100,178 +81,83 @@ VOWEL_MAP = {**DIACRITIC_TO_IPA,
              ALIF_MAKSURA: 'aː'}
 
 # ---------------------------------------------------------------------------
-# Dialect consonant reflexes
+# Variety resolution: consonants come from the spec, not from a table here
 # ---------------------------------------------------------------------------
-# Per-zone override of ARABIC_TO_IPA_CONSONANTS, consulted *before* the MSA
-# table in the cascade. A grapheme absent from a zone's map keeps its MSA
-# realization (so e.g. Gulf interdentals, retained, simply do not appear).
-# Only the marketed regional zones get entries; MSA/CLA are intentionally
-# empty so dialect=MSA is byte-identical to the reference cascade.
-#
-# Sources: widely documented urban/standard reflexes. Model-generated,
-# pending native-speaker validation. Competing realizations are flagged
-# inline; the override commits to the most-cited default.
-DIALECT_CONSONANT_OVERRIDES: Dict[ArabicDialect, Dict[str, str]] = {
-    ArabicDialect.EGYPTIAN: {
-        # Cairene qāf → glottal stop; jīm → hard /g/.
-        Q: "ʔ",
-        DJ: "g",
-        # Interdentals → dental stops. (Learned/loaned words instead take
-        # the sibilant reflex ث→s, ذ→z; not modelled here — lexically
-        # conditioned and unknowable from orthography.)
-        THEH: "t",
-        THAL: "d",
-        # Emphatic interdental ظ → emphatic stop dˤ in inherited Cairene
-        # vocabulary (merging with ض), consistent with the ث→t / ذ→d stop
-        # reflexes above. The emphatic sibilant zˤ is the *borrowed* reflex
-        # (parallel to the learned ث→s, ذ→z sibilants) and is lexically
-        # conditioned — not modelled from orthography.
-        ZAH: "dˤ",
-    },
-    ArabicDialect.LEVANTINE: {
-        # Urban Levantine (Damascus/Beirut): qāf → glottal stop;
-        # jīm → voiced postalveolar fricative ʒ.
-        Q: "ʔ",
-        DJ: "ʒ",
-        # Interdentals: urban default is the dental stop (ث→t, ذ→d); the
-        # sibilant reflex (t~s, d~z) surfaces in learned vocabulary —
-        # variability noted, stop chosen.
-        THEH: "t",
-        THAL: "d",
-        # ظ → emphatic stop dˤ, consistent with the ذ→d stop merger
-        # (inferred to match the chosen interdental treatment; the zˤ
-        # reflex also occurs).
-        ZAH: "dˤ",
-    },
-    ArabicDialect.GULF: {
-        # Gulf qāf → voiced velar /g/.
-        Q: "g",
-        # Gulf-proper jīm → palatal approximant /j/ (yodization), the
-        # distinctive sedentary-Gulf reflex. The affricate dʒ is the broader
-        # pan-Gulf / urban-Kuwaiti default and remains common; yodization is
-        # phonologically conditioned and variable. The zone label commits to
-        # /j/ as its marked feature — variability noted, not silently chosen.
-        DJ: "j",
-        # Interdentals (ث ذ ظ) are RETAINED → no override; they keep the
-        # MSA θ, ð, ðˤ.
-    },
-    ArabicDialect.MAGHREBI: {
-        # Maghrebi qāf has both q and g reflexes; the conservative q is
-        # kept as default → no override for Q (variability noted).
-        # jīm → ʒ.
-        DJ: "ʒ",
-        # Interdentals merged into dental stops.
-        THEH: "t",
-        THAL: "d",
-        # ظ → emphatic stop dˤ, consistent with the interdental merger.
-        ZAH: "dˤ",
-    },
-}
+
+_CONSONANT_MAPS: Dict[str, Dict[str, str]] = {}
+
+#: Vowel segments. A spec reading containing one is not a bare consonant.
+_VOWEL_CHARS = set("aiueoɑæəː")
 
 
-def consonant_ipa(grapheme: str, dialect: "ArabicDialect", default: str) -> str:
-    """Resolve a consonant grapheme to IPA under *dialect*.
+def consonant_map(lang: str) -> Dict[str, str]:
+    """The consonant realizations *lang*'s spec declares, keyed by grapheme.
 
-    Consults the zone's reflex override first, falling back to *default*
-    (the MSA realization the caller already computed). For MSA/CLA the
-    override table is empty, so this is the identity of *default*.
+    Only the graphemes the cascade treats as consonants are taken, and only
+    their first (highest-ranked) reading — the cascade is a single-path engine
+    and cannot carry candidates. A grapheme the spec does not override keeps
+    the reference realization in :data:`ARABIC_TO_IPA_CONSONANTS`.
+
+    A reading carrying a vowel is skipped. Some spec graphemes bake a default
+    vowel into the consonant — the hamza carriers read ⟨أ⟩ as ``ʔa``, which is
+    the right *lattice* candidate (a rescorer strips the vowel when an explicit
+    harakah follows) but the wrong thing to hand a cascade that appends the
+    harakah itself: it would yield ``ʔaa``. The cascade wants the bare
+    consonant, so it keeps its own ``ʔ``.
     """
-    return DIALECT_CONSONANT_OVERRIDES.get(dialect, {}).get(grapheme, default)
+    cached = _CONSONANT_MAPS.get(lang)
+    if cached is None:
+        from orthography2ipa import get
+        cached = {
+            grapheme: readings[0]
+            for grapheme, readings in get(lang).graphemes.items()
+            if grapheme in ARABIC_TO_IPA_CONSONANTS and readings
+            and not (_VOWEL_CHARS & set(readings[0]))
+        }
+        _CONSONANT_MAPS[lang] = cached
+    return cached
 
 
-# ---------------------------------------------------------------------------
-# Maghrebi short-vowel reduction (approximation)
-# ---------------------------------------------------------------------------
-# Maghrebi's signature is heavy reduction/elision of short vowels, which
-# operates below the orthography the cascade reads (CVCVC spellings give no
-# stress or syllable cues). We apply a CONSERVATIVE, deterministic stand-in:
-# a short vowel in a *non-initial, non-final, open* syllable (…C V C V…) is
-# centralized to schwa. This is an approximation of the reduction pattern,
-# not a syllabifier or stress model, and is intentionally cautious to avoid
-# corrupting closed syllables and final vowels.
-_SHORT_VOWELS = {"a", "i", "u"}
+def consonant_ipa(grapheme: str, lang: str, default: str) -> str:
+    """Resolve a consonant grapheme to IPA under the variety *lang*.
 
-
-def reduce_maghrebi_vowels(ipa: str) -> str:
-    """Centralize short vowels in non-initial open non-final syllables to ə.
-
-    Approximation of Maghrebi short-vowel reduction; see module note. Long
-    vowels (with the ``ː`` length mark) and vowels in closed or
-    word-edge syllables are left untouched.
+    Consults the variety's spec first, falling back to *default* (the reference
+    realization the caller already computed).
     """
-    chars = list(ipa)
-    n = len(chars)
-    out = []
-    # Track how many vowels have been emitted so we never touch the first
-    # (onset) vowel, only medial ones.
-    seen_vowel = False
-    for i, ch in enumerate(chars):
-        if ch in _SHORT_VOWELS:
-            nxt = chars[i + 1] if i + 1 < n else None
-            nxt2 = chars[i + 2] if i + 2 < n else None
-            # Reduce only when: not the first vowel of the word (seen_vowel),
-            # the vowel is short (not followed by length mark), it sits in an
-            # OPEN syllable (V followed by a single consonant then a vowel,
-            # i.e. C V . C V), and it is NOT the final vowel (nxt2 exists and
-            # is itself a vowel, so a syllable follows).
-            is_open_non_final = (
-                seen_vowel
-                and nxt is not None and nxt != "ː" and nxt not in _SHORT_VOWELS
-                and nxt2 is not None and nxt2 in _SHORT_VOWELS
-            )
-            if is_open_non_final:
-                out.append("ə")
-            else:
-                out.append(ch)
-            seen_vowel = True
-        else:
-            out.append(ch)
-            if ch == " ":
-                seen_vowel = False  # reset at word boundaries
-    return "".join(out)
+    return consonant_map(lang).get(grapheme, default)
 
 
-# ---------------------------------------------------------------------------
-# Language-code → dialect zone resolution
-# ---------------------------------------------------------------------------
-# Maps BCP-47 region subtags to the broad zone. Used by the G2P plugin to
-# pick a zone from context.lang. Unknown/region-less codes fall back to MSA.
-LANG_TO_DIALECT: Dict[str, ArabicDialect] = {
-    # Egyptian
-    "eg": ArabicDialect.EGYPTIAN,
-    # Levantine
-    "sy": ArabicDialect.LEVANTINE,
-    "lb": ArabicDialect.LEVANTINE,
-    "jo": ArabicDialect.LEVANTINE,
-    "ps": ArabicDialect.LEVANTINE,
-    # Gulf
-    "ae": ArabicDialect.GULF,
-    "bh": ArabicDialect.GULF,
-    "kw": ArabicDialect.GULF,
-    "om": ArabicDialect.GULF,
-    "qa": ArabicDialect.GULF,
-    "sa": ArabicDialect.GULF,
-    # Maghrebi
-    "ma": ArabicDialect.MAGHREBI,
-    "dz": ArabicDialect.MAGHREBI,
-    "tn": ArabicDialect.MAGHREBI,
-    "ly": ArabicDialect.MAGHREBI,
-}
+#: The spec code used when a caller names no variety.
+DEFAULT_LANG = "ar"
 
 
-def dialect_for_lang(lang: str) -> ArabicDialect:
-    """Resolve a BCP-47 language tag to an :class:`ArabicDialect` zone.
+def spec_for_lang(lang: Optional[str]) -> str:
+    """Resolve a language tag to an orthography2ipa Arabic spec code.
 
-    Reads the region subtag (``ar-EG`` → ``EGYPTIAN``); bare ``ar`` or any
-    unmapped region resolves to MSA.
+    An exact spec code wins (``ar-SA-x-najd``, ``ar-EG``, ``ar-x-gulf``), so a
+    caller can name any variety the data set carries. Otherwise the tag is
+    narrowed a subtag at a time (``ar-SA-x-najd`` → ``ar-SA`` → ``ar``) until a
+    spec exists. A tag naming no Arabic spec at all falls back to the ``ar``
+    leaf rather than raising: an unknown region is MSA.
     """
+    from orthography2ipa import available_codes
+
     if not lang:
-        return ArabicDialect.MSA
-    parts = lang.replace("_", "-").lower().split("-")
-    for part in parts[1:]:
-        if part in LANG_TO_DIALECT:
-            return LANG_TO_DIALECT[part]
-    return ArabicDialect.MSA
+        return DEFAULT_LANG
+    codes = set(available_codes())
+    lowered = {code.lower(): code for code in codes}
+    parts = lang.replace("_", "-").split("-")
+    for stop in range(len(parts), 0, -1):
+        candidate = "-".join(parts[:stop])
+        if candidate.endswith("-x"):  # a bare private-use marker is not a code
+            continue
+        if candidate in codes:
+            return candidate
+        match = lowered.get(candidate.lower())
+        if match:
+            return match
+    return DEFAULT_LANG
+
 
 # --- Word Exceptions ---
 # TODO - LLM generated, needs validation from native speaker
