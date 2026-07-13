@@ -42,20 +42,42 @@ def test_partially_marked_text_only_gains_what_it_lacks(diacritizer):
 
 # ─── guard 2: the skeleton is inviolable ────────────────────────────────
 
-def test_a_proposal_that_rewrites_a_letter_is_refused(diacritizer, monkeypatch):
+def test_a_rewritten_letter_is_repaired_not_discarded(diacritizer, monkeypatch):
     """A diacritizer MARKS a word; it does not rewrite it.
 
-    If the model hands back different letters it hallucinated, and the word must
-    fall back to how it was written — an underdetermined reading, which
-    orthography2ipa reports as such, beats a confident wrong one.
+    When it rewrites one anyway the marks are usually still right, so they are
+    kept and our letter is put back. Rejecting the whole proposal would throw
+    away good marks along with the bad letter.
     """
-    class Hallucinating:
+    class Rewriting:
         def diacritize(self, text):
-            return "كَلْب"  # a different word entirely
+            return "كَلْب"  # right marks, wrong middle letter (ت -> ل)
 
-    monkeypatch.setattr(diacritizer, "_diacritizer", Hallucinating())
+    monkeypatch.setattr(diacritizer, "_diacritizer", Rewriting())
+    # The marks survive; the skeleton is ours.
+    assert diacritizer.diacritize_word("كتب") == "كَتْب"
+    assert "كتب" in diacritizer.repaired
+
+
+def test_an_unrepairable_proposal_is_refused(diacritizer, monkeypatch):
+    """A proposal whose skeleton does not even align cannot be repaired."""
+    class Lengthening:
+        def diacritize(self, text):
+            return "كَتَبَاتٌ"  # more letters than we handed over
+
+    monkeypatch.setattr(diacritizer, "_diacritizer", Lengthening())
     assert diacritizer.diacritize_word("كتب") == "كتب"
     assert "كتب" in diacritizer.rejected
+
+
+def test_the_alef_madda_class_is_repaired(diacritizer):
+    """The real case: rawi rewrites آ to أ, destroying the long /aː/.
+
+    آبد is /ʔaːbid/; the model returns أَبْد, which is /ʔabd/ — the length is
+    simply gone. Repairing keeps the marks and puts the madda back.
+    """
+    out = diacritizer.diacritize_word("آبد")
+    assert out.startswith("آ"), out
 
 
 def test_a_restored_hamza_is_allowed(diacritizer, monkeypatch):
