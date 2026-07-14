@@ -46,7 +46,7 @@ The rescorers are pure, word-local, and composable. Cross-word sandhi —
 clitic joining, cross-word waṣl elision, idghām/iqlāb, pausal forms — is
 orthogonal to the word lattice and lives in the sentence-level
 orchestration (the sanctioned
-:meth:`orthography2ipa.g2p_plugin.G2PPlugin.post_process` seam), not here.
+the sentence orchestration), not here.
 
 Sources for the rescored rules:
 

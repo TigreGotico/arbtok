@@ -1,8 +1,10 @@
-"""arbtok's Arabic G2P engine, on the orthography2ipa base interface.
+"""arbtok's Arabic G2P engine.
 
-arbtok *consumes* orthography2ipa — its ``ar`` spec data and the shared
-:class:`~orthography2ipa.g2p_plugin.G2PPlugin`/``WordContext`` types —
-and owns the Arabic pipeline. Use it directly:
+arbtok *consumes* orthography2ipa — its spec data, its lattice and its
+``WordContext`` type — and owns the Arabic pipeline. It is not a plugin TO
+orthography2ipa: nothing there discovers or calls it. It is an engine built ON
+it, which is the opposite direction, and the ``G2PPlugin`` base class that once
+suggested otherwise is gone. Use it directly:
 
     >>> from arbtok.plugin import ArbtokG2PPlugin
     >>> ArbtokG2PPlugin().transcribe("كتاب جميل")
@@ -27,7 +29,7 @@ The engine maps arbtok's machinery onto the shared interface:
 """
 from typing import List, Optional
 
-from orthography2ipa.g2p_plugin import G2PPlugin, WordContext
+from orthography2ipa import WordContext
 
 from arbtok.constants import (
     DAGGER_ALIF,
@@ -46,7 +48,7 @@ from arbtok.lattice import defers_to_cascade, word_ipa
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.util import normalize as normalize_speech
 
-class ArbtokG2PPlugin(G2PPlugin):
+class ArbtokG2PPlugin:
     """Arabic G2P via the orthography2ipa shared lattice.
 
     Output defaults to Modern Standard Arabic. Pass *lang* — any
