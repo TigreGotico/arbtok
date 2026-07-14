@@ -38,7 +38,7 @@ SUN_CASES = [
     ("التَّاج", "aˈttaːdʒ", "ت tāʾ"),
     ("الثَّوْب", "aˈθθawb", "ث thāʾ"),
     ("الذَّهَب", "ˈaððahab", "ذ dhāl"),
-    ("الرَّجُل", "aˈrradʒul", "ر rāʾ"),
+    ("الرَّجُل", "ˈarradʒul", "ر rāʾ"),
     ("الزَّيْت", "aˈzzajt", "ز zāy"),
     ("الطَّعَام", "ɑtˤtˤɑˈʕaːm", "ط ṭāʾ"),
     ("الظَّبْي", "ɑˈðˤðˤɑbj", "ظ ẓāʾ"),
@@ -89,7 +89,7 @@ def test_sun_letter_rescorer_only_touches_the_article():
     ("اِسْتِقْبَال", "istiˈqbaːl"),
     ("اِجْتِمَاع", "idʒtiˈmaːʕ"),
     ("اِعْتِمَاد", "iʕtiˈmaːd"),
-    ("اِنْقَطَع", "iˈnqɑtˤɑʕ"),
+    ("اِنْقَطَع", "ˈinqɑtˤɑʕ"),
 ])
 def test_hamzat_al_wasl_elision(word, expected):
     """Word-initial hamzat al-waṣl is silent; the harakah carries the vowel."""
