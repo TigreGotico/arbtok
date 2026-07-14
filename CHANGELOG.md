@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a18](https://github.com/TigreGotico/arbtok/tree/0.0.0a18) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a17...0.0.0a18)
+
+**Merged pull requests:**
+
+- feat: stem lexicon + transliteration — arbtok beats espeak on undiacritized Arabic [\#20](https://github.com/TigreGotico/arbtok/pull/20) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a17](https://github.com/TigreGotico/arbtok/tree/0.0.0a17) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a16...0.0.0a17)
