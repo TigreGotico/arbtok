@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a11](https://github.com/TigreGotico/arbtok/tree/0.0.0a11) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a10...0.0.0a11)
+
+**Merged pull requests:**
+
+- Configure Renovate [\#1](https://github.com/TigreGotico/arbtok/pull/1) ([renovate[bot]](https://github.com/apps/renovate))
+
 ## [0.0.0a10](https://github.com/TigreGotico/arbtok/tree/0.0.0a10) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a9...0.0.0a10)
