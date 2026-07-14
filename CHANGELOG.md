@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a10](https://github.com/TigreGotico/arbtok/tree/0.0.0a10) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a9...0.0.0a10)
+
+**Merged pull requests:**
+
+- feat: benchmark the diacritizer, and repair rather than reject [\#12](https://github.com/TigreGotico/arbtok/pull/12) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a9](https://github.com/TigreGotico/arbtok/tree/0.0.0a9) (2026-07-13)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a8...0.0.0a9)
