@@ -32,6 +32,15 @@ dependencies = {file = ["requirements.txt"]}
 [project.optional-dependencies]
 test = ["pytest", "pytest-timeout", "jiwer"]
 
+[project.entry-points."orthography2ipa.normalize"]
+arbtok = "arbtok.o2i_plugins:ArbtokDiacritizer"
+
+[project.entry-points."orthography2ipa.rescore"]
+arbtok = "arbtok.o2i_plugins:ArbtokRescorers"
+
+[project.entry-points."orthography2ipa.sandhi"]
+arbtok = "arbtok.o2i_plugins:ArbtokSandhi"
+
 [project.urls]
 Homepage = "https://github.com/TigreGotico/arbtok"
 Issues = "https://github.com/TigreGotico/arbtok/issues"
