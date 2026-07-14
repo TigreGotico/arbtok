@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a12](https://github.com/TigreGotico/arbtok/tree/0.0.0a12) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a11...0.0.0a12)
+
+**Merged pull requests:**
+
+- feat: arbtok emits stress [\#14](https://github.com/TigreGotico/arbtok/pull/14) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a11](https://github.com/TigreGotico/arbtok/tree/0.0.0a11) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a10...0.0.0a11)
