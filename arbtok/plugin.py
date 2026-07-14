@@ -45,7 +45,11 @@ from arbtok.constants import (
 )
 from arbtok.dialects import DEFAULT_LANG, WORD_EXCEPTIONS, spec_for_lang
 from arbtok.lattice import defers_to_cascade, word_ipa
+from arbtok.lexicon import DEFAULT_LEXICON
 from arbtok.tokenizer import Sentence, normalize_unicode
+from arbtok.translit import is_latin, transliterate
+
+PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
 from arbtok.util import normalize as normalize_speech
 
 class ArbtokG2PPlugin:
@@ -66,7 +70,8 @@ class ArbtokG2PPlugin:
     """
 
     def __init__(self, lang: str = DEFAULT_LANG, diacritize: bool = True,
-                 stress: bool = True) -> None:
+                 stress: bool = True,
+                 lexicon: Optional[str] = DEFAULT_LEXICON) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
         #: The variety: any orthography2ipa Arabic spec code.
@@ -80,6 +85,10 @@ class ArbtokG2PPlugin:
         #: vowel duration and prominence, which a TTS voice needs. Turn it off to
         #: score against stress-free gold.
         self.stress = stress
+        #: The diacritized-stem lexicon consulted before the diacritizer model —
+        #: a path, a URL, an ``hf://`` id, or ``None`` to ask the model about
+        #: every word. See :mod:`arbtok.lexicon`.
+        self.lexicon = lexicon
 
     @property
     def language_codes(self) -> List[str]:
@@ -122,7 +131,8 @@ class ArbtokG2PPlugin:
         if self._diacritizer is None:
             try:
                 from arbtok.diacritize import LatticeDiacritizer
-                self._diacritizer = LatticeDiacritizer(lang=self.lang)
+                self._diacritizer = LatticeDiacritizer(lang=self.lang,
+                                                      lexicon=self.lexicon)
             except Exception:
                 self._diacritizer_failed = True
                 return text
@@ -134,12 +144,40 @@ class ArbtokG2PPlugin:
     # ─── transcription ───────────────────────────────────────────────
 
     def transcribe(self, text: str) -> str:
-        return Sentence(self.normalize(text), lang=self.lang, stress=self.stress).ipa
+        """Transcribe *text*, reading any Latin-script word as a loanword.
+
+        The Arabic runs are transcribed together, so the cross-word rules still see
+        their neighbours. A Latin word is a guest: it is nativised on its own (see
+        :mod:`arbtok.translit`) and spliced back in its place.
+        """
+        parts, buffer = [], []
+
+        def flush_arabic():
+            if buffer:
+                parts.append(Sentence(self.normalize(" ".join(buffer)),
+                                      lang=self.lang, stress=self.stress).ipa)
+                buffer.clear()
+
+        for token in text.split():
+            if is_latin(token):
+                flush_arabic()
+                guest = transliterate(token.strip(PUNCT_STRIP), self.lang)
+                if guest:
+                    parts.append(guest)
+            else:
+                buffer.append(token)
+        flush_arabic()
+        return " ".join(p for p in parts if p)
 
     def transcribe_word(
         self, word: str, context: Optional[WordContext] = None
     ) -> str:
         lang = self._resolve_lang(context)
+        if is_latin(word):
+            # A Latin-script word has no Arabic graphemes and no reading. Left to
+            # the engine its letters come back as themselves — `meeting` as
+            # `meeˈting` — which is not IPA at all.
+            return transliterate(word, lang) or ""
         if context is None or (context.prev_word is None
                                and context.next_word is None):
             # Isolated word: every variety runs on the orthography2ipa shared

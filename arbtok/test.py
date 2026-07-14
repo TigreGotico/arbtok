@@ -312,8 +312,9 @@ STRESS_TESTS = [
     ("يَسْتَخْدِمُونَ", "jastaxdimuːna", "Form X present plural"),
 
     # from wordlist exceptions - TODO should not need wordlist
-    ("مَدْرَسَة", "madrasah", "default penult (open)"),
-    ("مُسْتَشْفَى", "mustashfaː", "derived pattern, final long"),
+    # tāʾ marbūṭa is silent at a pause: madrasa, not madrasah.
+    ("مَدْرَسَة", "madrasa", "default penult (open)"),
+    ("مُسْتَشْفَى", "mustaʃfaː", "derived pattern, final long"),
 ]
 
 # --- PYTEST ENGINE ---

@@ -19,6 +19,12 @@ are masked out before the argmax. Those are facts about Arabic and about the
 model's class space — no lattice is needed to know them, so no lattice should have
 to.
 
+Before any of that, though, comes the cheapest guard of all: **a known word is a
+known word**. Which vowels a word carries is a lexical fact, and a model asked to
+re-derive a lexical fact will sometimes derive it wrong — so :mod:`arbtok.lexicon`
+is consulted first, and the model is only asked about words nobody has written
+down (see that module for why the entry is a diacritized *stem* and not IPA).
+
 What is left here is the part that genuinely needs a lattice:
 
 1. **Only act where the writing is actually silent.** orthography2ipa reports
@@ -27,6 +33,10 @@ What is left here is the part that genuinely needs a lattice:
 2. **The result must be licensed.** The diacritized word is tokenized against the
    *variety's own* grapheme table. A mark sequence the orthography does not admit
    is not an answer, and only the spec knows which those are.
+
+The lattice guards the lexicon exactly as it guards the model: an entry that the
+variety's orthography does not license is refused like any other proposal. The
+lexicon is data, and data can be wrong.
 
 A refused proposal falls back to the word as written — an underdetermined reading,
 which orthography2ipa reports as such, rather than a confident wrong one. The
@@ -41,6 +51,7 @@ from typing import List, Optional
 from orthography2ipa import get, is_underdetermined
 from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
 
+from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
 from arbtok.nisba import restore_nisba
 from arbtok.dialects import DEFAULT_LANG
 from arbtok.tokenizer import normalize_unicode
@@ -127,7 +138,9 @@ class LatticeDiacritizer:
     ``lang`` names the orthography2ipa variety whose grapheme table licenses the
     result. ``waqf`` drops the case endings from the model's output, giving the
     pausal form that is actually spoken rather than the fully-parsed form the
-    models restore (see :mod:`text2tashkeel.waqf`).
+    models restore (see :mod:`text2tashkeel.waqf`). ``lexicon`` names the
+    diacritized-stem lexicon consulted before the model — a path, a URL, an
+    ``hf://`` id, or ``None`` to ask the model about every word.
     """
 
     def __init__(
@@ -135,6 +148,7 @@ class LatticeDiacritizer:
         lang: str = DEFAULT_LANG,
         model: Optional[str] = None,
         waqf: bool = True,
+        lexicon: Optional[str] = DEFAULT_LEXICON,
     ) -> None:
         self.lang = lang
         self.waqf = waqf
@@ -142,11 +156,14 @@ class LatticeDiacritizer:
         self._diacritizer = None
         self._spec = get(lang)
         self._tokenizer = PhonetokTokenizer(self._spec)
+        self.lexicon = StemLexicon(lexicon) if lexicon else None
         #: Words the model proposed and the lattice refused outright, in order.
         self.rejected: List[str] = []
         #: Words whose letters the model rewrote and we put back, keeping its
         #: marks. Chiefly the alef-madda class — see :func:`repair_skeleton`.
         self.repaired: List[str] = []
+        #: Words answered from the lexicon, which the model never saw.
+        self.looked_up: List[str] = []
 
     @property
     def diacritizer(self):
@@ -157,6 +174,24 @@ class LatticeDiacritizer:
                 else Diacritizer(waqf=self.waqf)
             )
         return self._diacritizer
+
+    def _lookup(self, word: str) -> Optional[str]:
+        """The lexicon's stem for *word*, if it has one the orthography licenses.
+
+        An entry is held to every check a model's proposal is: it must spell the
+        word we were given (marks added, letters untouched) and it must tokenize
+        against the variety's grapheme table. A stem that fails either is not a
+        fact about this word, and the model is asked instead.
+        """
+        if self.lexicon is None or not self.waqf:
+            return None
+        stem = self.lexicon.get(word)
+        if stem is None:
+            return None
+        stem = restore_nisba(stem)
+        if strip_marks(stem) != strip_marks(word) or not self._is_licensed(stem):
+            return None
+        return stem
 
     def _is_licensed(self, word: str) -> bool:
         """True when every part of *word* maps to a grapheme the spec declares."""
@@ -174,9 +209,17 @@ class LatticeDiacritizer:
         if not is_underdetermined(normalized, self._spec):
             return word
 
+        # (2) Somebody already wrote this word down. A lexicon entry is a pausal
+        # stem, so it answers the waqf question and no other: with the case
+        # endings asked for, only the model can supply them.
+        entry = self._lookup(normalized)
+        if entry is not None:
+            self.looked_up.append(word)
+            return entry
+
         proposed = self.diacritizer.diacritize(normalized)
 
-        # (2) A diacritizer marks; it does not rewrite. When it did rewrite a
+        # (3) A diacritizer marks; it does not rewrite. When it did rewrite a
         # letter, the marks are usually still right — so keep them and put our
         # letter back, rather than throwing the whole proposal away. Only a
         # proposal that cannot be repaired (the skeletons do not align) is
@@ -189,13 +232,13 @@ class LatticeDiacritizer:
             self.repaired.append(word)
             proposed = repaired
 
-        # (3) The nisba's shadda is not printed, and the model does not restore
+        # (4) The nisba's shadda is not printed, and the model does not restore
         # it: عربي comes back as a bare yāʾ and reads /ʕarbiː/, not /ʕarabijj/.
         # Put the mark back before licensing, so the result is held to the
         # grapheme table like any other proposal.
         proposed = restore_nisba(proposed)
 
-        # (4) The orthography must license the result.
+        # (5) The orthography must license the result.
         if not self._is_licensed(proposed):
             self.rejected.append(word)
             return word
