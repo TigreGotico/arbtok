@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a15](https://github.com/TigreGotico/arbtok/tree/0.0.0a15) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a14...0.0.0a15)
+
+**Merged pull requests:**
+
+- feat: arbtok as orthography2ipa steps — plain o2i can read undiacritized Arabic [\#17](https://github.com/TigreGotico/arbtok/pull/17) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a14](https://github.com/TigreGotico/arbtok/tree/0.0.0a14) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a13...0.0.0a14)
