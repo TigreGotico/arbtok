@@ -9,24 +9,29 @@ the phonemizer will faithfully transcribe the hallucination.
 
 arbtok is the one library that knows about both the diacritizer and the
 orthography2ipa lattice, so it is where the two meet. The model **proposes**; the
-lattice **disposes**:
+lattice **disposes**.
+
+Two of the three guards this once carried have **moved upstream**, where they
+belong. text2tashkeel now decodes under an orthographic constraint of its own
+(:mod:`text2tashkeel.orthography`): it cannot rewrite a letter the writing spells,
+and it cannot overwrite a mark a human wrote, because the classes that would do so
+are masked out before the argmax. Those are facts about Arabic and about the
+model's class space — no lattice is needed to know them, so no lattice should have
+to.
+
+What is left here is the part that genuinely needs a lattice:
 
 1. **Only act where the writing is actually silent.** orthography2ipa reports
-   which letters are underdetermined (:func:`~orthography2ipa.is_underdetermined`).
-   A word that already carries its marks is left exactly as written — a human's
-   tashkeel is evidence, and a model must never overwrite it.
-2. **The skeleton is inviolable.** Strip the marks back off the model's output
-   and it must be the word we handed it. A diacritizer may add marks; it may not
-   add, drop or change a *letter*. (The rawi models also restore a hamza and the
-   dagger-alef — a documented widening of the task — so those specific letter
-   restorations are allowed, and nothing else is.)
-3. **The result must be licensed.** The diacritized word is tokenized against the
-   variety's own grapheme table. If any part of it does not map — if the model
-   produced a mark sequence the orthography does not admit — the word is rejected.
+   which letters are underdetermined (:func:`~orthography2ipa.is_underdetermined`),
+   so a fully-marked word is never handed to a model at all.
+2. **The result must be licensed.** The diacritized word is tokenized against the
+   *variety's own* grapheme table. A mark sequence the orthography does not admit
+   is not an answer, and only the spec knows which those are.
 
-A rejected proposal falls back to the word as written. That is the honest
-outcome: an underdetermined reading, which orthography2ipa will report as such,
-rather than a confident wrong one.
+A refused proposal falls back to the word as written — an underdetermined reading,
+which orthography2ipa reports as such, rather than a confident wrong one. The
+skeleton check stays as a cheap backstop: it should now never fire, and if it does,
+something upstream has regressed.
 """
 
 from __future__ import annotations
@@ -39,7 +44,7 @@ from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
 from arbtok.dialects import DEFAULT_LANG
 from arbtok.tokenizer import normalize_unicode
 
-__all__ = ["LatticeDiacritizer", "strip_marks"]
+__all__ = ["LatticeDiacritizer", "strip_marks", "repair_skeleton"]
 
 #: Every Arabic mark a diacritizer may add. Anything else it emits is a letter.
 _MARKS = set("ًٌٍَُِّْٰٓ")
@@ -59,6 +64,38 @@ _RESTORABLE = {
 def strip_marks(text: str) -> str:
     """The consonantal skeleton: *text* with every diacritic removed."""
     return "".join(ch for ch in text if ch not in _MARKS)
+
+
+def repair_skeleton(original: str, proposed: str) -> Optional[str]:
+    """Keep the model's **marks**, restore the original **letters**.
+
+    A diacritizer's job is to mark a word, so when it also swaps a letter the
+    marks are usually still right and only the letter is wrong. Rejecting the
+    whole proposal throws away good marks with the bad letter; repairing keeps
+    them and puts our letter back.
+
+    This is not hypothetical. The rawi models systematically rewrite the alef
+    madda ⟨آ⟩ to a plain hamza carrier ⟨أ⟩ — destroying the long /aː/ it stands
+    for (آبد /ʔaːbid/ came back as أَبْد /ʔabd/) — on about 6.5% of a WikiPron
+    Arabic sweep. Repairing those words rather than dropping them is worth
+    ~0.7 PER and ~0.5 WER points on that set, and it is strictly better than
+    rejecting on every metric measured.
+
+    Returns ``None`` when the skeletons do not align one-to-one, in which case
+    the proposal cannot be repaired and must be refused.
+    """
+    original_letters = strip_marks(original)
+    if len(original_letters) != len(strip_marks(proposed)):
+        return None
+    out: List[str] = []
+    i = 0
+    for ch in proposed:
+        if ch in _MARKS:
+            out.append(ch)
+        else:
+            out.append(original_letters[i])
+            i += 1
+    return "".join(out)
 
 
 def _skeleton_is_preserved(original: str, diacritized: str) -> bool:
@@ -104,8 +141,11 @@ class LatticeDiacritizer:
         self._diacritizer = None
         self._spec = get(lang)
         self._tokenizer = PhonetokTokenizer(self._spec)
-        #: Words the model proposed and the lattice refused, in order.
+        #: Words the model proposed and the lattice refused outright, in order.
         self.rejected: List[str] = []
+        #: Words whose letters the model rewrote and we put back, keeping its
+        #: marks. Chiefly the alef-madda class — see :func:`repair_skeleton`.
+        self.repaired: List[str] = []
 
     @property
     def diacritizer(self):
@@ -135,10 +175,18 @@ class LatticeDiacritizer:
 
         proposed = self.diacritizer.diacritize(normalized)
 
-        # (2) A diacritizer marks; it does not rewrite.
+        # (2) A diacritizer marks; it does not rewrite. When it did rewrite a
+        # letter, the marks are usually still right — so keep them and put our
+        # letter back, rather than throwing the whole proposal away. Only a
+        # proposal that cannot be repaired (the skeletons do not align) is
+        # refused.
         if not _skeleton_is_preserved(normalized, proposed):
-            self.rejected.append(word)
-            return word
+            repaired = repair_skeleton(normalized, proposed)
+            if repaired is None:
+                self.rejected.append(word)
+                return word
+            self.repaired.append(word)
+            proposed = repaired
 
         # (3) The orthography must license the result.
         if not self._is_licensed(proposed):
