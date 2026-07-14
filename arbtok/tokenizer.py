@@ -13,6 +13,7 @@ from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WA
                               ALIF_MAKSURA,  ALIF, ALEF_MADDA,
                               HAMZAT_AL_WASL, TA_MARBUTA, SHADDA,
                               SUN_LETTERS, CLITIC_BASES, PUNCT)
+from arbtok.stress import stress_words
 from arbtok.dialects import (VOWEL_MAP, ARABIC_TO_IPA_CONSONANTS, DIACRITIC_TO_IPA,
                              TANWIN_TO_IPA, WORD_EXCEPTIONS,
                              DEFAULT_LANG, consonant_ipa)
@@ -493,6 +494,10 @@ class WordToken:
 class Sentence:
     surface: str
     lang: str = DEFAULT_LANG
+    #: Mark the stressed syllable of each prosodic word. Stress is applied AFTER
+    #: assembly, so a proclitic and its host — joined in connected speech — take
+    #: one mark between them, which is what they are: one phonological word.
+    stress: bool = True
 
     @property
     def normalized(self) -> str:
@@ -545,7 +550,7 @@ class Sentence:
         ipa_str = ipa_str.replace("mim baʕ", "mimbaʕ")
         ipa_str = ipa_str.replace("min t", "mint")
 
-        return ipa_str
+        return stress_words(ipa_str, self.lang) if self.stress else ipa_str
 
     def __eq__(self, other) -> bool:
         if isinstance(other, str):

@@ -20,24 +20,24 @@ from orthography2ipa.g2p_plugin import WordContext
 
 @pytest.mark.parametrize("word,expected,why", [
     # Najdi qāf → /ɡ/ (Ingham 1994).
-    ("قَلَم", "ɡalam", "qāf → ɡ"),
+    ("قَلَم", "ˈɡalam", "qāf → ɡ"),
     # Velar affrication /k/ → [ts] before a front vowel (Ingham 1994 pp.13-14).
-    ("كِتَاب", "tsitaːb", "/k/ → [ts] before a front vowel"),
+    ("كِتَاب", "tsiˈtaːb", "/k/ → [ts] before a front vowel"),
     # Gahawa syndrome: epenthetic /a/ after a guttural in a coda after a low
     # vowel (Ingham 1994 pp.15-16) — gahwa → gahawa.
-    ("قَهْوَة", "ɡahawa", "gahawa-syndrome epenthesis"),
-    ("لَحْم", "laħam", "gahawa-syndrome epenthesis after ħ"),
+    ("قَهْوَة", "ˈɡahawa", "gahawa-syndrome epenthesis"),
+    ("لَحْم", "ˈlaħam", "gahawa-syndrome epenthesis after ħ"),
 ])
 def test_najdi(word, expected, why):
     assert word_ipa(word, "ar-SA-x-najd") == expected, why
 
 
 @pytest.mark.parametrize("word,expected,why", [
-    ("قَلَم", "ɡalam", "qāf → ɡ (Omar 1975)"),
+    ("قَلَم", "ˈɡalam", "qāf → ɡ (Omar 1975)"),
     # Urban Hejazi monophthongization /aj/ → [eː] (Omar 1975; Abdoh 2010).
-    ("بَيْت", "beːt", "/aj/ → [eː]"),
+    ("بَيْت", "ˈbeːt", "/aj/ → [eː]"),
     # Hejazi keeps /k/ — no affrication, unlike Najdi and Gulf.
-    ("كِتَاب", "kitaːb", "no velar affrication"),
+    ("كِتَاب", "kiˈtaːb", "no velar affrication"),
 ])
 def test_hejazi(word, expected, why):
     assert word_ipa(word, "ar-SA-x-hejaz") == expected, why
@@ -50,16 +50,16 @@ def test_saudi_varieties_are_distinct_from_each_other_and_from_gulf():
     legacy zone table mapped every Saudi tag to GULF, so all three collapsed
     onto the [tʃ] reading.
     """
-    assert word_ipa("كِتَاب", "ar-SA-x-najd") == "tsitaːb"
-    assert word_ipa("كِتَاب", "ar-SA-x-hejaz") == "kitaːb"
-    assert word_ipa("كِتَاب", "ar-x-gulf") == "tʃitaːb"
+    assert word_ipa("كِتَاب", "ar-SA-x-najd") == "tsiˈtaːb"
+    assert word_ipa("كِتَاب", "ar-SA-x-hejaz") == "kiˈtaːb"
+    assert word_ipa("كِتَاب", "ar-x-gulf") == "tʃiˈtaːb"
 
 
 def test_msa_is_unchanged_by_the_variety_machinery():
     """The default path must not move."""
-    assert word_ipa("قَلَم") == "qalam"
-    assert word_ipa("كِتَاب") == "kitaːb"
-    assert word_ipa("قَهْوَة") == "qahwa"
+    assert word_ipa("قَلَم") == "ˈqalam"
+    assert word_ipa("كِتَاب") == "kiˈtaːb"
+    assert word_ipa("قَهْوَة") == "ˈqahwa"
 
 
 def test_msa_emphatic_spreading_fires():
@@ -69,8 +69,8 @@ def test_msa_emphatic_spreading_fires():
     dropped them silently: /a/ next to an emphatic stayed [a] here while
     orthography2ipa's own G2P produced [ɑ] (Watson 2002, ch. Emphasis).
     """
-    assert word_ipa("صَبْر") == "sˤɑbr"
-    assert word_ipa("طَالِب") == "tˤɑːlib"
+    assert word_ipa("صَبْر") == "ˈsˤɑbr"
+    assert word_ipa("طَالِب") == "ˈtˤɑːlib"
 
 
 # ─── orthographic readings survive in every variety ─────────────────────
@@ -79,8 +79,8 @@ def test_msa_emphatic_spreading_fires():
     "ar", "ar-SA-x-najd", "ar-SA-x-hejaz", "ar-x-gulf", "ar-EG", "ar-MA",
 ])
 @pytest.mark.parametrize("word,expected", [
-    ("أَمِير", "ʔamiːr"),      # hamza carrier is a bare /ʔ/ before a harakah
-    ("مَدْرَسَة", "madrasa"),   # pausal tāʾ marbūṭa
+    ("أَمِير", "ʔaˈmiːr"),      # hamza carrier is a bare /ʔ/ before a harakah
+    ("مَدْرَسَة", "ˈmadrasa"),   # pausal tāʾ marbūṭa
 ])
 def test_msa_orthography_is_read_correctly_in_every_variety(lang, word, expected):
     """A variety is *written* in MSA orthography, so it must read it.
@@ -115,16 +115,16 @@ def test_spec_for_lang(tag, expected):
 # ─── the plugin surface ─────────────────────────────────────────────────
 
 def test_plugin_lang_selects_the_variety():
-    assert ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة") == "ɡahawa"
-    assert ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت") == "beːt"
-    assert ArbtokG2PPlugin().transcribe_word("قَهْوَة") == "qahwa"
+    assert ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة") == "ˈɡahawa"
+    assert ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت") == "ˈbeːt"
+    assert ArbtokG2PPlugin().transcribe_word("قَهْوَة") == "ˈqahwa"
 
 
 def test_plugin_context_lang_overrides_the_instance_default():
     plugin = ArbtokG2PPlugin()
     ctx = WordContext(lang="ar-SA-x-najd")
-    assert plugin.transcribe_word("كِتَاب", ctx) == "tsitaːb"
-    assert plugin.transcribe_word("كِتَاب") == "kitaːb"
+    assert plugin.transcribe_word("كِتَاب", ctx) == "tsiˈtaːb"
+    assert plugin.transcribe_word("كِتَاب") == "kiˈtaːb"
 
 
 @pytest.mark.parametrize("lang", [

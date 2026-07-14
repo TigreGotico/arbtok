@@ -33,20 +33,20 @@ def test_builds_on_shared_tokenizer():
 
 # The article + sun letter → lām assimilates, sun consonant geminates.
 SUN_CASES = [
-    ("الشَّمْس", "aʃʃams", "ش shīn"),
-    ("السَّمَك", "assamak", "س sīn"),
-    ("التَّاج", "attaːdʒ", "ت tāʾ"),
-    ("الثَّوْب", "aθθawb", "ث thāʾ"),
-    ("الذَّهَب", "aððahab", "ذ dhāl"),
-    ("الرَّجُل", "arradʒul", "ر rāʾ"),
-    ("الزَّيْت", "azzajt", "ز zāy"),
-    ("الطَّعَام", "ɑtˤtˤɑʕaːm", "ط ṭāʾ"),
-    ("الظَّبْي", "ɑðˤðˤɑbj", "ظ ẓāʾ"),
-    ("اللَّوْن", "allawn", "ل lām"),
-    ("النَّار", "annaːr", "ن nūn"),
-    ("الصَّوْت", "ɑsˤsˤɑwt", "ص ṣād"),
-    ("الدَّار", "addaːr", "د dāl"),
-    ("الضَّوْء", "ɑdˤdˤɑwʔ", "ض ḍād"),
+    ("الشَّمْس", "aˈʃʃams", "ش shīn"),
+    ("السَّمَك", "ˈassamak", "س sīn"),
+    ("التَّاج", "aˈttaːdʒ", "ت tāʾ"),
+    ("الثَّوْب", "aˈθθawb", "ث thāʾ"),
+    ("الذَّهَب", "ˈaððahab", "ذ dhāl"),
+    ("الرَّجُل", "aˈrradʒul", "ر rāʾ"),
+    ("الزَّيْت", "aˈzzajt", "ز zāy"),
+    ("الطَّعَام", "ɑtˤtˤɑˈʕaːm", "ط ṭāʾ"),
+    ("الظَّبْي", "ɑˈðˤðˤɑbj", "ظ ẓāʾ"),
+    ("اللَّوْن", "aˈllawn", "ل lām"),
+    ("النَّار", "aˈnnaːr", "ن nūn"),
+    ("الصَّوْت", "ɑˈsˤsˤɑwt", "ص ṣād"),
+    ("الدَّار", "aˈddaːr", "د dāl"),
+    ("الضَّوْء", "ɑˈdˤdˤɑwʔ", "ض ḍād"),
 ]
 
 
@@ -58,9 +58,9 @@ def test_sun_letter_assimilation(word, expected, name):
 
 # Moon letters keep the lām (control: no assimilation).
 MOON_CASES = [
-    ("الْقَمَر", "alqamar", "ق qāf"),
-    ("الْكِتَاب", "alkitaːb", "ك kāf"),
-    ("الْمَسْجِد", "almasdʒid", "م mīm"),
+    ("الْقَمَر", "ˈalqamar", "ق qāf"),
+    ("الْكِتَاب", "alkiˈtaːb", "ك kāf"),
+    ("الْمَسْجِد", "aˈlmasdʒid", "م mīm"),
 ]
 
 
@@ -86,10 +86,10 @@ def test_sun_letter_rescorer_only_touches_the_article():
 # ─── Hamzat al-waṣl ──────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("word, expected", [
-    ("اِسْتِقْبَال", "istiqbaːl"),
-    ("اِجْتِمَاع", "idʒtimaːʕ"),
-    ("اِعْتِمَاد", "iʕtimaːd"),
-    ("اِنْقَطَع", "inqɑtˤɑʕ"),
+    ("اِسْتِقْبَال", "istiˈqbaːl"),
+    ("اِجْتِمَاع", "idʒtiˈmaːʕ"),
+    ("اِعْتِمَاد", "iʕtiˈmaːd"),
+    ("اِنْقَطَع", "iˈnqɑtˤɑʕ"),
 ])
 def test_hamzat_al_wasl_elision(word, expected):
     """Word-initial hamzat al-waṣl is silent; the harakah carries the vowel."""
@@ -99,10 +99,10 @@ def test_hamzat_al_wasl_elision(word, expected):
 # ─── Gemination (shadda / tashdīd) ───────────────────────────────────────
 
 @pytest.mark.parametrize("word, expected", [
-    ("عَمَّ", "ʕamma"),
-    ("كُلّ", "kull"),
-    ("ظَلَّ", "ðˤɑlla"),
-    ("حَتَّى", "ħattaː"),
+    ("عَمَّ", "ˈʕamma"),
+    ("كُلّ", "ˈkull"),
+    ("ظَلَّ", "ˈðˤɑlla"),
+    ("حَتَّى", "ˈħattaː"),
 ])
 def test_gemination(word, expected):
     """Shadda doubles its consonant before the nucleus (not a length mark)."""
@@ -112,10 +112,10 @@ def test_gemination(word, expected):
 # ─── Hamza carrier vowel de-duplication & semivowel onset ────────────────
 
 @pytest.mark.parametrize("word, expected", [
-    ("أَمِير", "ʔamiːr"),   # hamza carrier + explicit fatḥa, not ʔaamīr
-    ("تَأْثِير", "taʔθiːr"),  # carrier + sukūn
-    ("يَوْم", "jawm"),       # ⟨يَ⟩ onset /ja/, not the /aj/ coda diphthong
-    ("بَيْت", "bajt"),       # ⟨َي⟩ coda diphthong retained
+    ("أَمِير", "ʔaˈmiːr"),   # hamza carrier + explicit fatḥa, not ʔaamīr
+    ("تَأْثِير", "taˈʔθiːr"),  # carrier + sukūn
+    ("يَوْم", "ˈjawm"),       # ⟨يَ⟩ onset /ja/, not the /aj/ coda diphthong
+    ("بَيْت", "ˈbajt"),       # ⟨َي⟩ coda diphthong retained
 ])
 def test_carrier_and_onset(word, expected):
     assert word_ipa(word) == expected
@@ -124,9 +124,9 @@ def test_carrier_and_onset(word, expected):
 # ─── Regression guards: geminate glides, final glide vowel, ligatures ─────
 
 @pytest.mark.parametrize("word, expected", [
-    ("عُيِّنَ", "ʕujjina"),    # geminate yāʾ (glide) — not dropped
-    ("قَوَّاس", "qawwaːs"),    # geminate wāw in a coda ligature
-    ("اِفْعَوَّل", "ifʕawwal"),  # geminate wāw, form IX
+    ("عُيِّنَ", "ˈʕujjina"),    # geminate yāʾ (glide) — not dropped
+    ("قَوَّاس", "qaˈwwaːs"),    # geminate wāw in a coda ligature
+    ("اِفْعَوَّل", "iˈfʕawwal"),  # geminate wāw, form IX
 ])
 def test_geminate_glides_not_dropped(word, expected):
     """Shadda geminates the semivowels ي/و too (Wright I §14; Ryding §2.3)."""
@@ -136,9 +136,9 @@ def test_geminate_glides_not_dropped(word, expected):
 # ─── Consonantal glide vs mater lectionis (ConsonantalGlideRescorer) ──────
 
 @pytest.mark.parametrize("word, expected", [
-    ("أَتْشِيُوت", "ʔatʃijuːt"),   # ⟨ـِيُو⟩: yāʾ bears its own ḍamma → onset /j/
-    ("أَبْخَازِيَا", "ʔabxaːzijaː"),  # ⟨ـِيَا⟩: yāʾ before /aː/ → onset /j/
-    ("أَحُوَل", "ʔaħuwal"),       # ⟨ـُوَ⟩: wāw before fatḥa → onset /w/
+    ("أَتْشِيُوت", "ʔatʃiˈjuːt"),   # ⟨ـِيُو⟩: yāʾ bears its own ḍamma → onset /j/
+    ("أَبْخَازِيَا", "ʔaˈbxaːzijaː"),  # ⟨ـِيَا⟩: yāʾ before /aː/ → onset /j/
+    ("أَحُوَل", "ˈʔaħuwal"),       # ⟨ـُوَ⟩: wāw before fatḥa → onset /w/
 ])
 def test_prevocalic_glide_is_a_consonant(word, expected):
     """A yāʾ/wāw after its homorganic vowel is length only when it CLOSES
@@ -149,9 +149,9 @@ def test_prevocalic_glide_is_a_consonant(word, expected):
 
 
 @pytest.mark.parametrize("word, expected", [
-    ("أَشُورِيّ", "ʔaʃuːrijj"),    # nisba ـِيّ = doubled /-ijj/ (Ryding §5.4.1)
-    ("أَرْمِيَّة", "ʔarmijja"),    # feminine nisba ـِيَّة = /-ijja/
-    ("أُبُوَّة", "ʔubuwwa"),      # ـُوَّة = /-uwwa/: geminate wāw, not /uːwa/
+    ("أَشُورِيّ", "ʔaʃuˈːrijj"),    # nisba ـِيّ = doubled /-ijj/ (Ryding §5.4.1)
+    ("أَرْمِيَّة", "ʔaˈrmijja"),    # feminine nisba ـِيَّة = /-ijja/
+    ("أُبُوَّة", "ʔuˈbuwwa"),      # ـُوَّة = /-uwwa/: geminate wāw, not /uːwa/
 ])
 def test_geminated_glide_after_homorganic_vowel(word, expected):
     """Shadda doubles the semivowels too (Wright I §14), so ⟨ِي⟩ before the
@@ -162,17 +162,17 @@ def test_geminated_glide_after_homorganic_vowel(word, expected):
 
 def test_word_final_glide_is_a_long_vowel():
     """A word-final ي reads as the long vowel, not the consonant /j/."""
-    assert word_ipa("يُصَلِّي") == "jusˤɑlliː"
+    assert word_ipa("يُصَلِّي") == "juˈsˤɑlliː"
 
 
 def test_presentation_ligature_never_empty():
     """The lam-alif ligature ﻻ decomposes; output is never empty."""
-    assert word_ipa("ﻻ") == "laː"
+    assert word_ipa("ﻻ") == "ˈlaː"
 
 
 def test_medial_semivowel_onset():
     """A medial ⟨وَ⟩ after a consonant is the onset /wa/ (أَبْوَاب → ʔabwaːb)."""
-    assert word_ipa("أَبْوَاب") == "ʔabwaːb"
+    assert word_ipa("أَبْوَاب") == "ʔaˈbwaːb"
 
 
 # ─── Deferral of cross-word / lexical cases (no public regression) ───────

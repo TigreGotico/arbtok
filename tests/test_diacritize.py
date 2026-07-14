@@ -113,7 +113,7 @@ def test_an_unlicensed_proposal_is_refused(diacritizer, monkeypatch):
 def test_the_plugin_transcribes_undiacritized_text():
     """The whole point: bare Arabic in, IPA out, with the marks restored."""
     plugin = ArbtokG2PPlugin()
-    assert plugin.transcribe("كتب الولد الدرس") == "katab alwalad addaras"
+    assert plugin.transcribe("كتب الولد الدرس") == "ˈkatab ˈalwalad ˈaddaras"
 
 
 def test_diacritization_can_be_turned_off():

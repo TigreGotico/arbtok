@@ -63,7 +63,8 @@ class ArbtokG2PPlugin(G2PPlugin):
     subtag at a time and ultimately falls back to the ``ar`` leaf.
     """
 
-    def __init__(self, lang: str = DEFAULT_LANG, diacritize: bool = True) -> None:
+    def __init__(self, lang: str = DEFAULT_LANG, diacritize: bool = True,
+                 stress: bool = True) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
         #: The variety: any orthography2ipa Arabic spec code.
@@ -72,6 +73,11 @@ class ArbtokG2PPlugin(G2PPlugin):
         #: input contract is diacritized text; without this, an unmarked word is
         #: transcribed from a default reading, which is a guess.
         self.diacritize = diacritize
+        #: Mark the stressed syllable. Arabic stress is quantity-sensitive, so it
+        #: is read off the transcription rather than the spelling — and it drives
+        #: vowel duration and prominence, which a TTS voice needs. Turn it off to
+        #: score against stress-free gold.
+        self.stress = stress
 
     @property
     def language_codes(self) -> List[str]:
@@ -126,7 +132,7 @@ class ArbtokG2PPlugin(G2PPlugin):
     # ─── transcription ───────────────────────────────────────────────
 
     def transcribe(self, text: str) -> str:
-        return Sentence(self.normalize(text), lang=self.lang).ipa
+        return Sentence(self.normalize(text), lang=self.lang, stress=self.stress).ipa
 
     def transcribe_word(
         self, word: str, context: Optional[WordContext] = None
@@ -142,8 +148,8 @@ class ArbtokG2PPlugin(G2PPlugin):
             # or lexical context (see `defers_to_cascade`).
             if (normalize_unicode(word) not in WORD_EXCEPTIONS
                     and not defers_to_cascade(word)):
-                return word_ipa(word, lang)
-            return Sentence(word, lang=lang).ipa
+                return word_ipa(word, lang, stress=self.stress)
+            return Sentence(word, lang=lang, stress=self.stress).ipa
 
         # Tokenize the word with its orthographic neighbours so the
         # cross-word rules (wasl elision, idgham/iqlab, clitic
@@ -151,8 +157,8 @@ class ArbtokG2PPlugin(G2PPlugin):
         parts = [p for p in (context.prev_word, word, context.next_word)
                  if p is not None]
         target = 0 if context.prev_word is None else 1
-        tokens = Sentence(" ".join(parts), lang=lang).tokens
+        tokens = Sentence(" ".join(parts), lang=lang, stress=self.stress).tokens
         words = [t for t in tokens if t.surface not in ("",)]
         if target < len(words):
             return words[target].ipa
-        return Sentence(word, lang=lang).ipa
+        return Sentence(word, lang=lang, stress=self.stress).ipa
