@@ -85,6 +85,7 @@ from arbtok.constants import (
     WAW_HAMZA,
     YA_HAMZA,
 )
+from arbtok.stress import stress_ipa
 from arbtok.tokenizer import normalize_unicode
 
 # The definite-article grapheme as the ar spec tokenises it (alif+lām).
@@ -331,14 +332,27 @@ def word_lattice(word: str, lang: str = DEFAULT_LANG) -> List[SegmentSlot]:
     return tokenizer.ipa_lattice(text, rescorer=rescorers)
 
 
-def word_ipa(word: str, lang: str = DEFAULT_LANG) -> str:
+
+def word_ipa(word: str, lang: str = DEFAULT_LANG, stress: bool = True) -> str:
     """Transcribe one diacritized *word* via the shared lattice + rescorers.
 
     Concatenates the best (lowest-cost) candidate of each rescored slot.
     Input must be diacritized (tashkeel) — the same contract the ar spec
     and arbtok share. *lang* selects the variety; see :func:`word_lattice`.
+
+    *stress* marks the stressed syllable. Arabic stress is quantity-sensitive —
+    it falls on a syllable because that syllable is *heavy*, and weight is a
+    property of the transcription, not of the spelling — so it can only be
+    placed once the IPA exists. Given diacritized input, weight is fully
+    determined and the placement is exact: superheavy final (kiˈtaːb) > heavy
+    penult (muˈdarris) > antepenult (ˈmadrasa). See the spec's stress block.
+
+    It matters for TTS: stress drives vowel duration and prominence, and getting
+    it wrong is one of the loudest cues of a non-native-sounding voice. Turn it
+    off for a consumer that scores against stress-free gold.
     """
-    return "".join(slot.top.ipa for slot in word_lattice(word, lang))
+    ipa = "".join(slot.top.ipa for slot in word_lattice(word, lang))
+    return stress_ipa(ipa, lang) if stress else ipa
 
 
 _ALL_DIACRITICS = _HARAKAT | {SHADDA, "ٰ", "ٓ"}

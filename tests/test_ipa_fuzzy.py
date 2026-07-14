@@ -39,6 +39,13 @@ MAX_GOLD_CER = 5
 MAX_GOLD_WER = 20
 DEBUG = False  # set to True to enable failing tests for visual inspection
 
+# Every gold set scored here — arbtok's own and the external ones (opendict,
+# neurlang) — is a SEGMENT gold: none of them carries a stress mark. Scoring a
+# symbol the gold never writes measures notation, not accuracy, which is the same
+# reason orthography2ipa's own benchmark strips stress from both sides by default.
+# So the hypotheses are built unstressed. Stress has its own tests.
+
+
 
 def test_gold_cer():
     total_chars = 0
@@ -47,7 +54,7 @@ def test_gold_cer():
     total_word_errors = 0
 
     for text, expected, _ in ALL_TEST_CASES:
-        result = Sentence(text).ipa
+        result = Sentence(text, stress=False).ipa
 
         expected = expected.strip()
         cer = jiwer.cer(expected, result) * 100
@@ -81,7 +88,7 @@ def test_better_than_espeak():
             replace(".", ""). \
             replace("ˈ", ""). \
             replace("ˌ", "")
-        result = Sentence(text).ipa
+        result = Sentence(text, stress=False).ipa
 
         expected = expected.strip()
         cer = jiwer.cer(expected, result) * 100
@@ -160,7 +167,7 @@ def test_max_tashkeel_errors_ambiguous():
 
     for text, expected, _ in AMBIGUOUS_TESTS[:N_WORDS]:
         diacritized = tashkeel.diacritize(text, pausal=True)
-        result = Sentence(diacritized).ipa
+        result = Sentence(diacritized, stress=False).ipa
 
         expected = expected.strip()
 
@@ -180,7 +187,7 @@ def test_max_tashkeel_errors_unambiguous():
 
     for text, expected, _ in UNAMBIGUOUS_TESTS[:N_WORDS]:
         diacritized = tashkeel.diacritize(text, pausal=True)
-        result = Sentence(diacritized).ipa
+        result = Sentence(diacritized, stress=False).ipa
 
         expected = expected.strip()
 
@@ -239,7 +246,7 @@ def test_max_lexicon_errors():
 
     for text, expected, _ in LEXICON_TESTS:
         diacritized = tashkeel.diacritize(text, pausal=True)
-        result = Sentence(diacritized).ipa
+        result = Sentence(diacritized, stress=False).ipa
         expected = expected.strip()
 
         cer = jiwer.cer(expected, result) * 100

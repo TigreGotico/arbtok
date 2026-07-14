@@ -1,5 +1,11 @@
-"""
-gold test set defined in arbtok.test
+"""gold test set defined in arbtok.test
+
+arbtok's reference gold is a SEGMENT gold: it was authored as phonemes and
+carries no stress marks. So these tests build their hypotheses unstressed and
+compare like with like.
+
+Stress is prosody, not a segment, and it has its own tests in test_stress.py —
+where it can be asserted precisely rather than smeared across 140 gold entries.
 """
 import string
 
@@ -18,7 +24,7 @@ def test_hardcoded_wordlist():
 def test_punctuation_preservation():
     """Ensure non-Arabic characters and punctuation are handled correctly."""
     text = "يَوْم جميل!"
-    result = Sentence(text).ipa
+    result = Sentence(text, stress=False).ipa
     assert "!" in result
     assert result.startswith("jawm")
 
@@ -62,6 +68,6 @@ def test_arabic_to_ipa(arabic_text, expected_ipa, description, request):
     if arabic_text in KNOWN_RULE_GAPS:
         request.node.add_marker(
             pytest.mark.xfail(reason="known rule gap", strict=False))
-    result = Sentence(arabic_text).ipa
+    result = Sentence(arabic_text, stress=False).ipa
     assert result.strip(PUNCT + string.whitespace) == expected_ipa.strip(
         PUNCT + string.whitespace), f"Failed {description}: Input '{arabic_text}'"
