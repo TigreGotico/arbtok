@@ -365,10 +365,6 @@ def defers_to_cascade(word: str) -> bool:
     it and must stay on arbtok's sentence/lexical cascade until the o2i
     ar-spec gaps are resolved, so the public output never regresses:
 
-    - **word-initial إ (alif-hamza-below)** — whether it is hamzat al-qaṭʿ
-      (kept: إِلَّا → ``ʔillaː``) or hamzat al-waṣl (elided: إِيمَان →
-      ``iːmaːn``) is *lexically* conditioned and unknowable from the
-      orthography alone;
     - **a proclitic (و ف ب ك ل س …) prefixed to a stem carrying an internal
       hamzat al-waṣl or the article** — the waṣl elision spans the
       proclitic↔stem boundary (وَبِاسْمِ → ``wabismi``), a cross-word effect.
@@ -379,9 +375,6 @@ def defers_to_cascade(word: str) -> bool:
     if any(c in PUNCT for c in norm):
         # Trailing punctuation marks a pausal form (tanwīn/tāʾ-marbūṭa
         # shortening) — an utterance-level effect the cascade owns.
-        return True
-    bare = "".join(c for c in norm if c not in _ALL_DIACRITICS)
-    if bare[:1] == ALEF_HAMZA_BELOW:
         return True
     # Peel leading proclitics (a clitic-base consonant + optional harakah);
     # if the stem then opens with a waṣl-alif or the article lām (بِاسْمِ,
