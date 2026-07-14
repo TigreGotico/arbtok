@@ -472,6 +472,10 @@ class WordToken:
         if self.is_reference_register and self.surface in WORD_EXCEPTIONS:
             return WORD_EXCEPTIONS[self.surface]
 
+        lattice_ipa = self._lattice_ipa()
+        if lattice_ipa is not None:
+            return lattice_ipa
+
         ipa = "".join([tok.ipa for tok in self.tokens])
         # HACK: Normalize double length markers if they occur
         # TODO: improve CharToken.ipa to avoid these mistakes in the first place
@@ -483,6 +487,47 @@ class WordToken:
         for k, v in replacements.items():
             ipa = ipa.replace(k, v)
         return ipa.strip()
+
+    def _lattice_ipa(self):
+        """This word's IPA from the shared lattice, or ``None`` to use the cascade.
+
+        The cascade reads the grapheme layer only: it never applied the variety's
+        ``allophone_rules``, so the same word came out differently depending on
+        whether it was transcribed alone or in a sentence — Najdi قَهْوَة was
+        ˈɡahawa as a word and ˈɡahwa in an utterance, the gahawa epenthesis
+        silently missing. The rules cannot be applied to the assembled string
+        either: gahawa is conditioned on SYLLABLE POSITION, which only the lattice
+        knows.
+
+        So the word's own phonology comes from the lattice, and the cascade keeps
+        what only it can do — the cross-word effects. The one it applies to a
+        word's *first* segment is waṣl: the article's ``a`` elides after a
+        proclitic or a vowel-final word, which is a fact about the neighbour, not
+        about this word, so it is re-applied here.
+
+        Returns ``None`` for the words the lattice cannot own — those needing the
+        lexical/cross-word rules it lacks (:func:`~arbtok.lattice.defers_to_cascade`).
+        """
+        from arbtok.lattice import defers_to_cascade, word_ipa
+
+        if defers_to_cascade(self.surface):
+            return None
+
+        ipa = word_ipa(self.surface, self.lang, stress=False)
+        if not ipa:
+            return None
+
+        # The cascade's one surviving experimental fixup, kept so the two paths
+        # cannot disagree on it.
+        ipa = ipa.replace("idʒt", "ijt")
+
+        if self.has_definite_article and self.prev_word is not None and (
+                self.prev_word.is_proclitic or self.prev_word.end_with_vowel):
+            # Cross-word waṣl: the article's vowel is not pronounced after a
+            # proclitic or a vowel — "fiː albajt" is "fiː lbajt".
+            ipa = ipa[1:] if ipa[:1] in ("a", "ɑ") else ipa
+
+        return ipa
 
     def __eq__(self, other) -> bool:
         if isinstance(other, str):
@@ -541,7 +586,12 @@ class Sentence:
           - When concatenating into a following definite article 'ال', drop the article's initial 'a'
             (the short article vowel) to model wasl-elision: e.g. "بِ الْمَدِينَة" -> "bi lmadiːna" (not "bi almadiːna").
         """
-        ipa_str = " ".join([w.ipa for w in self.tokens]).replace(" ː", "ː ").strip()
+        # A word's own phonology comes from the lattice; what happens BETWEEN
+        # words does not, and cannot — see arbtok.sandhi.
+        from arbtok.sandhi import apply_cross_word
+        pieces = apply_cross_word(
+            [(w.ipa, w.surface, w.is_punct) for w in self.tokens])
+        ipa_str = " ".join(pieces).replace(" ː", "ː ").strip()
 
         # HACK: experimentally determined
         # TODO - handle remove whitespaces better

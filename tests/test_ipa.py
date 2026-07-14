@@ -52,14 +52,28 @@ KNOWN_RULE_GAPS = {
     "فِي الْبَيْت",
     "كِتَابٌ عَلَى الْمَكْتَب",
     "مَأْسَاة",
-    "مَنْ يَقُولُ",
     "مِنْ تَحْت",
     "مْسَلَّة",
     "وَاسْمُه",
     "يَوْمُ الشَّمْس",
 }
 
+#: arbtok's reference gold is a BROAD transcription: it writes /a/ where the
+#: engine, applying the spec's cited emphatic-spreading rules, backs the vowel to
+#: [ɑ] next to an emphatic (Watson 2002, ch. Emphasis). Scoring the narrow form
+#: against a broad gold penalises the engine for being MORE precise than the
+#: reference, which measures notation rather than accuracy — the same reason
+#: orthography2ipa's benchmark compares at the gold's tier. So the comparison is
+#: made broad on both sides. The backing itself is asserted directly in
+#: test_spec_dialects.py, where it can be checked rather than smeared.
+def broad(ipa: str) -> str:
+    """Fold the narrow emphatic vowels onto the gold's broad tier."""
+    return ipa.replace("ɑː", "aː").replace("ɑ", "a")
+
+
 @pytest.mark.parametrize("arabic_text, expected_ipa, description", ALL_TEST_CASES)
+
+
 def test_arabic_to_ipa(arabic_text, expected_ipa, description, request):
     """
     Parametrized test to verify Arabic to IPA conversion.
@@ -69,5 +83,6 @@ def test_arabic_to_ipa(arabic_text, expected_ipa, description, request):
         request.node.add_marker(
             pytest.mark.xfail(reason="known rule gap", strict=False))
     result = Sentence(arabic_text, stress=False).ipa
-    assert result.strip(PUNCT + string.whitespace) == expected_ipa.strip(
-        PUNCT + string.whitespace), f"Failed {description}: Input '{arabic_text}'"
+    assert broad(result.strip(PUNCT + string.whitespace)) == broad(
+        expected_ipa.strip(PUNCT + string.whitespace)
+    ), f"Failed {description}: Input '{arabic_text}'"
