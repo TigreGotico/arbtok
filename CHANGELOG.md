@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a13](https://github.com/TigreGotico/arbtok/tree/0.0.0a13) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a12...0.0.0a13)
+
+**Merged pull requests:**
+
+- feat: one engine per word, and a real cross-word layer [\#15](https://github.com/TigreGotico/arbtok/pull/15) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a12](https://github.com/TigreGotico/arbtok/tree/0.0.0a12) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a11...0.0.0a12)
