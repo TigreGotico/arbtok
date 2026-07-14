@@ -13,7 +13,7 @@ import pytest
 from arbtok.dialects import spec_for_lang
 from arbtok.lattice import word_ipa
 from arbtok.plugin import ArbtokG2PPlugin
-from orthography2ipa.g2p_plugin import WordContext
+from orthography2ipa import WordContext
 
 
 # ─── the allophone rules of a variety fire ──────────────────────────────
