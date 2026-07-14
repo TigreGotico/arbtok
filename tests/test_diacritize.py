@@ -16,7 +16,9 @@ from arbtok.plugin import ArbtokG2PPlugin
 
 @pytest.fixture(scope="module")
 def diacritizer():
-    return LatticeDiacritizer()
+    # The guards under test are the MODEL's. A lexicon would answer first and
+    # the proposal being guarded would never be made.
+    return LatticeDiacritizer(lexicon=None)
 
 
 # ─── guard 1: only act where the writing is silent ──────────────────────
@@ -123,7 +125,7 @@ def test_diacritization_can_be_turned_off():
 
 def test_waqf_is_applied_by_default():
     """The models restore the full iʿrāb; speech does not pronounce it."""
-    out = LatticeDiacritizer(waqf=True).diacritize("كتب الدرس")
-    full = LatticeDiacritizer(waqf=False).diacritize("كتب الدرس")
+    out = LatticeDiacritizer(waqf=True, lexicon=None).diacritize("كتب الدرس")
+    full = LatticeDiacritizer(waqf=False, lexicon=None).diacritize("كتب الدرس")
     assert out != full
     assert full.endswith("َ") or full.endswith("ُ") or full.endswith("ِ")

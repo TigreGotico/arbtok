@@ -51,11 +51,22 @@ _KASRA = "ِ"     # ِ
 _ALIF = "ا"      # ا
 _MARKS = "ًٌٍَُِّْٰ"
 
-#: Function words ending in a bare ⟨ي⟩ that is a long vowel, not a nisba. A closed
-#: class, so it is a list: relative pronouns and the demonstrative/particle ذي.
+#: A bare final ⟨ي⟩ that is a long vowel, not the nisba suffix. A closed class, so
+#: it is a list rather than a rule.
+#:
+#: The nisba is formed on a NOUN or ADJECTIVE — it makes a relative adjective out of
+#: a thing (مِصْر → مِصْرِيّ). A **preposition** has no nisba to form, so a final ⟨ي⟩
+#: on one is not the suffix at all: it is the 1sg clitic ‑ī, 'me/my'. عِنْدِي is
+#: 'I have', not *'ʕindijj'. Prepositions are a closed class, which is what makes
+#: this statable (Wright I §§ 349-353).
 NOT_NISBA: Set[str] = {
+    # relative pronouns and demonstratives
     "الذي", "التي", "ذي", "اللذي", "اللتي",
-    "في", "لي", "بي", "هي", "الاولي", "علي",
+    # preposition (or quasi-preposition) + the 1sg clitic
+    "عندي", "لدي", "إلي", "الي", "علي", "في", "لي", "بي", "معي", "مني", "عني",
+    # pronouns
+    "هي",
+    "الاولي",
 }
 
 

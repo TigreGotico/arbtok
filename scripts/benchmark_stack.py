@@ -24,6 +24,9 @@ The arms, bottom of the stack upward
                        diacritizer's output.
 ``arbtok+t2t (no waqf)`` the same, keeping the full iʿrāb. The gold is mostly
                        pausal, so this prices the case endings.
+``arbtok+lex+t2t``     the same, with the diacritized-stem lexicon consulted first
+                       (:mod:`arbtok.lexicon`). Which vowels a word carries is a
+                       lexical fact; this is the arm that stops guessing at it.
 ``espeak``             espeak-ng's Arabic — the external baseline everyone else
                        uses, and the number to beat.
 
@@ -53,6 +56,8 @@ from typing import Callable, Dict, List, Tuple
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from benchmark_diacritization import load_gold  # noqa: E402
 
+from arbtok.lexicon import DEFAULT_LEXICON  # noqa: E402
+
 
 def normalize(ipa: str) -> str:
     """Strip what the arms are not being asked about: stress and segmentation."""
@@ -69,17 +74,17 @@ def edit_distance(a: str, b: str) -> int:
     return prev[-1]
 
 
-def build_stack(lang: str) -> Dict[str, Callable[[str], str]]:
+def build_stack(lang: str, lexicon: str) -> Dict[str, Callable[[str], str]]:
     from orthography2ipa import G2P
 
     from arbtok.diacritize import LatticeDiacritizer
     from arbtok.plugin import ArbtokG2PPlugin
 
     o2i = G2P(lang)
-    guarded = LatticeDiacritizer(lang=lang)
-    guarded_full = LatticeDiacritizer(lang=lang, waqf=False)
+    guarded_full = LatticeDiacritizer(lang=lang, waqf=False, lexicon=None)
     arbtok_bare = ArbtokG2PPlugin(lang=lang, diacritize=False)
-    arbtok_full = ArbtokG2PPlugin(lang=lang, diacritize=True)
+    arbtok_full = ArbtokG2PPlugin(lang=lang, diacritize=True, lexicon=None)
+    arbtok_lex = ArbtokG2PPlugin(lang=lang, diacritize=True, lexicon=lexicon)
 
     def raw_t2t():
         """text2tashkeel with no lattice guard — the model's own unchecked guess."""
@@ -99,6 +104,8 @@ def build_stack(lang: str) -> Dict[str, Callable[[str], str]]:
         "arbtok+t2t": lambda w: arbtok_full.transcribe_word(arbtok_full.normalize(w)),
         "arbtok+t2t (no waqf)": lambda w: arbtok_bare.transcribe_word(
             guarded_full.diacritize_word(w)),
+        "arbtok+lex+t2t": lambda w: arbtok_lex.transcribe_word(
+            arbtok_lex.normalize(w)),
         "espeak": espeak,
     }
 
@@ -133,6 +140,9 @@ def main() -> int:
                     help="score a sample of this size, spread ACROSS the gold. "
                          "The gold is sorted alphabetically, so taking the first "
                          "N would score only the words that start with alif.")
+    ap.add_argument("--lexicon", default=DEFAULT_LEXICON,
+                    help="the stem lexicon the lexicon arm consults: a path, a "
+                         "URL, or an hf:// id")
     ap.add_argument("--arms", default="",
                     help="comma-separated subset; default is the whole stack")
     args = ap.parse_args()
@@ -142,7 +152,7 @@ def main() -> int:
         stride = len(pairs) // args.limit
         pairs = pairs[::stride][:args.limit]
 
-    stack = build_stack(args.lang)
+    stack = build_stack(args.lang, args.lexicon)
     if args.arms:
         wanted = [a.strip() for a in args.arms.split(",")]
         stack = {k: v for k, v in stack.items() if k in wanted}
