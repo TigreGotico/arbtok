@@ -85,3 +85,42 @@ def test_stress_ipa_needs_a_vowel():
 
 def test_stress_words_marks_each_word():
     assert stress_words("kitaːb dʒamiːl") == "kiˈtaːb dʒaˈmiːl"
+
+
+# ─── cross-word phonology (arbtok.sandhi) ───────────────────────────────
+
+@pytest.mark.parametrize("text,expected,rule", [
+    ("مِنْ رَبِّهِمْ", "mir rabbihim", "idghām: n → r"),
+    ("مَنْ يَقُولُ", "maj jaquːlu", "idghām: n → j"),
+    ("مِنْ بَيْتِكَ", "mim bajtika", "iqlāb: n → m before b"),
+])
+def test_nun_assimilates_to_what_follows(text, expected, rule):
+    """A final /n/ is written, and it is not pronounced — it takes the shape of
+    the next word's onset. No word-level engine can see this."""
+    from arbtok.plugin import ArbtokG2PPlugin
+    assert ArbtokG2PPlugin(stress=False).transcribe(text) == expected, rule
+
+
+@pytest.mark.parametrize("text,expected,why", [
+    ("قَلَمٌ", "qalamun", "no pause is written, so the ending stands"),
+    ("مَدِينَةٌ.", "madiːna .", "at a pause the tanwīn goes, and the tāʾ with it"),
+    ("قَهْوَةً.", "qahwa .", "the tāʾ was only voiced by the ending that just left"),
+    ("كِتَابًا.", "kitaːbaː .", "tanwīn al-fatḥ lengthens rather than vanishing"),
+    ("مُؤْمِن", "muʔmin", "-in here is the WORD, not a case ending"),
+    ("مِنْ لَبَن", "millaban", "…and so is the -an of laban"),
+])
+def test_the_pause_removes_only_a_case_ending(text, expected, why):
+    """Driven by the spelling. A tanwīn is written; guessing it from the last two
+    characters of the IPA confuses an ending with a stem and eats the word."""
+    from arbtok.plugin import ArbtokG2PPlugin
+    assert ArbtokG2PPlugin(stress=False).transcribe(text) == expected, why
+
+
+def test_a_word_and_a_sentence_agree_on_a_varietys_phonology():
+    """The gahawa epenthesis fired in the word lattice and not in the cascade, so
+    the same word had two transcriptions depending on how you asked for it."""
+    from arbtok.plugin import ArbtokG2PPlugin
+    p = ArbtokG2PPlugin(lang="ar-SA-x-najd", stress=False)
+    assert p.transcribe_word("قَهْوَة") == "ɡahawa"
+    assert p.transcribe("قَهْوَة") == "ɡahawa"
+    assert p.transcribe("أُرِيدُ قَهْوَة").endswith("ɡahawa")
