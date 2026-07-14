@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a14](https://github.com/TigreGotico/arbtok/tree/0.0.0a14) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a13...0.0.0a14)
+
+**Merged pull requests:**
+
+- refactor: stop subclassing G2PPlugin — it was never a plugin [\#16](https://github.com/TigreGotico/arbtok/pull/16) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a13](https://github.com/TigreGotico/arbtok/tree/0.0.0a13) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a12...0.0.0a13)
