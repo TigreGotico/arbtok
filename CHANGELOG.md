@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a17](https://github.com/TigreGotico/arbtok/tree/0.0.0a17) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a16...0.0.0a17)
+
+**Merged pull requests:**
+
+- fix: restore the nisba's shadda, which the writing does not print [\#19](https://github.com/TigreGotico/arbtok/pull/19) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a16](https://github.com/TigreGotico/arbtok/tree/0.0.0a16) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a15...0.0.0a16)
