@@ -9,27 +9,29 @@ the phonemizer will faithfully transcribe the hallucination.
 
 arbtok is the one library that knows about both the diacritizer and the
 orthography2ipa lattice, so it is where the two meet. The model **proposes**; the
-lattice **disposes**:
+lattice **disposes**.
+
+Two of the three guards this once carried have **moved upstream**, where they
+belong. text2tashkeel now decodes under an orthographic constraint of its own
+(:mod:`text2tashkeel.orthography`): it cannot rewrite a letter the writing spells,
+and it cannot overwrite a mark a human wrote, because the classes that would do so
+are masked out before the argmax. Those are facts about Arabic and about the
+model's class space — no lattice is needed to know them, so no lattice should have
+to.
+
+What is left here is the part that genuinely needs a lattice:
 
 1. **Only act where the writing is actually silent.** orthography2ipa reports
-   which letters are underdetermined (:func:`~orthography2ipa.is_underdetermined`).
-   A word that already carries its marks is left exactly as written — a human's
-   tashkeel is evidence, and a model must never overwrite it.
-2. **The skeleton is inviolable.** Strip the marks back off the model's output
-   and it must be the word we handed it. A diacritizer may add marks; it may not
-   add, drop or change a *letter*. (The rawi models also restore a hamza and the
-   dagger-alef — a documented widening of the task — so those specific letter
-   restorations are allowed, and nothing else is.) A word whose letters were
-   rewritten anyway is **repaired, not discarded**: the marks are usually still
-   right, so they are kept and our letter is put back
-   (:func:`repair_skeleton`).
-3. **The result must be licensed.** The diacritized word is tokenized against the
-   variety's own grapheme table. If any part of it does not map — if the model
-   produced a mark sequence the orthography does not admit — the word is rejected.
+   which letters are underdetermined (:func:`~orthography2ipa.is_underdetermined`),
+   so a fully-marked word is never handed to a model at all.
+2. **The result must be licensed.** The diacritized word is tokenized against the
+   *variety's own* grapheme table. A mark sequence the orthography does not admit
+   is not an answer, and only the spec knows which those are.
 
-A rejected proposal falls back to the word as written. That is the honest
-outcome: an underdetermined reading, which orthography2ipa will report as such,
-rather than a confident wrong one.
+A refused proposal falls back to the word as written — an underdetermined reading,
+which orthography2ipa reports as such, rather than a confident wrong one. The
+skeleton check stays as a cheap backstop: it should now never fire, and if it does,
+something upstream has regressed.
 """
 
 from __future__ import annotations

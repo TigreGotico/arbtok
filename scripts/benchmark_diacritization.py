@@ -16,10 +16,11 @@ Arms
 ``bare``        arbtok straight on the skeleton, no diacritization. The floor:
                 whatever the engine can read from consonants alone.
 ``t2t``         arbtok on ``LatticeDiacritizer`` output — the shipped system.
-``t2t-raw``     the same, with the lattice guards OFF (the model's proposal is
-                taken as-is). Isolates what the guards are worth.
 ``t2t-full``    guarded, but with the full iʿrāb kept (waqf off). The gold is
                 pausal, so this measures what dropping the endings buys.
+``unconstrained`` the same, but with text2tashkeel's orthographic constraints
+                turned off — the model may rewrite a letter the writing spells and
+                overwrite a mark a human wrote.
 ``espeak``      espeak-ng's Arabic, the external baseline everyone else uses.
 
 Metrics
@@ -125,18 +126,21 @@ def build_arms(names: List[str], lang: str) -> Dict[str, Callable[[str], str]]:
         plugin = ArbtokG2PPlugin(lang=lang, diacritize=True)
         arms["t2t"] = lambda w: plugin.transcribe_word(plugin.normalize(w))
 
-    if "t2t-raw" in names:
-        # The guards off: take the model's proposal verbatim.
-        from text2tashkeel import Diacritizer
-        raw = Diacritizer(waqf=True)
-        bare = ArbtokG2PPlugin(lang=lang, diacritize=False)
-        arms["t2t-raw"] = lambda w: bare.transcribe_word(raw.diacritize(w))
-
     if "t2t-full" in names:
         guarded_full = LatticeDiacritizer(lang=lang, waqf=False)
         bare = ArbtokG2PPlugin(lang=lang, diacritize=False)
         arms["t2t-full"] = lambda w: bare.transcribe_word(
             guarded_full.diacritize_word(w))
+
+    if "unconstrained" in names:
+        # text2tashkeel with its orthographic constraints OFF: the model is free
+        # to rewrite a letter the writing spells and to overwrite a human's marks.
+        from text2tashkeel import Diacritizer
+        loose = Diacritizer(waqf=True, preserve_orthography=False,
+                            respect_existing=False)
+        bare_plugin = ArbtokG2PPlugin(lang=lang, diacritize=False)
+        arms["unconstrained"] = lambda w: bare_plugin.transcribe_word(
+            loose.diacritize(w))
 
     if "espeak" in names:
         from arbtok.espeak_wrapper import EspeakPhonemizer
@@ -173,7 +177,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--limit", type=int, default=0, help="0 = the whole gold set")
     ap.add_argument("--lang", default="ar")
-    ap.add_argument("--arms", default="bare,t2t,t2t-raw,t2t-full")
+    ap.add_argument("--arms", default="bare,t2t,t2t-raw,masked")
     args = ap.parse_args()
 
     pairs = load_gold(args.limit)
