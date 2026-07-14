@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a16](https://github.com/TigreGotico/arbtok/tree/0.0.0a16) (2026-07-14)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a15...0.0.0a16)
+
+**Merged pull requests:**
+
+- fix: require orthography2ipa\>=5.2.2a1 — syllable weight in segments [\#18](https://github.com/TigreGotico/arbtok/pull/18) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a15](https://github.com/TigreGotico/arbtok/tree/0.0.0a15) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a14...0.0.0a15)
