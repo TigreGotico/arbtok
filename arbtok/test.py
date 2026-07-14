@@ -149,7 +149,9 @@ WEAK_TESTS = [
     ("تَوَاصَلُوا", "tawaːsˤaluː", "Broken plurals / weak radicals"),
 
     # Weak root nouns
-    ("إِيْمَان", "iːmaːn", "Weak root nouns"),
+    # ⟨إ⟩ carries a written hamza: hamzat al-qaṭʿ, always pronounced
+    # (Wright I §19). Waṣl is written with a BARE alif.
+    ("إِيْمَان", "ʔiːmaːn", "Weak root nouns"),
     ("انْتِمَاء", "intimaːʔ", "Weak root nouns"),
 
     # Defective Verbs (Final weak radicals)

@@ -181,7 +181,6 @@ from arbtok.lattice import defers_to_cascade  # noqa: E402
 
 
 @pytest.mark.parametrize("word", [
-    "إِيْمَان",     # word-initial إ: waṣl vs qaṭʿ is lexical
     "وَبِاسْمِ",    # proclitic + internal hamzat al-waṣl (cross-word)
     "فَبِالْحَقِّ",  # proclitic + article
     "مَرْحَبًا!",   # trailing punctuation → pausal (utterance-level)
@@ -194,6 +193,8 @@ def test_lexical_and_crossword_words_defer(word):
 
 @pytest.mark.parametrize("word", [
     "الشَّمْس", "الْقَمَر", "كِتَاب", "يَوْم", "عُيِّنَ", "أَبْوَاب",
+    # ⟨إ⟩ carries a written hamza, so it is always hamzat al-qaṭʿ.
+    "إِيْمَان", "إِلَّا", "إِحْسَاس",
 ])
 def test_flagship_words_do_not_defer(word):
     """The lattice-handled words are not needlessly deferred."""
