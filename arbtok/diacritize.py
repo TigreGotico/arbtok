@@ -41,6 +41,7 @@ from typing import List, Optional
 from orthography2ipa import get, is_underdetermined
 from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
 
+from arbtok.nisba import restore_nisba
 from arbtok.dialects import DEFAULT_LANG
 from arbtok.tokenizer import normalize_unicode
 
@@ -188,7 +189,13 @@ class LatticeDiacritizer:
             self.repaired.append(word)
             proposed = repaired
 
-        # (3) The orthography must license the result.
+        # (3) The nisba's shadda is not printed, and the model does not restore
+        # it: عربي comes back as a bare yāʾ and reads /ʕarbiː/, not /ʕarabijj/.
+        # Put the mark back before licensing, so the result is held to the
+        # grapheme table like any other proposal.
+        proposed = restore_nisba(proposed)
+
+        # (4) The orthography must license the result.
         if not self._is_licensed(proposed):
             self.rejected.append(word)
             return word
