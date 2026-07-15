@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a20](https://github.com/TigreGotico/arbtok/tree/0.0.0a20) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a19...0.0.0a20)
+
+**Merged pull requests:**
+
+- feat: per-lect TTS-gold benchmark \(diacritized + undiacritized\) [\#22](https://github.com/TigreGotico/arbtok/pull/22) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a19](https://github.com/TigreGotico/arbtok/tree/0.0.0a19) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a18...0.0.0a19)
