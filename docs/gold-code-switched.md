@@ -23,10 +23,37 @@ TSV, tab-separated, UTF-8, header row:
 | `id` | `<lect>-cs-NNN` |
 | `sentence` | vocalised dialectal Arabic with inline Latin word(s) |
 | `raw` | `sentence` stripped of ḥarakāt (what a keyboard normally produces) |
-| `ipa` | `ArbtokG2PPlugin(lang, diacritize=True, nativize=True, pausal=True).transcribe(sentence)` — **pipeline output, never hand-edited** |
+| `ipa` | `ArbtokG2PPlugin(lang, diacritize=True, nativize=True, pausal=True).transcribe(sentence)` — **pipeline output, never hand-edited** for `pinned` rows; see `pipeline_status` for the `known-wrong` / `unsupported` exceptions |
 | `gloss_en` | English translation |
-| `cs_words` | semicolon list of the embedded Latin words |
-| `notes` | domain tag + which nativisation reflex each Latin word takes (refusals marked), and the cited table that fired |
+| `cs_words` | semicolon list of the embedded switched words |
+| `notes` | domain tag + which nativisation reflex each switched word takes (refusals marked), and the cited table that fired |
+| `pipeline_status` | *(optional)* `pinned` (default when absent) / `known-wrong` / `unsupported` — governs whether `validate` re-runs the pipeline on the row (see below) |
+
+### `pipeline_status` — pinned vs. authentic-but-unpinned rows
+
+The template files (frame-built, one reused frame set per zone) omit the column
+entirely and every row is implicitly `pinned`: `validate` re-runs
+`transcribe(sentence)` and asserts equality, so the file is a pure regression
+gate. Hand-authored *authentic* files (e.g. `ar-EG`, written in the lect's real
+code-switching register rather than the shared frames) add the column so a row
+can carry IPA the pipeline does **not** produce, without hiding that fact:
+
+- `pinned` — `ipa` **is** the pipeline output; re-run and asserted equal (the
+  regression pin, and the no-Latin-leakage check). This is the only status the
+  old files use, so their behaviour is unchanged.
+- `known-wrong` — an Arabic-script loanword the pipeline mis-reads (e.g. Cairene
+  موبايل: pipeline emits `lmuˈːbaːjil`, reading و as [uː] not the loan mid vowel
+  [o]). `ipa` holds the **correct** attested loan pronunciation; the pipeline's
+  wrong output and the divergence are spelled out in `notes`. Never ship wrong
+  IPA as gold — the correct value is pinned and the bug is documented for a later
+  `arbtok.translit` fix.
+- `unsupported` — an Arabizi row (Latin-written Arabic, *3arabi/7abibi* style).
+  The pipeline never sniffs a Latin run as Arabic, so it has no path for these;
+  `ipa` is the derived Cairene reading of the Arabic the row spells.
+
+`validate` (and the pytest gate) only pin `pipeline_status == "pinned"` rows;
+`known-wrong` / `unsupported` rows are still schema-, `raw`- and dedup-checked
+but are not re-run against `transcribe`.
 
 ## Provenance & honesty
 
@@ -36,11 +63,13 @@ TSV, tab-separated, UTF-8, header row:
   editor to be natural and are grounded in the dialectology each lect's spec
   cites, but they have **not** been checked by a native speaker. The Arabic
   spec `quality` is `research`, not `production`.
-- **The `ipa` column is machine output.** `scripts/gold_code_switched.py build`
-  regenerates it; `validate` (and `tests/test_gold_code_switched.py`) re-run the
-  pipeline and assert equality. If the pipeline is wrong, fix `arbtok.translit`
-  (cited) and rebuild — the IPA is never hand-corrected (ground rule #3: no
-  benchmark hacking).
+- **The `ipa` column is machine output** for `pinned` rows. `validate` (and
+  `tests/test_gold_code_switched.py`) re-run the pipeline and assert equality. If
+  the pipeline is wrong for a *Latin-embed* row, fix `arbtok.translit` (cited) and
+  rebuild — that IPA is never hand-corrected (ground rule #3: no benchmark
+  hacking). The `known-wrong` and `unsupported` rows (see `pipeline_status`) carry
+  hand-authored, source-cited IPA precisely because the pipeline cannot produce
+  the right value yet; they are documented, not hidden, and are not pinned.
 - **Frames are reused across lects** with per-zone dialectal adaptation of the
   surrounding function words. The embedded English words and their nativised
   reflexes — the point of the set — are identical inputs across lects, so the
