@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a19](https://github.com/TigreGotico/arbtok/tree/0.0.0a19) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a18...0.0.0a19)
+
+**Merged pull requests:**
+
+- feat: supported\_lects\(\) and pinned MSA-before-allophony pipeline order [\#21](https://github.com/TigreGotico/arbtok/pull/21) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a18](https://github.com/TigreGotico/arbtok/tree/0.0.0a18) (2026-07-14)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a17...0.0.0a18)
