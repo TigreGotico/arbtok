@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a22](https://github.com/TigreGotico/arbtok/tree/0.0.0a22) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a21...0.0.0a22)
+
+**Merged pull requests:**
+
+- feat: one declared waqf \(pausal\) policy; retire arbtok/test.py [\#24](https://github.com/TigreGotico/arbtok/pull/24) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a21](https://github.com/TigreGotico/arbtok/tree/0.0.0a21) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a20...0.0.0a21)
