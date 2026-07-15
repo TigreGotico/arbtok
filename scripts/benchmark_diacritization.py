@@ -135,7 +135,7 @@ def build_arms(names: List[str], lang: str) -> Dict[str, Callable[[str], str]]:
     if "unconstrained" in names:
         # text2tashkeel with its orthographic constraints OFF: the model is free
         # to rewrite a letter the writing spells and to overwrite a human's marks.
-        from text2tashkeel import Diacritizer
+        from text2tashkeel import Diacritizer  # optional, benchmark-only (not an arbtok dependency)
         loose = Diacritizer(waqf=True, preserve_orthography=False,
                             respect_existing=False)
         bare_plugin = ArbtokG2PPlugin(lang=lang, diacritize=False)

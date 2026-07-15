@@ -10,7 +10,7 @@ lattice's constraints never reach back to inform the choice; they can only veto
 it after the fact.
 
 This module closes that loop. rawi is a char-level classifier with an accessible
-per-character distribution (:meth:`text2tashkeel.Diacritizer.logits`), so instead
+per-character distribution (:meth:`arbtok._ensemble.EnsembleDiacritizer.logits`), so instead
 of taking its argmax and hoping the result is licensed, arbtok can enumerate the
 *licensed* diacritizations of a word and let rawi **score** them — picking the
 highest-probability reading the variety's orthography actually admits. The model
@@ -46,9 +46,10 @@ and its whole margin over the shipped pipeline is the set of words whose argmax
 the orthography refuses — where the generator falls back to a bare skeleton and
 the scorer instead recovers the best licensed reading.
 
-Ownership note: this is arbtok code by design (roadmap §T.3 route 4). text2tashkeel
-stays a generic diacritizer that knows nothing of lattices; arbtok is the one
-place that legitimately knows about both it and orthography2ipa.
+Ownership note: this is arbtok code by design (roadmap §T.3 route 4). The bundled
+ensemble (:mod:`arbtok._ensemble`) stays a generic diacritizer that knows nothing
+of lattices; this module is the one place that knows about both it and
+orthography2ipa.
 """
 
 from __future__ import annotations
@@ -59,23 +60,19 @@ from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from orthography2ipa import get, is_underdetermined
+from orthography2ipa import get, underdetermined_positions
 from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
 
 from arbtok.dialects import DEFAULT_LANG
-from arbtok.diacritize import repair_skeleton, strip_marks, _skeleton_is_preserved
+from arbtok.diacritize import (
+    _author_complete, repair_skeleton, strip_marks, _skeleton_is_preserved,
+)
 from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
 from arbtok.lattice import word_lattice
 from arbtok.nisba import restore_nisba
 from arbtok.tokenizer import normalize_unicode
 
 __all__ = ["FusionDiacritizer", "Hypothesis", "logprobs"]
-
-#: The rawi single-head models that expose a per-character distribution. The
-#: stitched flagship folds its gate into the graph and has no distribution left
-#: to score, so fusion uses a single head (see docs/rawi-fusion.md on the cost).
-_DEFAULT_MODEL = "rawi-v2"
-
 
 def logprobs(row: np.ndarray) -> np.ndarray:
     """Numerically-stable log-softmax of one logit row."""
@@ -120,7 +117,6 @@ class FusionDiacritizer:
     def __init__(
         self,
         lang: str = DEFAULT_LANG,
-        model: Optional[str] = None,
         waqf: bool = True,
         lexicon: Optional[str] = DEFAULT_LEXICON,
         beam: int = 8,
@@ -132,7 +128,6 @@ class FusionDiacritizer:
         self.beam = beam
         self.topk = topk
         self.lattice_weight = lattice_weight
-        self._model = model or _DEFAULT_MODEL
         self._diacritizer = None
         self._spec = get(lang)
         self._tokenizer = PhonetokTokenizer(self._spec)
@@ -150,9 +145,12 @@ class FusionDiacritizer:
     @property
     def diacritizer(self):
         if self._diacritizer is None:
-            from text2tashkeel import Diacritizer
-            # waqf is applied by this module (after scoring), not by the model.
-            self._diacritizer = Diacritizer(self._model, waqf=False)
+            # The bundled ensemble reader (logits / decode / diacritize) —
+            # arbtok's own stitched ONNX, exposing the flagship distribution to
+            # score. waqf is applied by this module (after scoring), not by the
+            # model.
+            from arbtok._ensemble import get_ensemble
+            self._diacritizer = get_ensemble()
         return self._diacritizer
 
     # ── licensing (shared with the guarded pipeline) ────────────────────────
@@ -185,19 +183,67 @@ class FusionDiacritizer:
 
     # ── the beam ────────────────────────────────────────────────────────────
 
-    def _beam_search(self, bare_word: str,
-                     word_logits: np.ndarray) -> List[Hypothesis]:
+    def _pins(self, word: str, bare_word: str):
+        """Per position of *bare_word*: the hard constraint the writing imposes.
+
+        A human's mark is an **answer, not a suggestion**: a position that
+        already carries a vocalic mark is pinned to exactly the class that
+        spells it, so no hypothesis can override an explicit sukūn or kasra. A
+        position whose source spells an orthographic mark (hamza, madda) is
+        restricted to the classes carrying exactly that spelling, so no
+        hypothesis can rewrite the letter. Only the genuinely silent positions
+        are left to the model — fusion engages on unmarked positions alone.
+
+        Returns a list (``None`` = free, ``int`` = pinned class id,
+        ``set`` = allowed class ids), or ``None`` when the decompositions
+        disagree and no mask can be trusted (see arbtok.orthography).
+        """
+        from arbtok.orthography import (
+            ORTHOGRAPHIC_MARKS, allowed_classes, pinned_class, source_marks,
+        )
+        src_bare, src_marks = source_marks(word, self.diacritizer._normalize)
+        if src_bare != bare_word or len(src_marks) != len(bare_word):
+            return None
+        classes = self.diacritizer.classes
+        pins: List[object] = []
+        for ch, marks in zip(bare_word, src_marks):
+            if not unicodedata.category(ch).startswith("L"):
+                pins.append(0)
+                continue
+            if marks - ORTHOGRAPHIC_MARKS:      # a human's vocalic mark: pinned
+                pin = pinned_class(classes, marks)
+                pins.append(pin if pin >= 0 else None)
+                continue
+            if marks:                            # spelled hamza/madda: restricted
+                pins.append(set(allowed_classes(classes, marks)))
+                continue
+            pins.append(None)                    # silent: the model's to decide
+        return pins
+
+    def _beam_search(self, bare_word: str, word_logits: np.ndarray,
+                     pins=None) -> List[Hypothesis]:
         """The ``beam`` best class-id assignments for *bare_word*, by summed
-        log-probability. A non-letter position is pinned to the empty class."""
+        log-probability. A non-letter position is pinned to the empty class;
+        *pins* (from :meth:`_pins`) hard-constrains what the writing fixed."""
         beams: List[Tuple[float, Tuple[int, ...]]] = [(0.0, ())]
         for i, ch in enumerate(bare_word):
             row = word_logits[i]
-            if not unicodedata.category(ch).startswith("L"):
+            pin = pins[i] if pins is not None else None
+            if isinstance(pin, (int, np.integer)):
+                # the writing's answer (or a non-letter): one choice, cost-free
+                choices = [(int(pin), 0.0)]
+            elif not unicodedata.category(ch).startswith("L"):
                 choices = [(0, 0.0)]
             else:
                 lp = logprobs(row)
-                order = np.argsort(lp)[::-1][: self.topk]
+                order = np.argsort(lp)[::-1]
+                if isinstance(pin, set):        # restricted to the spelling
+                    order = [c for c in order if int(c) in pin][: self.topk]
+                else:
+                    order = order[: self.topk]
                 choices = [(int(c), float(lp[c])) for c in order]
+                if not choices:
+                    choices = [(0, 0.0)]
             expanded: List[Tuple[float, Tuple[int, ...]]] = []
             for score, ids in beams:
                 for cid, clp in choices:
@@ -206,13 +252,40 @@ class FusionDiacritizer:
             beams = expanded[: self.beam]
         return [Hypothesis(ids, score) for score, ids in beams]
 
+    def _generate(self, orig_word: str, normalized: str,
+                  recovery: bool = False) -> str:
+        """The generator's decision rule for one word — constrained argmax,
+        pausal, skeleton repair, nisba, licensing — byte-identical to
+        :meth:`arbtok.diacritize.LatticeDiacritizer.diacritize_word` past its
+        gates. Used for a partially vocalized word (the writing's answers are
+        completed, never rescored) and as the nothing-licensed fallback."""
+        proposed = self.diacritizer.diacritize(normalized)
+        if self.waqf:
+            from arbtok.waqf import pausal
+            proposed = pausal(proposed)
+        if not _skeleton_is_preserved(normalized, proposed):
+            repaired = repair_skeleton(normalized, proposed)
+            proposed = repaired if repaired is not None else None
+        if proposed is not None:
+            proposed = restore_nisba(proposed)
+            if self._is_licensed(proposed):
+                if recovery:
+                    self.recovered.append(orig_word)
+                return proposed
+        self.rejected.append(orig_word)
+        return orig_word
+
     def _fuse_word(self, orig_word: str, bare_word: str,
                    word_logits: np.ndarray) -> str:
         normalized = normalize_unicode(orig_word)
         self.last_nbest = []
 
-        # (1) The writing already says it.
-        if not is_underdetermined(normalized, self._spec):
+        # (1) The writing already says it — including the author-complete case:
+        # a word whose only silent positions are the definite article's alif/lām
+        # is complete as written (the lattice fixes their reading without a
+        # model), so scoring it would only let the model overrule the author.
+        positions = underdetermined_positions(normalized, self._spec)
+        if _author_complete(normalized, positions):
             return orig_word
 
         # (2) A written-down word is a lexical fact, not a thing to score.
@@ -225,13 +298,27 @@ class FusionDiacritizer:
             self.rejected.append(orig_word)
             return orig_word
 
+        # (2b) A word a human has vocalized — even partially — is the
+        # generator's to complete, not the scorer's. The written marks are an
+        # author's answers; completing the few silent positions is exactly the
+        # constrained argmax the shipped generator applies, and using the same
+        # decision rule keeps vocalized input byte-identical whether fusion is
+        # on or off. Fusion's scoring engages only where the writing is wholly
+        # silent (bare words), which is also the only place its PER margin
+        # comes from.
+        if strip_marks(normalized) != normalized:
+            return self._generate(orig_word, normalized)
+
         # (3) Enumerate, render, keep the licensed ones — scored by rawi.
+        # (Defense in depth: pins re-assert the writing inside the search, so
+        # even a marked word reaching here could not have its marks overridden.)
+        pins = self._pins(normalized, bare_word)
         licensed: List[Hypothesis] = []
-        for hyp in self._beam_search(bare_word, word_logits):
+        for hyp in self._beam_search(bare_word, word_logits, pins):
             rendered = restore_nisba(self.diacritizer.decode(
                 bare_word, list(hyp.class_ids)))
             if self.waqf:
-                from text2tashkeel.waqf import pausal
+                from arbtok.waqf import pausal
                 rendered = pausal(rendered)
             if not self._is_licensed(rendered):
                 continue
@@ -240,23 +327,9 @@ class FusionDiacritizer:
             licensed.append(hyp)
 
         if not licensed:
-            # Nothing the orthography admits: fall back to the argmax reading,
-            # repaired if only its letters (not its marks) were wrong, exactly
-            # as the shipped pipeline does — else leave the word underdetermined.
-            proposed = self.diacritizer.diacritize(normalized)
-            if self.waqf:
-                from text2tashkeel.waqf import pausal
-                proposed = pausal(proposed)
-            if not _skeleton_is_preserved(normalized, proposed):
-                repaired = repair_skeleton(normalized, proposed)
-                proposed = repaired if repaired is not None else None
-            if proposed is not None:
-                proposed = restore_nisba(proposed)
-                if self._is_licensed(proposed):
-                    self.recovered.append(orig_word)
-                    return proposed
-            self.rejected.append(orig_word)
-            return orig_word
+            # Nothing the orthography admits: fall back to the generator's own
+            # reading, exactly as the shipped pipeline decides it.
+            return self._generate(orig_word, normalized, recovery=True)
 
         # Rank: rawi log-probability first, phonotactic cost as the tie-break.
         licensed.sort(
@@ -270,7 +343,7 @@ class FusionDiacritizer:
         # left unlicensed? (The margin this whole path exists to capture.)
         argmax = restore_nisba(self.diacritizer.diacritize(normalized))
         if self.waqf:
-            from text2tashkeel.waqf import pausal
+            from arbtok.waqf import pausal
             argmax = pausal(argmax)
         if not self._is_licensed(argmax):
             self.recovered.append(orig_word)
@@ -310,8 +383,7 @@ class FusionDiacritizer:
         orig_nonempty = [w for w in orig_words if w.strip()]
         if logits is None or len(bare_words) != len(orig_nonempty):
             from arbtok.diacritize import LatticeDiacritizer
-            guard = LatticeDiacritizer(lang=self.lang, model=self._model,
-                                       waqf=self.waqf,
+            guard = LatticeDiacritizer(lang=self.lang, waqf=self.waqf,
                                        lexicon=None if self.lexicon is None
                                        else DEFAULT_LEXICON)
             return guard.diacritize(text)

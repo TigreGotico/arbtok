@@ -1,8 +1,56 @@
 # arbtok
 
-Rule-based **Arabic (MSA) text→IPA** with **tashkeel** diacritization — a
-downstream Arabic engine built on
-[orthography2ipa](https://github.com/TigreGotico/orthography2ipa).
+**Arabic text→IPA** with **dialect-aware tashkeel** diacritization — a
+self-contained Arabic engine built on
+[orthography2ipa](https://github.com/TigreGotico/orthography2ipa), covering MSA,
+Classical, and 30+ regional varieties.
+
+## Dialect-aware tashkeel — the flagship
+
+To our knowledge arbtok is the **only Arabic phonemizer whose diacritization is
+dialect-aware**. Every other pipeline runs an MSA-trained diacritizer and then
+phonemizes whatever it wrote; arbtok turns that pipeline around. The bundled
+rawi neural ensemble (a 4.9 MB stitched ONNX inside the wheel — no network, no
+external model package) exposes its per-character **distribution**, and arbtok
+scores that distribution against **each variety's own phonological licensing**:
+the orthography2ipa grapheme table and allophone rules of the target lect
+(`docs/rawi-fusion.md`). The chosen tashkeel is the model's most probable
+reading *that the dialect's orthography actually admits* — for all 33 supported
+lects, from Najdi and Hejazi to Tunisian, Egyptian, and the qeltu Iraqi of
+Mosul (`docs/dialects.md`).
+
+So the same bare sentence receives variety-appropriate marks and IPA:
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+bare = "ذهب الولد الى المدرسة"                    # undiacritized input
+ArbtokG2PPlugin(lang="ar").transcribe(bare)           # ˈðahab ˈalwalad ˈalaː ˈlmudrasa
+ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)        # ˈðahab ˈalwalad ˈalɛː ˈlmudrasa
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("يشرب القهوة في البيت")
+# ˈjaʃrab alˈɡahawa ˈfiː ˈlbajt   — Najdi /g/ for qāf, epenthetic gahawa vowel
+ArbtokG2PPlugin(lang="ar-TN").transcribe("يشرب القهوة في البيت")
+# ˈjaʃrab alˈqahwa ˈfiː ˈlbiːt    — Tunisian monophthong /iː/ in bayt
+```
+
+Measured on the bare-input TTS gold (33 lects × 20 sentences, mean per-sentence
+phoneme error rate), scoring the ensemble distribution under dialect licensing
+outperforms running the same ensemble as a free generator, with the margin
+concentrated on the lects that diverge most from MSA — the signature of the
+licensing doing the work (`docs/rawi-fusion.md` carries the full table).
+
+Three capabilities define the engine:
+
+1. **Dialect-aware tashkeel** — the fusion scorer above; on by default
+   (`fusion=False` opts out), guarded so a human's marks are never overwritten
+   and a letter the writing spells is never rewritten.
+2. **Per-lect cited loanword nativization** — code-switched Latin words are
+   read out of the *matrix lect's own* inventory, per published loanword
+   literature (Cairene `[manaɡar]` vs Najdi `[manadʒar]`; see below).
+3. **Waqf / register policy** — one declared switch between the spoken pausal
+   register (the TTS default) and full-iʿrāb recitation (see below).
+
+## The lattice underneath
 
 Word phonology is built on the **orthography2ipa shared lattice**: the
 language-agnostic grapheme tokenizer (`PhonetokTokenizer`) over the `ar`
@@ -39,9 +87,8 @@ sentence-level orchestration. orthography2ipa 1.70 also added a shared
 `is_phrase_final`), the sanctioned home for that cross-word layer; arbtok's
 migration of its space-boundary waṣl elision and tanwīn pausal forms onto
 the seam is in progress (see `docs/` and the tracking notes). Bare
-(undiacritized) text is diacritized
-first via [text2tashkeel](https://github.com/TigreGotico/text2tashkeel) —
-a model picker over bundled ONNX diacritization models.
+(undiacritized) text is diacritized first by the bundled rawi ensemble —
+the dialect-aware fusion path above — entirely inside the wheel.
 
 > Honesty note: the gold IPA reference set was LLM-generated and has not been
 > validated by a native MSA speaker. If you speak MSA, pull requests are very
@@ -89,10 +136,12 @@ plugin.transcribe("كتاب جميل")    # auto-tashkeel + IPA
 
 Pass a spec code as `lang=` to phonemize a variety; `arbtok.supported_lects()`
 lists every code it resolves to, with the orthography2ipa quality tier of each.
-Bare (undiacritized) input is restored on MSA orthography **before** dialect
-allophony applies — the diacritizer and stem lexicon are MSA artifacts. See
-[`docs/dialects.md`](docs/dialects.md) for the resolution rules, the supported
-list, and the pinned pipeline order.
+Bare (undiacritized) input is restored **before** dialect allophony applies; the
+model and stem lexicon are MSA artifacts, but the fusion scorer constrains the
+model's distribution to the readings the *target lect's* orthography licenses
+(see the flagship section above and [`docs/rawi-fusion.md`](docs/rawi-fusion.md)).
+See [`docs/dialects.md`](docs/dialects.md) for the resolution rules, the
+supported list, and the pinned pipeline order.
 
 ```python
 import arbtok
@@ -161,7 +210,7 @@ pan-Arabic default.
 ### Diacritization only
 
 ```python
-from arbtok.tashkeel import TashkeelDiacritizer   # wraps text2tashkeel
+from arbtok.tashkeel import TashkeelDiacritizer   # the bundled rawi ensemble
 
 TashkeelDiacritizer().diacritize("كتاب جميل")
 ```

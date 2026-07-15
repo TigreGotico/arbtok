@@ -1,6 +1,10 @@
 # Varieties
 
-A variety is an **orthography2ipa spec**, named by its code:
+A variety is an **orthography2ipa spec**, named by its code — and each variety's
+spec does more than allophony: its grapheme table is the **licensing filter**
+that makes arbtok's tashkeel dialect-aware (the fusion scorer picks the model's
+most probable reading the variety's orthography admits — see
+[rawi-fusion.md](rawi-fusion.md)):
 
 ```python
 from arbtok.plugin import ArbtokG2PPlugin

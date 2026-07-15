@@ -14,7 +14,7 @@ The engine maps arbtok's machinery onto the shared interface:
 
 - ``normalize`` — Unicode/diacritic reordering, number and date
   expansion, and automatic tashkeel diacritization of bare text via
-  ``text2tashkeel`` (failure degrades gracefully to the undiacritized
+  the bundled rawi ensemble (failure degrades gracefully to the undiacritized
   input).
 - ``transcribe_word`` — for an isolated word (no context), the
   orthography2ipa shared lattice: the variety's grapheme table, arbtok's
@@ -74,13 +74,16 @@ class ArbtokG2PPlugin:
                  lexicon: Optional[str] = DEFAULT_LEXICON,
                  nativize: bool = True,
                  pausal: bool = True,
-                 fusion: bool = False) -> None:
+                 fusion: bool = True) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
-        #: Restore tashkeel by *scoring* the orthography's licensed readings with
-        #: the rawi distribution (:mod:`arbtok.fusion`), instead of tokenizing one
-        #: model guess. Off by default — a research path (roadmap §T.3 route 4)
-        #: whose empirical gate is documented in docs/rawi-fusion.md.
+        #: Restore tashkeel by *scoring* the flagship ensemble's licensed readings
+        #: (:mod:`arbtok.fusion`) instead of tokenizing one model guess. On by
+        #: default: scoring the bundled ensemble distribution under the variety's
+        #: own licensing beats the plain generator's mean bare-input PER
+        #: (0.189 vs 0.193), with the margin on the dialect-divergent lects. Set
+        #: ``False`` to opt out. The empirical gate is documented in
+        #: docs/rawi-fusion.md.
         self.fusion = fusion
         #: The variety: any orthography2ipa Arabic spec code.
         self.lang = spec_for_lang(lang)

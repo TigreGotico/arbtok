@@ -122,3 +122,95 @@ def test_alignment_mismatch_falls_back_to_guarded_pipeline():
     f = FusionDiacritizer(lang="ar", lexicon=None)
     out = f.diacritize("، ، ،")  # punctuation-only tokens, an alignment edge
     assert isinstance(out, str)
+
+
+# ── the bundled ensemble distribution (arbtok/_ensemble.py) ──────────────────
+
+_PROBE = [
+    "بسم الله الرحمن الرحيم", "العلم نور والجهل ظلام", "هذا كتاب مفيد",
+    "في التأني السلامة وفي العجلة الندامة", "محمد رسول الله",
+    "الحمد لله رب العالمين", "وإن وهبها لرب الأرض لم يلزمه القبول",
+]
+
+
+def test_ensemble_logits_contract():
+    """`logits(text)` returns `(bare, logits[T, C], classes)` — one row per NFD
+    base character, C == number of classes, and `None` when nothing to mark."""
+    from arbtok._ensemble import get_ensemble
+    d = get_ensemble()
+    bare, logits, classes = d.logits("بسم الله الرحمن الرحيم")
+    assert logits is not None
+    assert logits.shape == (len(bare), len(classes))
+    # nothing to mark (bare skeleton empty) → no distribution
+    empty_bare, empty_logits, _ = d.logits("ًٌٍَُِّْ")  # stray combining marks only
+    assert empty_bare == "" and empty_logits is None
+
+
+def test_ensemble_logits_argmax_equals_the_ensemble_decision():
+    """The correctness gate for scoring the stitched flagship: the argmax of the
+    exposed `gated_logits` distribution is byte-identical to the graph's own
+    `gated_cls` decision at every position, on a probe set. Without this the
+    scorer would be reading a different model than the one that decides."""
+    from arbtok._ensemble import get_ensemble
+    d = get_ensemble()
+    for text in _PROBE:
+        bare, logits, _ = d.logits(text)
+        if logits is None:
+            continue
+        ids = np.array([[d.c2i.get(c, d.unk) for c in bare]], np.int64)
+        gated_cls = d.sess.run(["gated_cls"], {"input": ids})[0][0]
+        assert (logits.argmax(-1) == gated_cls).all(), text
+
+
+def test_ensemble_diacritize_respects_the_writing():
+    """The generator's decision rule masks before the argmax: a madda alif is
+    never rewritten to a hamza (the /aː/ survives), and a mark a human wrote is
+    never overwritten — the arbtok.orthography constraints, applied to the
+    bundled ensemble distribution."""
+    from arbtok._ensemble import get_ensemble
+    d = get_ensemble()
+    # madda preserved: آ must survive in the output
+    assert "آ" in d.diacritize("آبد")
+    # a human's kasra is pinned, not overwritten
+    assert "كِ" in d.diacritize("كِتاب")
+
+
+def test_fusion_never_overrides_written_marks():
+    """A human's mark is an answer, not a suggestion: on the MAIN path an
+    explicit sukūn or kasra survives fusion verbatim (the reviewer-measured
+    regression: الشُّورْبَة must keep /uː...ba/, not come back rescored)."""
+    f = FusionDiacritizer(lang="ar", lexicon=None, waqf=True)
+    for word, kept in [("الشُّورْبَة", "شُّورْبَ"), ("الْجِدِيدَة", "جِدِيدَ")]:
+        out = f.diacritize(word)
+        assert kept in out, (word, out)
+
+
+def test_vocalized_input_identical_fusion_on_and_off():
+    """Fusion engages only where the writing is silent: on (even partially)
+    vocalized input the output is byte-identical with fusion on or off,
+    because a vocalized word is completed by the same generator decision rule."""
+    from arbtok.plugin import ArbtokG2PPlugin
+    sents = [
+        "التَّاير فِيه بَنْشَر لَازِم أُصَلِّحُه",     # partially vocalized loans
+        "ضَاع مِنِّي الْمُوبَايل مِن جَيبِي",
+        "ما كاينْش بْلاصَة فْ الْقَاعَة",
+        "أَعْطِينِي الْفَرْشِيطَة بَاش نَاكُل",
+    ]
+    for lect in ("ar", "ar-IQ", "ar-MA"):
+        on = ArbtokG2PPlugin(lang=lect, diacritize=True)
+        off = ArbtokG2PPlugin(lang=lect, diacritize=True, fusion=False)
+        for s in sents:
+            assert on.transcribe(s) == off.transcribe(s), (lect, s)
+
+
+def test_ensemble_inference_is_deterministic():
+    """Three runs over the same input yield byte-identical logits — the session
+    is single-threaded sequential, so an argmax near-tie cannot flip run-to-run
+    (the flaky-pin class of failures)."""
+    from arbtok._ensemble import EnsembleDiacritizer
+    outs = []
+    for _ in range(3):
+        d = EnsembleDiacritizer()   # fresh session each time
+        bare, logits, _ = d.logits("وإن وهبها لرب الأرض لم يلزمه القبول")
+        outs.append(logits.tobytes())
+    assert outs[0] == outs[1] == outs[2]

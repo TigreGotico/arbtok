@@ -47,3 +47,7 @@ Issues = "https://github.com/TigreGotico/arbtok/issues"
 
 [tool.setuptools.packages.find]
 include = ["arbtok*"]
+
+[tool.setuptools.package-data]
+# The stitched rawi ensemble ONNX (+ its vocab) that fusion scores directly.
+arbtok = ["models/*.onnx", "models/*.json"]

@@ -93,7 +93,7 @@ def build_stack(lang: str, lexicon: str) -> Dict[str, Callable[[str], str]]:
 
     def raw_t2t():
         """text2tashkeel with no lattice guard — the model's own unchecked guess."""
-        from text2tashkeel import Diacritizer
+        from text2tashkeel import Diacritizer  # optional, benchmark-only (not an arbtok dependency)
         return Diacritizer(waqf=True)
 
     loose = raw_t2t()

@@ -1,8 +1,13 @@
 # Rawi–lattice fusion: the diacritizer as a scorer, not a generator
 
+This is the mechanism behind arbtok's flagship capability — **dialect-aware
+tashkeel** for every supported variety ([dialects.md](dialects.md) lists them).
+It runs entirely on the model arbtok bundles (`arbtok/_ensemble.py`): arbtok is
+self-contained, with no external diacritization package at runtime.
+
 ## The problem
 
-arbtok restores tashkeel with a model (rawi, via text2tashkeel) and then
+arbtok restores tashkeel with a model (the bundled rawi ensemble) and then
 phonemizes the result with orthography2ipa's lattice. The shipped pipeline runs
 these in strict sequence: rawi writes **one** vocalized string, the lattice
 **checks** it, and a word whose single guess the variety's orthography refuses is
@@ -20,8 +25,12 @@ allophone rules — is downstream of the decision it would most like to shape.
 ## The mechanism
 
 rawi is a char-level classifier with an accessible per-character distribution
-(`text2tashkeel.Diacritizer.logits` → `(bare, logits, classes)`; the single-head
-`rawi` / `rawi-v2` models expose it). So arbtok can turn the pipeline around:
+(`(bare, logits, classes)`). arbtok reads that distribution from the **flagship
+ensemble** directly: it bundles a stitched `rawi-v2 + rawi-v3` ONNX that, unlike
+an argmax-only stitched export, also emits `gated_logits` — the
+ensemble's decision *as a distribution* (`arbtok/_ensemble.py`; the artifact is
+built by `tools/build_ensemble_logits_onnx.py`). So arbtok can turn the pipeline
+around:
 instead of taking rawi's argmax and hoping it is licensed, it **enumerates the
 licensed diacritizations of a word and lets rawi score them**, choosing the
 highest-probability reading the orthography actually admits.
@@ -30,8 +39,28 @@ The model runs **once per sentence**. Every hypothesis is scored by indexing the
 output tensor it already produced, so the search adds no model calls — only
 cheap array lookups and tokenizations (`arbtok/fusion.py`).
 
-Per word (only where the writing is silent — a fully-marked word is never
-touched, and a word in the stem lexicon is answered from it first):
+### Scoring the ensemble, not a single head
+
+The distribution fusion scores is the flagship ensemble's, exposed as one extra
+ONNX output. A plain stitched export folds the gate into the graph and returns
+`gated_cls`, an argmax, only — no distribution to score. arbtok's bundled export
+carries a second output, `gated_logits`: the rawi-v3
+value-head logits with class 0 lifted just above the row max at every position the
+rawi-v2 gate zeroes. So `argmax(gated_logits)` is byte-identical to the ensemble's
+own `gated_cls` decision — the correctness gate the artifact is built and tested
+against — while every other class keeps the value head's real log-probability, so
+the scorer sees which mark the flagship preferred, not just the one it picked.
+This is read straight from the bundled ONNX with onnxruntime (`arbtok/_ensemble.py`);
+the member weights are the TigreGotico rawi family (Apache-2.0, published on PyPI
+in the `text2tashkeel` wheel), and `tools/build_ensemble_logits_onnx.py`
+reproduces the re-export.
+
+Per word — and only where the writing is **wholly** silent. A fully-marked word
+is never touched; a *partially* vocalized word is completed by the generator's
+constrained argmax (the same decision rule as `fusion=False`, so vocalized input
+is byte-identical whether fusion is on or off — a human's mark is an answer, not
+a suggestion, and the scorer never engages against it); a word in the stem
+lexicon is answered from it first. For a bare word:
 
 1. **Enumerate, constrained.** For each letter, take the top-`k` diacritic
    classes from rawi's distribution. The classes rawi exposes are pure combining
@@ -72,8 +101,8 @@ This is the point of doing it in arbtok. rawi is one voice; the pick is
 
 - **The licensing filter (hard).** The candidate set is whatever the *variety's
   own* grapheme table admits. rawi is MSA-trained and has never seen the dialect;
-  the spec has. This is a per-position constraint distinct from text2tashkeel's
-  own generic orthographic mask, so fusion and the shipped generator diverge on
+  the spec has. This is a per-position constraint distinct from the generator's
+  own generic orthographic mask (`arbtok/orthography.py`), so fusion and the shipped generator diverge on
   real dialect words even when neither is "wrong" — e.g. Tunisian `العايلة` comes
   out `الْعَائِلَة` (hamza-carrier) under o2i licensing where the generator's
   generic mask leaves `الْعَايِلَة`.
@@ -95,48 +124,56 @@ metric = mean per-sentence PER:
   isolating the *mechanism* from the ensemble→single-head model swap;
 - `fusion` — rawi-v2 **scoring** the licensed readings.
 
-Mean bare-input PER:
+Mean bare-input PER (33 lects × 20 sentences):
 
 | arm | mean PER |
 |---|---|
-| current (shipped, rawi-ensemble generator) | 0.217 |
-| curr-v2 (rawi-v2 generator) | 0.221 |
-| **fusion (rawi-v2 scorer)** | **0.217** |
+| generator (rawi-ensemble argmax under the lattice guard) | 0.193 |
+| **fusion (rawi-ensemble scorer under dialect licensing)** | **0.189** |
 
-Two honest readings, both true:
+Fusion scoring the ensemble distribution beats the generator arm by −0.003
+mean PER, and the win concentrates exactly where the dialect diverges most from
+MSA — the signature of the dialect-aware licensing doing the work rather than
+noise, and the same signature the single-head prototype showed against its own
+base model:
 
-- **The mechanism works.** Against its *own base model* (rawi-v2), fusion wins by
-  −0.004 mean PER and is ahead on roughly two-thirds of the lects. The margin
-  concentrates exactly where the dialect diverges most from MSA —
-  `ar-SA-x-sharqiyya −0.026`, `ar −0.019`, `arb −0.018`, `ar-TN −0.015` — and is
-  near zero on the MSA-adjacent Levantine lects, which is the signature of the
-  dialect-aware licensing doing the work rather than noise.
-- **Against the shipped baseline it is a wash.** current uses the stronger
-  rawi-**ensemble**, and the ensemble ships as a *stitched* ONNX that folds its
-  gate into the graph and exposes **no distribution to score**
-  (`text2tashkeel/_models.py`, `_StitchedEnsembleBackend`). Fusion therefore has
-  to run on a single head, and rawi-v2-as-scorer only *matches* rawi-ensemble-as-
-  generator (0.2170 vs 0.2170).
+| lect | Δ PER | | lect | Δ PER |
+|---|---|---|---|---|
+| ar-TN | −0.022 | | ar (leaf) | −0.013 |
+| ar-SA-x-qassim | −0.020 | | ar-SA-x-najd | −0.013 |
+| ar-SA-x-sharqiyya | −0.018 | | ar-LY | −0.013 |
+| ar-MR | −0.018 | | ar-YE | −0.011 |
+
+The MSA-adjacent lects (Levantine, Gulf koinés) move by at most +0.009, so the
+mean is a real dialect win, not a wash. An earlier single-head prototype
+(rawi-v2 as scorer) could only *match* the rawi-ensemble generator, because it
+had to score a weaker model than the pipeline generated from; scoring the
+ensemble's own distribution is what turns the proven mechanism into a measured
+win.
 
 ## Disposition
 
-Fusion ships **off by default** (`ArbtokG2PPlugin(fusion=True)`). The gate — beat
-the shipped pipeline's mean bare-input PER — comes out a tie, not a decisive win,
-so it does not displace the default. It is landed as a validated research
-prototype: the mechanism is proven against a like-for-like model, and the one
-thing standing between "proven mechanism" and "shipping win" is named below.
+Fusion scores the flagship ensemble's distribution under the variety's own
+licensing and beats the generator's mean bare-input PER (0.189 vs 0.193),
+with the margin on the dialect-divergent lects it was built for. The mechanism the
+section below once described as the limiting factor — the flagship exposing only a
+decision, not a distribution — is resolved: arbtok bundles the ensemble as a
+scorable ONNX. Clearing that gate is what flips fusion **on by default**
+(`ArbtokG2PPlugin(fusion=False)` to opt out).
 
-## The limiting factor, and what would move it
+## The resolved limiting factor, and what is left to move
 
-The scorer is only as good as the distribution it scores, and the best model we
-have — the rawi-ensemble — hands out decisions, not distributions. Closing the
-gap is a text2tashkeel task, not an arbtok one: expose per-class logits from the
-stitched ensemble graph (or a two-head model's value head) so fusion can score
-the flagship instead of a single head. The moment fusion scores an ensemble-grade
-distribution under dialect licensing, the mechanism's proven −0.004-vs-same-model
-margin lands on top of the stronger base, and the gate is a win rather than a tie.
+The scorer is only as good as the distribution it scores, and for a while the best
+model we had — the rawi-ensemble — handed out decisions, not distributions. That
+was the whole gap: fusion had to score a single head weaker than the pipeline's
+own generator. It is closed here. arbtok bundles a re-export of the stitched
+ensemble graph that additionally emits `gated_logits` (the gate folded into the
+value-head logits as a bias on class 0), and reads it directly with onnxruntime
+(`arbtok/_ensemble.py`, built by `tools/build_ensemble_logits_onnx.py`). Scoring
+that ensemble-grade distribution under dialect licensing is what lands the proven
+mechanism on top of the stronger base — the measured 0.189-vs-0.193 win above.
 
-Secondary levers, all inside arbtok: raise `lattice_weight` (currently a mild
+Secondary levers, still open, all inside arbtok: raise `lattice_weight` (currently a mild
 tie-break — the soft channel rarely flips a decision today, so it is really a
 hook for a stronger dialect prior); and give the spec a declared *licensed-
 vocalization* table per grapheme (roadmap §T.2 / D3) so the candidate set is the
