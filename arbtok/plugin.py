@@ -71,7 +71,8 @@ class ArbtokG2PPlugin:
 
     def __init__(self, lang: str = DEFAULT_LANG, diacritize: bool = True,
                  stress: bool = True,
-                 lexicon: Optional[str] = DEFAULT_LEXICON) -> None:
+                 lexicon: Optional[str] = DEFAULT_LEXICON,
+                 nativize: bool = True) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
         #: The variety: any orthography2ipa Arabic spec code.
@@ -89,6 +90,12 @@ class ArbtokG2PPlugin:
         #: a path, a URL, an ``hf://`` id, or ``None`` to ask the model about
         #: every word. See :mod:`arbtok.lexicon`.
         self.lexicon = lexicon
+        #: Read a Latin-script (foreign) run as a loanword, nativised into the
+        #: matrix lect's phonology (see :mod:`arbtok.translit`). ``True`` is the
+        #: TTS default — a voice needs a pronounceable, in-inventory reading. Set
+        #: ``False`` for linguistic output that must not invent a pronunciation:
+        #: the Latin run is then left in place, untranscribed, rather than adapted.
+        self.nativize = nativize
 
     @property
     def language_codes(self) -> List[str]:
@@ -147,8 +154,10 @@ class ArbtokG2PPlugin:
         """Transcribe *text*, reading any Latin-script word as a loanword.
 
         The Arabic runs are transcribed together, so the cross-word rules still see
-        their neighbours. A Latin word is a guest: it is nativised on its own (see
-        :mod:`arbtok.translit`) and spliced back in its place.
+        their neighbours. A Latin word is a guest: with ``nativize`` on (the TTS
+        default) it is nativised on its own (see :mod:`arbtok.translit`) and spliced
+        back in its place; with it off the Latin run is left untouched, so a
+        linguistic caller gets the source string rather than an invented reading.
         """
         parts, buffer = [], []
 
@@ -161,6 +170,9 @@ class ArbtokG2PPlugin:
         for token in text.split():
             if is_latin(token):
                 flush_arabic()
+                if not self.nativize:
+                    parts.append(token)
+                    continue
                 guest = transliterate(token.strip(PUNCT_STRIP), self.lang)
                 if guest:
                     parts.append(guest)
@@ -176,7 +188,11 @@ class ArbtokG2PPlugin:
         if is_latin(word):
             # A Latin-script word has no Arabic graphemes and no reading. Left to
             # the engine its letters come back as themselves — `meeting` as
-            # `meeˈting` — which is not IPA at all.
+            # `meeˈting` — which is not IPA at all. With nativisation off, a
+            # linguistic caller wants the source word back rather than an adapted
+            # reading, so it is returned untouched.
+            if not self.nativize:
+                return word
             return transliterate(word, lang) or ""
         if context is None or (context.prev_word is None
                                and context.next_word is None):

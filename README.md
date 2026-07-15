@@ -102,6 +102,37 @@ arbtok.supported_lects()[:2]                                   # [Lect('ar', 're
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")  # 'ˈɡahawa'
 ```
 
+### Foreign words (loanword nativization)
+
+Real Arabic text is full of Latin-script words — *عندي meeting الساعة ٣*. A Latin
+run is read as a **loanword**: phonemized with its donor spec (English by default)
+and *nativized* into the matrix lect's phonology, out of that lect's own declared
+inventory. The nativization table is chosen by walking the orthography2ipa parent
+chain, so each lect adapts as its loanword literature says it does — Cairene reads
+*manager* with the native stop ǧīm `[manaɡar]` and merges the interdental of *think*
+to `[tink]`, where Najdi keeps the affricate `[manadʒar]` and the interdental
+`[θink]`. A symbol the matrix lect cannot realize is refused (`None`) rather than
+emitted unpronounceable.
+
+```python
+ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")        # 'manaɡar'
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager") # 'manadʒar'
+```
+
+`nativize=True` is the default (a TTS voice needs a pronounceable reading). Pass
+`nativize=False` for linguistic output that must not invent a pronunciation — the
+Latin run is then left in place, untranscribed:
+
+```python
+ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meeting")
+# 'ˈʕindiː meeting'
+```
+
+Cited tables ship for Najdi (`ar-SA-x-najd`, Alhoody 2019), Egyptian (`ar-EG`,
+Hafez 1996 / Watson 2002) and Levantine (`ar-x-levantine`, Al-Saidat 2011 / Cowell
+1964). A lect with no table of its own (e.g. `ar-KW`) falls back to a conservative
+pan-Arabic default.
+
 ### Diacritization only
 
 ```python
