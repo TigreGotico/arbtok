@@ -60,11 +60,13 @@ from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from orthography2ipa import get, is_underdetermined
+from orthography2ipa import get, underdetermined_positions
 from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
 
 from arbtok.dialects import DEFAULT_LANG
-from arbtok.diacritize import repair_skeleton, strip_marks, _skeleton_is_preserved
+from arbtok.diacritize import (
+    _author_complete, repair_skeleton, strip_marks, _skeleton_is_preserved,
+)
 from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
 from arbtok.lattice import word_lattice
 from arbtok.nisba import restore_nisba
@@ -207,8 +209,12 @@ class FusionDiacritizer:
         normalized = normalize_unicode(orig_word)
         self.last_nbest = []
 
-        # (1) The writing already says it.
-        if not is_underdetermined(normalized, self._spec):
+        # (1) The writing already says it — including the author-complete case:
+        # a word whose only silent positions are the definite article's alif/lām
+        # is complete as written (the lattice fixes their reading without a
+        # model), so scoring it would only let the model overrule the author.
+        positions = underdetermined_positions(normalized, self._spec)
+        if _author_complete(normalized, positions):
             return orig_word
 
         # (2) A written-down word is a lexical fact, not a thing to score.

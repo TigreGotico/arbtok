@@ -81,7 +81,7 @@ class ArbtokG2PPlugin:
         #: (:mod:`arbtok.fusion`) instead of tokenizing one model guess. On by
         #: default: scoring the bundled ensemble distribution under the variety's
         #: own licensing beats the plain generator's mean bare-input PER
-        #: (0.214 vs 0.217), with the margin on the dialect-divergent lects. Set
+        #: (0.190 vs 0.193), with the margin on the dialect-divergent lects. Set
         #: ``False`` to opt out. The empirical gate is documented in
         #: docs/rawi-fusion.md.
         self.fusion = fusion
