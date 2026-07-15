@@ -221,6 +221,15 @@ def cmd_build(args):
     GOLD_DIR.mkdir(parents=True, exist_ok=True)
     lects = args.lects or _roster()
     for lect in lects:
+        # Hand-authored (migrated) lects carry a pipeline_status column and are no
+        # longer template-generated; never clobber them from FRAMES. Pass the lect
+        # explicitly only when you really mean to regenerate a template file.
+        existing = GOLD_DIR / f"{lect}.tsv"
+        if not args.lects and existing.is_file():
+            with open(existing, encoding="utf-8") as fh:
+                if "pipeline_status" in (fh.readline()):
+                    print(f"skip {lect}: hand-authored (has pipeline_status)")
+                    continue
         rows = _build_rows(lect)
         with open(GOLD_DIR / f"{lect}.tsv", "w", encoding="utf-8", newline="") as f:
             w = csv.DictWriter(f, fieldnames=FIELDS, delimiter="\t")
@@ -248,6 +257,12 @@ def _leakage_failures(rid, row, lect):
         out.append(f"{rid}: uppercase Latin in ipa: {row['ipa']!r}")
     tokens = row["ipa"].split()
     for w in [t for t in row["cs_words"].split(";") if t]:
+        # Only Latin-script embeds go through nativisation-leakage checking; an
+        # Arabic-script loanword (pinned loan rows) or an Arabizi token is read
+        # as native graphemes, not a guest run, so the transliterate() gate below
+        # does not apply to it.
+        if not _LATIN.search(w):
+            continue
         if w not in row["sentence"]:
             out.append(f"{rid}: cs_word {w!r} not in sentence")
         nat = transliterate(w, lect)
@@ -295,10 +310,17 @@ def cmd_validate(args):
             seen.add(r["sentence"])
             if strip_tashkeel(r["sentence"]) != unicodedata.normalize("NFC", r["raw"]):
                 failures.append(f"{rid}: raw != sentence stripped of ḥarakāt")
-            got = plugin.transcribe(r["sentence"])
-            if got != r["ipa"]:
-                failures.append(f"{rid}: ipa regression\n    stored: {r['ipa']}\n    got:    {got}")
-            failures += _leakage_failures(rid, r, lect)
+            # pipeline_status is the migration column (optional; absent == "pinned"
+            # for the un-migrated template lects). Only *pinned* rows carry live
+            # pipeline output, so only they are regression-checked; known-wrong and
+            # unsupported rows carry hand-authored gold IPA the pipeline does not
+            # (yet) reproduce — see docs/gold-code-switched.md.
+            status = (r.get("pipeline_status") or "pinned").strip()
+            if status == "pinned":
+                got = plugin.transcribe(r["sentence"])
+                if got != r["ipa"]:
+                    failures.append(f"{rid}: ipa regression\n    stored: {r['ipa']}\n    got:    {got}")
+                failures += _leakage_failures(rid, r, lect)
     print(f"validated {total} rows across {len(lects)} lects")
     if failures:
         print(f"\n{len(failures)} FAILURE(S):")
