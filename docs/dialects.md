@@ -5,7 +5,7 @@ A variety is an **orthography2ipa spec**, named by its code:
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")   # 'ɡahawa'
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")   # 'ˈɡahawa'
 ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت")    # 'beːt'
 ArbtokG2PPlugin().transcribe_word("قَهْوَة")                      # 'qahwa'  (MSA)
 ```

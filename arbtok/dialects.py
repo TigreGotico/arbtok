@@ -179,6 +179,10 @@ def _is_arabic_code(code: str) -> bool:
     ``ar`` (MSA) and ``arb`` (Classical) plus every ``ar-…`` leaf and grouping
     node. The lookalikes ``arc`` (Aramaic) and ``arn`` (Mapudungun) sort next to
     them in the registry but are unrelated languages, so they are excluded.
+
+    Assumes the registry names Arabic varieties in BCP-47 form only: an ISO
+    639-3 dialect code (``arz``, ``ary``, ``apc``, …) would be silently missed
+    here and must be added explicitly if o2i ever registers one.
     """
     return code == "ar" or code == "arb" or code.startswith("ar-")
 

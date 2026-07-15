@@ -99,7 +99,7 @@ import arbtok
 from arbtok.plugin import ArbtokG2PPlugin
 
 arbtok.supported_lects()[:2]                                   # [Lect('ar', 'research'), …]
-ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")  # 'ɡahawa'
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")  # 'ˈɡahawa'
 ```
 
 ### Diacritization only
