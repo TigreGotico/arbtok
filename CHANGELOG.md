@@ -1,13 +1,15 @@
 # Changelog
 
-## [0.0.0a39](https://github.com/TigreGotico/arbtok/tree/0.0.0a39) (2026-07-15)
+## [0.0.0a40](https://github.com/TigreGotico/arbtok/tree/0.0.0a40) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a38...0.0.0a39)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a38...0.0.0a40)
 
 **Merged pull requests:**
 
+- feat\(gold-cs\): authentic Qassimi \(ar-SA-x-qassim\) code-switched gold set [\#53](https://github.com/TigreGotico/arbtok/pull/53) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Ḥassāniyya \(ar-MR\) code-switched gold set [\#52](https://github.com/TigreGotico/arbtok/pull/52) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Eastern Saudi / Sharqiyya \(ar-SA-x-sharqiyya\) code-switched gold set [\#51](https://github.com/TigreGotico/arbtok/pull/51) ([JarbasAl](https://github.com/JarbasAl))
+- feat\(gold-cs\): authentic urban Hejazi \(ar-SA-x-hejaz\) code-switched gold set [\#49](https://github.com/TigreGotico/arbtok/pull/49) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Tripoli Libyan \(ar-LY\) code-switched gold set [\#46](https://github.com/TigreGotico/arbtok/pull/46) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Rijāl Almaʿ \(ar-SA-x-rijal-alma\) code-switched gold set [\#44](https://github.com/TigreGotico/arbtok/pull/44) ([JarbasAl](https://github.com/JarbasAl))
 
