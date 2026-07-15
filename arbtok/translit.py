@@ -367,8 +367,7 @@ def _project(segment: str, lang: str) -> Optional[str]:
         return None
     if segment in targets:
         return segment
-    best = min(targets, key=lambda t: segment_distance(segment, t))
-    return best if segment_distance(segment, best) < 1.0 else None
+    return min(targets, key=lambda t: segment_distance(segment, t))
 
 
 def _map_segments(segments: Sequence[str], lang: str) -> List[str]:
@@ -382,7 +381,14 @@ def _map_segments(segments: Sequence[str], lang: str) -> List[str]:
             continue
         cited = seg_map.get(seg)
         if cited is not None:
-            out.append(cited)
+            # A cited mapping still has to land inside the matrix inventory —
+            # a table written for a Gulf lect may name a segment MSA lacks, and
+            # the adaptation literature's own principle applies to the mapped
+            # value too: it surfaces as the nearest native segment.
+            out.append("".join(
+                t if t in _targets(lang) else (_project(t, lang) or t)
+                for t in segment_ipa(cited)
+            ))
             continue
         projected = _project(seg, lang)
         out.append(projected if projected is not None else seg)
@@ -419,7 +425,7 @@ def nativize(donor_ipa: str, lang: str, donor: str = DONOR_LANG) -> str:
 
 
 def transliterate(
-    word: str, lang: str, donor: Optional[str] = None,
+    word: str, lang: str, donor: Optional[str] = None, strict: bool = False,
 ) -> Optional[str]:
     """Read a foreign-script *word* as a speaker of *lang* would say it.
 
@@ -433,10 +439,15 @@ def transliterate(
     *Arabizi* (Arabic in Latin letters) alike. When it is not given, the script is
     used as a weak guess (:data:`DONOR_BY_SCRIPT`).
 
-    Returns ``None`` when the result would use a phoneme *lang* does not declare —
-    the honest answer, because a symbol with no embedding is not a pronunciation.
-    Notably the Najdi reading of *meeting* is refused for MSA: it needs /ɡ/, which
-    is a Gulf reflex of qāf that MSA does not have.
+    Every segment lands on the nearest phoneme *lang* declares — loanword
+    adaptation never drops a word; a speaker says *something*, and what they say
+    is the closest native sound (Alhoody 2019 §5; Hafez 1996). So the MSA
+    reading of *meeting* maps the final /ɡ/ onto MSA's nearest segment instead
+    of refusing the word.
+
+    ``strict=True`` restores the refusal contract for linguistic callers:
+    ``None`` when the adapted form would need a phoneme *lang* does not declare,
+    because for analysis a symbol with no embedding is not a pronunciation.
     """
     if donor is None:
         script = guest_script(word)
@@ -455,5 +466,14 @@ def transliterate(
     declared = phoneme_inventory(spec)
     outside = [t for t in ipa_tokenize(adapted, spec) if t not in declared]
     if outside:
-        return None
+        if strict:
+            return None
+        # project any residual symbol onto the nearest declared phoneme —
+        # the word is pronounced, not dropped
+        for t in set(outside):
+            repl = _project(t, lang)
+            if repl is not None:
+                adapted = adapted.replace(t, repl)
+        if any(t not in declared for t in ipa_tokenize(adapted, spec)):
+            return None if strict else adapted
     return adapted

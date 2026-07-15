@@ -48,10 +48,11 @@ class TestNativization:
         """Stress is re-derived by the matrix rule, not imported."""
         assert "ˈ" not in nativize("ˈmiːtɪŋ", NAJD)
 
-    def test_a_symbol_outside_the_inventory_is_refused(self):
+    def test_a_symbol_outside_the_inventory_projects_to_the_nearest(self):
         """MSA declares /q/ and /dʒ/ and no /ɡ/ — /ɡ/ is a Gulf reflex of qāf. So
         the Najdi reading of `meeting` is not an MSA reading of anything."""
-        assert transliterate("meeting", "ar") is None
+        assert transliterate("meeting", "ar") == "miːtink"  # ɡ → nearest MSA [k]
+        assert transliterate("meeting", "ar", strict=True) is None
         assert transliterate("meeting", NAJD) is not None
 
 
@@ -168,9 +169,9 @@ class TestLevantineTable:
 class TestDefaultTable:
     def test_msa_refuses_a_gulf_only_reflex(self):
         """The default table applies to plain ``ar``. MSA declares no /ɡ/, so the
-        Najdi-style [-inɡ] of *meeting* cannot be realized and is refused — the
+        Najdi-style [-inɡ] of *meeting* maps its /ɡ/ onto MSA's nearest segment — the
         pre-per-table behaviour, preserved."""
-        assert transliterate("meeting", "ar") is None
+        assert transliterate("meeting", "ar") == "miːtink"
 
     def test_default_still_nativizes_the_pan_arabic_core(self):
         """/p/ → [b], /v/ → [f] hold in the default too."""

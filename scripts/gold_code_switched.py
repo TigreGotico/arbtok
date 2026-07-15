@@ -164,7 +164,7 @@ def _table_citation(lect: str) -> str:
 
 
 def _refusal_reason(word: str, lect: str) -> str:
-    """Why a word is refused: the adapted segment(s) the lect does not declare."""
+    """Which adapted segment(s) were projected onto the lect's nearest phonemes."""
     from arbtok.translit import nativize, DONOR_LANG
     from orthography2ipa import G2P
     from orthography2ipa.inventory import phoneme_inventory, tokenize as ipa_tok
@@ -189,7 +189,7 @@ def _notes(sentence: str, lect: str, cs_words) -> str:
         if r:
             parts.append(f"{w}→{r}")
         else:
-            parts.append(f"{w} REFUSED—{_refusal_reason(w, lect)}, dropped")
+            parts.append(f"{w} projected—{_refusal_reason(w, lect)}")
     return "; ".join(parts) + f". table: {_table_citation(lect)}"
 
 
@@ -238,7 +238,8 @@ def _leakage_failures(rid, row, lect):
     word surviving untranscribed*, which with ``nativize=True`` cannot happen by
     construction (``transliterate`` returns a nativised IPA string or ``None`` —
     never the source token). This proves it row-by-row: every embedded Latin word
-    is either present as its nativised reflex or absent (refused → dropped), never
+    is always present as its nativised reflex (missing segments project onto the
+    nearest declared phoneme), never
     verbatim; and no uppercase Latin (a brand-name leak signal) survives.
     """
     from arbtok.translit import transliterate
@@ -250,7 +251,7 @@ def _leakage_failures(rid, row, lect):
         if w not in row["sentence"]:
             out.append(f"{rid}: cs_word {w!r} not in sentence")
         nat = transliterate(w, lect)
-        if nat is None:
+        if nat is None:  # only a donor-G2P failure now — nativization is total
             # refused → dropped: the raw token must not appear as an ipa token
             if w in tokens:
                 out.append(f"{rid}: refused word {w!r} leaked into ipa")
