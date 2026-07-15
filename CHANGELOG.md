@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a25](https://github.com/TigreGotico/arbtok/tree/0.0.0a25) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a24...0.0.0a25)
+
+**Merged pull requests:**
+
+- feat\(gold-cs\): authentic Damascene \(ar-SY\) code-switched gold set [\#27](https://github.com/TigreGotico/arbtok/pull/27) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a24](https://github.com/TigreGotico/arbtok/tree/0.0.0a24) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a23...0.0.0a24)
