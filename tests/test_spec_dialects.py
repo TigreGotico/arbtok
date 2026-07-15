@@ -141,6 +141,30 @@ def test_every_variety_transcribes_through_the_cascade_too(lang):
     assert plugin.transcribe("كِتَاب جَمِيل")
 
 
+# ─── rescorers consult the resolved variety, not MSA ────────────────────
+
+@pytest.mark.parametrize("lang,article_word,expected,why", [
+    # Sun-letter assimilation of the definite article fires the same way in
+    # every variety — ⟨ش⟩ is a sun letter regardless of the qāf/jīm reflexes.
+    ("ar", "الشَّمْس", "aˈʃʃams", "MSA sun-letter"),
+    ("ar-EG", "الشَّمْس", "aˈʃʃams", "EG sun-letter unaffected by qāf→ʔ"),
+    ("ar-MA", "الشَّمْس", "aˈʃʃams", "MA sun-letter"),
+    # Moon-letter control: the article's lām is kept, and the qāf reflex of the
+    # variety still lands on the noun — the rescorer works on the resolved
+    # inventory, not an assumed MSA /q/.
+    ("ar", "الْقَمَر", "ˈalqamar", "MSA moon-letter keeps /q/"),
+    ("ar-EG", "الْقَمَر", "ˈalʔamar", "EG moon-letter with qāf→ʔ"),
+])
+def test_article_rescorer_reads_the_resolved_inventory(lang, article_word, expected, why):
+    assert word_ipa(article_word, lang) == expected, why
+
+
+def test_egyptian_jim_is_g_but_the_word_still_reads():
+    """ج is /ɡ/ in Cairene (Watson 2002); the lattice reads it, not MSA /dʒ/."""
+    assert word_ipa("جَمِيل", "ar-EG") == "ɡaˈmiːl"
+    assert word_ipa("جَمِيل", "ar") == "dʒaˈmiːl"
+
+
 @pytest.mark.xfail(
     reason="A diphthong split across slots (glide onset + coda glide) is not "
            "one segment, so the monophthongization rule cannot see it: يَوْم "

@@ -20,8 +20,12 @@ class TestNativization:
     """Alhoody (2019), Qassimi (= Najdi) — the variety we transcribe."""
 
     def test_p_becomes_b(self):
-        """English /p/ has no Arabic counterpart (§5.1)."""
-        assert transliterate("pizza", NAJD) == "bizza"
+        """English /p/ has no Arabic counterpart (§5.1).
+
+        No geminate: English orthographic doubling is not gemination (Venezky
+        1999), so the donor reading has a single /z/ — the Italian /ts/ is a
+        lexical fact, lexicon territory, not a rule."""
+        assert transliterate("pizza", NAJD) == "biza"
 
     def test_v_becomes_f(self):
         assert transliterate("video", NAJD).startswith("f")
@@ -58,5 +62,7 @@ class TestInSentence:
         assert "G" not in out and "oo" not in out
 
     def test_the_arabic_around_it_is_unaffected(self):
+        """أحب keeps its real shape — final geminate /bb/ (root ḥ-b-b) with the
+        stress the weight rule assigns it — while the loan is nativized."""
         p = ArbtokG2PPlugin(lang=NAJD, diacritize=True)
-        assert p.transcribe("أحب pizza") == "ˈʔaħab bizza"
+        assert p.transcribe("أحب pizza") == "ʔaˈħabb biza"

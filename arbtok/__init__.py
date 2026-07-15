@@ -14,4 +14,11 @@ if you speak MSA pull requests welcome!
   ar-SA-x-hejaz, ar-EG, ar-x-gulf, …): the spec supplies the grapheme table and
   the allophone rules, so a variety's phonology comes from cited spec data.
   Pass `lang=` — see docs/dialects.md
+
+``supported_lects()`` enumerates every variety `lang=` resolves to, each with
+its orthography2ipa quality tier.
 """
+
+from arbtok.dialects import Lect, spec_for_lang, supported_lects
+
+__all__ = ["Lect", "spec_for_lang", "supported_lects"]

@@ -15,7 +15,7 @@ allophone pass yet.
 """
 
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, List, NamedTuple, Optional
 
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
                               FATHA, DAMMA, KASRA, DAGGER_ALIF, MADD,
@@ -157,6 +157,60 @@ def spec_for_lang(lang: Optional[str]) -> str:
         if match:
             return match
     return DEFAULT_LANG
+
+
+class Lect(NamedTuple):
+    """A resolvable Arabic variety and the maturity of its spec.
+
+    :attr:`code` is an orthography2ipa spec code accepted by :func:`spec_for_lang`
+    and by ``lang=`` on the plugin. :attr:`tier` is that spec's
+    ``QualityTier`` value as declared upstream (``research``, ``skeleton``,
+    ``stub``, ``production``) — how far its cited rule set has been taken, not a
+    promise about arbtok's cascade.
+    """
+
+    code: str
+    tier: str
+
+
+def _is_arabic_code(code: str) -> bool:
+    """Whether *code* names an Arabic-macrolanguage spec.
+
+    ``ar`` (MSA) and ``arb`` (Classical) plus every ``ar-…`` leaf and grouping
+    node. The lookalikes ``arc`` (Aramaic) and ``arn`` (Mapudungun) sort next to
+    them in the registry but are unrelated languages, so they are excluded.
+
+    Assumes the registry names Arabic varieties in BCP-47 form only: an ISO
+    639-3 dialect code (``arz``, ``ary``, ``apc``, …) would be silently missed
+    here and must be added explicitly if o2i ever registers one.
+    """
+    return code == "ar" or code == "arb" or code.startswith("ar-")
+
+
+def supported_lects() -> List[Lect]:
+    """Every Arabic variety arbtok can phonemize, with its o2i quality tier.
+
+    Enumerated from the orthography2ipa registry, so it tracks the data set
+    rather than a table here: whatever ``ar*`` specs are installed are what
+    ``lang=`` resolves to. Sorted by code.
+
+    >>> from orthography2ipa import available_codes
+    >>> lects = supported_lects()
+    >>> [l.code for l in lects if l.code in ("ar", "ar-EG", "ar-SA-x-najd")]
+    ['ar', 'ar-EG', 'ar-SA-x-najd']
+    >>> len(lects) == sum(1 for c in available_codes() if c in {"ar", "arb"}
+    ...                   or c.startswith("ar-"))
+    True
+    >>> next(l.tier for l in lects if l.code == "ar")
+    'research'
+    """
+    from orthography2ipa import available_codes, get
+
+    return sorted(
+        (Lect(code, get(code).quality.value)
+         for code in available_codes() if _is_arabic_code(code)),
+        key=lambda lect: lect.code,
+    )
 
 
 # --- Word Exceptions ---
