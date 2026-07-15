@@ -61,7 +61,7 @@ class TestInSentence:
         """Left to the engine, `meeting` comes back as `meeˈting` — not IPA."""
         out = ArbtokG2PPlugin(lang=NAJD, diacritize=True).transcribe(
             "عندي meeting الساعة")
-        assert out == "ˈʕindiː miːtinɡ aˈssaːʕa"
+        assert out == "ˈʕindiː miːtinɡ asˈsaːʕa"
 
     def test_the_latin_letters_do_not_survive_into_the_ipa(self):
         """`meeting` used to come back as `meeˈting`: the letters themselves, which
@@ -195,4 +195,4 @@ class TestNativizeFlag:
         out = ArbtokG2PPlugin(lang=NAJD, diacritize=True,
                               nativize=False).transcribe("عندي meeting الساعة")
         assert "meeting" in out
-        assert out == "ˈʕindiː meeting aˈssaːʕa"
+        assert out == "ˈʕindiː meeting asˈsaːʕa"

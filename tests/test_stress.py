@@ -51,11 +51,13 @@ def test_a_proclitic_and_its_host_share_one_stress():
 
 
 def test_punctuation_is_not_a_word():
-    """It has no syllable to stress. Marking it leaves a mark floating."""
+    """It has no syllable to stress and no phonology, so it does not survive into
+    the IPA — orthography2ipa emits none either. It is still read as a *pause*,
+    which is why the tanwīn al-fatḥ here lengthens (utterance-final waqf)."""
     out = Sentence("مَرْحَبًا!").ipa
-    assert "!" in out
+    assert "!" not in out
     assert not out.endswith("ˈ")
-    assert out.replace(" !", "") == "ˈmarħabaː"  # utterance-final: tanwīn al-fatḥ lengthens
+    assert out == "ˈmarħabaː"  # utterance-final: tanwīn al-fatḥ lengthens
 
 
 # ─── it can be turned off ───────────────────────────────────────────────
@@ -103,9 +105,9 @@ def test_nun_assimilates_to_what_follows(text, expected, rule):
 
 @pytest.mark.parametrize("text,expected,why", [
     ("قَلَمٌ", "qalamun", "no pause is written, so the ending stands"),
-    ("مَدِينَةٌ.", "madiːna .", "at a pause the tanwīn goes, and the tāʾ with it"),
-    ("قَهْوَةً.", "qahwa .", "the tāʾ was only voiced by the ending that just left"),
-    ("كِتَابًا.", "kitaːbaː .", "tanwīn al-fatḥ lengthens rather than vanishing"),
+    ("مَدِينَةٌ.", "madiːna", "at a pause the tanwīn goes, and the tāʾ with it"),
+    ("قَهْوَةً.", "qahwa", "the tāʾ was only voiced by the ending that just left"),
+    ("كِتَابًا.", "kitaːbaː", "tanwīn al-fatḥ lengthens rather than vanishing"),
     ("مُؤْمِن", "muʔmin", "-in here is the WORD, not a case ending"),
     ("مِنْ لَبَن", "millaban", "…and so is the -an of laban"),
 ])

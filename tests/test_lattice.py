@@ -33,20 +33,20 @@ def test_builds_on_shared_tokenizer():
 
 # The article + sun letter → lām assimilates, sun consonant geminates.
 SUN_CASES = [
-    ("الشَّمْس", "aˈʃʃams", "ش shīn"),
+    ("الشَّمْس", "aʃˈʃams", "ش shīn"),
     ("السَّمَك", "ˈassamak", "س sīn"),
-    ("التَّاج", "aˈttaːdʒ", "ت tāʾ"),
-    ("الثَّوْب", "aˈθθawb", "ث thāʾ"),
+    ("التَّاج", "atˈtaːdʒ", "ت tāʾ"),
+    ("الثَّوْب", "aθˈθawb", "ث thāʾ"),
     ("الذَّهَب", "ˈaððahab", "ذ dhāl"),
     ("الرَّجُل", "ˈarradʒul", "ر rāʾ"),
-    ("الزَّيْت", "aˈzzajt", "ز zāy"),
+    ("الزَّيْت", "azˈzajt", "ز zāy"),
     ("الطَّعَام", "ɑtˤtˤɑˈʕaːm", "ط ṭāʾ"),
-    ("الظَّبْي", "ɑˈðˤðˤɑbj", "ظ ẓāʾ"),
-    ("اللَّوْن", "aˈllawn", "ل lām"),
-    ("النَّار", "aˈnnaːr", "ن nūn"),
-    ("الصَّوْت", "ɑˈsˤsˤɑwt", "ص ṣād"),
-    ("الدَّار", "aˈddaːr", "د dāl"),
-    ("الضَّوْء", "ɑˈdˤdˤɑwʔ", "ض ḍād"),
+    ("الظَّبْي", "ɑðˤˈðˤɑbj", "ظ ẓāʾ"),
+    ("اللَّوْن", "alˈlawn", "ل lām"),
+    ("النَّار", "anˈnaːr", "ن nūn"),
+    ("الصَّوْت", "ɑsˤˈsˤɑwt", "ص ṣād"),
+    ("الدَّار", "adˈdaːr", "د dāl"),
+    ("الضَّوْء", "ɑdˤˈdˤɑwʔ", "ض ḍād"),
 ]
 
 
@@ -60,7 +60,7 @@ def test_sun_letter_assimilation(word, expected, name):
 MOON_CASES = [
     ("الْقَمَر", "ˈalqamar", "ق qāf"),
     ("الْكِتَاب", "alkiˈtaːb", "ك kāf"),
-    ("الْمَسْجِد", "aˈlmasdʒid", "م mīm"),
+    ("الْمَسْجِد", "alˈmasdʒid", "م mīm"),
 ]
 
 
@@ -86,7 +86,7 @@ def test_sun_letter_rescorer_only_touches_the_article():
 # ─── Hamzat al-waṣl ──────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("word, expected", [
-    ("اِسْتِقْبَال", "istiˈqbaːl"),
+    ("اِسْتِقْبَال", "istiqˈbaːl"),
     ("اِجْتِمَاع", "idʒtiˈmaːʕ"),
     ("اِعْتِمَاد", "iʕtiˈmaːd"),
     ("اِنْقَطَع", "ˈinqɑtˤɑʕ"),
@@ -113,7 +113,7 @@ def test_gemination(word, expected):
 
 @pytest.mark.parametrize("word, expected", [
     ("أَمِير", "ʔaˈmiːr"),   # hamza carrier + explicit fatḥa, not ʔaamīr
-    ("تَأْثِير", "taˈʔθiːr"),  # carrier + sukūn
+    ("تَأْثِير", "taʔˈθiːr"),  # carrier + sukūn
     ("يَوْم", "ˈjawm"),       # ⟨يَ⟩ onset /ja/, not the /aj/ coda diphthong
     ("بَيْت", "ˈbajt"),       # ⟨َي⟩ coda diphthong retained
 ])
@@ -125,8 +125,8 @@ def test_carrier_and_onset(word, expected):
 
 @pytest.mark.parametrize("word, expected", [
     ("عُيِّنَ", "ˈʕujjina"),    # geminate yāʾ (glide) — not dropped
-    ("قَوَّاس", "qaˈwwaːs"),    # geminate wāw in a coda ligature
-    ("اِفْعَوَّل", "iˈfʕawwal"),  # geminate wāw, form IX
+    ("قَوَّاس", "qawˈwaːs"),    # geminate wāw in a coda ligature
+    ("اِفْعَوَّل", "ifˈʕawwal"),  # geminate wāw, form IX
 ])
 def test_geminate_glides_not_dropped(word, expected):
     """Shadda geminates the semivowels ي/و too (Wright I §14; Ryding §2.3)."""
@@ -137,7 +137,7 @@ def test_geminate_glides_not_dropped(word, expected):
 
 @pytest.mark.parametrize("word, expected", [
     ("أَتْشِيُوت", "ʔatʃiˈjuːt"),   # ⟨ـِيُو⟩: yāʾ bears its own ḍamma → onset /j/
-    ("أَبْخَازِيَا", "ʔaˈbxaːzijaː"),  # ⟨ـِيَا⟩: yāʾ before /aː/ → onset /j/
+    ("أَبْخَازِيَا", "ʔabˈxaːzijaː"),  # ⟨ـِيَا⟩: yāʾ before /aː/ → onset /j/
     ("أَحُوَل", "ˈʔaħuwal"),       # ⟨ـُوَ⟩: wāw before fatḥa → onset /w/
 ])
 def test_prevocalic_glide_is_a_consonant(word, expected):
@@ -149,8 +149,8 @@ def test_prevocalic_glide_is_a_consonant(word, expected):
 
 
 @pytest.mark.parametrize("word, expected", [
-    ("أَشُورِيّ", "ʔaʃuˈːrijj"),    # nisba ـِيّ = doubled /-ijj/ (Ryding §5.4.1)
-    ("أَرْمِيَّة", "ʔaˈrmijja"),    # feminine nisba ـِيَّة = /-ijja/
+    ("أَشُورِيّ", "ʔaʃuːˈrijj"),    # nisba ـِيّ = doubled /-ijj/ (Ryding §5.4.1)
+    ("أَرْمِيَّة", "ʔarˈmijja"),    # feminine nisba ـِيَّة = /-ijja/
     ("أُبُوَّة", "ʔuˈbuwwa"),      # ـُوَّة = /-uwwa/: geminate wāw, not /uːwa/
 ])
 def test_geminated_glide_after_homorganic_vowel(word, expected):
@@ -172,7 +172,7 @@ def test_presentation_ligature_never_empty():
 
 def test_medial_semivowel_onset():
     """A medial ⟨وَ⟩ after a consonant is the onset /wa/ (أَبْوَاب → ʔabwaːb)."""
-    assert word_ipa("أَبْوَاب") == "ʔaˈbwaːb"
+    assert word_ipa("أَبْوَاب") == "ʔabˈwaːb"
 
 
 # ─── Deferral of cross-word / lexical cases (no public regression) ───────
@@ -181,8 +181,7 @@ from arbtok.lattice import defers_to_cascade  # noqa: E402
 
 
 @pytest.mark.parametrize("word", [
-    "وَبِاسْمِ",    # proclitic + internal hamzat al-waṣl (cross-word)
-    "فَبِالْحَقِّ",  # proclitic + article
+    "وَبِاسْمِ",    # proclitic + internal (non-article) hamzat al-waṣl
     "مَرْحَبًا!",   # trailing punctuation → pausal (utterance-level)
 ])
 def test_lexical_and_crossword_words_defer(word):
@@ -195,6 +194,11 @@ def test_lexical_and_crossword_words_defer(word):
     "الشَّمْس", "الْقَمَر", "كِتَاب", "يَوْم", "عُيِّنَ", "أَبْوَاب",
     # ⟨إ⟩ carries a written hamza, so it is always hamzat al-qaṭʿ.
     "إِيْمَان", "إِلَّا", "إِحْسَاس",
+    # A proclitic prefixed to the ARTICLE is read by the word lattice, which
+    # elides the waṣl and assimilates exactly as orthography2ipa does
+    # (وَالرُّطُوبَة → warrutˤuːba) — the cascade mis-read it (waːlrr…), so
+    # it no longer defers. Only the non-article waṣl-alif stem still does.
+    "فَبِالْحَقِّ", "وَالرُّطُوبَة", "بِالزَّعْفَرَان",
 ])
 def test_flagship_words_do_not_defer(word):
     """The lattice-handled words are not needlessly deferred."""
