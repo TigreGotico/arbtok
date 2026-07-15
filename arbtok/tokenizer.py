@@ -13,7 +13,8 @@ from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WA
                               ALIF_MAKSURA,  ALIF, ALEF_MADDA,
                               HAMZAT_AL_WASL, TA_MARBUTA, SHADDA,
                               SUN_LETTERS, CLITIC_BASES, PUNCT)
-from arbtok.stress import stress_words
+from arbtok.stress import stress_words, stress_ipa, _first_segment_len
+from orthography2ipa.vowels import is_ipa_vowel
 from arbtok.dialects import (VOWEL_MAP, ARABIC_TO_IPA_CONSONANTS, DIACRITIC_TO_IPA,
                              TANWIN_TO_IPA, WORD_EXCEPTIONS,
                              DEFAULT_LANG, consonant_ipa)
@@ -491,11 +492,10 @@ class WordToken:
         either: gahawa is conditioned on SYLLABLE POSITION, which only the lattice
         knows.
 
-        So the word's own phonology comes from the lattice, and the cascade keeps
-        what only it can do — the cross-word effects. The one it applies to a
-        word's *first* segment is waṣl: the article's ``a`` elides after a
-        proclitic or a vowel-final word, which is a fact about the neighbour, not
-        about this word, so it is re-applied here.
+        So the word's own phonology comes from the lattice, and the cross-word
+        effects — including the article's waṣl elision, which is a fact about the
+        *spoken* neighbour — are left to :mod:`arbtok.sandhi`, which sees the
+        assembled utterance.
 
         Returns ``None`` for the words the lattice cannot own — those needing the
         lexical/cross-word rules it lacks (:func:`~arbtok.lattice.defers_to_cascade`).
@@ -513,12 +513,12 @@ class WordToken:
         # cannot disagree on it.
         ipa = ipa.replace("idʒt", "ijt")
 
-        if self.has_definite_article and self.prev_word is not None and (
-                self.prev_word.is_proclitic or self.prev_word.end_with_vowel):
-            # Cross-word waṣl: the article's vowel is not pronounced after a
-            # proclitic or a vowel — "fiː albajt" is "fiː lbajt".
-            ipa = ipa[1:] if ipa[:1] in ("a", "ɑ") else ipa
-
+        # Cross-word waṣl (the article's seat vowel eliding after a vowel-final
+        # word, "fiː albajt" → "fiː lbajt") is NOT applied here any more: it is a
+        # fact about the *spoken* neighbour, and a word-local check can only see
+        # the neighbour's spelling — it misses a tāʾ marbūṭa read as /a/ and a
+        # pause-shortened ending. arbtok.sandhi.apply_cross_word owns it, driven
+        # by the assembled spoken forms.
         return ipa
 
     def __eq__(self, other) -> bool:
@@ -585,20 +585,49 @@ class Sentence:
         """
         # A word's own phonology comes from the lattice; what happens BETWEEN
         # words does not, and cannot — see arbtok.sandhi.
-        from arbtok.sandhi import apply_cross_word
+        from arbtok.sandhi import apply_cross_word, _has_article
+        tokens = self.tokens
         pieces = apply_cross_word(
-            [(w.ipa, w.surface, w.is_punct) for w in self.tokens],
-            pausal=self.pausal)
+            [(w.ipa, w.surface, w.is_punct) for w in tokens],
+            pausal=self.pausal, lang=self.lang)
+
+        # A waṣl-elided definite article is proclitic — unstressed, outside its
+        # host's stress domain. When the article's seat vowel has been elided
+        # (the piece now opens on the article consonant, not on ``a``), hold that
+        # consonant out of the host's stress so الْيَوم is *lˈjawm*, not *ˈljawm*
+        # (see arbtok.stress.stress_ipa). Aligned to the spoken (non-punct) words.
+        spoken_tokens = [w for w in tokens if not w.is_punct]
+        onsets = [
+            (_first_segment_len(p)
+             if (_has_article(w.surface) and p and not is_ipa_vowel(p[0]))
+             else 0)
+            for w, p in zip(spoken_tokens, pieces)
+        ]
+
         ipa_str = " ".join(pieces).replace(" ː", "ː ").strip()
 
         # HACK: experimentally determined
         # TODO - handle remove whitespaces better
-        ipa_str = ipa_str.replace("mij j", "mijj")
-        ipa_str = ipa_str.replace("mil l", "mill")
-        ipa_str = ipa_str.replace("mim baʕ", "mimbaʕ")
-        ipa_str = ipa_str.replace("min t", "mint")
+        hacked = ipa_str
+        hacked = hacked.replace("mij j", "mijj")
+        hacked = hacked.replace("mil l", "mill")
+        hacked = hacked.replace("mim baʕ", "mimbaʕ")
+        hacked = hacked.replace("min t", "mint")
 
-        return stress_words(ipa_str, self.lang) if self.stress else ipa_str
+        if not self.stress:
+            return hacked
+
+        words = hacked.split(" ")
+        if len(words) == len(onsets):
+            # No word-merging fixup fired; stress each spoken word with its
+            # article-onset so the proclitic article stays unstressed.
+            return " ".join(
+                stress_ipa(w, self.lang, proclitic_onset=o)
+                for w, o in zip(words, onsets))
+        # A fixup merged two words (a min/man assimilation): the onset alignment
+        # no longer holds, so fall back to plain per-word stress. These never
+        # coincide with an article onset, so nothing is lost.
+        return stress_words(hacked, self.lang)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, str):

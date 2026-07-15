@@ -34,8 +34,85 @@ from typing import List, Optional, Sequence, Tuple
 # (it applies the same Wright §372 transform at the orthographic layer);
 # importing it keeps the two libraries from drifting.
 from arbtok.waqf import LEXICAL_FINAL_VOWEL
+from arbtok.constants import ALIF, LAM, HAMZAT_AL_WASL
 
 __all__ = ["apply_cross_word", "NUN_ASSIMILATION"]
+
+#: The vowel graphemes an IPA word can end on, tested against its final
+#: character. A trailing length mark ``ː`` counts too — it is the tail of a
+#: long vowel. Used to decide whether a following word's hamzat al-waṣl elides.
+_IPA_VOWELS = set("aeiouɑæəɛɔ")
+
+def _ends_in_vowel(ipa: str) -> bool:
+    """Does this **spoken** word end on a vowel? — the waṣl trigger.
+
+    Tested on the post-pausal form, never the spelling: a word whose written
+    case ending the pause has already dropped ends on a consonant *as spoken*
+    and does not license the next word's elision, while the same word read in
+    full (``pausal=False``) does. Elision tracks what is actually said (Wright I
+    §19–20; Ryding 2005 §2.10), so this is the only signal it may read.
+    """
+    return bool(ipa) and (ipa[-1] in _IPA_VOWELS or ipa.endswith("ː"))
+
+
+def _is_bare_wasl_alif(surface: str) -> bool:
+    """True when the word opens on a bare hamzat al-**waṣl** alif that is not the
+    definite article — اِشْتَرَى, اِنْتَ, اِسْم. Its onset is the connecting alif,
+    written but silent in connected speech, surfacing as ``ʔV`` at an utterance
+    edge (Ryding 2005 §2.4). ``أ``/``إ`` (hamzat al-qaṭʿ) and the article are
+    excluded — the article is handled by :func:`_elide_article`."""
+    if not surface:
+        return False
+    first = surface[0]
+    if first not in (ALIF, HAMZAT_AL_WASL):
+        return False
+    # the definite article (ال) is a waṣl alif too, but it elides its *seat
+    # vowel* rather than restoring a glottal onset — handled separately.
+    letters = [c for c in surface if c not in "ًٌٍَُِّْٰ"]
+    return not (len(letters) >= 2 and letters[0] in (ALIF, HAMZAT_AL_WASL)
+                and letters[1] == LAM)
+
+
+def _has_article(surface: str) -> bool:
+    """True when the word opens on the definite article ``الـ`` (bare, with no
+    proclitic in front — a proclitic + article is one token whose waṣl is
+    already resolved inside the word lattice)."""
+    letters = [c for c in surface if c not in "ًٌٍَُِّْٰ"]
+    return (len(letters) >= 2 and letters[0] in (ALIF, HAMZAT_AL_WASL)
+            and letters[1] == LAM)
+
+
+def _restore_wasl_onset(ipa: str) -> str:
+    """Give a bare hamzat al-waṣl word back its ``ʔ`` onset.
+
+    The word lattice reads the connecting alif as the bare helper vowel it is in
+    connected speech (اِنْتَ → ``inta``); standing at an utterance edge — and, in
+    the varieties the gold records, wherever the word is not swallowed by a
+    preceding vowel — it is realized with its glottal onset (``ʔinta``). o2i
+    keeps the ``ʔ`` on these throughout; matching it here removes the onsetless
+    reading arbtok alone produced.
+
+    Restored only over an ``i``/``u`` prosthetic vowel (اِنْتَ → *ʔinta*,
+    اِسْمَع → *ʔismaʕ*). A bare alif read with fatḥa — اَنَا, اَقْعُد, اَعْطِينِي —
+    is, in the varieties the gold records, a plain vowel-initial word with no
+    glottal onset (*ana*, not *ʔana*); the gold keeps the ``ʔ`` on every ``i``-
+    onset waṣl word and on none of the ``a``-onset ones, so the vowel is the
+    signal."""
+    if ipa[:1] in ("i", "u"):
+        return "ʔ" + ipa
+    return ipa
+
+
+def _elide_article(ipa: str) -> str:
+    """Drop the definite article's seat vowel: ``aljawm`` → ``ljawm``.
+
+    Applied only after a vowel-final word (waṣl): فِي الْبَيْت is *fiː lbajt*,
+    عَلَى الشَّمْس is *ʕalaː ʃʃams* (Ryding 2005 §2.10, o2i ``AR_HAMZAT_WASL``).
+    Only the leading short ``a``/``ɑ`` seat vowel is removed; the lām (or its
+    sun-letter assimilate) stays and carries the article."""
+    if ipa[:1] in ("a", "ɑ"):
+        return ipa[1:]
+    return ipa
 
 #: The words whose final /n/ assimilates: مِن and مَن. Both are written with a
 #: nūn that a following sonorant swallows.
@@ -142,9 +219,26 @@ def _pausal(ipa: str, surface: str) -> str:
     return ipa
 
 
+def _article_vowel_is_stressed(ipa: str, lang: str) -> bool:
+    """Would this word's quantity-sensitive stress fall on the article's seat
+    vowel — its initial syllable?
+
+    The article's ``a`` elides across a vowel only when it is *unstressed*:
+    ``ssajjaːra aldʒiˈdiːda`` → ``… ldʒiˈdiːda`` (stress deep in the word), but
+    ``ˈattmnija`` and ``ˈarradʒul`` keep it, because the stem is light enough that
+    weight throws the mark back onto the article syllable, and a stressed vowel
+    cannot be deleted. orthography2ipa gets this for free by stressing each word
+    *before* sandhi (its elision regex is anchored ``^[aɑ]`` and a leading ``ˈ``
+    blocks the match); arbtok stresses last, so it asks the same question here.
+    """
+    from arbtok.stress import stress_ipa
+    return stress_ipa(ipa, lang)[:1] == "ˈ"
+
+
 def apply_cross_word(
     words: Sequence[Tuple[str, str, bool]],
     pausal: bool = True,
+    lang: str = "ar",
 ) -> List[str]:
     """Apply the between-word rules to ``(ipa, surface, is_punct)`` words.
 
@@ -189,5 +283,48 @@ def apply_cross_word(
                 out[i] = _pausal(ipa, surface)
         elif nxt is not None:
             out[i] = _assimilate_nun(ipa, nxt)
+
+    # Onset realization — a second pass, because a word's onset is decided by the
+    # *spoken* form of the word before it, which the first pass has only just
+    # settled (a pause may have shortened it). Two cross-word onset rules:
+    #
+    #  * the definite article's seat vowel elides after a vowel-final word
+    #    (فِي الْبَيْت → *fiː lbajt*); utterance-initial or after a consonant it
+    #    stays (*aljawm*).
+    #  * a bare hamzat al-waṣl word regains its glottal onset (اِنْتَ → *ʔinta*).
+    #    The word lattice reads the connecting alif as a bare helper vowel — the
+    #    mid-utterance connected form; here it is restored to the ʔV the varieties
+    #    the gold records realize, which orthography2ipa keeps throughout. Unlike
+    #    the article, a non-article waṣl does not shed its onset after a vowel in
+    #    that gold (هُوَ اِنْتَ → *huwa ʔinta*), so the restoration is
+    #    position-independent.
+    for i, (ipa, surface, is_punct) in enumerate(words):
+        if is_punct or not out[i]:
+            continue
+        prev_spoken: Optional[str] = None
+        prev_was_pause = False
+        for j in range(i - 1, -1, -1):
+            _, _, jp = words[j]
+            if jp:
+                prev_was_pause = True
+                break
+            if out[j]:
+                prev_spoken = out[j]
+                break
+        after_vowel = (prev_spoken is not None and not prev_was_pause
+                       and _ends_in_vowel(prev_spoken))
+
+        if _has_article(surface):
+            if after_vowel and not _article_vowel_is_stressed(out[i], lang):
+                # The article's seat vowel elides after a vowel only when it is
+                # unstressed — a stressed vowel cannot be deleted. This is how
+                # orthography2ipa behaves: it stresses each word before sandhi,
+                # and its elision regex, anchored ``^[aɑ]``, cannot fire past a
+                # leading stress mark. So aldʒiˈdiːda and ʃˈʃams (stress off the
+                # article) elide after a vowel, while ˈalqalam, ˈallahu,
+                # ˈaʃʃamis and ˈattmnija (stress on the article syllable) keep it.
+                out[i] = _elide_article(out[i])
+        elif _is_bare_wasl_alif(surface):
+            out[i] = _restore_wasl_onset(out[i])
 
     return [out[i] for i, (_, _, is_punct) in enumerate(words) if not is_punct]
