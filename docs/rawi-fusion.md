@@ -55,8 +55,12 @@ the member weights are the TigreGotico rawi family (Apache-2.0, published on PyP
 in the `text2tashkeel` wheel), and `tools/build_ensemble_logits_onnx.py`
 reproduces the re-export.
 
-Per word (only where the writing is silent — a fully-marked word is never
-touched, and a word in the stem lexicon is answered from it first):
+Per word — and only where the writing is **wholly** silent. A fully-marked word
+is never touched; a *partially* vocalized word is completed by the generator's
+constrained argmax (the same decision rule as `fusion=False`, so vocalized input
+is byte-identical whether fusion is on or off — a human's mark is an answer, not
+a suggestion, and the scorer never engages against it); a word in the stem
+lexicon is answered from it first. For a bare word:
 
 1. **Enumerate, constrained.** For each letter, take the top-`k` diacritic
    classes from rawi's distribution. The classes rawi exposes are pure combining
@@ -125,7 +129,7 @@ Mean bare-input PER (33 lects × 20 sentences):
 | arm | mean PER |
 |---|---|
 | generator (rawi-ensemble argmax under the lattice guard) | 0.193 |
-| **fusion (rawi-ensemble scorer under dialect licensing)** | **0.190** |
+| **fusion (rawi-ensemble scorer under dialect licensing)** | **0.189** |
 
 Fusion scoring the ensemble distribution beats the generator arm by −0.003
 mean PER, and the win concentrates exactly where the dialect diverges most from
@@ -136,9 +140,9 @@ base model:
 | lect | Δ PER | | lect | Δ PER |
 |---|---|---|---|---|
 | ar-TN | −0.022 | | ar (leaf) | −0.013 |
-| ar-SA-x-sharqiyya | −0.018 | | ar-SA-x-najd | −0.013 |
-| ar-MR | −0.018 | | ar-LY | −0.013 |
-| ar-SA-x-qassim | −0.017 | | ar-YE | −0.011 |
+| ar-SA-x-qassim | −0.020 | | ar-SA-x-najd | −0.013 |
+| ar-SA-x-sharqiyya | −0.018 | | ar-LY | −0.013 |
+| ar-MR | −0.018 | | ar-YE | −0.011 |
 
 The MSA-adjacent lects (Levantine, Gulf koinés) move by at most +0.009, so the
 mean is a real dialect win, not a wash. An earlier single-head prototype
@@ -150,7 +154,7 @@ win.
 ## Disposition
 
 Fusion scores the flagship ensemble's distribution under the variety's own
-licensing and beats the generator's mean bare-input PER (0.190 vs 0.193),
+licensing and beats the generator's mean bare-input PER (0.189 vs 0.193),
 with the margin on the dialect-divergent lects it was built for. The mechanism the
 section below once described as the limiting factor — the flagship exposing only a
 decision, not a distribution — is resolved: arbtok bundles the ensemble as a
@@ -167,7 +171,7 @@ ensemble graph that additionally emits `gated_logits` (the gate folded into the
 value-head logits as a bias on class 0), and reads it directly with onnxruntime
 (`arbtok/_ensemble.py`, built by `tools/build_ensemble_logits_onnx.py`). Scoring
 that ensemble-grade distribution under dialect licensing is what lands the proven
-mechanism on top of the stronger base — the measured 0.190-vs-0.193 win above.
+mechanism on top of the stronger base — the measured 0.189-vs-0.193 win above.
 
 Secondary levers, still open, all inside arbtok: raise `lattice_weight` (currently a mild
 tie-break — the soft channel rarely flips a decision today, so it is really a

@@ -98,11 +98,21 @@ def build(out_path: str, int8: bool = True) -> None:
 
 
 def verify(out_path: str, int8: bool = True) -> None:
-    """The correctness gate: argmax(gated_logits) == gated_cls on a probe set."""
+    """Two correctness gates, on a probe set:
+
+    1. ``argmax(gated_logits) == gated_cls`` — the exposed distribution decides
+       exactly what the graph decides;
+    2. our ``gated_cls`` is byte-equal to text2tashkeel's *shipped* stitched
+       ensemble's ``gated_cls`` — the re-export is the same model, plus an
+       output, and nothing else.
+    """
     d = _t2t_models_dir()
     val = json.loads((d / "rawi_v2.vocab.json").read_text())
     c2i = dict(val["char_to_idx"]); unk = c2i.get("<UNK>", 1)
     sess = ort.InferenceSession(out_path, providers=["CPUExecutionProvider"])
+    ref_path = d / ("rawi_ensemble.int8.onnx" if int8 else "rawi_ensemble.onnx")
+    ref = (ort.InferenceSession(str(ref_path), providers=["CPUExecutionProvider"])
+           if ref_path.exists() else None)
 
     tests = [
         "بسم الله الرحمن الرحيم", "العلم نور والجهل ظلام", "هذا كتاب مفيد",
@@ -119,7 +129,10 @@ def verify(out_path: str, int8: bool = True) -> None:
         ids = np.array([[c2i.get(c, unk) for c in bare]], np.int64)
         cls, logits = sess.run(["gated_cls", "gated_logits"], {"input": ids})
         ok &= bool((logits[0].argmax(-1) == cls[0]).all())
-    print("re-export correctness gate (argmax(gated_logits) == gated_cls):", ok)
+        if ref is not None:
+            ref_cls = ref.run(["gated_cls"], {"input": ids})[0]
+            ok &= bool((cls == ref_cls).all())
+    print("re-export correctness gates (argmax==gated_cls; ==shipped ensemble):", ok)
     assert ok
 
 

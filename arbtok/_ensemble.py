@@ -59,8 +59,18 @@ class EnsembleDiacritizer:
         self.c2i = dict(v["char_to_idx"])
         self.i2d = {i: s for s, i in dict(v["diac_to_idx"]).items()}
         self.unk = self.c2i.get("<UNK>", 1)
+        # Deterministic inference: multithreaded int8 reductions are not
+        # bit-reproducible, and an argmax near-tie then flips run-to-run — a
+        # regression pin that fails one run and passes the next. Single-threaded
+        # sequential execution makes every run byte-identical; at this model's
+        # size (4.9 MB, one sentence per call) the speed cost is negligible.
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = 1
+        opts.inter_op_num_threads = 1
+        opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         self.sess = ort.InferenceSession(
-            str(model_path), providers=providers or ["CPUExecutionProvider"])
+            str(model_path), sess_options=opts,
+            providers=providers or ["CPUExecutionProvider"])
 
     @property
     def classes(self):
