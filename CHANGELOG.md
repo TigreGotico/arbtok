@@ -2,22 +2,27 @@
 
 ## [0.0.0a37](https://github.com/TigreGotico/arbtok/tree/0.0.0a37) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a35...0.0.0a37)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a36...0.0.0a37)
+
+## [0.0.0a36](https://github.com/TigreGotico/arbtok/tree/0.0.0a36) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a34...0.0.0a36)
 
 **Merged pull requests:**
 
+- feat\(gold-cs\): authentic Algiers \(ar-DZ\) French-matrix code-switched gold set [\#50](https://github.com/TigreGotico/arbtok/pull/50) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic code-switched rows for MSA, Classical & the 5 grouping nodes [\#48](https://github.com/TigreGotico/arbtok/pull/48) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Nigerian/Shuwa \(ar-NG\) code-switched gold set [\#47](https://github.com/TigreGotico/arbtok/pull/47) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Tunis \(ar-TN\) French-matrix code-switched gold set [\#45](https://github.com/TigreGotico/arbtok/pull/45) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Chadian \(ar-TD\) code-switched gold set [\#43](https://github.com/TigreGotico/arbtok/pull/43) ([JarbasAl](https://github.com/JarbasAl))
 
-## [0.0.0a35](https://github.com/TigreGotico/arbtok/tree/0.0.0a35) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a34...0.0.0a35)
-
 ## [0.0.0a34](https://github.com/TigreGotico/arbtok/tree/0.0.0a34) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a32...0.0.0a34)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a35...0.0.0a34)
+
+## [0.0.0a35](https://github.com/TigreGotico/arbtok/tree/0.0.0a35) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a33...0.0.0a35)
 
 **Merged pull requests:**
 
@@ -28,13 +33,13 @@
 - feat\(gold-cs\): authentic urban Palestinian \(ar-PS\) code-switched gold set [\#35](https://github.com/TigreGotico/arbtok/pull/35) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Kuwaiti \(ar-KW\) code-switched gold set [\#33](https://github.com/TigreGotico/arbtok/pull/33) ([JarbasAl](https://github.com/JarbasAl))
 
-## [0.0.0a32](https://github.com/TigreGotico/arbtok/tree/0.0.0a32) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a33...0.0.0a32)
-
 ## [0.0.0a33](https://github.com/TigreGotico/arbtok/tree/0.0.0a33) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a31...0.0.0a33)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a32...0.0.0a33)
+
+## [0.0.0a32](https://github.com/TigreGotico/arbtok/tree/0.0.0a32) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a31...0.0.0a32)
 
 **Merged pull requests:**
 
@@ -43,20 +48,20 @@
 
 ## [0.0.0a31](https://github.com/TigreGotico/arbtok/tree/0.0.0a31) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a30...0.0.0a31)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a29...0.0.0a31)
 
 **Merged pull requests:**
 
 - feat\(gold-cs\): authentic Ṣanʿānī Yemeni \(ar-YE\) code-switched gold set [\#37](https://github.com/TigreGotico/arbtok/pull/37) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Omani \(ar-OM\) code-switched gold set [\#34](https://github.com/TigreGotico/arbtok/pull/34) ([JarbasAl](https://github.com/JarbasAl))
 
-## [0.0.0a30](https://github.com/TigreGotico/arbtok/tree/0.0.0a30) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a29...0.0.0a30)
-
 ## [0.0.0a29](https://github.com/TigreGotico/arbtok/tree/0.0.0a29) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a28...0.0.0a29)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a30...0.0.0a29)
+
+## [0.0.0a30](https://github.com/TigreGotico/arbtok/tree/0.0.0a30) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a28...0.0.0a30)
 
 **Merged pull requests:**
 
