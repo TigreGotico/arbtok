@@ -122,3 +122,42 @@ def test_alignment_mismatch_falls_back_to_guarded_pipeline():
     f = FusionDiacritizer(lang="ar", lexicon=None)
     out = f.diacritize("، ، ،")  # punctuation-only tokens, an alignment edge
     assert isinstance(out, str)
+
+
+# ── the bundled ensemble distribution (arbtok/_ensemble.py) ──────────────────
+
+_PROBE = [
+    "بسم الله الرحمن الرحيم", "العلم نور والجهل ظلام", "هذا كتاب مفيد",
+    "في التأني السلامة وفي العجلة الندامة", "محمد رسول الله",
+    "الحمد لله رب العالمين", "وإن وهبها لرب الأرض لم يلزمه القبول",
+]
+
+
+def test_ensemble_logits_contract():
+    """`logits(text)` returns `(bare, logits[T, C], classes)` — one row per NFD
+    base character, C == number of classes, and `None` when nothing to mark —
+    the same contract a single-head text2tashkeel diacritizer honours."""
+    from arbtok._ensemble import get_ensemble
+    d = get_ensemble()
+    bare, logits, classes = d.logits("بسم الله الرحمن الرحيم")
+    assert logits is not None
+    assert logits.shape == (len(bare), len(classes))
+    # nothing to mark (bare skeleton empty) → no distribution
+    empty_bare, empty_logits, _ = d.logits("ًٌٍَُِّْ")  # stray combining marks only
+    assert empty_bare == "" and empty_logits is None
+
+
+def test_ensemble_logits_argmax_equals_the_ensemble_decision():
+    """The correctness gate for scoring the stitched flagship: the argmax of the
+    exposed distribution is byte-identical to the ensemble's own `gated_cls`
+    decision (which `diacritize()` decodes) at every position, on a probe set.
+    Without this the scorer would be reading a different model than it ships."""
+    import unicodedata
+    from arbtok._ensemble import get_ensemble
+    d = get_ensemble()
+    for text in _PROBE:
+        bare, logits, _ = d.logits(text)
+        if logits is None:
+            continue
+        argmax_reading = d.decode(bare, logits.argmax(-1))
+        assert argmax_reading == d.diacritize(text), text

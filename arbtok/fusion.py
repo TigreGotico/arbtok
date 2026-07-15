@@ -71,10 +71,13 @@ from arbtok.tokenizer import normalize_unicode
 
 __all__ = ["FusionDiacritizer", "Hypothesis", "logprobs"]
 
-#: The rawi single-head models that expose a per-character distribution. The
-#: stitched flagship folds its gate into the graph and has no distribution left
-#: to score, so fusion uses a single head (see docs/rawi-fusion.md on the cost).
-_DEFAULT_MODEL = "rawi-v2"
+#: Fusion scores the flagship **ensemble** distribution, read from the stitched
+#: ONNX arbtok bundles (arbtok/_ensemble.py). The plain stitched flagship returns
+#: an argmax only; the bundled re-export additionally emits ``gated_logits`` (the
+#: gate folded in as a bias on the value-head logits), so the scorer sees the
+#: ensemble's decision as a distribution instead of a single head. The name is
+#: only used on the rare alignment-mismatch fallback to the guarded pipeline.
+_DEFAULT_MODEL = "rawi-ensemble"
 
 
 def logprobs(row: np.ndarray) -> np.ndarray:
@@ -150,9 +153,12 @@ class FusionDiacritizer:
     @property
     def diacritizer(self):
         if self._diacritizer is None:
-            from text2tashkeel import Diacritizer
-            # waqf is applied by this module (after scoring), not by the model.
-            self._diacritizer = Diacritizer(self._model, waqf=False)
+            # The bundled ensemble reader — same (logits / decode / diacritize)
+            # contract as a text2tashkeel Diacritizer, but reads arbtok's own
+            # stitched ONNX and exposes the flagship distribution to score. waqf
+            # is applied by this module (after scoring), not by the model.
+            from arbtok._ensemble import get_ensemble
+            self._diacritizer = get_ensemble()
         return self._diacritizer
 
     # ── licensing (shared with the guarded pipeline) ────────────────────────
