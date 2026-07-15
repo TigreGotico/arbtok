@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.0a32](https://github.com/TigreGotico/arbtok/tree/0.0.0a32) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a31...0.0.0a32)
+
+**Merged pull requests:**
+
+- feat\(gold-cs\): authentic Emirati \(ar-AE\) code-switched gold set [\#40](https://github.com/TigreGotico/arbtok/pull/40) ([JarbasAl](https://github.com/JarbasAl))
+- feat\(gold-cs\): authentic Qatari \(ar-QA\) code-switched gold set [\#32](https://github.com/TigreGotico/arbtok/pull/32) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a31](https://github.com/TigreGotico/arbtok/tree/0.0.0a31) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a30...0.0.0a31)
