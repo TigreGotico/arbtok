@@ -148,9 +148,12 @@ def apply_cross_word(
 ) -> List[str]:
     """Apply the between-word rules to ``(ipa, surface, is_punct)`` words.
 
-    Returns the rewritten IPA of each. Punctuation is passed through untouched —
-    it is not a word and has no phonology. What it *is* is a pause, and a pause is
-    what strips a case ending.
+    Returns the rewritten IPA of each **spoken** word — punctuation is dropped
+    from the result. A comma or a full stop is not a word and has no phonology;
+    an IPA transcription carries none, exactly as ``orthography2ipa`` emits no
+    ``.``/``،``/``؟``. What punctuation *is* is a pause, and a pause is what
+    strips a case ending, so it is still read (below) to drive the pausal form
+    of the word before it — it simply does not survive into the output.
 
     ``pausal`` is arbtok's declared waqf policy switch. ``True`` (the TTS
     default) renders a word standing at a written pause in its pausal form
@@ -187,4 +190,4 @@ def apply_cross_word(
         elif nxt is not None:
             out[i] = _assimilate_nun(ipa, nxt)
 
-    return out
+    return [out[i] for i, (_, _, is_punct) in enumerate(words) if not is_punct]

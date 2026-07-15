@@ -527,8 +527,10 @@ def test_hardcoded_wordlist():
         assert WordToken(text, word_idx=0).ipa == expected
 
 
-def test_punctuation_preservation():
-    """Non-Arabic characters and punctuation survive transcription."""
+def test_punctuation_is_not_emitted():
+    """Punctuation has no phonology and does not survive into the IPA — exactly
+    as orthography2ipa emits none. It is still read as a pause (see
+    arbtok.sandhi), which is what drives the pausal form before it."""
     result = transcribe("يَوْم جميل!")
-    assert "!" in result
+    assert "!" not in result
     assert result.startswith("jawm")

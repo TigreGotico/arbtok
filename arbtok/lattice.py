@@ -361,15 +361,23 @@ _ALL_DIACRITICS = _HARAKAT | {SHADDA, "ٰ", "ٓ"}
 def defers_to_cascade(word: str) -> bool:
     """True when a word needs cross-word/lexical rules the word lattice lacks.
 
-    The shared lattice is a *word* engine: two Arabic phenomena live outside
-    it and must stay on arbtok's sentence/lexical cascade until the o2i
-    ar-spec gaps are resolved, so the public output never regresses:
+    Two cases remain:
 
-    - **a proclitic (و ف ب ك ل س …) prefixed to a stem carrying an internal
-      hamzat al-waṣl or the article** — the waṣl elision spans the
-      proclitic↔stem boundary (وَبِاسْمِ → ``wabismi``), a cross-word effect.
+    - **trailing punctuation** — it marks a pausal form (tanwīn/tāʾ-marbūṭa
+      shortening), an utterance-level effect the cascade owns;
+    - **a proclitic (و ف ب ك ل س …) prefixed to a stem opening on a bare
+      waṣl-alif that is NOT the article** (وَبِاسْمِ → ``wabismi``) — the
+      elision of that internal hamzat al-waṣl spans the proclitic↔stem
+      boundary, and only the cascade performs it (the lattice reads the
+      alif as a vowel: ``wabiaːsmi``).
 
-    Deferring is always safe: the cascade is the current reference path.
+    The proclitic + **article** case (وَالرُّطُوبَة, بِالزَّعْفَرَان) used to
+    defer here too, and must not: the cascade mis-reads it — an unelided و
+    and an unassimilated article lām, ``waːlrrutˤuːba`` — while the word
+    lattice elides the waṣl and assimilates exactly as orthography2ipa does
+    (``warrutˤuːba``, ``bizzaʕfaraːn``). It now stays on the lattice.
+
+    Deferring is only safe where the cascade is actually the better path.
     """
     norm = normalize_unicode(word)
     if any(c in PUNCT for c in norm):
@@ -377,21 +385,22 @@ def defers_to_cascade(word: str) -> bool:
         # shortening) — an utterance-level effect the cascade owns.
         return True
     # Peel leading proclitics (a clitic-base consonant + optional harakah);
-    # if the stem then opens with a waṣl-alif or the article lām (بِاسْمِ,
-    # بِالـ, لِلـ), the waṣl elision crosses the proclitic boundary.
-    i, peeled = 0, False
+    # if the stem then opens on a bare waṣl-alif that does not start the
+    # article (بِاسْمِ but not بِالْبَيْت), the waṣl elision crosses the
+    # proclitic boundary and only the cascade models it. A FATḤA on the
+    # peeled consonant rules the case out: ⟨بَا⟩ is that consonant plus the
+    # mater-lectionis /aː/ — the ب is part of the word, not a clitic
+    # (بَاش /baːʃ/, بَاچِر /baːtʃir/) — and the lattice reads it correctly.
+    i, peeled, last_harakah = 0, False, None
     while i < len(norm) and norm[i] in CLITIC_BASES:
         j = i + 1
+        last_harakah = None
         if j < len(norm) and norm[j] in _SHORT_HARAKAT:
+            last_harakah = norm[j]
             j += 1
-        # A proclitic lām directly before the article lām (لِلـ = li + al-,
-        # the article's alif elided) — do not peel the article away; leave
-        # the stem opening on لـ so it is recognised below.
-        if norm[i] == LAM and j < len(norm) and norm[j] == LAM:
-            break
         i, peeled = j, True
-    if peeled:
+    if peeled and last_harakah != FATHA:
         stem = "".join(c for c in norm[i:] if c not in _ALL_DIACRITICS)
-        if stem[:1] in (ALIF, LAM):
+        if stem[:1] == ALIF and stem[1:2] != LAM:
             return True
     return False

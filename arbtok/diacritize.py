@@ -46,9 +46,10 @@ something upstream has regressed.
 
 from __future__ import annotations
 
+import re
 from typing import List, Optional
 
-from orthography2ipa import get, is_underdetermined
+from orthography2ipa import get, is_underdetermined, underdetermined_positions
 from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
 
 from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
@@ -71,6 +72,36 @@ _RESTORABLE = {
     "ه": {"ة"},                   # hāʾ → tāʾ marbūṭa
     "ي": {"ى"},                   # yāʾ → alif maqṣūra
 }
+
+
+#: The definite article's hamzat al-waṣl and its lām. Neither ever carries a
+#: mark — the alif is a connective seat and the lām is either the moon /l/ or
+#: sun-assimilated — so a word left "underdetermined" *only* at these positions
+#: is not underdetermined in any way a model can help with. The article may sit
+#: behind a single one-consonant proclitic (wa-, bi-, fa-, ka-, li-).
+_ARTICLE_RE = re.compile(r"^[وفبكل]?[َُِ]?(?:ا|ٱ|أ)ل")
+
+
+def _author_complete(word: str, positions) -> bool:
+    """True when a human has fully pointed *word* to the gold's convention.
+
+    ``orthography2ipa`` reports the leading article's alif/lām as
+    underdetermined because they carry no mark, yet their reading is fixed —
+    the alif is hamzat al-waṣl and the lām is resolved by the sun/moon rescorer,
+    not by any vowel a diacritizer could add. When those are the *only* silent
+    positions the word is complete as written, and handing it to the model can
+    only re-guess marks the author already committed (a fully-marked ⟨عِيش⟩
+    re-read as a glide /ʕijʃ/ instead of the written /ʕiːʃ/). Such a word is
+    passed through untouched.
+    """
+    if not positions:
+        return True
+    m = _ARTICLE_RE.match(word)
+    if not m:
+        return False
+    # The alif and the lām are the two characters the match ends on.
+    article = {m.end() - 2, m.end() - 1}
+    return set(positions) <= article
 
 
 def strip_marks(text: str) -> str:
@@ -205,8 +236,13 @@ class LatticeDiacritizer:
         """Return *word* diacritized, or unchanged if it needs nothing or the
         proposal is refused."""
         normalized = normalize_unicode(word)
-        # (1) The writing already says it — never overwrite a human's marks.
-        if not is_underdetermined(normalized, self._spec):
+        # (1) The writing already says it — never overwrite a human's marks. A
+        # word is "already said" when every silent position is the definite
+        # article's alif/lām, whose reading the lattice fixes without a model;
+        # re-marking such a word only lets the model overrule the author (see
+        # ``_author_complete``).
+        positions = underdetermined_positions(normalized, self._spec)
+        if _author_complete(normalized, positions):
             return word
 
         # (2) Somebody already wrote this word down. A lexicon entry is a pausal

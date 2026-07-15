@@ -146,9 +146,9 @@ def test_every_variety_transcribes_through_the_cascade_too(lang):
 @pytest.mark.parametrize("lang,article_word,expected,why", [
     # Sun-letter assimilation of the definite article fires the same way in
     # every variety — ⟨ش⟩ is a sun letter regardless of the qāf/jīm reflexes.
-    ("ar", "الشَّمْس", "aˈʃʃams", "MSA sun-letter"),
-    ("ar-EG", "الشَّمْس", "aˈʃʃams", "EG sun-letter unaffected by qāf→ʔ"),
-    ("ar-MA", "الشَّمْس", "aˈʃʃams", "MA sun-letter"),
+    ("ar", "الشَّمْس", "aʃˈʃams", "MSA sun-letter"),
+    ("ar-EG", "الشَّمْس", "aʃˈʃams", "EG sun-letter unaffected by qāf→ʔ"),
+    ("ar-MA", "الشَّمْس", "aʃˈʃams", "MA sun-letter"),
     # Moon-letter control: the article's lām is kept, and the qāf reflex of the
     # variety still lands on the noun — the rescorer works on the resolved
     # inventory, not an assumed MSA /q/.
