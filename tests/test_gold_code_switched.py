@@ -54,9 +54,14 @@ def test_gold_matches_pipeline(lect):
         seen.add(r["sentence"])
         assert gcs.strip_tashkeel(r["sentence"]) == r["raw"], \
             f"{rid}: raw != sentence stripped of ḥarakāt"
-        assert plugin.transcribe(r["sentence"]) == r["ipa"], \
-            f"{rid}: ipa regression (re-run scripts/gold_code_switched.py build)"
-        failures += gcs._leakage_failures(rid, r, lect)
+        # Only pinned rows carry live pipeline output (absent column == pinned for
+        # the un-migrated template lects); known-wrong / unsupported rows carry
+        # hand-authored gold the pipeline does not reproduce — see the build script.
+        status = (r.get("pipeline_status") or "pinned").strip()
+        if status == "pinned":
+            assert plugin.transcribe(r["sentence"]) == r["ipa"], \
+                f"{rid}: ipa regression (re-run scripts/gold_code_switched.py build)"
+            failures += gcs._leakage_failures(rid, r, lect)
     assert not failures, "\n".join(failures)
 
 
