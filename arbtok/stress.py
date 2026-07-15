@@ -19,7 +19,7 @@ from __future__ import annotations
 from orthography2ipa import get
 from orthography2ipa.vowels import is_ipa_vowel
 from orthography2ipa.stress import (
-    apply_stress_mark, detect_stress, detect_stress_by_weight,
+    apply_stress_mark, detect_stress, detect_stress_by_weight, syllabify_ipa,
 )
 
 from arbtok.dialects import DEFAULT_LANG
@@ -39,8 +39,18 @@ def stress_ipa(ipa: str, lang: str = DEFAULT_LANG) -> str:
     rules = get(lang).stress
     if rules is None:
         return ipa
-    idx = (detect_stress_by_weight(ipa, rules) if rules.quantity_sensitive
-           else detect_stress(ipa, rules))
+    if rules.quantity_sensitive:
+        idx = detect_stress_by_weight(ipa, rules)
+        # Mark against the SAME phonological division the weights were read off
+        # (see orthography2ipa.g2p). The naive ``syllabify`` cuts ``saːliq`` as
+        # ``sa|ːliq``, dropping the mark inside the long vowel — ``saˈːliq`` —
+        # which is the Vˈː artifact. ``syllabify_ipa`` keeps the length mark on
+        # its vowel segment, so the mark lands on the syllable onset.
+        return apply_stress_mark(
+            ipa, rules, idx,
+            ipa_syllables=syllabify_ipa(ipa, rules.max_onset),
+        )
+    idx = detect_stress(ipa, rules)
     return apply_stress_mark(ipa, rules, idx)
 
 
