@@ -27,13 +27,43 @@ from arbtok.dialects import DEFAULT_LANG
 __all__ = ["stress_ipa", "stress_words"]
 
 
-def stress_ipa(ipa: str, lang: str = DEFAULT_LANG) -> str:
+#: The superscript / diacritic modifiers that ride on a consonant's base letter
+#: (emphatic ˤ, labialized ʷ, palatalized ʲ, aspirated ʰ, …). They are part of
+#: the segment, so a proclitic-onset length must not split them off.
+_SEGMENT_MODIFIERS = set("ˤʷʲʰˠˀʼ̪̬̥̠̃ː")
+
+
+def _first_segment_len(ipa: str) -> int:
+    """Length in characters of the first phoneme segment of *ipa* — a base
+    character plus any modifiers riding on it (``ðˤ`` is two chars, one segment).
+    """
+    if not ipa:
+        return 0
+    n = 1
+    while n < len(ipa) and ipa[n] in _SEGMENT_MODIFIERS:
+        n += 1
+    return n
+
+
+def stress_ipa(
+    ipa: str, lang: str = DEFAULT_LANG, proclitic_onset: int = 0,
+) -> str:
     """Mark the stressed syllable of one prosodic word of IPA.
 
     A stretch of IPA with no vowel in it is not a word — it is punctuation the
     assembler carried through, and it has no syllable to stress. Marking it would
     leave a bare stress mark floating next to a full stop.
+
+    ``proclitic_onset`` holds this many leading characters out of the stress
+    computation and re-prepends them unmarked. It carries the waṣl-elided
+    definite article, which is proclitic: unstressed and outside its host's
+    stress domain, so الْيَوم after a vowel is *lˈjawm*, not *ˈljawm*, and
+    السُّوق is *sˈsuːɡ* — the stress lands by the host word's weight, exactly as
+    orthography2ipa places it (Ryding 2005 §2.10; Watson 2002 ch.3).
     """
+    if proclitic_onset:
+        head, rest = ipa[:proclitic_onset], ipa[proclitic_onset:]
+        return head + stress_ipa(rest, lang)
     if not ipa or not any(is_ipa_vowel(ch) for ch in ipa):
         return ipa
     rules = get(lang).stress

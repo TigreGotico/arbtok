@@ -100,7 +100,10 @@ WASL = [
     ("بِ الطَّبِيب", "bi tˤtˤabiːb", "bi + al + ṭāʾ"),
     ("فِي الشَّرِكَة", "fiː ʃʃarika", "Waṣl after vowel-final word + sun letter"),
     ("لِ الْكِتَاب", "li lkitaːb", "Waṣl after proclitic + moon letter"),
-    ("فِي الْقَلَم", "fiː lqalam", "Waṣl after vowel-final word + moon letter"),
+    ("فِي الْبَيْت", "fiː lbajt", "Waṣl after vowel: heavy stem, article unstressed → elides"),
+    ("فِي الْقَلَم", "fiː alqalam",
+     "Waṣl, light stem: stress falls on the article syllable (ˈalqalam), and a "
+     "stressed vowel is not deleted — the seat vowel is kept, as orthography2ipa reads it"),
 ]
 
 HAMZA = [
@@ -149,7 +152,9 @@ SANDHI = [
     ("مَنْ يَقُولُ", "maj jaquːlu", "Idghām: n + j → jj (no written pause: -u kept)"),
     ("مِنْ بَيْتِكَ", "mim bajtika", "Iqlāb: n → m before b (no written pause: -a kept)"),
     ("مِنْ بَعْد", "mimbaʕd", "Iqlāb joined"),
-    ("إِلَى الرَّجُل", "ʔilaː rradʒul", "Waṣl + sun letter after ʔilaː"),
+    ("إِلَى الرَّجُل", "ʔilaː arradʒul",
+     "Waṣl + sun letter after ʔilaː: light stem, stress on the article (ˈarradʒul), "
+     "so the seat vowel is kept — as orthography2ipa reads it"),
 ]
 
 PAUSAL = [
@@ -164,7 +169,7 @@ WEAK = [
     ("قَالُوا", "qaːluː", "Hollow verb plural"),
     ("تَوَاصَلُوا", "tawaːsˤaluː", "Form VI plural"),
     ("إِيْمَان", "ʔiːmaːn", "⟨إ⟩ is hamzat al-qaṭʿ, always pronounced (Wright I §19)"),
-    ("انْتِمَاء", "intimaːʔ", "Bare waṣl-alif takes helper /i/"),
+    ("انْتِمَاء", "ʔintimaːʔ", "Bare waṣl-alif: helper /i/, ʔ onset at an utterance edge"),
     ("رَمَى", "ramaː", "Alif maqṣūra as long aː"),
     ("دَعَا", "daʕaː", "Alif mamdūda as long aː"),
     ("قَاضٍ", "qaːdˤin", "Defective noun, tanwīn kasr kept (no written pause)"),
@@ -202,15 +207,19 @@ MULTIWORD = [
 ]
 
 HAMZAT_AL_WASL = [
-    ("اِسْتِقْبَال", "istiqbaːl", "Form X maṣdar"),
-    ("اِسْتِعْدَاد", "istiʕdaːd", "Form X maṣdar"),
-    ("اِبْتِدَاء", "ibtidaːʔ", "Form VIII maṣdar"),
-    ("اِجْتِمَاع", "ijtimaːʕ", "Form VIII maṣdar"),
-    ("اِعْتِمَاد", "iʕtimaːd", "Form VIII maṣdar"),
-    ("اِنْقَطَع", "inqatˤaʕ", "Form VII"),
-    ("اِنْفِعَال", "infiʕaːl", "Form VII maṣdar"),
-    ("اِفْعَوَّل", "ifʕawwal", "Form XII pattern"),
-    ("اِحْمِرَار", "iħmiraːr", "Form IX maṣdar"),
+    # Standing at an utterance edge (a lone word is a lone utterance), the
+    # connecting alif is realized with its ʔ onset — istiqbaːl → ʔistiqbaːl —
+    # exactly as orthography2ipa reads it (Wright I §19-20). The onset elides
+    # only when a preceding word's vowel swallows it (see MULTIWORD).
+    ("اِسْتِقْبَال", "ʔistiqbaːl", "Form X maṣdar"),
+    ("اِسْتِعْدَاد", "ʔistiʕdaːd", "Form X maṣdar"),
+    ("اِبْتِدَاء", "ʔibtidaːʔ", "Form VIII maṣdar"),
+    ("اِجْتِمَاع", "ʔijtimaːʕ", "Form VIII maṣdar"),
+    ("اِعْتِمَاد", "ʔiʕtimaːd", "Form VIII maṣdar"),
+    ("اِنْقَطَع", "ʔinqatˤaʕ", "Form VII"),
+    ("اِنْفِعَال", "ʔinfiʕaːl", "Form VII maṣdar"),
+    ("اِفْعَوَّل", "ʔifʕawwal", "Form XII pattern"),
+    ("اِحْمِرَار", "ʔiħmiraːr", "Form IX maṣdar"),
     ("وَبِاسْمِ", "wabismi", "wa + bi + ism through waṣl"),
     ("فَبِالْحَقِّ", "fabilħaqqi", "fa + bi + article, moon letter (no written pause: -i kept)"),
     ("وَلِلنَّاس", "walinnaːs", "wa + li + sun letter"),
@@ -272,7 +281,7 @@ RESOLVED = [
     ("عَلَى الشَّاطِئ", "ʕalaː ʃʃaːtˤiʔ", "alif maqṣūra = long aː"),
     ("فِي الضَّوْءِ", "fiː dˤdˤawʔi", "ض = dˤ; kasra kept, no written pause"),
     ("تِيكْنُولُوجْيَا", "tiːknuːluːdʒjaː", "ḍamma+wāw = long uː"),
-    ("اِسْوَدَّ", "iswadda", "Form IX ends in short fatḥa"),
+    ("اِسْوَدَّ", "ʔiswadda", "Form IX ends in short fatḥa"),
     ("يَوْمُ الشَّمْس", "jawmu ʃʃams", "ḍamma kept, no written pause"),
     ("أُمُّ الْمُسْلِمِينَ", "ʔummu lmuslimiːna", "-na kept, no written pause"),
     ("كِتَابٌ عَلَى الْمَكْتَب", "kitaːbun ʕalaː lmaktab",
@@ -306,9 +315,11 @@ def test_msa_gold(text, expected, description):
 
 def test_wasl_elision_after_vowel_final_word():
     """Legacy gold said *fiː albajt* ("article a dropped after preposition"
-    yet spelled out!). Policy: the article's vowel elides after a vowel-final
-    word (waṣl — Wright I §19; Ryding §2.4), consistently with the passing
-    فِي الْقَلَم → *fiː lqalam* row → *fiː lbajt*."""
+    yet spelled out!). Policy: the article's unstressed seat vowel elides after
+    a vowel-final word (waṣl — Wright I §19; Ryding §2.4). بَيْت is a heavy stem
+    that pulls the stress off the article (alˈbajt), so the seat vowel is
+    deletable → *fiː lbajt*. (A light stem keeps the stress — and the vowel — on
+    the article: فِي الْقَلَم → *fiː alqalam*.)"""
     check("فِي الْبَيْت", "fiː lbajt")
 
 
@@ -357,9 +368,9 @@ def test_waw_damma_is_long_u_in_loanword():
 
 def test_form_ix_ends_short():
     """Legacy gold *iswaddaː* was flagged disputed in the file: Form IX
-    اِسْوَدَّ ends in a short fatḥa, not /aː/ → *iswadda* (kept: no written
-    pause)."""
-    check("اِسْوَدَّ", "iswadda")
+    اِسْوَدَّ ends in a short fatḥa, not /aː/ → *ʔiswadda* (final -a kept, no
+    written pause; ʔ onset at the utterance edge)."""
+    check("اِسْوَدَّ", "ʔiswadda")
 
 
 def test_construct_damma_kept_without_written_pause():
