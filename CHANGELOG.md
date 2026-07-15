@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a28](https://github.com/TigreGotico/arbtok/tree/0.0.0a28) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a27...0.0.0a28)
+
+**Merged pull requests:**
+
+- feat\(gold-cs\): authentic Moroccan Darija \(ar-MA\) code-switched gold set [\#30](https://github.com/TigreGotico/arbtok/pull/30) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a27](https://github.com/TigreGotico/arbtok/tree/0.0.0a27) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a26...0.0.0a27)
