@@ -48,6 +48,7 @@ from arbtok.lattice import defers_to_cascade, word_ipa
 from arbtok.lexicon import DEFAULT_LEXICON
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.translit import is_latin, transliterate
+from arbtok.arabizi import is_arabizi, to_arabic_skeleton
 
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
 from arbtok.util import normalize as normalize_speech
@@ -74,6 +75,7 @@ class ArbtokG2PPlugin:
                  lexicon: Optional[str] = DEFAULT_LEXICON,
                  dialect_lexicon: bool = True,
                  nativize: bool = True,
+                 arabizi: bool = True,
                  pausal: bool = True,
                  fusion: bool = True) -> None:
         self._diacritizer = None
@@ -113,6 +115,16 @@ class ArbtokG2PPlugin:
         #: ``False`` for linguistic output that must not invent a pronunciation:
         #: the Latin run is then left in place, untranscribed, rather than adapted.
         self.nativize = nativize
+        #: Read a Latin-script run written in *Arabizi* (Arabic in Latin letters +
+        #: digit-gutturals, e.g. ``7abibi`` = حبيبي) as Arabic: reverse-transliterate
+        #: it to an unpointed Arabic skeleton and send it through the normal
+        #: diacritize + phonology pipeline, so fusion restores the vocalism
+        #: dialect-aware (see :mod:`arbtok.arabizi`). The gate is conservative — a
+        #: Latin run is read as Arabizi only when it carries a digit-guttural (or a
+        #: caller passes an explicit hint), so genuine English/French embeds
+        #: (``meeting``, ``email``) stay on the loanword-nativisation path. ``True``
+        #: by default; set ``False`` to disable the Arabizi path entirely.
+        self.arabizi = arabizi
         #: The waqf (pausal) policy — ONE declared switch for the whole stack
         #: (Wright, *A Grammar of the Arabic Language*, 3rd ed., I §372;
         #: Ryding, *A Reference Grammar of MSA*, CUP 2005, §2.4).
@@ -200,16 +212,39 @@ class ArbtokG2PPlugin:
 
     # ─── transcription ───────────────────────────────────────────────
 
-    def transcribe(self, text: str) -> str:
+    def transcribe(self, text: str, arabizi: Optional[bool] = None) -> str:
         """Transcribe *text*, reading any Latin-script word as a loanword.
 
         The Arabic runs are transcribed together, so the cross-word rules still see
-        their neighbours. A Latin word is a guest: with ``nativize`` on (the TTS
-        default) it is nativised on its own (see :mod:`arbtok.translit`) and spliced
-        back in its place; with it off the Latin run is left untouched, so a
-        linguistic caller gets the source string rather than an invented reading.
+        their neighbours. A Latin word is a guest, and there are two kinds:
+
+        * **Arabizi** — Arabic written in Latin letters (``3ala``, ``7abibi``). When
+          the Arabizi path is on (the default) and the run is detected as Arabizi
+          (any token carries a digit-guttural, or *arabizi* is passed ``True``),
+          every Latin token is reverse-transliterated to an Arabic skeleton
+          (:mod:`arbtok.arabizi`) and folded into the Arabic buffer, so it runs
+          through the same diacritize + phonology stack as native text and fusion
+          restores the vocalism. This is why ``7abibi`` reads as حبيبي and not as an
+          English word.
+        * **foreign loanword** — everything else. With ``nativize`` on (the TTS
+          default) it is nativised on its own (see :mod:`arbtok.translit`) and
+          spliced back in its place; with it off the Latin run is left untouched.
+
+        *arabizi* is an explicit per-call hint: ``True`` forces the Arabizi reading
+        of the Latin runs, ``False`` forbids it (they go to the loanword path). When
+        ``None`` (the default) the digit-guttural gate decides. A caller that has
+        language-tagged its input drives the call this way; the module never sniffs
+        all-alphabetic Arabizi apart from English on its own (documented ambiguity).
         """
         parts, buffer = [], []
+
+        latin = [t for t in text.split() if is_latin(t)]
+        if not self.arabizi:
+            arabizi_mode = False
+        elif arabizi is not None:
+            arabizi_mode = arabizi
+        else:
+            arabizi_mode = any(is_arabizi(t) for t in latin)
 
         def flush_arabic():
             if buffer:
@@ -220,6 +255,11 @@ class ArbtokG2PPlugin:
 
         for token in text.split():
             if is_latin(token):
+                if arabizi_mode:
+                    # Arabic-in-Latin: reverse-transliterate to a skeleton and let
+                    # it flow through the normal Arabic pipeline with its neighbours.
+                    buffer.append(to_arabic_skeleton(token))
+                    continue
                 flush_arabic()
                 if not self.nativize:
                     parts.append(token)
