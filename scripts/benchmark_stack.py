@@ -85,6 +85,11 @@ def build_stack(lang: str, lexicon: str) -> Dict[str, Callable[[str], str]]:
     arbtok_bare = ArbtokG2PPlugin(lang=lang, diacritize=False)
     arbtok_full = ArbtokG2PPlugin(lang=lang, diacritize=True, lexicon=None)
     arbtok_lex = ArbtokG2PPlugin(lang=lang, diacritize=True, lexicon=lexicon)
+    # Rawi-lattice fusion: the diacritizer as a scorer over licensed readings
+    # rather than a free generator (docs/rawi-fusion.md). Off in the shipped
+    # stack; measured here against the generator arm on the same lexicon.
+    arbtok_fusion = ArbtokG2PPlugin(lang=lang, diacritize=True, lexicon=lexicon,
+                                    fusion=True)
 
     def raw_t2t():
         """text2tashkeel with no lattice guard — the model's own unchecked guess."""
@@ -106,6 +111,8 @@ def build_stack(lang: str, lexicon: str) -> Dict[str, Callable[[str], str]]:
             guarded_full.diacritize_word(w)),
         "arbtok+lex+t2t": lambda w: arbtok_lex.transcribe_word(
             arbtok_lex.normalize(w)),
+        "arbtok+lex+fusion": lambda w: arbtok_fusion.transcribe_word(
+            arbtok_fusion.normalize(w)),
         "espeak": espeak,
     }
 

@@ -73,9 +73,15 @@ class ArbtokG2PPlugin:
                  stress: bool = True,
                  lexicon: Optional[str] = DEFAULT_LEXICON,
                  nativize: bool = True,
-                 pausal: bool = True) -> None:
+                 pausal: bool = True,
+                 fusion: bool = False) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
+        #: Restore tashkeel by *scoring* the orthography's licensed readings with
+        #: the rawi distribution (:mod:`arbtok.fusion`), instead of tokenizing one
+        #: model guess. Off by default — a research path (roadmap §T.3 route 4)
+        #: whose empirical gate is documented in docs/rawi-fusion.md.
+        self.fusion = fusion
         #: The variety: any orthography2ipa Arabic spec code.
         self.lang = spec_for_lang(lang)
         #: Restore the marks the writing omits before transcribing. The engine's
@@ -162,10 +168,16 @@ class ArbtokG2PPlugin:
             return text
         if self._diacritizer is None:
             try:
-                from arbtok.diacritize import LatticeDiacritizer
-                self._diacritizer = LatticeDiacritizer(lang=self.lang,
-                                                      waqf=self.pausal,
-                                                      lexicon=self.lexicon)
+                if self.fusion:
+                    from arbtok.fusion import FusionDiacritizer
+                    self._diacritizer = FusionDiacritizer(lang=self.lang,
+                                                          waqf=self.pausal,
+                                                          lexicon=self.lexicon)
+                else:
+                    from arbtok.diacritize import LatticeDiacritizer
+                    self._diacritizer = LatticeDiacritizer(lang=self.lang,
+                                                          waqf=self.pausal,
+                                                          lexicon=self.lexicon)
             except Exception:
                 self._diacritizer_failed = True
                 return text
