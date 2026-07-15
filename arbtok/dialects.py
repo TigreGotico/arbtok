@@ -58,6 +58,16 @@ ARABIC_TO_IPA_CONSONANTS = {
     LAM: 'l',
     WAW: 'w',
     YA: 'j',
+    # Non-standard Perso-Arabic letters used in loanwords and colloquial
+    # spelling (چ tʃ, گ ɡ, پ p, ڤ v, ژ ʒ). They are real graphemes the cascade
+    # must transcribe, not drop: without them ⟨بَاچِر⟩ /baːtʃir/ loses its
+    # affricate. The word lattice already reads them; the cascade must too, so
+    # the two paths agree.
+    "چ": 'tʃ',  # چ
+    "گ": 'ɡ',   # گ
+    "پ": 'p',   # پ
+    "ڤ": 'v',   # ڤ
+    "ژ": 'ʒ',   # ژ
     # Other unicode variations
     "ﻻ": "laː"
 }
