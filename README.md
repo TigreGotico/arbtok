@@ -85,6 +85,23 @@ plugin = ArbtokG2PPlugin()
 plugin.transcribe("كتاب جميل")    # auto-tashkeel + IPA
 ```
 
+### Varieties
+
+Pass a spec code as `lang=` to phonemize a variety; `arbtok.supported_lects()`
+lists every code it resolves to, with the orthography2ipa quality tier of each.
+Bare (undiacritized) input is restored on MSA orthography **before** dialect
+allophony applies — the diacritizer and stem lexicon are MSA artifacts. See
+[`docs/dialects.md`](docs/dialects.md) for the resolution rules, the supported
+list, and the pinned pipeline order.
+
+```python
+import arbtok
+from arbtok.plugin import ArbtokG2PPlugin
+
+arbtok.supported_lects()[:2]                                   # [Lect('ar', 'research'), …]
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")  # 'ɡahawa'
+```
+
 ### Diacritization only
 
 ```python

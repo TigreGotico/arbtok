@@ -20,6 +20,74 @@ the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
 `ar-x-maghrebi`, `ar-x-mashriqi`), and the leaves (`ar-SA-x-najd`,
 `ar-SA-x-hejaz`, `ar-EG`, `ar-IQ`, `ar-MA`, …).
 
+## What `lang=` resolves to
+
+`arbtok.supported_lects()` enumerates every variety `lang=` accepts, each with
+the orthography2ipa `quality` tier of its spec — so the list tracks the
+installed data set rather than a table in arbtok. The tier reports how far the
+spec's cited rule set has been taken (`research` vs `skeleton`/`stub`), not a
+promise about arbtok's cascade.
+
+```python
+import arbtok
+
+for lect in arbtok.supported_lects():
+    print(lect.code, lect.tier)
+```
+
+| code | tier | code | tier |
+|---|---|---|---|
+| `ar` | research | `ar-QA` | research |
+| `arb` | research | `ar-SA-x-najd` | research |
+| `ar-EG` | research | `ar-SA-x-hejaz` | research |
+| `ar-SD` | research | `ar-YE` | research |
+| `ar-SY` | research | `ar-MA` | research |
+| `ar-LB` | research | `ar-x-gulf` | research |
+| `ar-JO` | research | `ar-x-levantine` | research |
+| `ar-PS` | research | `ar-Latn-buckwalter` | research |
+| `ar-IQ` | research | `ar-DZ` | skeleton |
+| `ar-IQ-x-qeltu` | research | `ar-TN` | skeleton |
+| `ar-KW` | research | `ar-LY` | skeleton |
+| `ar-BH` | research | `ar-MR` | skeleton |
+| `ar-AE` | research | `ar-TD` | skeleton |
+| `ar-OM` | research | `ar-NG` | skeleton |
+| | | `ar-x-maghrebi` | skeleton |
+| | | `ar-x-mashriqi` | skeleton |
+| | | `ar-x-peninsular` | skeleton |
+
+(The `skeleton`-tier grouping nodes and Maghrebi/Sudanic leaves resolve and read
+their grapheme layer, but their allophone rule sets are not yet at research
+tier — see orthography2ipa's Arabic roadmap.)
+
+## Pipeline order: MSA restoration before dialect allophony
+
+The stem lexicon and the tashkeel diacritizer are **MSA artifacts**, and
+dialect text is *written* in MSA orthography. So when the input is bare
+(undiacritized), the pipeline restores the short vowels on the MSA-shaped
+orthography **first**, and the word lattice applies the target variety's
+allophony **after** that, on the resulting segments:
+
+```
+normalize → diacritize (MSA model, guarded by the lattice) → word lattice
+          → structural rescorers → the spec's allophone rules
+```
+
+The order is observable. Bare `قلم`:
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+ArbtokG2PPlugin(lang="ar", diacritize=True).transcribe("قلم")          # 'ˈqalam'
+ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=True).transcribe("قلم") # 'ˈɡalam'
+ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=False).transcribe("قلم") # 'ɡlm'
+```
+
+`ˈɡalam` carries both the restored MSA vowels *and* the Najdi qāf → /ɡ/ reflex:
+it can only exist if the MSA diacritizer ran first (it supplied the vowels the
+bare skeleton lacked) and the Najdi allophony ran after it (it supplied the
+/ɡ/). Reversing the stages would hand the MSA diacritizer a string the lattice
+had already turned to IPA. `tests/test_pipeline_order.py` pins this.
+
 ## Where a variety's phonology comes from
 
 Two layers, both read from the spec:
