@@ -112,6 +112,42 @@ segments in context:
 Saudi is not one variety, and it is not Gulf: Najdi affricates /k/ to **[ts]**,
 Gulf to **[tʃ]**, and Hejazi keeps **/k/**.
 
+## Foreign words: per-lect nativization
+
+A Latin-script (or other non-Arabic) run is read as a **loanword**: phonemized
+with its donor spec (English by default) and *nativized* into the matrix lect's
+phonology, out of that lect's own declared inventory (`arbtok.translit`). A lect
+adapts a loan as its own loanword literature says it does, so the nativization
+table is chosen by walking the orthography2ipa **parent chain** — no hardcoded
+lang→zone map — and the first ancestor carrying a table wins:
+
+| table | keyed at | inherited by | source |
+|---|---|---|---|
+| Najdi | `ar-SA-x-najd` | — | Alhoody (2019) |
+| Egyptian | `ar-EG` | — | Hafez (1996); Watson (2002) |
+| Levantine | `ar-x-levantine` | `ar-LB`, `ar-SY`, `ar-PS`, `ar-JO` | Al-Saidat (2011); Cowell (1964) |
+| default | `ar` | every un-tabled lect (e.g. `ar-KW` → `ar-x-gulf` → `ar-x-peninsular` → …) | Watson (2002); Holes (2004) |
+
+```python
+ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'manaɡar'  (Cairene stop ǧīm)
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manadʒar' (Najdi affricate)
+ArbtokG2PPlugin(lang="ar-EG").transcribe_word("think")           # 'tink'     (interdental merger)
+```
+
+Whatever a table emits must be realizable in the matrix lect's inventory; a symbol
+the lect does not declare is **refused** (`transliterate` returns `None`) rather
+than emitted as an unpronounceable token. So Najdi's `[-inɡ]` reading of *meeting*
+is refused for MSA (which has no /ɡ/), and the Egyptian interdental merger is what
+lets *think* be realized at all in `ar-EG` (which has no /θ/).
+
+`nativize=True` is the TTS default. `nativize=False` leaves a Latin run in place,
+untranscribed — for linguistic output that must not invent a pronunciation:
+
+```python
+ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meeting")
+# 'ˈʕindiː meeting'
+```
+
 ## Known limits
 
 - The **sentence cascade has no allophone pass** — it reads the grapheme layer

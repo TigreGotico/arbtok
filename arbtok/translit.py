@@ -24,7 +24,18 @@ A loanword is not pronounced in its donor's phonology. It is **nativised** — m
 into the phonology of the language actually being spoken. That is the whole content
 of the loanword-adaptation literature, and for this variety it has been measured.
 
-## The map
+## The map is per-lect, not one-size-fits-all
+
+A loanword is adapted into *the lect actually being spoken*, and lects adapt
+differently: a Cairene says *manager* with the native ǧīm stop [ɡ] where a Najdi
+keeps the affricate [dʒ], and merges the English interdental of *think* into [t]
+where the Najdi keeps [θ]. So there is not one nativisation table but several, each
+cited to the loanword phonology *of its own lect*, and the table is chosen by the
+matrix spec — walking the o2i parent chain, so a leaf inherits its group's table
+(``ar-LB`` → the Levantine table) and an un-studied lect falls back to a
+conservative pan-Arabic default rather than borrowing a neighbour's map.
+
+### Najdi — ``ar-SA-x-najd`` (:data:`SEGMENT_MAP`)
 
 Alhoody, M. M. A. (2019), *Phonological Adaptation of English Loanwords into
 Qassimi Arabic: an Optimality-Theoretic Account*, PhD thesis, Newcastle University.
@@ -33,17 +44,59 @@ map borrowed from a neighbouring dialect, it is the map for the language we are
 transcribing.
 
 * Consonants English has and Arabic does not: /p/ → [b], /v/ → [f], /tʃ/ → [ʃ],
-  /ʒ/ → [dʒ] (§5.1).
+  /ʒ/ → [dʒ] (§5.1). The native ǧīm reflex /dʒ/ is a Najdi phoneme and is kept.
 * **/ŋ/ is conditioned** (§5.1.10): [n] before /k/, but **[nɡ]** elsewhere. So
   *meeting* ends [-inɡ] and *pancreas* is [ban.kirˈjaːs]. This is why the naive
   answer's /ŋ/ is not merely mapped to /n/.
 * Vowels collapse into the Arabic three-quality system: the English inventory has
   no /ɪ ʊ ɛ æ ə/ to give.
 
-Stress is **not** carried over. It is re-derived by the matrix language's own rule
-— Arabic's quantity-sensitive weight rule, over the Arabic syllabification of the
-*adapted* form. *album* /ˈæl.bəm/ surfaces as [ʔalˈbuːm]: the stress has moved, and
-the engine that moves it is the one already in this library.
+### Egyptian — ``ar-EG`` (:data:`_EGYPTIAN_MAP`)
+
+Hafez, O. (1996), *Phonological and Morphological Integration of Loanwords into
+Egyptian Arabic*, Égypte/Monde arabe 27–28, 383–410; with the consonant inventory
+of Watson, J. C. E. (2002), *The Phonology and Morphology of Arabic*, OUP.
+
+* /p/ → [b] (Hafez p. 383), /v/ → [f] (p. 385), /tʃ/ → [ʃ] (p. 386).
+* The native ǧīm of Cairene is the **stop [ɡ]**, so a loan /dʒ/ adapts to it —
+  *manager* → [manaɡar], not the Najdi [manadʒar] (Watson 2002 §1; Hafez p. 386).
+* /ʒ/ is a retained marginal loan phoneme, **[ʒ]** — *garage* keeps its final
+  [ʒ] where Najdi has no /ʒ/ and refuses or substitutes [dʒ].
+* Cairene has merged the interdentals into the dental stops, so English /θ/ → [t]
+  (Hafez p. 385, *thermos* → [tormos]) and /ð/ → [d]. The Najdi keeps [θ]/[ð].
+* Vowels are limited to the EA set (Hafez p. 388); the /e/ and /o/ of the donor
+  fall into that set.
+
+### Levantine — ``ar-x-levantine`` (:data:`_LEVANTINE_MAP``; inherited by ``ar-LB``,
+``ar-SY``, ``ar-PS``, ``ar-JO``)
+
+Al-Saidat, E. (2011), *English Loanwords in Jordanian Arabic: Gender and Number
+Assignment*, Language Forum 37(1); with the Syrian consonant/vowel system of
+Cowell, M. W. (1964), *A Reference Grammar of Syrian Arabic*, Georgetown UP.
+
+* /v/ → [f], /tʃ/ → [ʃ], /ɹ/ → [r] and — basilectally — /p/ → [b] (Al-Saidat
+  2011; he records /p/ variably approximated by more anglicised speakers, so this
+  is the integrated, monolingual value).
+* The urban Levantine ǧīm is [ʒ], retained; interdentals /θ/ /ð/ are retained in
+  the group as a whole (the spec declares them), so unlike Cairene they are kept.
+* The mid long vowels [eː] [oː] are native (Cowell 1964), so /eɪ/ → [eː] and
+  /əʊ/ → [oː] — monophthongisation the three-vowel lects do not have.
+
+### Default — ``ar`` (:data:`_DEFAULT_MAP`)
+
+The conservative pan-Arabic core for a lect with no studied table of its own
+(e.g. ``ar-KW``, which walks ``ar-x-gulf`` → ``ar-x-peninsular`` → ``arb`` and
+finds none): the substitutions every survey agrees on — /p/ → [b], /v/ → [f],
+/tʃ/ → [ʃ] — over MSA's three-vowel system, with interdentals kept (Watson 2002;
+Holes, C. (2004), *Modern Arabic: Structures, Functions and Varieties*, GUP).
+The inventory check does the rest: /ɡ/ passes for a Gulf lect that declares it and
+is refused for MSA that does not.
+
+Stress is **not** carried over by any table. It is re-derived by the matrix
+language's own rule — Arabic's quantity-sensitive weight rule, over the Arabic
+syllabification of the *adapted* form. *album* /ˈæl.bəm/ surfaces as [ʔalˈbuːm]:
+the stress has moved, and the engine that moves it is the one already in this
+library.
 
 ## What this deliberately does not do
 
@@ -71,7 +124,7 @@ from orthography2ipa.inventory import phoneme_inventory
 from orthography2ipa.inventory import tokenize as ipa_tokenize
 
 __all__ = ["nativize", "transliterate", "is_latin", "guest_script", "segment_ipa",
-           "SEGMENT_MAP", "DONOR_LANG", "DONOR_BY_SCRIPT"]
+           "SEGMENT_MAP", "DONOR_LANG", "DONOR_BY_SCRIPT", "nativization_table"]
 
 #: The donor assumed when the caller names none. English is the overwhelming
 #: source of live code-switching in Gulf Arabic, and it is the donor the map is
@@ -124,6 +177,118 @@ SEGMENT_MAP: Dict[str, str] = {
     "eə": "eː",
     "ʊə": "uː",
 }
+
+#: The pan-Arabic consonant substitutions every loanword survey agrees on, and the
+#: three-quality vowel collapse shared by lects without a mid-vowel system. Each
+#: cited table is built on top of this and overrides only what its own literature
+#: says differs. ``ɡ`` is the script-g (U+0261), the Arabic reflex — not ASCII ``g``.
+_PAN_ARABIC_CONSONANTS: Dict[str, str] = {
+    "p": "b",
+    "v": "f",
+    "tʃ": "ʃ",
+    "ɹ": "r",
+    "ɫ": "l",
+}
+_THREE_VOWELS: Dict[str, str] = {
+    "ɪ": "i",
+    "iː": "iː",
+    "ʊ": "u",
+    "uː": "uː",
+    "ɛ": "i",
+    "æ": "a",
+    "ə": "a",
+    "ʌ": "a",
+    "ɑː": "aː",
+    "ɔː": "uː",
+    "ɒ": "u",
+    "ɜː": "a",
+    "aɪ": "aj",
+    "aʊ": "aw",
+    "ɔɪ": "uj",
+    "ɪə": "iː",
+    "ʊə": "uː",
+}
+
+#: Egyptian (Cairene), ``ar-EG``. Hafez (1996); Watson (2002). The ǧīm is the stop
+#: [ɡ], so a loan /dʒ/ lands on it; /ʒ/ is a retained loan phoneme; the interdentals
+#: are merged into the dental stops. Vowels stay in the EA set (Hafez p. 388).
+_EGYPTIAN_MAP: Dict[str, str] = {
+    **_PAN_ARABIC_CONSONANTS,
+    **_THREE_VOWELS,
+    "dʒ": "ɡ",   # Cairene ǧīm is a stop (Watson 2002 §1) — manager → [manaɡar]
+    "ʒ": "ʒ",    # retained marginal loan phoneme — garage keeps [ʒ]
+    "ɡ": "ɡ",    # native ǧīm
+    "θ": "t",    # interdental merger (Hafez p. 385) — think → [tink]
+    "ð": "d",
+}
+
+#: Levantine, ``ar-x-levantine`` (inherited by ``ar-LB``/``ar-SY``/``ar-PS``/``ar-JO``).
+#: Al-Saidat (2011); Cowell (1964). Urban ǧīm is [ʒ], interdentals kept, and the
+#: native mid long vowels [eː]/[oː] give monophthongised reflexes.
+_LEVANTINE_MAP: Dict[str, str] = {
+    **_PAN_ARABIC_CONSONANTS,
+    **_THREE_VOWELS,
+    "dʒ": "dʒ",  # kept where the spec declares it
+    "ʒ": "ʒ",    # urban ǧīm is [ʒ] (Cowell 1964)
+    "ɡ": "ɡ",
+    "eɪ": "eː",  # monophthongisation to the native mid long vowels (Cowell 1964)
+    "əʊ": "oː",
+}
+
+#: The conservative pan-Arabic default, ``ar`` — for any lect with no cited table
+#: of its own. Interdentals are kept (MSA declares them); /ɡ/ passes for a lect
+#: that declares it and is refused by the inventory check for one that does not.
+_DEFAULT_MAP: Dict[str, str] = {
+    **_PAN_ARABIC_CONSONANTS,
+    **_THREE_VOWELS,
+    "dʒ": "dʒ",
+    "ʒ": "dʒ",   # MSA/Gulf have no /ʒ/; the nearest declared segment is /dʒ/
+    "ɡ": "ɡ",
+    "eɪ": "eː",  # in-inventory for Gulf/peninsular lects; refused for MSA
+    "əʊ": "oː",
+}
+
+#: Nativisation tables keyed by the o2i spec code they are cited FOR. Selection
+#: (:func:`nativization_table`) resolves the matrix tag to a spec, then walks its
+#: parent chain and takes the first code carrying a table — so a leaf inherits its
+#: group's map and an un-tabled lect lands on the default. There is no hardcoded
+#: lang→zone map here: the chain is o2i's own declared genealogy.
+_TABLES: Dict[str, Dict[str, str]] = {
+    "ar-SA-x-najd": SEGMENT_MAP,      # Alhoody (2019)
+    "ar-EG": _EGYPTIAN_MAP,           # Hafez (1996), Watson (2002)
+    "ar-x-levantine": _LEVANTINE_MAP,  # Al-Saidat (2011), Cowell (1964)
+    "ar": _DEFAULT_MAP,               # conservative pan-Arabic default
+}
+
+
+@functools.lru_cache(maxsize=256)
+def nativization_table(lang: str) -> Dict[str, str]:
+    """The nativisation map for matrix *lang*, by walking o2i's parent chain.
+
+    *lang* is resolved to a spec code (:func:`arbtok.dialects.spec_for_lang`), then
+    the code and each of its ancestors is tried against :data:`_TABLES` in order,
+    so ``ar-EG`` takes the Egyptian table, ``ar-LB`` inherits the Levantine one
+    (``ar-LB`` → ``ar-x-levantine``), and ``ar-KW`` — whose chain
+    ``ar-x-gulf`` → ``ar-x-peninsular`` → ``arb`` carries no table — falls back to
+    the conservative :data:`_DEFAULT_MAP`. Cached; the returned dict is read-only.
+    """
+    from arbtok.dialects import spec_for_lang
+    from orthography2ipa import get
+
+    code: Optional[str] = spec_for_lang(lang)
+    seen = set()
+    while code and code not in seen:
+        table = _TABLES.get(code)
+        if table is not None:
+            return table
+        seen.add(code)
+        try:
+            parent = get(code).primary_parent
+        except Exception:
+            break
+        code = getattr(parent, "code", parent)
+    return _DEFAULT_MAP
+
 
 #: /ŋ/ is not a simple substitution (Alhoody §5.1.10): [n] before /k/, [nɡ] else.
 _NG = "ŋ"
@@ -207,6 +372,7 @@ def _project(segment: str, lang: str) -> Optional[str]:
 
 
 def _map_segments(segments: Sequence[str], lang: str) -> List[str]:
+    seg_map = nativization_table(lang)
     out: List[str] = []
     for i, seg in enumerate(segments):
         if seg == _NG:
@@ -214,7 +380,7 @@ def _map_segments(segments: Sequence[str], lang: str) -> List[str]:
             # [n] before /k/, [nɡ] elsewhere — meeting → -inɡ, pancreas → ban.k…
             out.append("n" if nxt == "k" else "nɡ")
             continue
-        cited = SEGMENT_MAP.get(seg)
+        cited = seg_map.get(seg)
         if cited is not None:
             out.append(cited)
             continue
