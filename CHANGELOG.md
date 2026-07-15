@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a24](https://github.com/TigreGotico/arbtok/tree/0.0.0a24) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a23...0.0.0a24)
+
+**Merged pull requests:**
+
+- feat!: total nativization — project missing segments, never drop the word [\#26](https://github.com/TigreGotico/arbtok/pull/26) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a23](https://github.com/TigreGotico/arbtok/tree/0.0.0a23) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a22...0.0.0a23)
