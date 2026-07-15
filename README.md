@@ -115,3 +115,10 @@ TashkeelDiacritizer().diacritize("كتاب جميل")
 The test suite pins a gold sentence set (CER target ≤ 5% against the
 reference transcriptions) and benchmarks against espeak-ng. See
 `tests/test_ipa_fuzzy.py` and `docs/` for details.
+
+For **per-lect** scoring — every resolvable variety against the orthography2ipa
+Arabic TTS gold, diacritized and bare, next to espeak-ng — run
+`python scripts/benchmark_stack.py --lect` and see
+[`docs/benchmarks.md`](docs/benchmarks.md), which carries the full table and the
+honesty note on why those figures are engine-similarity to cited-rule o2i output
+rather than native-validated truth.

@@ -51,7 +51,7 @@ import argparse
 import os
 import sys
 import time
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from benchmark_diacritization import load_gold  # noqa: E402
@@ -133,8 +133,226 @@ def evaluate(arm: Callable[[str], str],
     }
 
 
+# ─── per-lect TTS-gold benchmark (roadmap F1 + D1) ────────────────────────
+#
+# A second gold and a second question. The WikiPron arm above asks "MSA word →
+# IPA"; this arm asks "does a *dialect* sentence, diacritized or bare, come out
+# the way the requested lect's cited rules say it should?" — the thing the
+# spec-driven resolution (``supported_lects``) exists to make measurable.
+#
+# The gold is orthography2ipa's Arabic TTS set: one TSV per lect, sentence-level,
+# with a vocalized ``sentence``, its bare ``raw`` skeleton, and a reference
+# ``ipa``. Its provenance is honest and load-bearing: the reference IPA is
+# LLM-generated from the specs' cited rules, then rule-anchored — it is an
+# o2i-regression snapshot, NOT native-validated ground truth. So every number
+# here is *engine similarity* to cited-rule o2i output, and a lect where arbtok
+# scores well means "arbtok reproduces what o2i's rules predict", not "a native
+# speaker signed off". Read docs/benchmarks.md before quoting any figure.
+
+import csv  # noqa: E402
+import glob  # noqa: E402
+import json  # noqa: E402
+import unicodedata  # noqa: E402
+
+_STRESS = ("ˈ", "ˌ")
+_PUNCT = "،؟؛.,!?:؛«»\"'()[]{}…—–-"
+
+
+def gold_dir() -> str:
+    """The installed orthography2ipa's Arabic TTS gold directory.
+
+    Read from the package so it tracks whatever spec data is installed rather
+    than a path baked in here.
+    """
+    import orthography2ipa
+    return os.path.join(os.path.dirname(orthography2ipa.__file__),
+                        "data", "gold", "arabic_tts")
+
+
+def strip_harakat(text: str) -> str:
+    """Drop the vowel marks the writing may omit (every combining mark).
+
+    This is the undiacritized path's input: the same sentence a person actually
+    types. On this gold it reproduces the ``raw`` column exactly (verified), so
+    the diacritized/undiacritized delta prices exactly the missing harakat.
+    """
+    return "".join(c for c in unicodedata.normalize("NFC", text)
+                   if unicodedata.category(c) != "Mn")
+
+
+def _words(ipa: str) -> List[str]:
+    """Comparable tokens: stress-stripped, punctuation-stripped, non-empty.
+
+    Sentence PER and WER both ask only what the words sound like, so stress and
+    orthographic punctuation — which neither espeak nor the gold treat
+    consistently — are removed before either is measured.
+    """
+    for mark in _STRESS:
+        ipa = ipa.replace(mark, "")
+    out = []
+    for tok in ipa.split():
+        tok = tok.strip(_PUNCT)
+        if tok:
+            out.append(tok)
+    return out
+
+
+def score_pair(pred: str, gold: str) -> Tuple[int, int, int, int]:
+    """(char_dist, char_len, word_dist, word_len) for one sentence."""
+    pw, gw = _words(pred), _words(gold)
+    cp, cg = "".join(pw), "".join(gw)
+    return (edit_distance(cg, cp), len(cg),
+            edit_distance(gw, pw), len(gw))
+
+
+def load_lect_gold(path: str) -> List[Tuple[str, str, str, str]]:
+    """(id, vocalized sentence, bare skeleton, reference IPA) rows for one lect."""
+    rows = []
+    with open(path, encoding="utf-8") as fh:
+        for r in csv.DictReader(fh, delimiter="\t"):
+            raw = r.get("raw") or strip_harakat(r["sentence"])
+            rows.append((r["id"], r["sentence"], raw, r["ipa"]))
+    return rows
+
+
+def _espeak_available() -> bool:
+    import shutil
+    return bool(shutil.which("espeak-ng") or shutil.which("espeak"))
+
+
+def run_lect_benchmark(codes: Optional[List[str]] = None,
+                       lexicon: Optional[str] = None,
+                       limit: int = 0,
+                       with_espeak: bool = True) -> dict:
+    """Score arbtok (diacritized and undiacritized) and espeak-ng per lect.
+
+    arbtok runs the shipped full stack (diacritizer + lexicon where given) on the
+    variety's own spec. espeak-ng has no dialect voices, so *every* lect is scored
+    against its single ``ar`` (MSA) voice — an honest apples-to-oranges baseline:
+    espeak is not being asked the dialect question, it simply has no way to answer
+    it, and the gap is the point.
+
+    The arbtok columns never skip. The espeak column is skipped as a whole (per
+    lect ``espeak`` left ``None``) only when no espeak binary is installed.
+    """
+    from arbtok.dialects import supported_lects
+    from arbtok.plugin import ArbtokG2PPlugin
+
+    tiers = {lect.code: lect.tier for lect in supported_lects()}
+
+    files = sorted(glob.glob(os.path.join(gold_dir(), "*.tsv")))
+    available = {os.path.splitext(os.path.basename(f))[0]: f for f in files}
+    if codes:
+        available = {c: available[c] for c in codes if c in available}
+
+    espeak_on = with_espeak and _espeak_available()
+    espeak = None
+    if espeak_on:
+        from arbtok.espeak_wrapper import EspeakPhonemizer
+        espeak = EspeakPhonemizer(pausal=True)
+
+    results = {}
+    for code, path in available.items():
+        rows = load_lect_gold(path)
+        if limit:
+            rows = rows[:limit]
+        plugin = ArbtokG2PPlugin(lang=code, diacritize=True, lexicon=lexicon)
+
+        acc = {k: [0, 0, 0, 0] for k in ("diac", "undiac", "espeak")}
+        n = 0
+        for _id, sentence, raw, gold in rows:
+            n += 1
+            for arm, source, on in (("diac", sentence, True),
+                                    ("undiac", raw, True),
+                                    ("espeak", sentence, espeak_on)):
+                if not on:
+                    continue
+                try:
+                    if arm == "espeak":
+                        pred = espeak.phonemize_string(source, "ar")
+                    else:
+                        pred = plugin.transcribe(source)
+                except Exception:
+                    pred = ""
+                for i, v in enumerate(score_pair(pred, gold)):
+                    acc[arm][i] += v
+
+        def rates(key):
+            cd, cl, wd, wl = acc[key]
+            return {"per": cd / max(cl, 1), "wer": wd / max(wl, 1)}
+
+        entry = {
+            "tier": tiers.get(code, "unknown"),
+            "sentences": n,
+            "arbtok_diac": rates("diac"),
+            "arbtok_undiac": rates("undiac"),
+        }
+        entry["undiac_delta_per"] = (entry["arbtok_undiac"]["per"]
+                                     - entry["arbtok_diac"]["per"])
+        entry["undiac_delta_wer"] = (entry["arbtok_undiac"]["wer"]
+                                     - entry["arbtok_diac"]["wer"])
+        entry["espeak"] = rates("espeak") if espeak_on else None
+        results[code] = entry
+
+    return {
+        "gold": "orthography2ipa/data/gold/arabic_tts (o2i #358)",
+        "provenance": "LLM-generated from cited spec rules; engine-similarity, "
+                      "not native-validated ground truth",
+        "espeak": "ar (MSA) voice for every lect — no dialect voices exist",
+        "lexicon": lexicon,
+        "lects": results,
+    }
+
+
+def lect_markdown_table(report: dict) -> str:
+    """A markdown table of the per-lect report, sorted worst-arbtok-first."""
+    rows = sorted(report["lects"].items(),
+                  key=lambda kv: kv[1]["arbtok_diac"]["per"])
+    head = ("| Lect | Tier | N | arbtok PER (diac) | arbtok WER (diac) | "
+            "arbtok PER (bare) | arbtok WER (bare) | ΔPER (bare−diac) | "
+            "espeak PER | espeak WER |")
+    sep = "|" + "|".join(["---"] * 10) + "|"
+    lines = [head, sep]
+    for code, e in rows:
+        es = e["espeak"]
+        es_per = f"{es['per']:.3f}" if es else "n/a"
+        es_wer = f"{es['wer']:.3f}" if es else "n/a"
+        lines.append(
+            f"| {code} | {e['tier']} | {e['sentences']} | "
+            f"{e['arbtok_diac']['per']:.3f} | {e['arbtok_diac']['wer']:.3f} | "
+            f"{e['arbtok_undiac']['per']:.3f} | {e['arbtok_undiac']['wer']:.3f} | "
+            f"{e['undiac_delta_per']:+.3f} | {es_per} | {es_wer} |")
+    return "\n".join(lines)
+
+
+def _run_lect_mode(args) -> int:
+    codes = [c.strip() for c in args.lects.split(",")] if args.lects else None
+    report = run_lect_benchmark(codes=codes, lexicon=args.lexicon,
+                                limit=args.limit,
+                                with_espeak=not args.no_espeak)
+    if args.json:
+        with open(args.json, "w", encoding="utf-8") as fh:
+            json.dump(report, fh, ensure_ascii=False, indent=2)
+    print(f"gold: {report['gold']}")
+    print(f"provenance: {report['provenance']}")
+    print(f"espeak baseline: {report['espeak']}\n")
+    print(lect_markdown_table(report))
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--lect", action="store_true",
+                    help="per-lect TTS-gold mode (roadmap F1 + D1): score arbtok "
+                         "diacritized AND undiacritized, plus espeak-ng, over the "
+                         "o2i Arabic TTS gold, one row per lect")
+    ap.add_argument("--lects", default="",
+                    help="--lect mode: comma-separated subset of lect codes; "
+                         "default is every lect with a gold file")
+    ap.add_argument("--json", default="",
+                    help="--lect mode: also write the full report as JSON here")
+    ap.add_argument("--no-espeak", action="store_true",
+                    help="--lect mode: skip the espeak column (arbtok never skips)")
     ap.add_argument("--lang", default="ar")
     ap.add_argument("--limit", type=int, default=0,
                     help="score a sample of this size, spread ACROSS the gold. "
@@ -146,6 +364,9 @@ def main() -> int:
     ap.add_argument("--arms", default="",
                     help="comma-separated subset; default is the whole stack")
     args = ap.parse_args()
+
+    if args.lect:
+        return _run_lect_mode(args)
 
     pairs = load_gold(0)
     if args.limit and args.limit < len(pairs):
