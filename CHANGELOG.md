@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a27](https://github.com/TigreGotico/arbtok/tree/0.0.0a27) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a26...0.0.0a27)
+
+**Merged pull requests:**
+
+- feat\(gold\): authentic Najdi code-switched gold set \(ar-SA-x-najd\) [\#29](https://github.com/TigreGotico/arbtok/pull/29) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a26](https://github.com/TigreGotico/arbtok/tree/0.0.0a26) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a25...0.0.0a26)
