@@ -14,7 +14,7 @@ The engine maps arbtok's machinery onto the shared interface:
 
 - ``normalize`` — Unicode/diacritic reordering, number and date
   expansion, and automatic tashkeel diacritization of bare text via
-  ``text2tashkeel`` (failure degrades gracefully to the undiacritized
+  the bundled rawi ensemble (failure degrades gracefully to the undiacritized
   input).
 - ``transcribe_word`` — for an isolated word (no context), the
   orthography2ipa shared lattice: the variety's grapheme table, arbtok's

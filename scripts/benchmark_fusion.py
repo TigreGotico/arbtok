@@ -64,12 +64,17 @@ def _per(pred: str, gold: str) -> float:
 
 
 def _curr_v2(lect: str) -> ArbtokG2PPlugin:
-    """The generator pipeline pinned to rawi-v2 (fusion's model)."""
+    """The generator pipeline pinned to rawi-v2 — the single-head arm this
+    benchmark compares the mechanism against. Research arm only: it needs the
+    optional ``text2tashkeel`` package (not an arbtok dependency; arbtok's own
+    pipeline runs entirely on the bundled ensemble)."""
+    from text2tashkeel import Diacritizer  # optional, benchmark-only
     from arbtok.diacritize import LatticeDiacritizer
     from arbtok.lexicon import DEFAULT_LEXICON
     p = ArbtokG2PPlugin(lang=lect, diacritize=True, fusion=False)
-    p._diacritizer = LatticeDiacritizer(lang=p.lang, model="rawi-v2",
-                                        waqf=p.pausal, lexicon=DEFAULT_LEXICON)
+    guard = LatticeDiacritizer(lang=p.lang, waqf=p.pausal, lexicon=DEFAULT_LEXICON)
+    guard._diacritizer = Diacritizer("rawi-v2")   # swap the model under the guard
+    p._diacritizer = guard
     return p
 
 

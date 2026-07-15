@@ -135,8 +135,7 @@ _PROBE = [
 
 def test_ensemble_logits_contract():
     """`logits(text)` returns `(bare, logits[T, C], classes)` — one row per NFD
-    base character, C == number of classes, and `None` when nothing to mark —
-    the same contract a single-head text2tashkeel diacritizer honours."""
+    base character, C == number of classes, and `None` when nothing to mark."""
     from arbtok._ensemble import get_ensemble
     d = get_ensemble()
     bare, logits, classes = d.logits("بسم الله الرحمن الرحيم")
@@ -149,15 +148,28 @@ def test_ensemble_logits_contract():
 
 def test_ensemble_logits_argmax_equals_the_ensemble_decision():
     """The correctness gate for scoring the stitched flagship: the argmax of the
-    exposed distribution is byte-identical to the ensemble's own `gated_cls`
-    decision (which `diacritize()` decodes) at every position, on a probe set.
-    Without this the scorer would be reading a different model than it ships."""
-    import unicodedata
+    exposed `gated_logits` distribution is byte-identical to the graph's own
+    `gated_cls` decision at every position, on a probe set. Without this the
+    scorer would be reading a different model than the one that decides."""
     from arbtok._ensemble import get_ensemble
     d = get_ensemble()
     for text in _PROBE:
         bare, logits, _ = d.logits(text)
         if logits is None:
             continue
-        argmax_reading = d.decode(bare, logits.argmax(-1))
-        assert argmax_reading == d.diacritize(text), text
+        ids = np.array([[d.c2i.get(c, d.unk) for c in bare]], np.int64)
+        gated_cls = d.sess.run(["gated_cls"], {"input": ids})[0][0]
+        assert (logits.argmax(-1) == gated_cls).all(), text
+
+
+def test_ensemble_diacritize_respects_the_writing():
+    """The generator's decision rule masks before the argmax: a madda alif is
+    never rewritten to a hamza (the /aː/ survives), and a mark a human wrote is
+    never overwritten — the arbtok.orthography constraints, applied to the
+    bundled ensemble distribution."""
+    from arbtok._ensemble import get_ensemble
+    d = get_ensemble()
+    # madda preserved: آ must survive in the output
+    assert "آ" in d.diacritize("آبد")
+    # a human's kasra is pinned, not overwritten
+    assert "كِ" in d.diacritize("كِتاب")

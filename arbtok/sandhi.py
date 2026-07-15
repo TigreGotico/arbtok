@@ -30,10 +30,10 @@ from typing import List, Optional, Sequence, Tuple
 
 # The closed class of words whose final short vowel is lexical (part of the
 # word) rather than iʿrāb, and so survives the pause — pronouns,
-# demonstratives, relatives and a few particles. text2tashkeel owns the list
+# demonstratives, relatives and a few particles. arbtok.waqf owns the list
 # (it applies the same Wright §372 transform at the orthographic layer);
 # importing it keeps the two libraries from drifting.
-from text2tashkeel.waqf import LEXICAL_FINAL_VOWEL
+from arbtok.waqf import LEXICAL_FINAL_VOWEL
 
 __all__ = ["apply_cross_word", "NUN_ASSIMILATION"]
 
@@ -97,7 +97,7 @@ def _pausal(ipa: str, surface: str) -> str:
     مُؤْمِن is the word, and only the orthography can tell them apart. A
     closed class of function words (هُوَ, نَحْنُ, …) carries a *lexical*
     final vowel that is not iʿrāb and survives the pause
-    (:data:`text2tashkeel.waqf.LEXICAL_FINAL_VOWEL`).
+    (:data:`arbtok.waqf.LEXICAL_FINAL_VOWEL`).
 
     Unmodeled: the construct-state tāʾ marbūṭa, which pausally keeps /t/
     before its annex in careful renditions (Wright I §372 rem.); arbtok has

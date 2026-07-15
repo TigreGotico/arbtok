@@ -10,7 +10,7 @@ lattice's constraints never reach back to inform the choice; they can only veto
 it after the fact.
 
 This module closes that loop. rawi is a char-level classifier with an accessible
-per-character distribution (:meth:`text2tashkeel.Diacritizer.logits`), so instead
+per-character distribution (:meth:`arbtok._ensemble.EnsembleDiacritizer.logits`), so instead
 of taking its argmax and hoping the result is licensed, arbtok can enumerate the
 *licensed* diacritizations of a word and let rawi **score** them — picking the
 highest-probability reading the variety's orthography actually admits. The model
@@ -46,9 +46,10 @@ and its whole margin over the shipped pipeline is the set of words whose argmax
 the orthography refuses — where the generator falls back to a bare skeleton and
 the scorer instead recovers the best licensed reading.
 
-Ownership note: this is arbtok code by design (roadmap §T.3 route 4). text2tashkeel
-stays a generic diacritizer that knows nothing of lattices; arbtok is the one
-place that legitimately knows about both it and orthography2ipa.
+Ownership note: this is arbtok code by design (roadmap §T.3 route 4). The bundled
+ensemble (:mod:`arbtok._ensemble`) stays a generic diacritizer that knows nothing
+of lattices; this module is the one place that knows about both it and
+orthography2ipa.
 """
 
 from __future__ import annotations
@@ -70,15 +71,6 @@ from arbtok.nisba import restore_nisba
 from arbtok.tokenizer import normalize_unicode
 
 __all__ = ["FusionDiacritizer", "Hypothesis", "logprobs"]
-
-#: Fusion scores the flagship **ensemble** distribution, read from the stitched
-#: ONNX arbtok bundles (arbtok/_ensemble.py). The plain stitched flagship returns
-#: an argmax only; the bundled re-export additionally emits ``gated_logits`` (the
-#: gate folded in as a bias on the value-head logits), so the scorer sees the
-#: ensemble's decision as a distribution instead of a single head. The name is
-#: only used on the rare alignment-mismatch fallback to the guarded pipeline.
-_DEFAULT_MODEL = "rawi-ensemble"
-
 
 def logprobs(row: np.ndarray) -> np.ndarray:
     """Numerically-stable log-softmax of one logit row."""
@@ -123,7 +115,6 @@ class FusionDiacritizer:
     def __init__(
         self,
         lang: str = DEFAULT_LANG,
-        model: Optional[str] = None,
         waqf: bool = True,
         lexicon: Optional[str] = DEFAULT_LEXICON,
         beam: int = 8,
@@ -135,7 +126,6 @@ class FusionDiacritizer:
         self.beam = beam
         self.topk = topk
         self.lattice_weight = lattice_weight
-        self._model = model or _DEFAULT_MODEL
         self._diacritizer = None
         self._spec = get(lang)
         self._tokenizer = PhonetokTokenizer(self._spec)
@@ -153,10 +143,10 @@ class FusionDiacritizer:
     @property
     def diacritizer(self):
         if self._diacritizer is None:
-            # The bundled ensemble reader — same (logits / decode / diacritize)
-            # contract as a text2tashkeel Diacritizer, but reads arbtok's own
-            # stitched ONNX and exposes the flagship distribution to score. waqf
-            # is applied by this module (after scoring), not by the model.
+            # The bundled ensemble reader (logits / decode / diacritize) —
+            # arbtok's own stitched ONNX, exposing the flagship distribution to
+            # score. waqf is applied by this module (after scoring), not by the
+            # model.
             from arbtok._ensemble import get_ensemble
             self._diacritizer = get_ensemble()
         return self._diacritizer
@@ -237,7 +227,7 @@ class FusionDiacritizer:
             rendered = restore_nisba(self.diacritizer.decode(
                 bare_word, list(hyp.class_ids)))
             if self.waqf:
-                from text2tashkeel.waqf import pausal
+                from arbtok.waqf import pausal
                 rendered = pausal(rendered)
             if not self._is_licensed(rendered):
                 continue
@@ -251,7 +241,7 @@ class FusionDiacritizer:
             # as the shipped pipeline does — else leave the word underdetermined.
             proposed = self.diacritizer.diacritize(normalized)
             if self.waqf:
-                from text2tashkeel.waqf import pausal
+                from arbtok.waqf import pausal
                 proposed = pausal(proposed)
             if not _skeleton_is_preserved(normalized, proposed):
                 repaired = repair_skeleton(normalized, proposed)
@@ -276,7 +266,7 @@ class FusionDiacritizer:
         # left unlicensed? (The margin this whole path exists to capture.)
         argmax = restore_nisba(self.diacritizer.diacritize(normalized))
         if self.waqf:
-            from text2tashkeel.waqf import pausal
+            from arbtok.waqf import pausal
             argmax = pausal(argmax)
         if not self._is_licensed(argmax):
             self.recovered.append(orig_word)
@@ -316,8 +306,7 @@ class FusionDiacritizer:
         orig_nonempty = [w for w in orig_words if w.strip()]
         if logits is None or len(bare_words) != len(orig_nonempty):
             from arbtok.diacritize import LatticeDiacritizer
-            guard = LatticeDiacritizer(lang=self.lang, model=self._model,
-                                       waqf=self.waqf,
+            guard = LatticeDiacritizer(lang=self.lang, waqf=self.waqf,
                                        lexicon=None if self.lexicon is None
                                        else DEFAULT_LEXICON)
             return guard.diacritize(text)

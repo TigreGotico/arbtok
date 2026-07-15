@@ -2,7 +2,8 @@
 
 Restoring tashkeel is a statistical problem — which vowel follows a letter is
 morphological and syntactic, and the letters say none of it — so it belongs to a
-model, and arbtok delegates it to ``text2tashkeel``. But a model asked to write
+model — arbtok's bundled rawi ensemble (:mod:`arbtok._ensemble`). But a model
+asked to write
 into a word can write *anything*, including a reading the orthography does not
 license and a consonant that was never there. Downstream, that is indetectable:
 the phonemizer will faithfully transcribe the hallucination.
@@ -11,13 +12,13 @@ arbtok is the one library that knows about both the diacritizer and the
 orthography2ipa lattice, so it is where the two meet. The model **proposes**; the
 lattice **disposes**.
 
-Two of the three guards this once carried have **moved upstream**, where they
-belong. text2tashkeel now decodes under an orthographic constraint of its own
-(:mod:`text2tashkeel.orthography`): it cannot rewrite a letter the writing spells,
-and it cannot overwrite a mark a human wrote, because the classes that would do so
-are masked out before the argmax. Those are facts about Arabic and about the
-model's class space — no lattice is needed to know them, so no lattice should have
-to.
+Two of the three guards this once carried live at **decision time**, where they
+belong. The ensemble decodes under an orthographic constraint
+(:mod:`arbtok.orthography`, applied in :mod:`arbtok._ensemble`): it cannot rewrite
+a letter the writing spells, and it cannot overwrite a mark a human wrote, because
+the classes that would do so are masked out before the argmax. Those are facts
+about Arabic and about the model's class space — no lattice is needed to know
+them, so no lattice should have to.
 
 Before any of that, though, comes the cheapest guard of all: **a known word is a
 known word**. Which vowels a word carries is a lexical fact, and a model asked to
@@ -64,7 +65,7 @@ _MARKS = set("ًٌٍَُِّْٰٓ")
 
 #: Letters the rawi models legitimately RESTORE rather than merely mark: a bare
 #: alif typed for a hamza carrier, and the silent dagger-alef. This is a
-#: documented widening of the task (text2tashkeel's models fix real,
+#: documented widening of the task (the rawi models fix real,
 #: inconsistently-spelled input), so a change confined to these is not a
 #: hallucination. Keyed by what may replace what.
 _RESTORABLE = {
@@ -169,7 +170,7 @@ class LatticeDiacritizer:
     ``lang`` names the orthography2ipa variety whose grapheme table licenses the
     result. ``waqf`` drops the case endings from the model's output, giving the
     pausal form that is actually spoken rather than the fully-parsed form the
-    models restore (see :mod:`text2tashkeel.waqf`). ``lexicon`` names the
+    model restores (see :mod:`arbtok.waqf`). ``lexicon`` names the
     diacritized-stem lexicon consulted before the model — a path, a URL, an
     ``hf://`` id, or ``None`` to ask the model about every word.
     """
@@ -177,13 +178,11 @@ class LatticeDiacritizer:
     def __init__(
         self,
         lang: str = DEFAULT_LANG,
-        model: Optional[str] = None,
         waqf: bool = True,
         lexicon: Optional[str] = DEFAULT_LEXICON,
     ) -> None:
         self.lang = lang
         self.waqf = waqf
-        self._model = model
         self._diacritizer = None
         self._spec = get(lang)
         self._tokenizer = PhonetokTokenizer(self._spec)
@@ -199,12 +198,19 @@ class LatticeDiacritizer:
     @property
     def diacritizer(self):
         if self._diacritizer is None:
-            from text2tashkeel import Diacritizer
-            self._diacritizer = (
-                Diacritizer(self._model, waqf=self.waqf) if self._model
-                else Diacritizer(waqf=self.waqf)
-            )
+            from arbtok._ensemble import get_ensemble
+            self._diacritizer = get_ensemble()
         return self._diacritizer
+
+    def _propose(self, word: str) -> str:
+        """The model's reading of *word* — constrained argmax over the bundled
+        ensemble, reduced to its pausal form when ``waqf`` is on (the transform
+        the model cannot know: :func:`arbtok.waqf.pausal`)."""
+        proposed = self.diacritizer.diacritize(word)
+        if self.waqf:
+            from arbtok.waqf import pausal
+            proposed = pausal(proposed)
+        return proposed
 
     def _lookup(self, word: str) -> Optional[str]:
         """The lexicon's stem for *word*, if it has one the orthography licenses.
@@ -253,7 +259,7 @@ class LatticeDiacritizer:
             self.looked_up.append(word)
             return entry
 
-        proposed = self.diacritizer.diacritize(normalized)
+        proposed = self._propose(normalized)
 
         # (3) A diacritizer marks; it does not rewrite. When it did rewrite a
         # letter, the marks are usually still right — so keep them and put our
