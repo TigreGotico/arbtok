@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a26](https://github.com/TigreGotico/arbtok/tree/0.0.0a26) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a25...0.0.0a26)
+
+**Merged pull requests:**
+
+- feat\(gold-cs\): authentic Cairene code-switched gold for ar-EG + pipeline\_status [\#28](https://github.com/TigreGotico/arbtok/pull/28) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a25](https://github.com/TigreGotico/arbtok/tree/0.0.0a25) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a24...0.0.0a25)
