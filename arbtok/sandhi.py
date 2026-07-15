@@ -25,7 +25,15 @@ about words, which is what they are.
 
 from __future__ import annotations
 
+import re
 from typing import List, Optional, Sequence, Tuple
+
+# The closed class of words whose final short vowel is lexical (part of the
+# word) rather than iʿrāb, and so survives the pause — pronouns,
+# demonstratives, relatives and a few particles. text2tashkeel owns the list
+# (it applies the same Wright §372 transform at the orthographic layer);
+# importing it keeps the two libraries from drifting.
+from text2tashkeel.waqf import LEXICAL_FINAL_VOWEL
 
 __all__ = ["apply_cross_word", "NUN_ASSIMILATION"]
 
@@ -57,28 +65,48 @@ def _assimilate_nun(ipa: str, next_ipa: str) -> str:
     return ipa[:-1] + surface
 
 
-#: The tanwīn: the only endings a pause removes. A word ends in one or it does not,
-#: and the ORTHOGRAPHY says which — never the transcription.
+#: The tanwīn. A word ends in one or it does not, and the ORTHOGRAPHY says
+#: which — never the transcription.
 _TANWIN_FATH, _TANWIN_DAMM, _TANWIN_KASR = "ً", "ٌ", "ٍ"
 
 #: The tāʾ marbūṭa, silent at a pause and pronounced when a vowel follows it.
 _TA_MARBUTA = "ة"
 
+#: The plain short-vowel iʿrāb marks and the IPA vowel each one writes.
+_SHORT_VOWEL_IPA = {"َ": "a", "ُ": "u", "ِ": "i"}
+
+#: The run of harakāt at the very end of a written word.
+_TRAILING_MARKS = re.compile(r"[ًٌٍَُِّْٰ]+$")
+
 
 def _pausal(ipa: str, surface: str) -> str:
-    """A word at a pause drops its case ending.
+    """A word at a pause takes its pausal (waqf) form — Wright I §372.
 
-    Driven by the **spelling**, not by the IPA. A tanwīn is written, so whether a
-    word has one is a fact about the page; guessing it from the transcription's
-    last two characters confuses a case ending with a stem and eats the word —
-    مُؤْمِن /muʔmin/ becomes *muʔm*, لَبَن /laban/ becomes *labaː*. The suffix
-    -in is a case ending in قَاضٍ and part of the word in مُؤْمِن, and only the
-    orthography can tell them apart.
+    The pause drops the case and mood endings (iʿrāb): a final short vowel
+    goes, tanwīn ḍamm/kasr go with their /n/, and tanwīn al-fatḥ is the
+    exception — it does not vanish, it lengthens, the written alif carrying
+    it: كِتَابًا is *kitaːbaː*. A tāʾ marbūṭa voiced only by its ending falls
+    silent with it: مَدِينَةٌ is [madiːnatun] in full and [madiːna] at a
+    pause. (Wright, *A Grammar of the Arabic Language*, 3rd ed., I §372;
+    Ryding, *A Reference Grammar of MSA*, CUP 2005, §2.4.)
 
-    Tanwīn al-fatḥ is the exception among the three: it does not vanish, it
-    lengthens — the alif carrying it is written and it is heard. كِتَابًا is
-    *kitaːbaː*.
+    Driven by the **spelling**, not by the IPA. A tanwīn or a final harakah is
+    written, so whether a word has one is a fact about the page; guessing it
+    from the transcription's last characters confuses a case ending with a
+    stem and eats the word — the -in of قَاضٍ is an ending and the -in of
+    مُؤْمِن is the word, and only the orthography can tell them apart. A
+    closed class of function words (هُوَ, نَحْنُ, …) carries a *lexical*
+    final vowel that is not iʿrāb and survives the pause
+    (:data:`text2tashkeel.waqf.LEXICAL_FINAL_VOWEL`).
+
+    Unmodeled: the construct-state tāʾ marbūṭa, which pausally keeps /t/
+    before its annex in careful renditions (Wright I §372 rem.); arbtok has
+    no morphosyntax to detect iḍāfa, and a written pause after a construct
+    head is itself unusual, so the plain pausal /a/ is used throughout.
     """
+    if surface in LEXICAL_FINAL_VOWEL:
+        return ipa
+
     marks = set(surface)
     has_tanwin = bool(marks & {_TANWIN_FATH, _TANWIN_DAMM, _TANWIN_KASR})
 
@@ -96,17 +124,40 @@ def _pausal(ipa: str, surface: str) -> str:
     if (_TANWIN_DAMM in marks and ipa.endswith("un")) or (
             _TANWIN_KASR in marks and ipa.endswith("in")):
         return ipa[:-2]
+
+    # A plain final short vowel — fatḥa, ḍamma, kasra — is the case or mood
+    # ending, and the pause drops it (Wright I §372). Only when the page
+    # actually writes it word-finally, and only when the transcription ends
+    # in the very vowel that mark writes.
+    trailing = _TRAILING_MARKS.search(surface)
+    if trailing:
+        vowel = next((v for m, v in _SHORT_VOWEL_IPA.items()
+                      if m in trailing.group()), None)
+        if vowel is not None and ipa.endswith(vowel):
+            ipa = ipa[: -1]
+            # The tāʾ marbūṭa the departed vowel was voicing goes too.
+            if (surface[: trailing.start()].endswith(_TA_MARBUTA)
+                    and ipa.endswith("t")):
+                ipa = ipa[: -1]
     return ipa
 
 
 def apply_cross_word(
     words: Sequence[Tuple[str, str, bool]],
+    pausal: bool = True,
 ) -> List[str]:
     """Apply the between-word rules to ``(ipa, surface, is_punct)`` words.
 
     Returns the rewritten IPA of each. Punctuation is passed through untouched —
     it is not a word and has no phonology. What it *is* is a pause, and a pause is
     what strips a case ending.
+
+    ``pausal`` is arbtok's declared waqf policy switch. ``True`` (the TTS
+    default) renders a word standing at a written pause in its pausal form
+    (Wright I §372 — see :func:`_pausal`); ``False`` is the full-iʿrāb
+    passthrough: every written ending is read out, the recitation/pedagogical
+    register. Both modes see the same word IPA — the pause is the only thing
+    the flag changes, so the two cannot drift.
 
     A word at the end of the input is **not** treated as paused. The pause has to
     be written: an utterance may continue past whatever fragment was handed to us,
@@ -131,7 +182,8 @@ def apply_cross_word(
                 break
 
         if before_pause:
-            out[i] = _pausal(ipa, surface)
+            if pausal:
+                out[i] = _pausal(ipa, surface)
         elif nxt is not None:
             out[i] = _assimilate_nun(ipa, nxt)
 

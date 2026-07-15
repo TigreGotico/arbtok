@@ -13,7 +13,7 @@ import orthography2ipa
 from orthography2ipa import WordContext
 
 from arbtok.plugin import ArbtokG2PPlugin
-from arbtok.test import ALL_TEST_CASES
+from tests.test_msa_pausal import ALL_TEST_CASES
 from arbtok.tokenizer import Sentence
 
 

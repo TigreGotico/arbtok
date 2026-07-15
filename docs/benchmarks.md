@@ -141,6 +141,26 @@ Worst (by diacritized PER — a policy/register issue, not broken dialect rules)
 - **ar-IQ** (gilit) 0.037 — Iraqi gilit has the richest set of reflexes (kāf→/tʃ/,
   qāf→/g/, affrication) and the most room for a single segment to diverge.
 
+### The MSA rows are a register seam, and the waqf policy prices it
+
+The `ar`/`arb` gold keeps the full iʿrāb; arbtok's default is the declared
+pausal (waqf) policy — `ArbtokG2PPlugin(pausal=True)`, Wright I §372 — which
+drops the endings a TTS voice should not read out. Scoring the right register
+against the right gold (`--full-irab`, i.e. `pausal=False`) removes almost the
+whole gap (N=6, current gold; the table above was N=5):
+
+| Lect | mode | PER (diac) | WER (diac) | PER (bare) | WER (bare) |
+|---|---|---|---|---|---|
+| ar  | pausal (default) | 0.086 | 0.400 | 0.231 | 0.800 |
+| ar  | `--full-irab`    | **0.015** | **0.089** | 0.203 | 0.644 |
+| arb | pausal (default) | 0.062 | 0.405 | 0.115 | 0.786 |
+| arb | `--full-irab`    | **0.007** | **0.048** | 0.128 | 0.595 |
+
+The residual diacritized error in `--full-irab` mode is the ordinary rule
+seam, not the register; the pausal-mode numbers are unchanged from before the
+policy was centralized, which is the point — one flag, one place
+(`arbtok.sandhi`), same lattice in both modes.
+
 ## Regression status
 
 These are engine-similarity numbers on an LLM-origin gold, so they are reported,

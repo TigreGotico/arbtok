@@ -1,6 +1,6 @@
 import jiwer
 import string
-from arbtok.test import ALL_TEST_CASES
+from tests.test_msa_pausal import ALL_TEST_CASES  # run from repo root
 from arbtok.espeak_wrapper import EspeakPhonemizer
 from arbtok.tokenizer import Sentence, PUNCT
 

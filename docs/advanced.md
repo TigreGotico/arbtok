@@ -106,8 +106,10 @@ Key methods:
   marks. Undiacritized text phonemizes to a consonant skeleton — diacritize first
   (see [tashkeel.md](tashkeel.md)).
 - **Accuracy is experimental and unverified.** The rule set and the IPA gold set
-  (`arbtok.test.ALL_TEST_CASES`) are LLM-generated. Many gold cases are marked
-  failing. Passing tests is not linguistic correctness.
+  (`tests/test_msa_pausal.py::ALL_TEST_CASES`) are LLM-generated, since revised
+  case-by-case under the declared waqf policy (Wright I §372) with the disputed
+  rows resolved and justified in that module. Passing tests is still not
+  native-speaker validation.
 - **Reuse the diacritizer.** `TashkeelDiacritizer()` loads an ONNX session; build
   one and keep it, don't construct per sentence.
 - **Vendored deps.** `arbtok.pyarabic` and `arbtok.tashkeel` are vendored copies;

@@ -72,7 +72,8 @@ class ArbtokG2PPlugin:
     def __init__(self, lang: str = DEFAULT_LANG, diacritize: bool = True,
                  stress: bool = True,
                  lexicon: Optional[str] = DEFAULT_LEXICON,
-                 nativize: bool = True) -> None:
+                 nativize: bool = True,
+                 pausal: bool = True) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
         #: The variety: any orthography2ipa Arabic spec code.
@@ -96,6 +97,30 @@ class ArbtokG2PPlugin:
         #: ``False`` for linguistic output that must not invent a pronunciation:
         #: the Latin run is then left in place, untranscribed, rather than adapted.
         self.nativize = nativize
+        #: The waqf (pausal) policy — ONE declared switch for the whole stack
+        #: (Wright, *A Grammar of the Arabic Language*, 3rd ed., I §372;
+        #: Ryding, *A Reference Grammar of MSA*, CUP 2005, §2.4).
+        #:
+        #: ``True`` — the TTS register, the default. A word standing at a
+        #: written phrase boundary takes its pausal form: the final short
+        #: vowel (iʿrāb) is dropped, tanwīn -un/-in drop with their /n/,
+        #: tanwīn -an lengthens to /aː/ on its written alif, and a tāʾ
+        #: marbūṭa voiced only by its ending falls silent with it (the
+        #: construct-state /at/ is documented as unmodeled). The
+        #: diacritizer, when it runs on bare text, restores the pausal
+        #: register throughout (the modern spoken register keeps no iʿrāb).
+        #:
+        #: ``False`` — full iʿrāb passthrough: every written ending is read
+        #: out and the diacritizer restores the full case/mood endings. The
+        #: recitation/pedagogical register, and the right mode to score
+        #: against iʿrāb-keeping gold.
+        #:
+        #: Both modes run the SAME lattice and rescorers; the flag is
+        #: consulted only at the sentence-level pause rescorer
+        #: (:mod:`arbtok.sandhi`) and the diacritizer, so the transform is
+        #: applied exactly once — never dropped twice, never guessed from
+        #: the IPA.
+        self.pausal = pausal
 
     @property
     def language_codes(self) -> List[str]:
@@ -139,6 +164,7 @@ class ArbtokG2PPlugin:
             try:
                 from arbtok.diacritize import LatticeDiacritizer
                 self._diacritizer = LatticeDiacritizer(lang=self.lang,
+                                                      waqf=self.pausal,
                                                       lexicon=self.lexicon)
             except Exception:
                 self._diacritizer_failed = True
@@ -164,7 +190,8 @@ class ArbtokG2PPlugin:
         def flush_arabic():
             if buffer:
                 parts.append(Sentence(self.normalize(" ".join(buffer)),
-                                      lang=self.lang, stress=self.stress).ipa)
+                                      lang=self.lang, stress=self.stress,
+                                      pausal=self.pausal).ipa)
                 buffer.clear()
 
         for token in text.split():
@@ -205,7 +232,8 @@ class ArbtokG2PPlugin:
             if (normalize_unicode(word) not in WORD_EXCEPTIONS
                     and not defers_to_cascade(word)):
                 return word_ipa(word, lang, stress=self.stress)
-            return Sentence(word, lang=lang, stress=self.stress).ipa
+            return Sentence(word, lang=lang, stress=self.stress,
+                            pausal=self.pausal).ipa
 
         # Tokenize the word with its orthographic neighbours so the
         # cross-word rules (wasl elision, idgham/iqlab, clitic
@@ -213,8 +241,10 @@ class ArbtokG2PPlugin:
         parts = [p for p in (context.prev_word, word, context.next_word)
                  if p is not None]
         target = 0 if context.prev_word is None else 1
-        tokens = Sentence(" ".join(parts), lang=lang, stress=self.stress).tokens
+        tokens = Sentence(" ".join(parts), lang=lang, stress=self.stress,
+                          pausal=self.pausal).tokens
         words = [t for t in tokens if t.surface not in ("",)]
         if target < len(words):
             return words[target].ipa
-        return Sentence(word, lang=lang, stress=self.stress).ipa
+        return Sentence(word, lang=lang, stress=self.stress,
+                        pausal=self.pausal).ipa
