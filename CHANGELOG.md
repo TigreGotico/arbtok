@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a23](https://github.com/TigreGotico/arbtok/tree/0.0.0a23) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a22...0.0.0a23)
+
+**Merged pull requests:**
+
+- feat: code-switched Arabic gold set \(gold-20-code-switched\) [\#25](https://github.com/TigreGotico/arbtok/pull/25) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a22](https://github.com/TigreGotico/arbtok/tree/0.0.0a22) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a21...0.0.0a22)
