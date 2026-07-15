@@ -1,10 +1,20 @@
 # Diacritization (tashkeel)
 
 Arabic in the wild is written without short vowels. The phonemizer needs them —
-no diacritics means no vowels to emit. `arbtok.tashkeel` restores diacritics
-via [text2tashkeel](https://github.com/TigreGotico/text2tashkeel), a model
-picker over bundled ONNX diacritization models (no PyTorch, offline by
-default; the flagship ensemble also restores hamza and the dagger-alef).
+no diacritics means no vowels to emit. arbtok restores diacritics with a model it
+**bundles**: the rawi stitched ensemble, one 4.9 MB int8 ONNX inside the wheel
+(`arbtok/_ensemble.py` — onnxruntime + numpy, no PyTorch, no network, no external
+diacritization package; it also restores hamza and the dagger-alef).
+
+The model's weights are the TigreGotico rawi family (rawi-v2 gate + rawi-v3
+value head, Apache-2.0, published on PyPI in the `text2tashkeel` wheel); the
+bundled re-export additionally emits the pre-argmax **distribution**, which is
+what makes the dialect-aware fusion scorer possible
+([rawi-fusion.md](rawi-fusion.md)) and lets the generator mask the classes the
+writing contradicts *before* the argmax — a letter the writing spells is never
+rewritten and a human's marks are never overwritten (`arbtok/orthography.py`).
+`tools/build_ensemble_logits_onnx.py` reproduces the artifact and asserts that
+the exposed distribution's argmax equals the graph's own decision.
 
 ## `TashkeelDiacritizer`
 
@@ -15,13 +25,6 @@ diac = TashkeelDiacritizer()
 print(diac.diacritize("قال الملك"))
 ```
 
-Pass a text2tashkeel model name to pick a specific accuracy/speed/size
-trade-off:
-
-```python
-TashkeelDiacritizer("rawi-v2-int8")   # small int8 variant
-```
-
 ### `diacritize(text, pausal=False) -> str`
 
 Returns the input text with diacritics inserted.
@@ -30,9 +33,9 @@ Returns the input text with diacritics inserted.
 diac.diacritize("ذهب الطالب")
 ```
 
-`pausal=True` rewrites the word-final case vowels (fatha/damma/kasra and the
-damm/kasr tanwīn) to sukūn — the pausal form used when citing isolated words,
-which is how dictionary lexicons transcribe them:
+`pausal=True` drops the word-final case and mood endings (iʿrāb), leaving the
+pausal (waqf) form that is spoken — the transform is deterministic and
+rule-cited (`arbtok/waqf.py`; Wright I §372, Ryding §2.4):
 
 ```python
 diac.diacritize("كتب", pausal=True)
