@@ -74,13 +74,16 @@ class ArbtokG2PPlugin:
                  lexicon: Optional[str] = DEFAULT_LEXICON,
                  nativize: bool = True,
                  pausal: bool = True,
-                 fusion: bool = False) -> None:
+                 fusion: bool = True) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
-        #: Restore tashkeel by *scoring* the orthography's licensed readings with
-        #: the rawi distribution (:mod:`arbtok.fusion`), instead of tokenizing one
-        #: model guess. Off by default — a research path (roadmap §T.3 route 4)
-        #: whose empirical gate is documented in docs/rawi-fusion.md.
+        #: Restore tashkeel by *scoring* the flagship ensemble's licensed readings
+        #: (:mod:`arbtok.fusion`) instead of tokenizing one model guess. On by
+        #: default: scoring the bundled ensemble distribution under the variety's
+        #: own licensing beats the plain generator's mean bare-input PER
+        #: (0.214 vs 0.217), with the margin on the dialect-divergent lects. Set
+        #: ``False`` to opt out. The empirical gate is documented in
+        #: docs/rawi-fusion.md.
         self.fusion = fusion
         #: The variety: any orthography2ipa Arabic spec code.
         self.lang = spec_for_lang(lang)
