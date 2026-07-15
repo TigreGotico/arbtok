@@ -67,6 +67,7 @@ from arbtok.dialects import DEFAULT_LANG
 from arbtok.diacritize import (
     _author_complete, repair_skeleton, strip_marks, _skeleton_is_preserved,
 )
+from arbtok.dialect_lexicon import DialectLexicon
 from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
 from arbtok.lattice import word_lattice
 from arbtok.nisba import restore_nisba
@@ -119,6 +120,7 @@ class FusionDiacritizer:
         lang: str = DEFAULT_LANG,
         waqf: bool = True,
         lexicon: Optional[str] = DEFAULT_LEXICON,
+        dialect_lexicon: bool = True,
         beam: int = 8,
         topk: int = 4,
         lattice_weight: float = 0.5,
@@ -132,11 +134,17 @@ class FusionDiacritizer:
         self._spec = get(lang)
         self._tokenizer = PhonetokTokenizer(self._spec)
         self.lexicon = StemLexicon(lexicon) if lexicon else None
+        self._dialect_lexicon_on = dialect_lexicon
+        #: The lect's closed-class lexicon, a hard prior consulted before the
+        #: stem lexicon and before scoring (see :mod:`arbtok.dialect_lexicon`).
+        self.dialect_lexicon = DialectLexicon(lang) if dialect_lexicon else None
         #: Words the fusion recovered — a licensed reading the plain argmax would
         #: have left unlicensed (the whole reason this path exists), in order.
         self.recovered: List[str] = []
-        #: Words answered from the lexicon, which the model never scored.
+        #: Words answered from the stem lexicon, which the model never scored.
         self.looked_up: List[str] = []
+        #: Words answered from the lect's closed-class lexicon (the hard prior).
+        self.dialect_looked_up: List[str] = []
         #: Words no licensed hypothesis covered, left as written (underdetermined).
         self.rejected: List[str] = []
         #: The n-best licensed hypotheses of the last fused word, best first.
@@ -169,6 +177,19 @@ class FusionDiacritizer:
             return float(sum(slot.top.cost for slot in word_lattice(word, self.lang)))
         except Exception:
             return 0.0
+
+    def _dialect_lookup(self, word: str) -> Optional[str]:
+        """The lect's closed-class vocalization for *word*, guarded like a stem
+        entry (spells the word, licensed by the variety). Register-invariant, so
+        it answers in both waqf modes. See :mod:`arbtok.dialect_lexicon`."""
+        if self.dialect_lexicon is None:
+            return None
+        voc = self.dialect_lexicon.get(word)
+        if voc is None:
+            return None
+        if strip_marks(voc) != strip_marks(word) or not self._is_licensed(voc):
+            return None
+        return voc
 
     def _lookup(self, word: str) -> Optional[str]:
         if self.lexicon is None or not self.waqf:
@@ -288,7 +309,15 @@ class FusionDiacritizer:
         if _author_complete(normalized, positions):
             return orig_word
 
-        # (2) A written-down word is a lexical fact, not a thing to score.
+        # (2a) A closed-class dialect word: written in MSA orthography, said the
+        # lect's way. A hard prior consulted before the stem lexicon and before
+        # scoring — the model would score it for the wrong variety.
+        dialect = self._dialect_lookup(normalized)
+        if dialect is not None:
+            self.dialect_looked_up.append(orig_word)
+            return dialect
+
+        # (2b) A written-down word is a lexical fact, not a thing to score.
         entry = self._lookup(normalized)
         if entry is not None:
             self.looked_up.append(orig_word)
@@ -385,7 +414,8 @@ class FusionDiacritizer:
             from arbtok.diacritize import LatticeDiacritizer
             guard = LatticeDiacritizer(lang=self.lang, waqf=self.waqf,
                                        lexicon=None if self.lexicon is None
-                                       else DEFAULT_LEXICON)
+                                       else DEFAULT_LEXICON,
+                                       dialect_lexicon=self._dialect_lexicon_on)
             return guard.diacritize(text)
 
         out, bi = [], 0

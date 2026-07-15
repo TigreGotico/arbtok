@@ -53,6 +53,7 @@ from typing import List, Optional
 from orthography2ipa import get, is_underdetermined, underdetermined_positions
 from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
 
+from arbtok.dialect_lexicon import DialectLexicon
 from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
 from arbtok.nisba import restore_nisba
 from arbtok.dialects import DEFAULT_LANG
@@ -180,6 +181,7 @@ class LatticeDiacritizer:
         lang: str = DEFAULT_LANG,
         waqf: bool = True,
         lexicon: Optional[str] = DEFAULT_LEXICON,
+        dialect_lexicon: bool = True,
     ) -> None:
         self.lang = lang
         self.waqf = waqf
@@ -187,13 +189,21 @@ class LatticeDiacritizer:
         self._spec = get(lang)
         self._tokenizer = PhonetokTokenizer(self._spec)
         self.lexicon = StemLexicon(lexicon) if lexicon else None
+        #: The lect's closed-class lexicon, consulted as a hard prior *before*
+        #: the stem lexicon and the model — the function words a dialect spells
+        #: in MSA orthography but vocalizes its own way (see
+        #: :mod:`arbtok.dialect_lexicon`). Empty for a lect that ships none.
+        self.dialect_lexicon = DialectLexicon(lang) if dialect_lexicon else None
         #: Words the model proposed and the lattice refused outright, in order.
         self.rejected: List[str] = []
         #: Words whose letters the model rewrote and we put back, keeping its
         #: marks. Chiefly the alef-madda class — see :func:`repair_skeleton`.
         self.repaired: List[str] = []
-        #: Words answered from the lexicon, which the model never saw.
+        #: Words answered from the stem lexicon, which the model never saw.
         self.looked_up: List[str] = []
+        #: Words answered from the lect's closed-class lexicon (the hard prior),
+        #: which neither the stem lexicon nor the model saw.
+        self.dialect_looked_up: List[str] = []
 
     @property
     def diacritizer(self):
@@ -230,6 +240,25 @@ class LatticeDiacritizer:
             return None
         return stem
 
+    def _dialect_lookup(self, word: str) -> Optional[str]:
+        """The lect's closed-class vocalization for *word*, if it has one the
+        orthography licenses.
+
+        Held to the same guards as a model proposal and a stem entry: the
+        vocalization must spell the word we were given (marks added, letters
+        untouched) and it must tokenize against the variety's grapheme table.
+        These are register-invariant function words with no iʿrāb, so — unlike
+        the pausal stem lexicon — the entry answers in both waqf modes.
+        """
+        if self.dialect_lexicon is None:
+            return None
+        voc = self.dialect_lexicon.get(word)
+        if voc is None:
+            return None
+        if strip_marks(voc) != strip_marks(word) or not self._is_licensed(voc):
+            return None
+        return voc
+
     def _is_licensed(self, word: str) -> bool:
         """True when every part of *word* maps to a grapheme the spec declares."""
         try:
@@ -251,7 +280,17 @@ class LatticeDiacritizer:
         if _author_complete(normalized, positions):
             return word
 
-        # (2) Somebody already wrote this word down. A lexicon entry is a pausal
+        # (2a) The lect writes this word in MSA orthography but does not say it
+        # the MSA way — a closed-class function word whose dialect vocalization
+        # the grammar records. A hard prior: it is consulted before the stem
+        # lexicon and the model, because here the model's answer is not merely
+        # uncertain, it is confidently for the wrong variety.
+        dialect = self._dialect_lookup(normalized)
+        if dialect is not None:
+            self.dialect_looked_up.append(word)
+            return dialect
+
+        # (2b) Somebody already wrote this word down. A lexicon entry is a pausal
         # stem, so it answers the waqf question and no other: with the case
         # endings asked for, only the model can supply them.
         entry = self._lookup(normalized)
