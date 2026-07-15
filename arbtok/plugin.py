@@ -72,6 +72,7 @@ class ArbtokG2PPlugin:
     def __init__(self, lang: str = DEFAULT_LANG, diacritize: bool = True,
                  stress: bool = True,
                  lexicon: Optional[str] = DEFAULT_LEXICON,
+                 dialect_lexicon: bool = True,
                  nativize: bool = True,
                  pausal: bool = True,
                  fusion: bool = True) -> None:
@@ -100,6 +101,12 @@ class ArbtokG2PPlugin:
         #: a path, a URL, an ``hf://`` id, or ``None`` to ask the model about
         #: every word. See :mod:`arbtok.lexicon`.
         self.lexicon = lexicon
+        #: Consult the lect's closed-class lexicon — the function words a dialect
+        #: writes in MSA orthography but vocalizes its own way — as a hard prior
+        #: ahead of the stem lexicon and the model. On by default; the entries
+        #: are bundled per lect (see :mod:`arbtok.dialect_lexicon`). Set ``False``
+        #: to fall back to the MSA stem lexicon and the model alone.
+        self.dialect_lexicon = dialect_lexicon
         #: Read a Latin-script (foreign) run as a loanword, nativised into the
         #: matrix lect's phonology (see :mod:`arbtok.translit`). ``True`` is the
         #: TTS default — a voice needs a pronounceable, in-inventory reading. Set
@@ -175,12 +182,14 @@ class ArbtokG2PPlugin:
                     from arbtok.fusion import FusionDiacritizer
                     self._diacritizer = FusionDiacritizer(lang=self.lang,
                                                           waqf=self.pausal,
-                                                          lexicon=self.lexicon)
+                                                          lexicon=self.lexicon,
+                                                          dialect_lexicon=self.dialect_lexicon)
                 else:
                     from arbtok.diacritize import LatticeDiacritizer
                     self._diacritizer = LatticeDiacritizer(lang=self.lang,
                                                           waqf=self.pausal,
-                                                          lexicon=self.lexicon)
+                                                          lexicon=self.lexicon,
+                                                          dialect_lexicon=self.dialect_lexicon)
             except Exception:
                 self._diacritizer_failed = True
                 return text

@@ -49,5 +49,7 @@ Issues = "https://github.com/TigreGotico/arbtok/issues"
 include = ["arbtok*"]
 
 [tool.setuptools.package-data]
-# The stitched rawi ensemble ONNX (+ its vocab) that fusion scores directly.
-arbtok = ["models/*.onnx", "models/*.json"]
+# The stitched rawi ensemble ONNX (+ its vocab) that fusion scores directly,
+# and the hand-authored per-lect closed-class lexicons (Apache-2.0-clean,
+# bundled rather than fetched — see arbtok.dialect_lexicon).
+arbtok = ["models/*.onnx", "models/*.json", "data/lexicons/*.tsv"]

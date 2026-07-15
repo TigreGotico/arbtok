@@ -81,6 +81,47 @@ Apache-2.0, so it ships as a Hugging Face dataset fetched on first use, exactly
 as the diacritizer's model weights are. `scripts/build_stem_lexicon.py` builds
 one from any diacritized corpus.
 
+## The per-lect closed-class lexicon
+
+The stem lexicon answers *which vowels an MSA word carries*, and that is the
+right answer for the shared vocabulary the dialects inherit unchanged. It is the
+wrong answer for the **closed class** — the negators, demonstratives, relatives,
+interrogatives, prepositions and the handful of very-high-frequency verbs and
+particles a dialect writes in the inherited orthography but vocalizes its own
+way. Asked to point ⟨كي⟩ for a Maghrebi voice, the MSA model restores ⟨كَي⟩
+/kaj/; the dialect says ⟨كِي⟩ /kiː/. The model is not guessing badly — it is
+answering for the wrong variety, because the word it is pointing is not the word
+that is spoken.
+
+These words are few, frequent, and **written down** in every dialect grammar, so
+arbtok looks them up rather than inferring them, and it looks them up *first* — a
+closed-class dialect entry is a **hard prior** consulted ahead of the stem
+lexicon and the model:
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+ArbtokG2PPlugin(lang="ar-x-maghrebi").transcribe("كيفاش راك اليوم")
+ArbtokG2PPlugin(lang="ar-x-maghrebi", dialect_lexicon=False)  # off
+```
+
+The value is a **diacritized surface form**, not IPA — fed back through the
+variety's lattice exactly like a stem entry, so a looked-up word still gets the
+lect's allophony, stress and pausal treatment, and the same entry reads
+correctly under every spec that shares the word. An entry is held to the same
+guards as a model proposal (it must spell the word it keys, and the variety's
+grapheme table must license it) and never fires on a word a human has already
+vocalized — the author-complete gate runs first, and a marked surface form never
+matches an undiacritized key.
+
+Unlike the stem lexicon, this data is **hand-authored from the dialect grammars**
+(Harrell, Cowell, Erwin, Ingham, Badawi & Hinds, Holes, Heath, …) rather than
+mined, so it is small, Apache-2.0-clean, and **bundled** in the wheel at
+`arbtok/data/lexicons/<lect>.tsv`; each row carries its source. A lect inherits
+its ancestors' entries — `ar-MA` sees the pan-Maghrebi function words in
+`ar-x-maghrebi.tsv` *and* its own Moroccan-specific ones, the more specific file
+winning on a collision. See `arbtok/dialect_lexicon.py`.
+
 ### Errors
 
 Failures inside the model raise `TashkeelError` with the underlying cause
