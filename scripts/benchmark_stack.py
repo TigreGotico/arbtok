@@ -223,7 +223,8 @@ def _espeak_available() -> bool:
 def run_lect_benchmark(codes: Optional[List[str]] = None,
                        lexicon: Optional[str] = None,
                        limit: int = 0,
-                       with_espeak: bool = True) -> dict:
+                       with_espeak: bool = True,
+                       pausal: bool = True) -> dict:
     """Score arbtok (diacritized and undiacritized) and espeak-ng per lect.
 
     arbtok runs the shipped full stack (diacritizer + lexicon where given) on the
@@ -256,7 +257,8 @@ def run_lect_benchmark(codes: Optional[List[str]] = None,
         rows = load_lect_gold(path)
         if limit:
             rows = rows[:limit]
-        plugin = ArbtokG2PPlugin(lang=code, diacritize=True, lexicon=lexicon)
+        plugin = ArbtokG2PPlugin(lang=code, diacritize=True, lexicon=lexicon,
+                                 pausal=pausal)
 
         acc = {k: [0, 0, 0, 0] for k in ("diac", "undiac", "espeak")}
         n = 0
@@ -300,6 +302,7 @@ def run_lect_benchmark(codes: Optional[List[str]] = None,
                       "not native-validated ground truth",
         "espeak": "ar (MSA) voice for every lect — no dialect voices exist",
         "lexicon": lexicon,
+        "pausal": pausal,
         "lects": results,
     }
 
@@ -329,7 +332,8 @@ def _run_lect_mode(args) -> int:
     codes = [c.strip() for c in args.lects.split(",")] if args.lects else None
     report = run_lect_benchmark(codes=codes, lexicon=args.lexicon,
                                 limit=args.limit,
-                                with_espeak=not args.no_espeak)
+                                with_espeak=not args.no_espeak,
+                                pausal=not args.full_irab)
     if args.json:
         with open(args.json, "w", encoding="utf-8") as fh:
             json.dump(report, fh, ensure_ascii=False, indent=2)
@@ -351,6 +355,11 @@ def main() -> int:
                          "default is every lect with a gold file")
     ap.add_argument("--json", default="",
                     help="--lect mode: also write the full report as JSON here")
+    ap.add_argument("--full-irab", action="store_true",
+                    help="--lect mode: run arbtok with pausal=False — the "
+                         "full-iʿrāb passthrough register, the right mode "
+                         "against iʿrāb-keeping gold (Wright I §372 "
+                         "pausal forms are the default)")
     ap.add_argument("--no-espeak", action="store_true",
                     help="--lect mode: skip the espeak column (arbtok never skips)")
     ap.add_argument("--lang", default="ar")

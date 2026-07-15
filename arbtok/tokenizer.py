@@ -181,14 +181,10 @@ class CharToken:
             #  Default: empty
             return ""
 
-        # --- Tanwin Rules ---
-        is_pausal = self.word.next_word and self.word.next_word.is_punct
-        # Pausal: 'an' becomes long 'a' at end
-        if s == TANWIN_FATH and is_pausal:
-            return "aː"
-        # Pausal: 'un' becomes silent at end
-        elif s == TANWIN_DAMM and is_pausal:
-            return ""
+        # Tanwīn is always read in full here (an/un/in): the pausal form is
+        # not a property of a character but of a word standing at a pause,
+        # and it is applied in ONE place — the sentence-level rescorer
+        # (arbtok.sandhi._pausal) — under the declared waqf policy.
 
         # Assimilation of n + r/j/l/m
         if self.word.next_word and s == N and \
@@ -253,16 +249,12 @@ class CharToken:
 
         # --- Ta Marbuta (ة) ---
         if s == TA_MARBUTA:
-
-            # If pause (followed by nothing or non-diacritic), it is silent (or /h/).
-            if is_pausal:
-                pass
-
-            # If connected (followed by vowel/tanwin), it is /t/.
-            elif self.next_token and self.next_token.is_vowel:
+            # Voiced /t/ only when an ending follows it; bare (word-final,
+            # no ending written) it is silent. Whether a WRITTEN ending is
+            # read or pausally dropped is the sandhi rescorer's decision,
+            # not this character's.
+            if self.next_token and self.next_token.is_vowel:
                 return "t"
-
-            # In pause, standard pronunciation often drops it entirely or implies 'h'
             return ""
 
         # --- Waw (و) ---
@@ -543,6 +535,11 @@ class Sentence:
     #: assembly, so a proclitic and its host — joined in connected speech — take
     #: one mark between them, which is what they are: one phonological word.
     stress: bool = True
+    #: The waqf policy (Wright I §372): ``True`` (TTS default) renders a word
+    #: at a written pause in its pausal form — final short vowels and tanwīn
+    #: -un/-in dropped, tanwīn -an lengthened to -aː, tāʾ marbūṭa /a/;
+    #: ``False`` reads the full iʿrāb as written. See arbtok.sandhi._pausal.
+    pausal: bool = True
 
     @property
     def normalized(self) -> str:
@@ -590,7 +587,8 @@ class Sentence:
         # words does not, and cannot — see arbtok.sandhi.
         from arbtok.sandhi import apply_cross_word
         pieces = apply_cross_word(
-            [(w.ipa, w.surface, w.is_punct) for w in self.tokens])
+            [(w.ipa, w.surface, w.is_punct) for w in self.tokens],
+            pausal=self.pausal)
         ipa_str = " ".join(pieces).replace(" ː", "ː ").strip()
 
         # HACK: experimentally determined

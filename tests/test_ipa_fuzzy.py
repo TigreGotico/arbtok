@@ -31,7 +31,7 @@ from arbtok.espeak_wrapper import EspeakPhonemizer
 from arbtok.tashkeel import TashkeelDiacritizer
 
 from arbtok.tokenizer import Sentence, PUNCT
-from tests.test_ipa import ALL_TEST_CASES
+from tests.test_msa_pausal import ALL_TEST_CASES
 
 # maximum allowed error rate in gold set
 # test that accuracy doesn't go down over time

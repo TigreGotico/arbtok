@@ -102,6 +102,31 @@ arbtok.supported_lects()[:2]                                   # [Lect('ar', 're
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")  # 'ˈɡahawa'
 ```
 
+### Waqf — the pausal register (`pausal=True`)
+
+Read aloud, Arabic **pauses in waqf form** (Wright, *A Grammar of the Arabic
+Language*, 3rd ed., I §372; Ryding, *A Reference Grammar of MSA*, CUP 2005,
+§2.4): at a phrase boundary the word-final short vowel (the case/mood ending,
+iʿrāb) is not pronounced, tanwīn *-un/-in* drop with their /n/, tanwīn *-an*
+lengthens to /aː/ on its written seat alif, and a tāʾ marbūṭa voiced only by
+its ending falls silent with it (مَدِينَةٌ. → *madiːna*). The construct-state
+/at/ (an iḍāfa head pausing with its tāʾ) is **not modeled**.
+
+`pausal=True` is the default — the TTS register. A pause has to be **written**
+(a punctuation token): no pause is invented at the edge of the input. When the
+diacritizer runs on bare text it restores the pausal register throughout,
+since the modern spoken register keeps no iʿrāb at all. Pass `pausal=False`
+for the full-iʿrāb passthrough (recitation/pedagogical register, and the mode
+to use against iʿrāb-keeping gold):
+
+```python
+ArbtokG2PPlugin(pausal=True).transcribe("رَأَيْتُ كِتَابًا.")   # …kitaːbaː
+ArbtokG2PPlugin(pausal=False).transcribe("رَأَيْتُ كِتَابًا.")  # …kitaːban
+```
+
+Both modes run the same lattice and rescorers; the flag is consulted in one
+place (`arbtok.sandhi`), so the transform applies exactly once.
+
 ### Foreign words (loanword nativization)
 
 Real Arabic text is full of Latin-script words — *عندي meeting الساعة ٣*. A Latin

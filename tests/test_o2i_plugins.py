@@ -34,10 +34,15 @@ def test_naming_it_puts_the_vowels_back():
 
 @pytest.mark.parametrize("text,expected,rule", [
     ("مِنْ رَبِّهِمْ", "ˈmir ˈrabbihim", "idghām: n → r"),
-    ("مَنْ يَقُولُ", "ˈmaj jaˈquːlu", "idghām: n → j"),
-    ("مِنْ بَيْتِكَ", "ˈmim ˈbajtika", "iqlāb: n → m before b"),
+    ("مَنْ يَقُولُ", "ˈmaj jaˈquːl", "idghām: n → j"),
+    ("مِنْ بَيْتِكَ", "ˈmim ˈbajtik", "iqlāb: n → m before b"),
 ])
 def test_the_sandhi_plugin_assimilates_across_words(text, expected, rule):
+    """o2i's SandhiPlugin contract marks the end of input as pausal, so the
+    LAST word here also takes its pausal form under arbtok's declared waqf
+    policy (Wright I §372): the mood -u of يَقُولُ and the suffix vowel -a of
+    بَيْتِكَ are dropped at the pause. The assimilation under test is
+    unaffected."""
     assert G2P("ar", plugins=ARBTOK).transcribe(text) == expected, rule
 
 
