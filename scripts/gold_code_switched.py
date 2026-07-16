@@ -63,8 +63,8 @@ ZONES = {
     "lev":  ["ar-SY", "ar-LB", "ar-JO", "ar-PS", "ar-x-levantine"],
     "gulf": ["ar-KW", "ar-AE", "ar-BH", "ar-QA", "ar-OM", "ar-x-gulf",
              "ar-SA-x-najd", "ar-SA-x-hejaz", "ar-SA-x-qassim",
-             "ar-SA-x-rijal-alma", "ar-SA-x-sharqiyya", "ar-YE",
-             "ar-x-peninsular"],
+             "ar-SA-x-rijal-alma", "ar-SA-x-sharqiyya", "ar-SA-x-dawasir",
+             "ar-SA-x-tihama-qahtan", "ar-YE", "ar-x-peninsular"],
     "iraq": ["ar-IQ", "ar-IQ-x-qeltu", "ar-x-mashriqi"],
     "magh": ["ar-MA", "ar-TN", "ar-DZ", "ar-LY", "ar-MR", "ar-x-maghrebi"],
     "sd":   ["ar-SD", "ar-TD", "ar-NG"],
@@ -232,7 +232,8 @@ def cmd_build(args):
                     continue
         rows = _build_rows(lect)
         with open(GOLD_DIR / f"{lect}.tsv", "w", encoding="utf-8", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=FIELDS, delimiter="\t")
+            w = csv.DictWriter(f, fieldnames=FIELDS, delimiter="\t",
+                               lineterminator="\n")
             w.writeheader()
             w.writerows(rows)
         print(f"wrote {lect}: {len(rows)} rows")

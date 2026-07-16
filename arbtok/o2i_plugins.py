@@ -43,14 +43,21 @@ __all__ = [
     "ArbtokSandhi",
 ]
 
-#: Every Arabic variety arbtok speaks for.
-_ARABIC = [
-    "ar", "arb", "ar-x-peninsular", "ar-x-gulf", "ar-x-levantine",
-    "ar-x-maghrebi", "ar-x-mashriqi", "ar-SA-x-najd", "ar-SA-x-hejaz",
-    "ar-EG", "ar-IQ", "ar-SY", "ar-LB", "ar-JO", "ar-PS", "ar-MA", "ar-DZ",
-    "ar-TN", "ar-LY", "ar-AE", "ar-BH", "ar-KW", "ar-QA", "ar-OM", "ar-YE",
-    "ar-SD",
-]
+
+def _arabic_codes() -> List[str]:
+    """Every Arabic variety arbtok speaks for, read from the orthography2ipa
+    registry — not pinned in a list here.
+
+    :func:`arbtok.dialects.supported_lects` already enumerates the ``ar*`` specs
+    installed upstream; a second hand-kept copy drifts the moment o2i registers a
+    new lect (a Saudi variety, a qeltu group, a Sahelian code). Deriving the
+    ``language_codes`` the plugins advertise from that same source means a spec
+    added upstream is spoken for the instant it is installed, with no list to
+    update in step.
+    """
+    from arbtok.dialects import supported_lects
+
+    return [lect.code for lect in supported_lects()]
 
 
 class ArbtokDiacritizer(NormalizePlugin):
@@ -76,7 +83,7 @@ class ArbtokDiacritizer(NormalizePlugin):
 
     @property
     def language_codes(self) -> List[str]:
-        return list(_ARABIC)
+        return _arabic_codes()
 
 
 class ArbtokRescorers(RescorerPlugin):
@@ -95,7 +102,7 @@ class ArbtokRescorers(RescorerPlugin):
 
     @property
     def language_codes(self) -> List[str]:
-        return list(_ARABIC)
+        return _arabic_codes()
 
 
 class ArbtokSandhi(SandhiPlugin):
@@ -161,4 +168,4 @@ class ArbtokSandhi(SandhiPlugin):
 
     @property
     def language_codes(self) -> List[str]:
-        return list(_ARABIC)
+        return _arabic_codes()
