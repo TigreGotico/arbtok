@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a53](https://github.com/TigreGotico/arbtok/tree/0.0.0a53) (2026-07-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a52...0.0.0a53)
+
+**Merged pull requests:**
+
+- fix\(gold\): re-pin cs gold to o2i spec drift + dynamic Arabic lect enumeration [\#63](https://github.com/TigreGotico/arbtok/pull/63) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a52](https://github.com/TigreGotico/arbtok/tree/0.0.0a52) (2026-07-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a51...0.0.0a52)
@@ -108,7 +116,7 @@
 
 ## [0.0.0a36](https://github.com/TigreGotico/arbtok/tree/0.0.0a36) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a35...0.0.0a36)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a34...0.0.0a36)
 
 **Merged pull requests:**
 
@@ -118,13 +126,13 @@
 - feat\(gold-cs\): authentic Tunis \(ar-TN\) French-matrix code-switched gold set [\#45](https://github.com/TigreGotico/arbtok/pull/45) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Chadian \(ar-TD\) code-switched gold set [\#43](https://github.com/TigreGotico/arbtok/pull/43) ([JarbasAl](https://github.com/JarbasAl))
 
-## [0.0.0a35](https://github.com/TigreGotico/arbtok/tree/0.0.0a35) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a34...0.0.0a35)
-
 ## [0.0.0a34](https://github.com/TigreGotico/arbtok/tree/0.0.0a34) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a33...0.0.0a34)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a35...0.0.0a34)
+
+## [0.0.0a35](https://github.com/TigreGotico/arbtok/tree/0.0.0a35) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a33...0.0.0a35)
 
 **Merged pull requests:**
 
