@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a51](https://github.com/TigreGotico/arbtok/tree/0.0.0a51) (2026-07-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a50...0.0.0a51)
+
+**Merged pull requests:**
+
+- fix: close the vocalized-input gap vs the orthography2ipa spec engine, add a register switch [\#61](https://github.com/TigreGotico/arbtok/pull/61) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a50](https://github.com/TigreGotico/arbtok/tree/0.0.0a50) (2026-07-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a49...0.0.0a50)
@@ -55,15 +63,15 @@
 
 ## [0.0.0a43](https://github.com/TigreGotico/arbtok/tree/0.0.0a43) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a41...0.0.0a43)
-
-## [0.0.0a41](https://github.com/TigreGotico/arbtok/tree/0.0.0a41) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a42...0.0.0a41)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a42...0.0.0a43)
 
 ## [0.0.0a42](https://github.com/TigreGotico/arbtok/tree/0.0.0a42) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a40...0.0.0a42)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a41...0.0.0a42)
+
+## [0.0.0a41](https://github.com/TigreGotico/arbtok/tree/0.0.0a41) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a40...0.0.0a41)
 
 ## [0.0.0a40](https://github.com/TigreGotico/arbtok/tree/0.0.0a40) (2026-07-15)
 
@@ -108,7 +116,7 @@
 
 ## [0.0.0a34](https://github.com/TigreGotico/arbtok/tree/0.0.0a34) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a32...0.0.0a34)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a33...0.0.0a34)
 
 **Merged pull requests:**
 
@@ -119,13 +127,13 @@
 - feat\(gold-cs\): authentic urban Palestinian \(ar-PS\) code-switched gold set [\#35](https://github.com/TigreGotico/arbtok/pull/35) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Kuwaiti \(ar-KW\) code-switched gold set [\#33](https://github.com/TigreGotico/arbtok/pull/33) ([JarbasAl](https://github.com/JarbasAl))
 
-## [0.0.0a32](https://github.com/TigreGotico/arbtok/tree/0.0.0a32) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a33...0.0.0a32)
-
 ## [0.0.0a33](https://github.com/TigreGotico/arbtok/tree/0.0.0a33) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a31...0.0.0a33)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a32...0.0.0a33)
+
+## [0.0.0a32](https://github.com/TigreGotico/arbtok/tree/0.0.0a32) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a31...0.0.0a32)
 
 **Merged pull requests:**
 
@@ -134,20 +142,20 @@
 
 ## [0.0.0a31](https://github.com/TigreGotico/arbtok/tree/0.0.0a31) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a29...0.0.0a31)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a30...0.0.0a31)
 
 **Merged pull requests:**
 
 - feat\(gold-cs\): authentic Ṣanʿānī Yemeni \(ar-YE\) code-switched gold set [\#37](https://github.com/TigreGotico/arbtok/pull/37) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Omani \(ar-OM\) code-switched gold set [\#34](https://github.com/TigreGotico/arbtok/pull/34) ([JarbasAl](https://github.com/JarbasAl))
 
-## [0.0.0a29](https://github.com/TigreGotico/arbtok/tree/0.0.0a29) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a30...0.0.0a29)
-
 ## [0.0.0a30](https://github.com/TigreGotico/arbtok/tree/0.0.0a30) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a28...0.0.0a30)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a29...0.0.0a30)
+
+## [0.0.0a29](https://github.com/TigreGotico/arbtok/tree/0.0.0a29) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a28...0.0.0a29)
 
 **Merged pull requests:**
 
