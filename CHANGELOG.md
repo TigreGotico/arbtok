@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a52](https://github.com/TigreGotico/arbtok/tree/0.0.0a52) (2026-07-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a51...0.0.0a52)
+
+**Merged pull requests:**
+
+- fix\(gold\): Rijāl Almaʿ qāf→\[ɡ\] spec tracking + cross-lect state guard [\#62](https://github.com/TigreGotico/arbtok/pull/62) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a51](https://github.com/TigreGotico/arbtok/tree/0.0.0a51) (2026-07-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a50...0.0.0a51)
