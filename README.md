@@ -55,16 +55,13 @@ Three capabilities define the engine:
 Word phonology is built on the **orthography2ipa shared lattice**: the
 language-agnostic grapheme tokenizer (`PhonetokTokenizer`) over the `ar`
 spec grapheme table produces a per-position candidate lattice. The `ar`
-engine (orthography2ipa ≥ 1.70) handles the segment-local phonology
-natively — gemination (shadda ّ, glides included), lam-alif / presentation
-ligatures (ﻻ → `laː`), onset glides (يَ → `ja`), a hamza carrier's bare
-/ʔ/ before an explicit harakah, a fatḥa + standalone alif maksūra as one
-long vowel (حَتَّى → `ħattaː`), a sukūn-final **coda glide** (ظَبْي → `ðˤabj`,
-رَمْي → `ramj`, while فِي stays `fiː`), and pausal tāʾ marbūṭa. The last two
-were once patched by arbtok's own `MaterLectionisRescorer` /
-`GlideCodaRescorer`; orthography2ipa 1.70 (upstream #251) fixed them at
-source, so those rescorers are gone. The Arabic morpho-phonology that the
-shared table still cannot express is layered on as composable
+engine handles the segment-local phonology natively — gemination (shadda ّ,
+glides included), lam-alif / presentation ligatures (ﻻ → `laː`), onset
+glides (يَ → `ja`), a hamza carrier's bare /ʔ/ before an explicit harakah, a
+fatḥa + standalone alif maksūra as one long vowel (حَتَّى → `ħattaː`), a
+sukūn-final **coda glide** (ظَبْي → `ðˤabj`, رَمْي → `ramj`, while فِي stays
+`fiː`), and pausal tāʾ marbūṭa. The Arabic morpho-phonology that the shared
+grapheme table cannot express is layered on as composable
 `LatticeRescorer`s (`arbtok/lattice.py`) rather than a private tokenizer
 fork:
 
@@ -81,14 +78,10 @@ Emphatic (pharyngealization) spreading rides on the `ar` spec's own B8
 `allophone_rules`. Cross-word sandhi — clitic joining, cross-word waṣl
 elision, tanwīn pausal forms, tāʾ marbūṭa, and idgham/iqlab nasal
 assimilation — is orthogonal to the word lattice and lives in the
-sentence-level orchestration. orthography2ipa 1.70 also added a shared
-**sentence-context seam** (`orthography2ipa.sentence`: `SentenceLattice` +
-`SentenceRescorer` with `prev_word`/`next_word` edge slots and
-`is_phrase_final`), the sanctioned home for that cross-word layer; arbtok's
-migration of its space-boundary waṣl elision and tanwīn pausal forms onto
-the seam is in progress (see `docs/` and the tracking notes). Bare
-(undiacritized) text is diacritized first by the bundled rawi ensemble —
-the dialect-aware fusion path above — entirely inside the wheel.
+sentence-level orchestration, exposed to plain orthography2ipa through its
+sandhi plugin hook (`arbtok/o2i_plugins.py`). Bare (undiacritized) text is
+diacritized first by the bundled rawi ensemble — the dialect-aware fusion
+path above — entirely inside the wheel.
 
 > Honesty note: the gold IPA reference set was LLM-generated and has not been
 > validated by a native MSA speaker. If you speak MSA, pull requests are very
@@ -119,8 +112,8 @@ An isolated MSA word transcribes on the shared lattice directly:
 ```python
 from arbtok.lattice import word_ipa
 
-word_ipa("الشَّمْس")   # 'aʃʃams' — sun-letter assimilation as a rescorer
-word_ipa("الْقَمَر")   # 'alqamar' — moon-letter control (lām kept)
+word_ipa("الشَّمْس")   # 'aʃˈʃams' — sun-letter assimilation as a rescorer
+word_ipa("الْقَمَر")   # 'ˈalqamar' — moon-letter control (lām kept)
 ```
 
 Bare text is handled by diacritizing first:
@@ -213,6 +206,21 @@ pan-Arabic default.
 from arbtok.tashkeel import TashkeelDiacritizer   # the bundled rawi ensemble
 
 TashkeelDiacritizer().diacritize("كتاب جميل")
+```
+
+### As orthography2ipa plugins
+
+Installing arbtok registers three **named** orthography2ipa step plugins
+(`normalize` / `rescore` / `sandhi`, see `arbtok/o2i_plugins.py`) so plain
+orthography2ipa can transcribe **undiacritized** Arabic — which it cannot do
+alone, since its input contract is diacritized text. The plugin is opted into at
+the call site, never applied implicitly:
+
+```python
+from orthography2ipa import G2P
+
+G2P("ar").transcribe("كتب")                                   # 'ˈktb' — no vowels to read
+G2P("ar", plugins={"normalize": "arbtok"}).transcribe("كتب")  # 'ˈkatab' — arbtok restores them
 ```
 
 ## Quality benchmarks

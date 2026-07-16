@@ -1,7 +1,50 @@
 # API reference
 
-Every public symbol, with real signatures and return shapes. `arbtok` is a
-checkout-and-import library; import paths are module-qualified.
+Every public symbol, with real signatures and return shapes. Import paths are
+module-qualified (`from arbtok.plugin import ArbtokG2PPlugin`).
+
+## `arbtok.plugin`
+
+The primary entry point — the full engine, including automatic diacritization,
+dialects, loanword nativization, and Arabizi.
+
+### `ArbtokG2PPlugin(lang="ar", diacritize=True, stress=True, lexicon=..., dialect_lexicon=True, nativize=True, arabizi=True, pausal=True, fusion=True)`
+
+Constructs an Arabic G2P engine. Every argument is a policy switch:
+
+| kwarg | default | meaning |
+| --- | --- | --- |
+| `lang` | `"ar"` | The variety: any orthography2ipa Arabic spec code (`ar`, `arb`, `ar-EG`, `ar-SA-x-najd`, …). Resolves by narrowing subtags, falling back to `ar`. |
+| `diacritize` | `True` | Restore the marks bare text omits before transcribing. |
+| `stress` | `True` | Mark the stressed syllable (quantity-sensitive, read off the transcription). |
+| `lexicon` | default HF id | Diacritized-stem lexicon consulted before the model — a path, URL, `hf://` id, or `None`. |
+| `dialect_lexicon` | `True` | Consult the lect's closed-class lexicon (function words) as a hard prior. |
+| `nativize` | `True` | Read a Latin-script run as a loanword, nativized into the lect's phonology. |
+| `arabizi` | `True` | Read a digit-guttural Latin run (`7abibi`) as Arabic (see [arabizi.md](arabizi.md)). |
+| `pausal` | `True` | The waqf/pausal (TTS) register; `False` for full-iʿrāb passthrough. |
+| `fusion` | `True` | Score the diacritizer distribution under dialect licensing (see [rawi-fusion.md](rawi-fusion.md)); `False` for the plain generator. |
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+p = ArbtokG2PPlugin(lang="ar-EG")
+```
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `transcribe(text, arabizi=None)` | `str` | Full-sentence IPA, with clitic joining and cross-word sandhi. Latin runs are read as loanwords or Arabizi. `arabizi` overrides the instance default per call. |
+| `transcribe_word(word, context=None)` | `str` | IPA for one isolated word on the shared lattice (the variety's grapheme table + allophone rules). |
+| `normalize(text)` | `str` | The lifecycle step: speech normalization, Unicode/diacritic reordering, and (if `diacritize`) tashkeel restoration. |
+| `language_codes` | `List[str]` | `["ar", "arb"]`. |
+
+```python
+p.transcribe("ذهب الولد الى المدرسة")            # bare input, auto-diacritized
+p.transcribe_word("قَهْوَة")                      # single word
+p.transcribe("عِنْدِي meeting", arabizi=False)    # force the loanword reading
+```
+
+Diacritization degrades gracefully: if the model cannot load, the engine
+transcribes whatever diacritics are already present rather than raising.
 
 ## `arbtok.tokenizer`
 
@@ -173,8 +216,33 @@ A baseline phonemizer that shells out to the `espeak-ng` binary, for comparison
 against the rule-based path. See [advanced.md](advanced.md#espeak-baseline).
 Key symbols: `EspeakPhonemizer`, `EspeakError`.
 
+## `arbtok.o2i_plugins` — the orthography2ipa step plugins
+
+arbtok is an engine built *on* orthography2ipa, but the pieces it owns are exactly
+the steps orthography2ipa made pluggable. Installing arbtok registers three
+entry-point plugins so plain orthography2ipa can transcribe **undiacritized**
+Arabic — which it cannot do alone, since its input contract is diacritized text:
+
+| entry-point group | class | contribution |
+| --- | --- | --- |
+| `orthography2ipa.normalize` | `ArbtokDiacritizer` | restore tashkeel, guarded by the lattice |
+| `orthography2ipa.rescore` | `ArbtokRescorers` | sun-letter assimilation, hamzat al-waṣl, hamza carrier, accusative alif |
+| `orthography2ipa.sandhi` | `ArbtokSandhi` | cross-word idghām/iqlāb, pausal case-ending drop, waṣl |
+
+The plugin is **named**, not implicit — installing arbtok does not silently change
+what orthography2ipa says about Arabic; the caller opts in at the call site:
+
+```python
+from orthography2ipa import G2P
+
+G2P("ar").transcribe("كتب")                                   # 'ˈktb' — no vowels to read
+G2P("ar", plugins={"normalize": "arbtok"}).transcribe("كتب")  # 'ˈkatab' — arbtok restores them
+```
+
 ## Where next
 
 - [quickstart.md](quickstart.md) — install and the core idea
 - [tashkeel.md](tashkeel.md) — the diacritizer subsystem
+- [rawi-fusion.md](rawi-fusion.md) — the fusion scorer
+- [dialects.md](dialects.md) — varieties and per-lect phonology
 - [advanced.md](advanced.md) — internals, espeak baseline, recipes, gotchas

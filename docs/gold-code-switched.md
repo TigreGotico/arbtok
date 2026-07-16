@@ -7,7 +7,7 @@ the matrix lect's phonology out of that lect's own cited table
 (`arbtok.translit`), never spliced in as raw English.
 
 Every `ar*` spec `arbtok.supported_lects()` resolves is covered (33 lects,
-including the Saudi round's `ar-SA-x-qassim`, `ar-SA-x-rijal-alma` and
+including the Saudi sub-lects `ar-SA-x-qassim`, `ar-SA-x-rijal-alma` and
 `ar-SA-x-sharqiyya`), with
 one deliberate exclusion: **`ar-Latn-buckwalter`**. That code is a Latin
 romanisation *of* Arabic, so a mixed Arabic/Latin sentence has no stable Arabic
@@ -39,8 +39,8 @@ code-switching register rather than the shared frames) add the column so a row
 can carry IPA the pipeline does **not** produce, without hiding that fact:
 
 - `pinned` — `ipa` **is** the pipeline output; re-run and asserted equal (the
-  regression pin, and the no-Latin-leakage check). This is the only status the
-  old files use, so their behaviour is unchanged.
+  regression pin, and the no-Latin-leakage check). This is the status the
+  frame-built template files carry throughout.
 - `known-wrong` — an Arabic-script loanword the pipeline mis-reads (e.g. Cairene
   موبايل: pipeline emits `lmuˈːbaːjil`, reading و as [uː] not the loan mid vowel
   [o]). `ipa` holds the **correct** attested loan pronunciation; the pipeline's

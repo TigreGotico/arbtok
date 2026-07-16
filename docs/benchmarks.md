@@ -28,8 +28,8 @@ rule-anchored** — it is an o2i-regression snapshot, **not native-speaker–val
 ground truth.** So every figure here is *engine similarity to cited-rule o2i
 output*: a lect where arbtok scores well means "arbtok reproduces what o2i's
 rules predict for it", never "a native speaker signed off". Native word-level
-gold (roadmap F2) is what would turn these into truth claims; until then, read
-these as a consistency check between arbtok's lattice and the specs it consults.
+gold is what would turn these into truth claims; until then, read these as a
+consistency check between arbtok's lattice and the specs it consults.
 
 espeak-ng has **no dialect voices**, so every lect is scored against its single
 `ar` (MSA) voice. That is honestly apples-to-oranges — espeak is not being asked
@@ -45,15 +45,15 @@ Both sides are stress-stripped and punctuation-stripped before scoring.
 - **WER** — word edit distance / gold words. A TTS voice gets no partial credit
   for a word it mispronounces, so WER is the harsher, more honest headline.
 
-Two arbtok arms run the shipped full stack (diacritizer + stem lexicon) on the
+Two arbtok arms run the full default stack (diacritizer + stem lexicon) on the
 variety's own spec:
 
 - **diac** — input is the vocalized `sentence` (the marks are already there).
 - **bare** — input is the `raw` abjad skeleton; the diacritizer must restore the
-  vowels the writing omits. This is the everyday-input question (roadmap D1).
+  vowels the writing omits. This is the everyday-input question.
 - **ΔPER** = bare − diac: the price of the missing harakat, per lect.
 
-## Results (full gold, 5 sentences/lect, shipped stem lexicon)
+## Results (full gold, 5 sentences/lect, default stem lexicon)
 
 Sorted best-to-worst by arbtok diacritized PER.
 
@@ -101,7 +101,7 @@ segments that define a dialect.
 skeleton dialect.** Their WER (0.37–0.38) is far above any dialect's. Diagnosis:
 these gold sentences carry full iʿrāb case endings and hamzat-waṣl that
 arbtok's pausal-TTS defaults resolve away, so word-final segments disagree with a
-gold that kept them. This is a policy seam (roadmap D4/E2 pausal vs full iʿrāb),
+gold that kept them. This is a policy seam (pausal vs full iʿrāb),
 not a dialect-rule failure.
 
 **Undiacritized path (D1) — stripping harakat costs +0.06 to +0.20 PER.** The
@@ -111,8 +111,7 @@ falls on the lects with the heaviest vowel reduction / syncope, where the abjad
 skeleton underdetermines the most — Egyptian (+0.197), Libyan (+0.194), Tunisian
 (+0.191), Syrian (+0.190). The smallest ΔPER is Classical `arb` (+0.059) and
 Iraqi qeltu (+0.069), whose fuller vocalism the MSA diacritizer handles closer to
-right. This is the measurement roadmap D2 (closed-class dialect lexicons) has to
-move.
+right. The closed-class dialect lexicons are what narrow this residual.
 
 **On the bare path, arbtok still beats espeak on most lects, but loses on MSA.**
 For `ar`, espeak's bare-input PER (0.176) beats arbtok's (0.245) — espeak's engine
@@ -147,7 +146,7 @@ The `ar`/`arb` gold keeps the full iʿrāb; arbtok's default is the declared
 pausal (waqf) policy — `ArbtokG2PPlugin(pausal=True)`, Wright I §372 — which
 drops the endings a TTS voice should not read out. Scoring the right register
 against the right gold (`--full-irab`, i.e. `pausal=False`) removes almost the
-whole gap (N=6, current gold; the table above was N=5):
+whole gap:
 
 | Lect | mode | PER (diac) | WER (diac) | PER (bare) | WER (bare) |
 |---|---|---|---|---|---|
@@ -157,14 +156,13 @@ whole gap (N=6, current gold; the table above was N=5):
 | arb | `--full-irab`    | **0.007** | **0.048** | 0.128 | 0.595 |
 
 The residual diacritized error in `--full-irab` mode is the ordinary rule
-seam, not the register; the pausal-mode numbers are unchanged from before the
-policy was centralized, which is the point — one flag, one place
-(`arbtok.sandhi`), same lattice in both modes.
+seam, not the register. The waqf policy is one flag consulted in one place
+(`arbtok.sandhi`), and both modes run the same lattice.
 
-## Regression status
+## Why these are reported, not gated
 
 These are engine-similarity numbers on an LLM-origin gold, so they are reported,
-not gated. A CI regression gate (roadmap F5) belongs on native word-level gold
-(F2) once it exists; wiring `--lect` into CI before then would gate arbtok
-against its own specs. `tests/test_lect_benchmark.py` pins that the runner works
-(2 lects × 3 sentences, no network), not any score.
+not used as a pass/fail gate. A CI regression gate belongs on native word-level
+gold; wiring `--lect` into CI against this gold would only gate arbtok against its
+own specs. `tests/test_lect_benchmark.py` pins that the runner works (2 lects × 3
+sentences, no network), not any score.

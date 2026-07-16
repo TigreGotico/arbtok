@@ -8,12 +8,12 @@ self-contained, with no external diacritization package at runtime.
 ## The problem
 
 arbtok restores tashkeel with a model (the bundled rawi ensemble) and then
-phonemizes the result with orthography2ipa's lattice. The shipped pipeline runs
-these in strict sequence: rawi writes **one** vocalized string, the lattice
-**checks** it, and a word whose single guess the variety's orthography refuses is
-dropped back to its bare skeleton — an underdetermined reading
-(`arbtok/diacritize.py`). The model proposes once; when that one proposal is
-unlicensed, its whole distribution is discarded with it. The lattice's
+phonemizes the result with orthography2ipa's lattice. The plain generator path
+(`fusion=False`) runs these in strict sequence: rawi writes **one** vocalized
+string, the lattice **checks** it, and a word whose single guess the variety's
+orthography refuses is dropped back to its bare skeleton — an underdetermined
+reading (`arbtok/diacritize.py`). The model proposes once; when that one proposal
+is unlicensed, its whole distribution is discarded with it. The lattice's
 constraints never reach *back* to inform the choice — they can only veto it after
 the fact.
 
@@ -25,7 +25,7 @@ allophone rules — is downstream of the decision it would most like to shape.
 ## The mechanism
 
 rawi is a char-level classifier with an accessible per-character distribution
-(`(bare, logits, classes)`). arbtok reads that distribution from the **flagship
+(`(bare, logits, classes)`). arbtok reads that distribution from the **bundled
 ensemble** directly: it bundles a stitched `rawi-v2 + rawi-v3` ONNX that, unlike
 an argmax-only stitched export, also emits `gated_logits` — the
 ensemble's decision *as a distribution* (`arbtok/_ensemble.py`; the artifact is
@@ -41,7 +41,7 @@ cheap array lookups and tokenizations (`arbtok/fusion.py`).
 
 ### Scoring the ensemble, not a single head
 
-The distribution fusion scores is the flagship ensemble's, exposed as one extra
+The distribution fusion scores is the bundled ensemble's, exposed as one extra
 ONNX output. A plain stitched export folds the gate into the graph and returns
 `gated_cls`, an argmax, only — no distribution to score. arbtok's bundled export
 carries a second output, `gated_logits`: the rawi-v3
@@ -49,7 +49,7 @@ value-head logits with class 0 lifted just above the row max at every position t
 rawi-v2 gate zeroes. So `argmax(gated_logits)` is byte-identical to the ensemble's
 own `gated_cls` decision — the correctness gate the artifact is built and tested
 against — while every other class keeps the value head's real log-probability, so
-the scorer sees which mark the flagship preferred, not just the one it picked.
+the scorer sees which mark the ensemble preferred, not just the one it picked.
 This is read straight from the bundled ONNX with onnxruntime (`arbtok/_ensemble.py`);
 the member weights are the TigreGotico rawi family (Apache-2.0, published on PyPI
 in the `text2tashkeel` wheel), and `tools/build_ensemble_logits_onnx.py`
@@ -102,7 +102,7 @@ This is the point of doing it in arbtok. rawi is one voice; the pick is
 - **The licensing filter (hard).** The candidate set is whatever the *variety's
   own* grapheme table admits. rawi is MSA-trained and has never seen the dialect;
   the spec has. This is a per-position constraint distinct from the generator's
-  own generic orthographic mask (`arbtok/orthography.py`), so fusion and the shipped generator diverge on
+  own generic orthographic mask (`arbtok/orthography.py`), so fusion and the plain generator diverge on
   real dialect words even when neither is "wrong" — e.g. Tunisian `العايلة` comes
   out `الْعَائِلَة` (hamza-carrier) under o2i licensing where the generator's
   generic mask leaves `الْعَايِلَة`.
@@ -113,16 +113,14 @@ This is the point of doing it in arbtok. rawi is one voice; the pick is
 
 A free generator hears neither of these until it is too late to change its mind.
 
-## The measured result (empirical gate)
+## The measured result
 
-`scripts/benchmark_fusion.py` scores three arms on the bare (`raw`) column of the
+`scripts/benchmark_fusion.py` scores two arms on the bare (`raw`) column of the
 Fable-corrected TTS gold (33 lects × 20 sentences), reference = the `ipa` column,
 metric = mean per-sentence PER:
 
-- `current` — the shipped stack (rawi-**ensemble** generator);
-- `curr-v2` — the same generator pipeline forced to **rawi-v2** (fusion's model),
-  isolating the *mechanism* from the ensemble→single-head model swap;
-- `fusion` — rawi-v2 **scoring** the licensed readings.
+- **generator** — rawi-ensemble argmax tokenized under the lattice guard;
+- **fusion** — the rawi-ensemble distribution scoring the licensed readings.
 
 Mean bare-input PER (33 lects × 20 sentences):
 
@@ -134,8 +132,7 @@ Mean bare-input PER (33 lects × 20 sentences):
 Fusion scoring the ensemble distribution beats the generator arm by −0.003
 mean PER, and the win concentrates exactly where the dialect diverges most from
 MSA — the signature of the dialect-aware licensing doing the work rather than
-noise, and the same signature the single-head prototype showed against its own
-base model:
+noise:
 
 | lect | Δ PER | | lect | Δ PER |
 |---|---|---|---|---|
@@ -145,36 +142,26 @@ base model:
 | ar-MR | −0.018 | | ar-YE | −0.011 |
 
 The MSA-adjacent lects (Levantine, Gulf koinés) move by at most +0.009, so the
-mean is a real dialect win, not a wash. An earlier single-head prototype
-(rawi-v2 as scorer) could only *match* the rawi-ensemble generator, because it
-had to score a weaker model than the pipeline generated from; scoring the
-ensemble's own distribution is what turns the proven mechanism into a measured
-win.
+mean is a real dialect win, not a wash.
 
-## Disposition
+## Why fusion is the default
 
-Fusion scores the flagship ensemble's distribution under the variety's own
-licensing and beats the generator's mean bare-input PER (0.189 vs 0.193),
-with the margin on the dialect-divergent lects it was built for. The mechanism the
-section below once described as the limiting factor — the flagship exposing only a
-decision, not a distribution — is resolved: arbtok bundles the ensemble as a
-scorable ONNX. Clearing that gate is what flips fusion **on by default**
-(`ArbtokG2PPlugin(fusion=False)` to opt out).
+Fusion scores the bundled ensemble's distribution under the variety's own
+licensing and beats the plain generator's mean bare-input PER (0.189 vs 0.193),
+with the margin on the dialect-divergent lects it is built for. It costs no extra
+model calls — the ensemble runs once per sentence and every hypothesis is a tensor
+lookup — so it is **on by default**; pass `ArbtokG2PPlugin(fusion=False)` to fall
+back to the plain generator.
 
-## The resolved limiting factor, and what is left to move
+The scorer is only as good as the distribution it scores. The bundled artifact is
+a re-export of the stitched ensemble graph that emits `gated_logits` (the gate
+folded into the value-head logits as a bias on class 0), read directly with
+onnxruntime (`arbtok/_ensemble.py`, built by `tools/build_ensemble_logits_onnx.py`),
+so the scorer works from the ensemble-grade distribution rather than a single
+weaker head.
 
-The scorer is only as good as the distribution it scores, and for a while the best
-model we had — the rawi-ensemble — handed out decisions, not distributions. That
-was the whole gap: fusion had to score a single head weaker than the pipeline's
-own generator. It is closed here. arbtok bundles a re-export of the stitched
-ensemble graph that additionally emits `gated_logits` (the gate folded into the
-value-head logits as a bias on class 0), and reads it directly with onnxruntime
-(`arbtok/_ensemble.py`, built by `tools/build_ensemble_logits_onnx.py`). Scoring
-that ensemble-grade distribution under dialect licensing is what lands the proven
-mechanism on top of the stronger base — the measured 0.189-vs-0.193 win above.
-
-Secondary levers, still open, all inside arbtok: raise `lattice_weight` (currently a mild
-tie-break — the soft channel rarely flips a decision today, so it is really a
-hook for a stronger dialect prior); and give the spec a declared *licensed-
-vocalization* table per grapheme (roadmap §T.2 / D3) so the candidate set is the
-dialect's admissible vowels rather than rawi's top-`k` filtered after the fact.
+`lattice_weight` is the soft channel — a mild phonotactic tie-break between
+readings the model rates near-equal — and it is the hook for a stronger dialect
+prior: a spec that declares a *licensed-vocalization* table per grapheme would let
+the candidate set be the dialect's admissible vowels directly, rather than rawi's
+top-`k` filtered after the fact.
