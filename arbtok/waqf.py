@@ -66,6 +66,7 @@ SHADDA = "ّ"
 TANWIN_FATH = "ً"
 TANWIN_DAMM = "ٌ"
 TANWIN_KASR = "ٍ"
+TA_MARBUTA = "ة"
 
 #: The short vowels that a pause deletes word-finally (the case/mood endings).
 SHORT_VOWELS = (FATHA, DAMMA, KASRA)
@@ -108,7 +109,17 @@ def _pausal_word(word: str) -> str:
     # kitābā). It is handled first and by a whole-word search, because it sits
     # *before* the alif and so is not among the word's trailing marks at all.
     # Tanwīn only ever occurs word-finally, so this cannot fire mid-word.
+    #
+    # On a tāʾ marbūṭa there is no carrying alif and nothing lengthens:
+    # pausal ``-atan`` is plain ``-a`` — مَدِينَةً is *madīna* at a pause,
+    # never *madīnatā* (Wright I §372: the tāʾ marbūṭa's ending is dropped
+    # with the tāʾ falling silent; the alif-lengthening clause is specific to
+    # the written alif). Degrading the mark to a fatḥa here would leave a
+    # spurious vowel that voices the tāʾ (*madīnata*), so the mark is
+    # dropped instead.
     if TANWIN_FATH in word:
+        if TA_MARBUTA + TANWIN_FATH in word or TANWIN_FATH + TA_MARBUTA in word:
+            return word.replace(TANWIN_FATH, "")
         return word.replace(TANWIN_FATH, FATHA)
 
     marks = _TRAILING_MARKS.search(word)

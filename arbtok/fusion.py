@@ -65,7 +65,8 @@ from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
 
 from arbtok.dialects import DEFAULT_LANG
 from arbtok.diacritize import (
-    _author_complete, repair_skeleton, strip_marks, _skeleton_is_preserved,
+    _author_complete, _proclitic_complete, repair_skeleton, strip_marks,
+    _skeleton_is_preserved,
 )
 from arbtok.dialect_lexicon import DialectLexicon
 from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
@@ -322,6 +323,14 @@ class FusionDiacritizer:
         if entry is not None:
             self.looked_up.append(orig_word)
             return entry
+
+        # (2c) Author-near-complete: only a bare leading proclitic is silent.
+        # The spec path reads it as the vowelless clitic the dialect gold
+        # records (وكَان → /wkaːn/); neither the generator nor the scorer may
+        # add a register fatḥa the author did not write. After the lexicons,
+        # mirroring the guarded pipeline.
+        if _proclitic_complete(normalized, positions):
+            return orig_word
 
         if word_logits is None or not bare_word:
             self.rejected.append(orig_word)

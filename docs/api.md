@@ -8,7 +8,7 @@ module-qualified (`from arbtok.plugin import ArbtokG2PPlugin`).
 The primary entry point — the full engine, including automatic diacritization,
 dialects, loanword nativization, and Arabizi.
 
-### `ArbtokG2PPlugin(lang="ar", diacritize=True, stress=True, lexicon=..., dialect_lexicon=True, nativize=True, arabizi=True, pausal=True, fusion=True)`
+### `ArbtokG2PPlugin(lang="ar", diacritize=True, stress=True, lexicon=..., dialect_lexicon=True, nativize=True, arabizi=True, pausal=None, register="pausal", fusion=True)`
 
 Constructs an Arabic G2P engine. Every argument is a policy switch:
 
@@ -21,7 +21,8 @@ Constructs an Arabic G2P engine. Every argument is a policy switch:
 | `dialect_lexicon` | `True` | Consult the lect's closed-class lexicon (function words) as a hard prior. |
 | `nativize` | `True` | Read a Latin-script run as a loanword, nativized into the lect's phonology. |
 | `arabizi` | `True` | Read a digit-guttural Latin run (`7abibi`) as Arabic (see [arabizi.md](arabizi.md)). |
-| `pausal` | `True` | The waqf/pausal (TTS) register; `False` for full-iʿrāb passthrough. |
+| `register` | `"pausal"` | The waqf policy by name: `"pausal"` (the TTS register — Wright I §372; Ryding 2005 §2.4) or `"full"` (continuous full-iʿrāb passthrough: waqf reductions disabled, every written ending read out — recitation/pedagogy, and MSA gold that keeps its iʿrāb). MSA/Classical only; a dialect lect has no iʿrāb to drop under either value. |
+| `pausal` | `None` | The same switch as an explicit boolean (`True` = pausal, `False` = full); wins over `register` when passed. |
 | `fusion` | `True` | Score the diacritizer distribution under dialect licensing (see [rawi-fusion.md](rawi-fusion.md)); `False` for the plain generator. |
 
 ```python

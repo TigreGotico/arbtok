@@ -76,7 +76,8 @@ class ArbtokG2PPlugin:
                  dialect_lexicon: bool = True,
                  nativize: bool = True,
                  arabizi: bool = True,
-                 pausal: bool = True,
+                 pausal: Optional[bool] = None,
+                 register: str = "pausal",
                  fusion: bool = True) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
@@ -148,6 +149,25 @@ class ArbtokG2PPlugin:
         #: (:mod:`arbtok.sandhi`) and the diacritizer, so the transform is
         #: applied exactly once — never dropped twice, never guessed from
         #: the IPA.
+        #:
+        #: ``register`` is the named front door to the same switch —
+        #: ``"pausal"`` (the default: ``pausal=True``, the TTS register) or
+        #: ``"full"`` (``pausal=False``: continuous full-iʿrāb passthrough,
+        #: every waqf reduction disabled throughout the stack). ``"full"`` is
+        #: the register for reading fully-vocalized MSA exactly as its author
+        #: pointed it — recitation, pedagogy, and scoring against
+        #: iʿrāb-keeping gold — where the pausal default would silently drop
+        #: the case endings the text spells. Wright I §372 scopes the waqf
+        #: reductions to a word standing *at a pause*, and Ryding 2005 §2.4
+        #: likewise treats them as the pause form, not the connected one; a
+        #: caller reading connected, fully-inflected MSA therefore wants
+        #: ``register="full"``. An explicit boolean ``pausal=`` argument (the
+        #: pre-``register`` spelling) still wins when both are passed.
+        if register not in ("pausal", "full"):
+            raise ValueError(
+                f"register must be 'pausal' or 'full', got {register!r}")
+        if pausal is None:
+            pausal = register == "pausal"
         self.pausal = pausal
 
     @property

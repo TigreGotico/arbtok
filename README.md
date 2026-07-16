@@ -144,7 +144,7 @@ arbtok.supported_lects()[:2]                                   # [Lect('ar', 're
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")  # 'ˈɡahawa'
 ```
 
-### Waqf — the pausal register (`pausal=True`)
+### Waqf — the register switch (`register="pausal"`)
 
 Read aloud, Arabic **pauses in waqf form** (Wright, *A Grammar of the Arabic
 Language*, 3rd ed., I §372; Ryding, *A Reference Grammar of MSA*, CUP 2005,
@@ -154,17 +154,27 @@ lengthens to /aː/ on its written seat alif, and a tāʾ marbūṭa voiced only 
 its ending falls silent with it (مَدِينَةٌ. → *madiːna*). The construct-state
 /at/ (an iḍāfa head pausing with its tāʾ) is **not modeled**.
 
-`pausal=True` is the default — the TTS register. A pause has to be **written**
-(a punctuation token): no pause is invented at the edge of the input. When the
-diacritizer runs on bare text it restores the pausal register throughout,
-since the modern spoken register keeps no iʿrāb at all. Pass `pausal=False`
-for the full-iʿrāb passthrough (recitation/pedagogical register, and the mode
-to use against iʿrāb-keeping gold):
+The named switch is `register` — `"pausal"` (the default, the TTS register)
+or `"full"` (continuous full-iʿrāb passthrough: every waqf reduction is
+disabled and every written ending is read out — the recitation/pedagogical
+register, and the mode for fully-vocalized MSA that should be read exactly as
+its author pointed it, including scoring against iʿrāb-keeping gold):
 
 ```python
-ArbtokG2PPlugin(pausal=True).transcribe("رَأَيْتُ كِتَابًا.")   # …kitaːbaː
-ArbtokG2PPlugin(pausal=False).transcribe("رَأَيْتُ كِتَابًا.")  # …kitaːban
+ArbtokG2PPlugin(register="pausal").transcribe("رَأَيْتُ كِتَابًا.")  # …kitaːbaː
+ArbtokG2PPlugin(register="full").transcribe("رَأَيْتُ كِتَابًا.")    # …kitaːban
 ```
+
+Under `register="pausal"`, a pause has to be **written** (a punctuation
+token): no pause is invented at the edge of the input. When the diacritizer
+runs on bare text it restores the pausal register throughout, since the
+modern spoken register keeps no iʿrāb at all. The boolean `pausal=True/False`
+is the same switch's original spelling and wins when passed explicitly.
+
+The iʿrāb-driven reductions are facts about the MSA/Classical registers only:
+a dialect lect has no case endings to drop, so its final short vowels and its
+lexicalized *-an* adverbs (أَهْلًا وَسَهْلًا → *ahlan wasahlan*) are read as
+written under either register.
 
 Both modes run the same lattice and rescorers; the flag is consulted in one
 place (`arbtok.sandhi`), so the transform applies exactly once.
