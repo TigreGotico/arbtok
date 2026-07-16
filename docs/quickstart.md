@@ -1,61 +1,70 @@
 # Quickstart — Arabic text to IPA
 
-`arbtok` turns Arabic script into IPA phonemes for TTS front-ends, targeting
-Modern Standard Arabic (MSA). If you can write a string, you can phonemize it.
+`arbtok` turns Arabic script into IPA phonemes for TTS front-ends, across Modern
+Standard Arabic, Classical, and 30+ regional varieties. It is **self-contained**:
+the diacritizer model ships inside the wheel, so there is no external model to
+download and no network call at runtime.
 
 ## 1. Install
 
-`arbtok` is a checkout-and-import library (no packaging metadata). Clone it and
-install the runtime dependencies:
-
 ```bash
-pip install -r requirements.txt
+pip install arbtok
 ```
 
-Runtime deps: `numpy`, `onnxruntime`, `quebra-frases`, `langcodes`,
-`ovos-number-parser`, `ovos-date-parser`. The `tashkeel` diacritizer ships its
-own `model.onnx` in-tree, so no model download is needed.
+That pulls the runtime deps (`numpy`, `onnxruntime`, `orthography2ipa`,
+`quebra-frases`, `langcodes`, `ovos-number-parser`, `ovos-date-parser`) and the
+bundled rawi diacritizer ensemble.
 
-## 2. The one thing to understand
+## 2. The one call to know
 
-Everything funnels through one class: `Sentence`. You build it from raw text
-and read its `.ipa` property. The phonology (definite-article assimilation,
-sun/moon letters, tanwin, idgham/iqlab) is resolved from each character's
-neighbours via a linked-list of tokens — you never wire that up yourself.
+`ArbtokG2PPlugin` is the engine. Give it text, get IPA. It restores the missing
+short vowels for you, so **you do not have to diacritize the input first**:
 
 ```python
-from arbtok.tokenizer import Sentence
+from arbtok.plugin import ArbtokG2PPlugin
 
-s = Sentence("قَالَ ٱلْمَلِكُ")   # "the king said"
-print(s.ipa)                       # qaːla lmaliku
+p = ArbtokG2PPlugin()                       # Modern Standard Arabic
+print(p.transcribe("ذهب الولد الى المدرسة"))   # ˈðahab ˈalwalad ˈalaː ˈlmudrasa
 ```
 
-`Sentence` expects **diacritized** Arabic. The vowels are written as combining
-marks (fatha, kasra, damma); without them the phonemizer has no vowels to emit.
-If your text is undiacritized, run it through the [diacritizer](tashkeel.md)
-first.
+The input here is **bare** — no ḥarakāt, the way Arabic is normally typed. arbtok
+diacritizes it internally (the flagship dialect-aware tashkeel, see
+[tashkeel.md](tashkeel.md) and [rawi-fusion.md](rawi-fusion.md)) and then
+phonemizes the result. If your text already carries diacritics, they are honored
+as written and never overwritten.
 
-## 3. First real call
+## 3. Pick a dialect
+
+Pass a variety code as `lang=`. The *same bare sentence* gets variety-appropriate
+vowels and reflexes, because the diacritizer's choice is constrained to what that
+variety's orthography actually admits:
 
 ```python
-from arbtok.tokenizer import Sentence
+from arbtok.plugin import ArbtokG2PPlugin
 
-for text in ["ذَهَبَ الطَّالِبُ إِلَى الْمَدْرَسَةِ", "بَابٌ", "اَلْشَّمْس"]:
-    print(text, "->", Sentence(text).ipa)
+najdi = ArbtokG2PPlugin(lang="ar-SA-x-najd")
+tunis = ArbtokG2PPlugin(lang="ar-TN")
+
+print(najdi.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈɡahawa ˈfiː ˈlbajt
+print(tunis.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈqahwa ˈfiː ˈlbiːt
 ```
 
-The definite article `ال` elides into the previous word, sun letters double, and
-tanwin endings resolve by position — all from the surrounding context.
+Najdi reads qāf as /ɡ/ and inserts the *gahawa* epenthetic vowel; Tunisian keeps
+/q/ and monophthongizes *bayt* to /biːt/. `arbtok.supported_lects()` lists every
+code you can pass. See [dialects.md](dialects.md) for the full list and the
+resolution rules.
 
 ## 4. Normalize numbers, dates and units first
 
 TTS text is rarely clean. `normalize()` expands numbers, dates, times, units and
-fractions into spoken words for a given language before you phonemize:
+fractions into spoken words before you phonemize:
 
 ```python
 from arbtok.util import normalize
+from arbtok.plugin import ArbtokG2PPlugin
 
-print(normalize("عندي 3 كتب", "ar"))   # عندي ثلاثة كتب
+spoken = normalize("عندي 3 كتب", "ar")     # عندي ثلاثة كتب
+print(ArbtokG2PPlugin().transcribe(spoken))
 ```
 
 For Arabic-specific number-to-words (with gender/case variants and percent
@@ -64,31 +73,36 @@ handling) reach for `num2words`:
 ```python
 from arbtok.num2words import num2words
 
-print(num2words("عندي 25 كتاب"))       # diacritized Arabic words
+print(num2words("عندي 25 كتاب"))            # diacritized Arabic words
 ```
 
-## 5. Diacritize undiacritized text
+## 5. The low-level core (already-diacritized text)
 
-Most real-world Arabic has no diacritics. The bundled `TashkeelDiacritizer`
-restores them with an ONNX model, so the phonemizer has vowels to work with:
+If you have fully-diacritized Arabic and want the phonology alone — no diacritizer,
+no dialect model — go straight to `Sentence`:
 
 ```python
-from arbtok.tashkeel import TashkeelDiacritizer
 from arbtok.tokenizer import Sentence
 
-diac = TashkeelDiacritizer()
-text = diac.diacritize("قال الملك")
-print(Sentence(text).ipa)
+print(Sentence("قَالَ ٱلْمَلِكُ").ipa)        # ˈqaːla lˈmaliku
 ```
+
+`Sentence` expects the vowels to be **written** as combining marks. Without them
+it has nothing to voice and emits a bare consonant skeleton — which is why the
+plugin diacritizes first.
 
 ## Accuracy note
 
-This phonemizer is experimental. The rule set and the IPA reference test set are
-LLM-generated and unverified; passing tests is not a guarantee of linguistic
-correctness. Treat the output as a starting point, not gospel.
+The rule set and the IPA reference test set are LLM-generated and have not been
+validated by a native speaker; the Arabic specs are `research` tier, not
+`production`. Treat the output as a strong starting point, not gospel. If you
+speak MSA or a covered dialect, pull requests are very welcome.
 
 ## Where next
 
+- [tashkeel.md](tashkeel.md) — the flagship diacritizer and its lexicons
+- [rawi-fusion.md](rawi-fusion.md) — how the diacritizer is scored, not just run
+- [dialects.md](dialects.md) — varieties, resolution, and per-lect phonology
+- [arabizi.md](arabizi.md) — reading Latin-script Arabic (`7abibi`, `3ala`)
 - [api.md](api.md) — every public class, function and important kwarg
-- [tashkeel.md](tashkeel.md) — the diacritizer subsystem in depth
 - [advanced.md](advanced.md) — token internals, espeak baseline, recipes, gotchas

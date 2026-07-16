@@ -10,8 +10,8 @@ most probable reading the variety's orthography admits — see
 from arbtok.plugin import ArbtokG2PPlugin
 
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")   # 'ˈɡahawa'
-ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت")    # 'beːt'
-ArbtokG2PPlugin().transcribe_word("قَهْوَة")                      # 'qahwa'  (MSA)
+ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت")    # 'ˈbeːt'
+ArbtokG2PPlugin().transcribe_word("قَهْوَة")                      # 'ˈqahwa'  (MSA)
 ```
 
 The variety may also ride on `WordContext.lang` per call, which overrides the
@@ -60,8 +60,8 @@ for lect in arbtok.supported_lects():
 | | | `ar-x-peninsular` | skeleton |
 
 (The `skeleton`-tier grouping nodes and Maghrebi/Sudanic leaves resolve and read
-their grapheme layer, but their allophone rule sets are not yet at research
-tier — see orthography2ipa's Arabic roadmap.)
+their grapheme layer, but their allophone rule sets are not at research tier; the
+tier is a property of the installed orthography2ipa spec, not of arbtok.)
 
 ## Pipeline order: MSA restoration before dialect allophony
 

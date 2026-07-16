@@ -114,8 +114,10 @@ Key methods:
   one and keep it, don't construct per sentence.
 - **Vendored deps.** `arbtok.pyarabic` and `arbtok.tashkeel` are vendored copies;
   import them from `arbtok`, not from a system package.
-- **No packaging metadata.** There is no `pip install .`; consumers import from a
-  checkout with the repo root on `PYTHONPATH`.
+- **`Sentence` is the low-level core.** It does the phonology only, on
+  already-diacritized text. For everyday (bare) input, dialects, nativization and
+  Arabizi, use `ArbtokG2PPlugin`, which diacritizes first and then runs the same
+  lattice.
 
 ## Where next
 
