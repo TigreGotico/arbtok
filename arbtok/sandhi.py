@@ -263,6 +263,18 @@ def apply_cross_word(
     """
     out = [ipa for ipa, _, _ in words]
 
+    # The iʿrāb-driven rules are facts about the REFERENCE register only.
+    # Waqf drops *case endings* (Wright I §372) and a dialect has none: its
+    # final short vowels and its -an adverbs (أَهْلًا وَسَهْلًا → ahlan
+    # wasahlan) are lexical, written because they are said, and the gold for
+    # every dialect lect keeps them — as does orthography2ipa, which applies
+    # no pausal transform. Likewise idghām/iqlāb of مِن's /n/ is Classical
+    # recitation sandhi; the dialect gold reads *min baʕd*, not *mim baʕd*.
+    # A dialect's own waqf-shaped vocalism is already restored at the
+    # orthographic layer by the diacritizer (arbtok.waqf), so gating these
+    # IPA-level rules to MSA/Classical drops nothing a dialect needs.
+    reference_register = lang in ("ar", "arb")
+
     for i, (ipa, surface, is_punct) in enumerate(words):
         if is_punct or not ipa:
             continue
@@ -279,9 +291,9 @@ def apply_cross_word(
                 break
 
         if before_pause:
-            if pausal:
+            if pausal and reference_register:
                 out[i] = _pausal(ipa, surface)
-        elif nxt is not None:
+        elif nxt is not None and reference_register:
             out[i] = _assimilate_nun(ipa, nxt)
 
     # Onset realization — a second pass, because a word's onset is decided by the

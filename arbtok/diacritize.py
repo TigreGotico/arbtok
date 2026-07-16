@@ -83,6 +83,13 @@ _RESTORABLE = {
 #: behind a single one-consonant proclitic (wa-, bi-, fa-, ka-, li-).
 _ARTICLE_RE = re.compile(r"^[وفبكل]?[َُِ]?(?:ا|ٱ|أ)ل")
 
+#: A leading proclitic consonant written bare against a stem the author has
+#: marked. The proclitic's reading is the spec's to fix — orthography2ipa reads
+#: an unmarked ⟨و⟩ before a consonant as the clitic cluster /w/ (وكَان →
+#: ``wkaːn``, the dialect gold's form), and a modeled fatḥa (وَكَان →
+#: ``wakaːn``) is a register guess the author did not write.
+_BARE_PROCLITIC_RE = re.compile(r"^[وفبكلس](?=[^\sًٌٍَُِّْٰٓ])")
+
 
 def _author_complete(word: str, positions) -> bool:
     """True when a human has fully pointed *word* to the gold's convention.
@@ -95,6 +102,14 @@ def _author_complete(word: str, positions) -> bool:
     only re-guess marks the author already committed (a fully-marked ⟨عِيش⟩
     re-read as a glide /ʕijʃ/ instead of the written /ʕiːʃ/). Such a word is
     passed through untouched.
+
+    The same holds for a bare proclitic consonant heading an otherwise-marked
+    stem: an author who pointed كَان but left the و of وكَان bare has written
+    the clitic as the dialect says it — /w/, the reading the spec path gives —
+    and the only thing a model can add there is a case-register fatḥa the
+    author chose not to write. The proclitic position therefore counts as
+    already answered *when the rest of the word is*; a bare word stays the
+    model's to vocalize.
     """
     if not positions:
         return True
@@ -104,6 +119,19 @@ def _author_complete(word: str, positions) -> bool:
     # The alif and the lām are the two characters the match ends on.
     article = {m.end() - 2, m.end() - 1}
     return set(positions) <= article
+
+
+def _proclitic_complete(word: str, positions) -> bool:
+    """True when the ONLY silent position is a bare leading proclitic.
+
+    Checked *after* the closed-class and stem lexicons — a two-letter word
+    like كِي is itself a lexicon entry, not a clitic on a one-letter stem —
+    and before the model: the author marked everything except the clitic
+    consonant, whose bare form the spec path already reads as the cluster
+    /w/ the dialect gold records (see ``_BARE_PROCLITIC_RE``).
+    """
+    return bool(positions) and set(positions) == {0} \
+        and _BARE_PROCLITIC_RE.match(word) is not None and len(word) > 2
 
 
 def strip_marks(text: str) -> str:
@@ -297,6 +325,14 @@ class LatticeDiacritizer:
         if entry is not None:
             self.looked_up.append(word)
             return entry
+
+        # (2c) Author-near-complete: everything is marked except a bare leading
+        # proclitic. The spec path reads that clitic without a vowel (وكَان →
+        # /wkaːn/, the dialect gold's form); the model would only add a
+        # register fatḥa the author did not write. Checked after the lexicons
+        # so a short closed-class word still gets its recorded vocalization.
+        if _proclitic_complete(normalized, positions):
+            return word
 
         proposed = self._propose(normalized)
 

@@ -128,10 +128,35 @@ class SunLetterRescorer(LatticeRescorer):
         nxt = context.next_slot
         if nxt is None:
             return slot.candidates
-        if nxt.grapheme in SUN_LETTERS:
-            # lām assimilates: article realises as bare /a/.
+        # A written article + shadda-marked sun letter never reaches this
+        # rescorer: the spec fuses it into one grapheme (⟨السس⟩ → ``ass``) and
+        # assimilates natively. An ⟨ال⟩ standing as its own slot has NO
+        # written gemination, and what that means depends on whether anyone
+        # vocalized the word:
+        #
+        # * a **vocalized** word whose author pointed the stem but wrote no
+        #   shadda on the sun letter is deliberate — orthography2ipa reads
+        #   الصْبَاح as ``alsˤbaːħ`` and the relative اللِي as ``alliː``,
+        #   keeping the lām the page wrote (idghām ash-shamsiyya is carried by
+        #   the shadda, Wright I §17). The article is spec-canonical /al/.
+        # * a **bare** word omits every mark, the assimilating shadda with
+        #   them, so nothing can be read off the (absent) pointing: the letter
+        #   class is the only signal, and the classical rule applies —
+        #   assimilate before a sun letter, keep the lām before a moon.
+        if nxt.grapheme == LAM:
+            # ⟨ال⟩ + a lām slot is the relative/geminate-lām class — اللِي
+            # written with two lāms, or الّي whose written shadda the
+            # tokenizer's gemination expansion has already turned into that
+            # second lām (erasing the mark before this rescorer can see it).
+            # Either spelling is read /all-/ (orthography2ipa: ``alliː``);
+            # assimilating would swallow the geminate.
+            return (Candidate(ipa="al", cost=0.0),)
+        if nxt.grapheme in SUN_LETTERS and not any(
+                ch in _HARAKAT or ch == SHADDA
+                for s in context.slots for ch in s.grapheme):
+            # bare word: lām assimilates, article realises as bare /a/ (the
+            # sun letter's gemination is likewise unwritten and unrealised).
             return (Candidate(ipa="a", cost=0.0),)
-        # moon letter: keep the lām (spec canonical /al/).
         return (Candidate(ipa="al", cost=0.0),)
 
 
@@ -238,14 +263,24 @@ class ConsonantalGlideRescorer(LatticeRescorer):
     def rescore(
         self, slot: SegmentSlot, context: RescoreContext,
     ) -> Sequence[Candidate]:
+        # The next slot proves a vowel onset only when it (a) actually renders
+        # one — an empty rendering (a sukūn slot: كِيْف) proves nothing, and an
+        # unguarded ``""[:1] in _VOWEL_ONSETS`` is vacuously true — and (b) is
+        # not itself a bare mater glide: a bare و/ي read as ``uː``/``iː`` is
+        # vowel *length*, and the spec resolves the sequence as hiatus
+        # (Maghrebi 1pl ⟨ـِيو⟩ → ``iːuː``, orthography2ipa's own reading), not
+        # by consonantizing the first glide. A glide bearing its own harakah
+        # (⟨يُ⟩, ⟨ُو⟩ as a digraph slot) still proves the onset.
         nxt = context.next_slot
+        nxt_vowel_onset = (
+            nxt is not None and nxt.top.ipa
+            and nxt.top.ipa[0] in _VOWEL_ONSETS
+            and nxt.grapheme not in ("و", "ي"))
         if slot.grapheme == KASRA + "ي" and nxt is not None and (
-                nxt.grapheme in _YA_ONSETS
-                or nxt.top.ipa[:1] in _VOWEL_ONSETS):
+                nxt.grapheme in _YA_ONSETS or nxt_vowel_onset):
             return (Candidate(ipa="ij", cost=0.0),)
         if slot.grapheme == DAMMA + "و" and nxt is not None and (
-                nxt.grapheme in _WAW_ONSETS
-                or nxt.top.ipa[:1] in _VOWEL_ONSETS):
+                nxt.grapheme in _WAW_ONSETS or nxt_vowel_onset):
             return (Candidate(ipa="uw", cost=0.0),)
         # The bare geminate copy after a rescored ⟨ِي⟩/⟨ُو⟩: force the
         # consonant so the shadda yields ``ijj``/``uww``, not ``ijiː``.
@@ -351,8 +386,40 @@ def word_ipa(word: str, lang: str = DEFAULT_LANG, stress: bool = True) -> str:
     it wrong is one of the loudest cues of a non-native-sounding voice. Turn it
     off for a consumer that scores against stress-free gold.
     """
-    ipa = "".join(slot.top.ipa for slot in word_lattice(word, lang))
+    ipa = spec_word_exception(word, lang)
+    if ipa is None:
+        ipa = "".join(slot.top.ipa for slot in word_lattice(word, lang))
     return stress_ipa(ipa, lang) if stress else ipa
+
+
+def spec_word_exception(word: str, lang: str = DEFAULT_LANG):
+    """The spec's whole-word IPA override for *word*, or ``None``.
+
+    orthography2ipa specs carry inline ``word_exceptions`` — the lexical
+    forms a variety's rules cannot derive (Lebanese هَيْدَا → ``hajda``
+    against the monophthongization rule, Emirati عِيش → ``ʕeːʃ``, qeltu
+    بَاكِر → ``baːkiʁ``). Its own engine consults them before the rules
+    (``G2P._override_for``); a lattice path that skips them re-derives those
+    words from rules the spec's authors have explicitly overridden, and
+    drifts from the reference output word by word. Matched on the same
+    NFC-normalized key the o2i engine uses (Arabic has no case), with
+    arbtok's mark-reordered normalization tried as well so a
+    vowel-before-shadda spelling still hits.
+    """
+    exceptions = get(lang).word_exceptions
+    if not exceptions:
+        return None
+    import unicodedata
+    from orthography2ipa.phonetok import _expand_arabic_gemination
+    hit = exceptions.get(unicodedata.normalize("NFC", word))
+    if hit is None:
+        hit = exceptions.get(normalize_unicode(word))
+    if hit is None:
+        # o2i keys the table on its tokenizer's normalized form, in which a
+        # shadda is already expanded to a doubled letter (التِّلِيفُون is
+        # stored as التتِلِيفُون) — expand the same way before giving up.
+        hit = exceptions.get(_expand_arabic_gemination(normalize_unicode(word)))
+    return hit
 
 
 _ALL_DIACRITICS = _HARAKAT | {SHADDA, "ٰ", "ٓ"}
@@ -394,6 +461,12 @@ def defers_to_cascade(word: str) -> bool:
     i, peeled, last_harakah = 0, False, None
     while i < len(norm) and norm[i] in CLITIC_BASES:
         j = i + 1
+        # A letter carrying shadda is a geminate — part of the stem, never a
+        # clitic (لِسَّا is li-ssa the word, not لِ+سَّا): stop peeling here,
+        # or a stem-internal alif would be mistaken for a waṣl-alif and the
+        # word sent to the cascade, off the spec lattice.
+        if j < len(norm) and norm[j] == SHADDA:
+            break
         last_harakah = None
         if j < len(norm) and norm[j] in _SHORT_HARAKAT:
             last_harakah = norm[j]
