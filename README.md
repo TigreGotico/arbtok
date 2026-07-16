@@ -5,7 +5,7 @@ self-contained Arabic engine built on
 [orthography2ipa](https://github.com/TigreGotico/orthography2ipa), covering MSA,
 Classical, and 30+ regional varieties.
 
-## Dialect-aware tashkeel — the flagship
+## Dialect-aware tashkeel
 
 To our knowledge arbtok is the **only Arabic phonemizer whose diacritization is
 dialect-aware**. Every other pipeline runs an MSA-trained diacritizer and then
