@@ -2,7 +2,7 @@ numpy
 onnxruntime
 quebra-frases
 langcodes
-ovos-number-parser>=0.4.0
+ovos-number-parser>=0.18.5a1
 ovos-date-parser>=0.6.4a1
 orthography2ipa>=7.31.0a1
 huggingface_hub

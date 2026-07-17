@@ -689,6 +689,8 @@ _AR_INDIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01
 # A digit run that is NOT part of an Arabizi token (Latin+digit, where 3=ع, 7=ح), with an
 # optional trailing percent sign. The Latin lookarounds keep "3ala"/"7abibi" for the Arabizi path.
 _RESIDUAL_NUM = re.compile(r"(?<![A-Za-z])(\d+)(\s*%)?(?![A-Za-z])")
+# A lone percent sign (ASCII "%" or Arabic "٪") left behind once its number was verbalized.
+_RESIDUAL_PERCENT = re.compile(r"\s*[%٪]")
 
 
 def _verbalize_residual_digits_ar(text: str) -> str:
@@ -705,7 +707,11 @@ def _verbalize_residual_digits_ar(text: str) -> str:
         words = num2words(m.group(1), handle_percent=False, apply_tashkeel=True)
         return f"{words} {PERCENT_DIAC}" if m.group(2) else words
 
-    return _RESIDUAL_NUM.sub(repl, text)
+    text = _RESIDUAL_NUM.sub(repl, text)
+    # A percent sign that survived the number pass (the digit was verbalized but the "%" was
+    # left behind) must still be spoken, never reach the phoneme map as a bare symbol.
+    text = _RESIDUAL_PERCENT.sub(f" {PERCENT_DIAC}", text)
+    return text
 
 
 def normalize(text: str, lang: str) -> str:
