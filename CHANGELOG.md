@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a55](https://github.com/TigreGotico/arbtok/tree/0.0.0a55) (2026-07-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a54...0.0.0a55)
+
+**Merged pull requests:**
+
+- fix: do not assimilate final /n/ into a following /m/ [\#65](https://github.com/TigreGotico/arbtok/pull/65) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a54](https://github.com/TigreGotico/arbtok/tree/0.0.0a54) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a53...0.0.0a54)
@@ -87,15 +95,15 @@
 
 ## [0.0.0a43](https://github.com/TigreGotico/arbtok/tree/0.0.0a43) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a41...0.0.0a43)
-
-## [0.0.0a41](https://github.com/TigreGotico/arbtok/tree/0.0.0a41) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a42...0.0.0a41)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a42...0.0.0a43)
 
 ## [0.0.0a42](https://github.com/TigreGotico/arbtok/tree/0.0.0a42) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a40...0.0.0a42)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a41...0.0.0a42)
+
+## [0.0.0a41](https://github.com/TigreGotico/arbtok/tree/0.0.0a41) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a40...0.0.0a41)
 
 ## [0.0.0a40](https://github.com/TigreGotico/arbtok/tree/0.0.0a40) (2026-07-15)
 
@@ -140,7 +148,7 @@
 
 ## [0.0.0a34](https://github.com/TigreGotico/arbtok/tree/0.0.0a34) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a33...0.0.0a34)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a32...0.0.0a34)
 
 **Merged pull requests:**
 
@@ -151,13 +159,13 @@
 - feat\(gold-cs\): authentic urban Palestinian \(ar-PS\) code-switched gold set [\#35](https://github.com/TigreGotico/arbtok/pull/35) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(gold-cs\): authentic Kuwaiti \(ar-KW\) code-switched gold set [\#33](https://github.com/TigreGotico/arbtok/pull/33) ([JarbasAl](https://github.com/JarbasAl))
 
-## [0.0.0a33](https://github.com/TigreGotico/arbtok/tree/0.0.0a33) (2026-07-15)
-
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a32...0.0.0a33)
-
 ## [0.0.0a32](https://github.com/TigreGotico/arbtok/tree/0.0.0a32) (2026-07-15)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a31...0.0.0a32)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a33...0.0.0a32)
+
+## [0.0.0a33](https://github.com/TigreGotico/arbtok/tree/0.0.0a33) (2026-07-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a31...0.0.0a33)
 
 **Merged pull requests:**
 
