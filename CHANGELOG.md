@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a58](https://github.com/TigreGotico/arbtok/tree/0.0.0a58) (2026-07-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a57...0.0.0a58)
+
+**Merged pull requests:**
+
+- use ovos-number-parser for number verbalization \(not arbtok's num2words\) [\#68](https://github.com/TigreGotico/arbtok/pull/68) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a57](https://github.com/TigreGotico/arbtok/tree/0.0.0a57) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a56...0.0.0a57)
