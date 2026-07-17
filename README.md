@@ -5,13 +5,53 @@ self-contained Arabic engine built on
 [orthography2ipa](https://github.com/TigreGotico/orthography2ipa), covering MSA,
 Classical, and 30+ regional varieties.
 
+## What arbtok adds over orthography2ipa
+
+[orthography2ipa](https://github.com/TigreGotico/orthography2ipa) (o2i) is a
+language-agnostic grapheme→IPA lattice engine. For Arabic it assumes
+**fully-vocalized** input: given the tashkeel, it transcribes accurately, but
+real Arabic text is written **without** the short vowels, and o2i cannot invent
+them — a bare skeleton transcribes incompletely wherever a vowel or gemination is
+unwritten. That is the gap arbtok exists to close.
+
+arbtok sits on o2i's lattice and adds the layer o2i deliberately leaves out:
+
+- **A bundled neural diacritizer (rawi), extracted from
+  [text2tashkeel](https://github.com/TigreGotico/text2tashkeel).** text2tashkeel
+  is a diacritization library with a family of ONNX models; arbtok takes its
+  **rawi** ensemble and stitches it into a single 4.9 MB logits ONNX baked into
+  the wheel (`arbtok/_ensemble.py`, built by
+  `tools/build_ensemble_logits_onnx.py`). There is **no runtime dependency on
+  text2tashkeel** and no network — the model rides inside the package. This is
+  what lets arbtok read the undiacritized text a person actually types.
+- **Dialect-aware fusion, cross-word sandhi, loanword nativization, and a waqf
+  register switch** — the sentence-level, variety-specific phonology below.
+
+The split shows up directly in the numbers. On the `arabic-dialects-gold20` set,
+scored on the **undiacritized** `raw` skeleton (each lect at its own register —
+full iʿrāb for MSA/Classical, pausal for the spoken varieties;
+`scripts/benchmark_gold20.py --undiac`), arbtok roughly **halves** o2i's error and
+beats every dialect, while o2i-on-a-skeleton is barely better than espeak-ng:
+
+| system | mean PER (stress-stripped) | MSA `ar` | Classical `arb` |
+|---|---|---|---|
+| **arbtok** (diacritizer on) | **0.147** | **0.076** | **0.055** |
+| orthography2ipa (bare) | 0.302 | 0.363 | 0.444 |
+| espeak-ng | 0.308 | 0.345 | 0.314 |
+
+On the *vocalized* form of the same gold, arbtok's diacritizer is idle and it
+simply matches o2i (that set does not exercise the layer). The undiacritized
+per-dialect table is the benchmark that actually measures arbtok.
+
 ## Dialect-aware tashkeel
 
 To our knowledge arbtok is the **only Arabic phonemizer whose diacritization is
 dialect-aware**. Every other pipeline runs an MSA-trained diacritizer and then
 phonemizes whatever it wrote; arbtok turns that pipeline around. The bundled
-rawi neural ensemble (a 4.9 MB stitched ONNX inside the wheel — no network, no
-external model package) exposes its per-character **distribution**, and arbtok
+rawi neural ensemble — extracted from
+[text2tashkeel](https://github.com/TigreGotico/text2tashkeel) and stitched into a
+4.9 MB ONNX inside the wheel (no network, no external model package) — exposes
+its per-character **distribution**, and arbtok
 scores that distribution against **each variety's own phonological licensing**:
 the orthography2ipa grapheme table and allophone rules of the target lect
 (`docs/rawi-fusion.md`). The chosen tashkeel is the model's most probable
