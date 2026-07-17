@@ -8,17 +8,20 @@ row, against the dialectology literature (``ipa`` — the ``fable_corrections`` 
 ``notes`` columns cite the source of every change). It is pulled from Hugging Face
 at run time and cached locally; **no gold is vendored into this repo.**
 
-Two facts about the gold decide how to read every number below:
+There are two tasks, and they ask opposite questions of arbtok (``--undiac``):
 
-1. **The reference ``ipa`` began as o2i output.** So o2i is close to the ruler by
-   construction, and arbtok — which reassembles the pronunciation itself rather
-   than calling ``G2P.transcribe`` — can only *match* the gold where its lattice,
-   rescorers, sandhi and stress reproduce o2i's engine, and *loses* wherever they
-   diverge. The point of this script is to find exactly those rows.
-2. **The rows are already vocalized.** So arbtok is run with ``diacritize=False``:
-   the diacritizer has nothing to restore and could only add noise. This is the
-   honest scoring config for this gold, and it isolates the *phonology* delta from
-   the diacritization delta.
+1. **Vocalized (default).** Score the fully-vocalized ``sentence`` column with
+   arbtok's diacritizer off. The reference ``ipa`` began as o2i output, so o2i is
+   close to the ruler by construction, and arbtok — which reassembles the
+   pronunciation rather than calling ``G2P.transcribe`` — can only *match* o2i
+   here, never beat it. This isolates the phonology delta and finds arbtok's
+   regressions against its own substrate.
+2. **Undiacritized (``--undiac``).** Score the bare ``raw`` skeleton with arbtok's
+   full stack on (``diacritize=True``). This is the real task — the text a person
+   actually types — and it cannot be solved without putting back the vowels the
+   writing omits. o2i and espeak get the same skeleton with nothing to restore it,
+   so this is where arbtok's diacritizer is priced and where it earns its place on
+   top of o2i (MSA/Classical PER falls from ~0.4 to ~0.06).
 
 Arms, all scored against the gold ``ipa`` column with one metric:
   ``o2i``     ``orthography2ipa.G2P(lang).transcribe`` — the substrate, the floor.
@@ -71,6 +74,22 @@ LOCAL_GOLD = os.environ.get("SALESTEQ_GOLD20", "")
 # Out of scope for this gold (dataset excludes them): the Buckwalter Latin
 # transliteration bucket and the unassigned xaa node.
 EXCLUDE = {"ar-Latn-buckwalter", "xaa"}
+
+# The lects whose gold is cited in full iʿrāb — Modern Standard and Classical
+# Arabic, the two registers that pronounce case and mood endings. Every other
+# lect is a spoken variety whose gold is pausal: it does not write or say those
+# endings. Scoring a lect in the wrong register is the single biggest artefact on
+# the undiacritized task — the diacritizer, given a bare skeleton, otherwise
+# restores full MSA endings a dialect never has (الماكلة كانت → *almaʔkilatu
+# kaːnat*, gold *almaːkla kaːnit*), and raw o2i's sparse reading scores closer by
+# accident. So each lect is scored at its own register, never one flag for all.
+_FULL_IRAB_LECTS = {"ar", "arb"}
+
+
+def register_for(code: str) -> bool:
+    """The pausal flag for *code*: ``False`` (full iʿrāb) for MSA/Classical,
+    ``True`` (pausal, the spoken-variety register) for every dialect."""
+    return code not in _FULL_IRAB_LECTS
 
 _STRESS = ("ˈ", "ˌ")
 
@@ -133,7 +152,8 @@ def _rates(acc: List[int]) -> Dict[str, float]:
 # ─── arms ─────────────────────────────────────────────────────────────────────
 
 def build_arms(code: str, with_epitran: bool,
-               pausal: bool = False) -> Dict[str, Callable[[str], str]]:
+               pausal: bool = False,
+               undiac: bool = False) -> Dict[str, Callable[[str], str]]:
     """One transcriber per system, keyed by arm name. Optional arms that cannot
     load are simply omitted (the caller reports them as absent, never crashes).
 
@@ -143,6 +163,13 @@ def build_arms(code: str, with_epitran: bool,
     phrase-final case ending the gold and o2i both keep, and the gap is a register
     choice, not a phonology error. Dialect gold is already pausal (no case
     endings in the orthography), so the flag barely moves those lects.
+
+    ``undiac`` scores the undiacritized task — the real one. The caller feeds the
+    bare ``raw`` skeleton, and arbtok runs its full stack (``diacritize=True``): it
+    restores the vowels the writing omits, which is the whole reason it sits on top
+    of o2i. o2i and espeak get the same skeleton with nothing to restore it, so
+    this is where the diacritizer is priced. On the vocalized task (``undiac=False``)
+    arbtok's diacritizer is idle and it can only match o2i.
     """
     from orthography2ipa import G2P
 
@@ -151,7 +178,7 @@ def build_arms(code: str, with_epitran: bool,
     arms: Dict[str, Callable[[str], str]] = {}
     arms["o2i"] = G2P(code).transcribe
     arms["arbtok"] = ArbtokG2PPlugin(
-        lang=code, diacritize=False, pausal=pausal).transcribe
+        lang=code, diacritize=undiac, pausal=pausal).transcribe
 
     try:
         from arbtok.espeak_wrapper import EspeakPhonemizer
@@ -179,16 +206,22 @@ def _safe(arm: Callable[[str], str], text: str) -> str:
 
 # ─── per-lect run + row bucketing ─────────────────────────────────────────────
 
-def run_lect(code: str, with_epitran: bool, pausal: bool = False) -> dict:
+def run_lect(code: str, with_epitran: bool, pausal: Optional[bool] = None,
+             undiac: bool = False) -> dict:
     rows = load_gold(code)
-    arms = build_arms(code, with_epitran, pausal=pausal)
+    # Per-lect register guard: unless the caller forces one, each lect is scored
+    # at the register its gold is cited in (full iʿrāb for MSA/Classical, pausal
+    # for the spoken varieties). One flag for every lect is the wrong default.
+    lect_pausal = register_for(code) if pausal is None else pausal
+    arms = build_arms(code, with_epitran, pausal=lect_pausal, undiac=undiac)
+    src = "raw" if undiac else "sentence"
     # acc[arm][keep_stress] = [char_dist, char_len, word_dist, word_len]
     acc = {a: {False: [0, 0, 0, 0], True: [0, 0, 0, 0]} for a in arms}
     bucket_a, bucket_b = [], []
 
     for r in rows:
         gold = r["ipa"]
-        preds = {a: _safe(fn, r["sentence"]) for a, fn in arms.items()}
+        preds = {a: _safe(fn, r[src]) for a, fn in arms.items()}
         for a, pred in preds.items():
             for keep in (False, True):
                 for i, v in enumerate(_per_wer(pred, gold, keep)):
@@ -297,8 +330,13 @@ def main() -> int:
                     help="comma-separated subset; default is every gold lect")
     ap.add_argument("--no-epitran", action="store_true",
                     help="skip the epitran arm")
-    ap.add_argument("--pausal", action="store_true",
-                    help="run arbtok in pausal/waqf register (default off, to match the\n                         o2i arm and the full-iʿrab MSA/Classical gold)")
+    ap.add_argument("--undiac", action="store_true",
+                    help="score the undiacritized task: feed the bare `raw` column and\n                         run arbtok with its diacritizer on (its reason to exist)")
+    ap.add_argument("--register", choices=("auto", "pausal", "full"),
+                    default="auto",
+                    help="arbtok's register. 'auto' (default) scores each lect at "
+                         "its\n                         own — full iʿrab for MSA/Classical, "
+                         "pausal for dialects; 'pausal'/'full' force one for all lects")
     ap.add_argument("--json", default="",
                     help="write the full machine report (tables + both buckets) here")
     ap.add_argument("--show-buckets", action="store_true",
@@ -314,16 +352,20 @@ def main() -> int:
         gold_codes = {os.path.splitext(f)[0] for f in _lect_files()}
         codes = sorted(gold_codes & known)
 
+    forced = {"pausal": True, "full": False}.get(args.register)  # None == auto
+
     report = []
     for code in codes:
         if code in EXCLUDE:
             continue
         print(f"scoring {code} …", file=sys.stderr)
         report.append(run_lect(code, with_epitran=not args.no_epitran,
-                               pausal=args.pausal))
+                               pausal=forced, undiac=args.undiac))
 
     print(f"\ngold: {HF_REPO} (fully-vocalized, o2i-seeded + paper-corrected)")
-    print("arbtok run with diacritize=False; scored vs the `ipa` column\n")
+    mode = ("UNDIACRITIZED (raw skeleton, arbtok diacritizer ON)" if args.undiac
+            else "vocalized (arbtok diacritizer off)")
+    print(f"input: {mode}; scored vs the `ipa` column\n")
     print("### PER / WER — stress-stripped (headline)\n")
     print(_table(report, keep_stress=False))
     print("\n### PER / WER — stress-kept\n")
