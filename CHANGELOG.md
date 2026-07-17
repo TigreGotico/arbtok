@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a56](https://github.com/TigreGotico/arbtok/tree/0.0.0a56) (2026-07-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a55...0.0.0a56)
+
+**Merged pull requests:**
+
+- feat: undiacritized gold20 mode + per-lect register guard \(arbtok's real QA gate\) [\#66](https://github.com/TigreGotico/arbtok/pull/66) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a55](https://github.com/TigreGotico/arbtok/tree/0.0.0a55) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a54...0.0.0a55)
