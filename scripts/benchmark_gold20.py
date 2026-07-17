@@ -75,6 +75,22 @@ LOCAL_GOLD = os.environ.get("SALESTEQ_GOLD20", "")
 # transliteration bucket and the unassigned xaa node.
 EXCLUDE = {"ar-Latn-buckwalter", "xaa"}
 
+# The lects whose gold is cited in full iʿrāb — Modern Standard and Classical
+# Arabic, the two registers that pronounce case and mood endings. Every other
+# lect is a spoken variety whose gold is pausal: it does not write or say those
+# endings. Scoring a lect in the wrong register is the single biggest artefact on
+# the undiacritized task — the diacritizer, given a bare skeleton, otherwise
+# restores full MSA endings a dialect never has (الماكلة كانت → *almaʔkilatu
+# kaːnat*, gold *almaːkla kaːnit*), and raw o2i's sparse reading scores closer by
+# accident. So each lect is scored at its own register, never one flag for all.
+_FULL_IRAB_LECTS = {"ar", "arb"}
+
+
+def register_for(code: str) -> bool:
+    """The pausal flag for *code*: ``False`` (full iʿrāb) for MSA/Classical,
+    ``True`` (pausal, the spoken-variety register) for every dialect."""
+    return code not in _FULL_IRAB_LECTS
+
 _STRESS = ("ˈ", "ˌ")
 
 
@@ -190,10 +206,14 @@ def _safe(arm: Callable[[str], str], text: str) -> str:
 
 # ─── per-lect run + row bucketing ─────────────────────────────────────────────
 
-def run_lect(code: str, with_epitran: bool, pausal: bool = False,
+def run_lect(code: str, with_epitran: bool, pausal: Optional[bool] = None,
              undiac: bool = False) -> dict:
     rows = load_gold(code)
-    arms = build_arms(code, with_epitran, pausal=pausal, undiac=undiac)
+    # Per-lect register guard: unless the caller forces one, each lect is scored
+    # at the register its gold is cited in (full iʿrāb for MSA/Classical, pausal
+    # for the spoken varieties). One flag for every lect is the wrong default.
+    lect_pausal = register_for(code) if pausal is None else pausal
+    arms = build_arms(code, with_epitran, pausal=lect_pausal, undiac=undiac)
     src = "raw" if undiac else "sentence"
     # acc[arm][keep_stress] = [char_dist, char_len, word_dist, word_len]
     acc = {a: {False: [0, 0, 0, 0], True: [0, 0, 0, 0]} for a in arms}
@@ -312,8 +332,11 @@ def main() -> int:
                     help="skip the epitran arm")
     ap.add_argument("--undiac", action="store_true",
                     help="score the undiacritized task: feed the bare `raw` column and\n                         run arbtok with its diacritizer on (its reason to exist)")
-    ap.add_argument("--pausal", action="store_true",
-                    help="run arbtok in pausal/waqf register (default off, to match the\n                         o2i arm and the full-iʿrab MSA/Classical gold)")
+    ap.add_argument("--register", choices=("auto", "pausal", "full"),
+                    default="auto",
+                    help="arbtok's register. 'auto' (default) scores each lect at "
+                         "its\n                         own — full iʿrab for MSA/Classical, "
+                         "pausal for dialects; 'pausal'/'full' force one for all lects")
     ap.add_argument("--json", default="",
                     help="write the full machine report (tables + both buckets) here")
     ap.add_argument("--show-buckets", action="store_true",
@@ -329,13 +352,15 @@ def main() -> int:
         gold_codes = {os.path.splitext(f)[0] for f in _lect_files()}
         codes = sorted(gold_codes & known)
 
+    forced = {"pausal": True, "full": False}.get(args.register)  # None == auto
+
     report = []
     for code in codes:
         if code in EXCLUDE:
             continue
         print(f"scoring {code} …", file=sys.stderr)
         report.append(run_lect(code, with_epitran=not args.no_epitran,
-                               pausal=args.pausal, undiac=args.undiac))
+                               pausal=forced, undiac=args.undiac))
 
     print(f"\ngold: {HF_REPO} (fully-vocalized, o2i-seeded + paper-corrected)")
     mode = ("UNDIACRITIZED (raw skeleton, arbtok diacritizer ON)" if args.undiac
