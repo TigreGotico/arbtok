@@ -69,13 +69,13 @@ class TestPercentIsSpoken:
         assert not _ANY_DIGIT.search(out)
         assert "ثلاثون" in out
         assert "%" not in out
-        assert "بِالْمِئَة" in out
+        assert "بالمئة" in out
 
     def test_arabic_percent_sign_is_verbalized(self):
         out = normalize("خصم ٣٠٪", "ar")
         assert not _ANY_DIGIT.search(out)
         assert "٪" not in out
-        assert "بِالْمِئَة" in out
+        assert "بالمئة" in out
 
 
 class TestArabiziDigitsPreserved:
