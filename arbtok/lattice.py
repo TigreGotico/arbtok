@@ -65,6 +65,7 @@ from typing import Dict, List, Sequence, Tuple
 
 from orthography2ipa import get
 from orthography2ipa.allophony import compile_allophone_rescorer
+from orthography2ipa.stress import is_cliticless
 from orthography2ipa.phonetok import Candidate, PhonetokTokenizer, SegmentSlot
 from orthography2ipa.rescorer import LatticeRescorer, RescoreContext
 
@@ -389,7 +390,12 @@ def word_ipa(word: str, lang: str = DEFAULT_LANG, stress: bool = True) -> str:
     ipa = spec_word_exception(word, lang)
     if ipa is None:
         ipa = "".join(slot.top.ipa for slot in word_lattice(word, lang))
-    return stress_ipa(ipa, lang) if stress else ipa
+    # A declared prosodic clitic (a preposition, a vocative particle) bears no
+    # word stress — it leans on its host. The engine leaves it unmarked, so the
+    # stack must too, or a bare ``ˈfiː`` diverges from o2i on every phrase.
+    if not stress or is_cliticless(word, get(lang)):
+        return ipa
+    return stress_ipa(ipa, lang)
 
 
 def spec_word_exception(word: str, lang: str = DEFAULT_LANG):

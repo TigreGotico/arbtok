@@ -14,6 +14,8 @@ from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WA
                               HAMZAT_AL_WASL, TA_MARBUTA, SHADDA,
                               SUN_LETTERS, CLITIC_BASES, PUNCT)
 from arbtok.stress import stress_words, stress_ipa, _first_segment_len
+from orthography2ipa import get
+from orthography2ipa.stress import is_cliticless
 from orthography2ipa.vowels import is_ipa_vowel
 from arbtok.dialects import (VOWEL_MAP, ARABIC_TO_IPA_CONSONANTS, DIACRITIC_TO_IPA,
                              TANWIN_TO_IPA, WORD_EXCEPTIONS,
@@ -620,10 +622,15 @@ class Sentence:
         words = hacked.split(" ")
         if len(words) == len(onsets):
             # No word-merging fixup fired; stress each spoken word with its
-            # article-onset so the proclitic article stays unstressed.
+            # article-onset so the proclitic article stays unstressed. A declared
+            # prosodic clitic (a preposition, a vocative particle) is left
+            # unmarked, exactly as the engine leaves it — it leans on its host and
+            # carries no word stress.
+            spec = get(self.lang)
             return " ".join(
-                stress_ipa(w, self.lang, proclitic_onset=o)
-                for w, o in zip(words, onsets))
+                w if is_cliticless(t.surface, spec)
+                else stress_ipa(w, self.lang, proclitic_onset=o)
+                for w, o, t in zip(words, onsets, spoken_tokens))
         # A fixup merged two words (a min/man assimilation): the onset alignment
         # no longer holds, so fall back to plain per-word stress. These never
         # coincide with an article onset, so nothing is lost.
