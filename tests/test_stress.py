@@ -45,9 +45,13 @@ def test_each_word_of_an_utterance_is_stressed():
 
 
 def test_a_proclitic_and_its_host_share_one_stress():
-    """Connected speech joins them into one unit, and one unit takes one mark."""
+    """Connected speech joins a proclitic to its host into one unit, and one unit
+    takes one mark. فِي is a cliticless preposition (unstressed, per the ar spec's
+    ``stress.cliticless_words``; Watson 2002 ch.3) and the definite article is
+    proclitic, so the host noun carries the phrase's only stress."""
     out = ArbtokG2PPlugin().transcribe("فِي الْبَيْتِ")
-    assert out.count("ˈ") == 2  # fiː + the clitic-joined article+noun
+    assert out == "fiː lˈbajti"
+    assert out.count("ˈ") == 1  # فِي unstressed; بيت + proclitic article share one
 
 
 def test_punctuation_is_not_a_word():

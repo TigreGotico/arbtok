@@ -284,6 +284,49 @@ def _load(lect):
         return list(csv.DictReader(f, delimiter="\t"))
 
 
+def cmd_refresh(args):
+    """Re-pin the ``ipa`` of every pinned row to the current pipeline, in place.
+
+    ``build`` regenerates a file wholesale from the FRAME templates, so it cannot
+    touch a migrated (hand-authored-sentence) lect without discarding its bespoke
+    sentences. This instead rewrites only the ``ipa`` column of rows that track
+    the pipeline (``pipeline_status`` pinned or absent), leaving the sentence,
+    every other column, and every known-wrong / unsupported row exactly as
+    authored. Run it after an intentional pipeline change (e.g. a stress or sandhi
+    fix) so the regression pins move with the engine and stay a true snapshot.
+    """
+    from arbtok.plugin import ArbtokG2PPlugin
+    lects = args.lects or _roster()
+    changed = 0
+    for lect in lects:
+        p = GOLD_DIR / f"{lect}.tsv"
+        rows = _load(lect)
+        if rows is None:
+            print(f"skip {lect}: missing gold file")
+            continue
+        plugin = ArbtokG2PPlugin(lang=lect, diacritize=True, nativize=True,
+                                 pausal=True)
+        fieldnames = list(rows[0].keys())
+        touched = 0
+        for r in rows:
+            if (r.get("pipeline_status") or "pinned").strip() != "pinned":
+                continue
+            new = plugin.transcribe(r["sentence"])
+            if new != r["ipa"]:
+                r["ipa"] = new
+                touched += 1
+        if touched:
+            with open(p, "w", encoding="utf-8", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t",
+                                   lineterminator="\n")
+                w.writeheader()
+                w.writerows(rows)
+            changed += 1
+        print(f"{lect}: re-pinned {touched} row(s)")
+    print(f"updated {changed} file(s)")
+    return 0
+
+
 def cmd_validate(args):
     from arbtok.plugin import ArbtokG2PPlugin
     lects = args.lects or _roster()
@@ -337,6 +380,7 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("build"); p.add_argument("lects", nargs="*"); p.set_defaults(fn=cmd_build)
+    p = sub.add_parser("refresh"); p.add_argument("lects", nargs="*"); p.set_defaults(fn=cmd_refresh)
     p = sub.add_parser("validate"); p.add_argument("lects", nargs="*"); p.set_defaults(fn=cmd_validate)
     args = ap.parse_args()
     sys.exit(args.fn(args) or 0)
