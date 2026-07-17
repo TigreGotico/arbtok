@@ -120,11 +120,14 @@ _NUN_WORDS = {"min", "man"}
 
 #: What a final /n/ becomes before each following onset (Wright I §14; the
 #: recitation terms are idghām for the sonorants and iqlāb for the labial).
+#: The nasal target /m/ is deliberately absent: idghām of /n/ into a following
+#: /m/ is a recitation register, and everyday speech keeps the two nasals
+#: distinct (مَن مَعِي is *man maʕiː*, not *mam maʕiː*), which is what the
+#: dialect and MSA references transcribe.
 NUN_ASSIMILATION = {
     "r": "r",   # idghām: min rabbihim → mir rabbihim
     "j": "j",   # idghām: man jaquːlu  → maj jaquːlu
     "l": "l",   # idghām: min lisaːn   → mil lisaːn
-    "m": "m",   # idghām
     "b": "m",   # iqlāb:  min bajtika  → mim bajtika
 }
 
