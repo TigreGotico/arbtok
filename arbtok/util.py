@@ -684,6 +684,30 @@ def is_fraction(word: str) -> bool:
     return False
 
 
+# Arabic-Indic and extended (Persian) digits mapped to ASCII so one rule covers them all.
+_AR_INDIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
+# A digit run that is NOT part of an Arabizi token (Latin+digit, where 3=ع, 7=ح), with an
+# optional trailing percent sign. The Latin lookarounds keep "3ala"/"7abibi" for the Arabizi path.
+_RESIDUAL_NUM = re.compile(r"(?<![A-Za-z])(\d+)(\s*%)?(?![A-Za-z])")
+
+
+def _verbalize_residual_digits_ar(text: str) -> str:
+    """Guarantee no digit reaches the phoneme map: verbalize every remaining digit run.
+
+    Runs after the locale number pass, so it only catches what that pass missed — numbers glued
+    to punctuation ("10،"), a stray "%", or Arabic-Indic digits. Arabizi digits (glued to Latin
+    letters) are left untouched for the Arabizi transcription path.
+    """
+    from arbtok.num2words import num2words, PERCENT_DIAC
+    text = text.translate(_AR_INDIC_DIGITS)
+
+    def repl(m: "re.Match") -> str:
+        words = num2words(m.group(1), handle_percent=False, apply_tashkeel=True)
+        return f"{words} {PERCENT_DIAC}" if m.group(2) else words
+
+    return _RESIDUAL_NUM.sub(repl, text)
+
+
 def normalize(text: str, lang: str) -> str:
     """
     Normalize a text string for speech by expanding contractions and titles and converting dates, times, numbers, units, and fractions into spoken forms.
@@ -725,6 +749,10 @@ def normalize(text: str, lang: str) -> str:
 
     normalized_words = [_normalize_word(word, full_lang, rbnf_engine) for word in words]
     dialog = " ".join(normalized_words)
+
+    # Step 5 (Arabic): guarantee no digit survives into the phoneme map.
+    if lang_code == "ar":
+        dialog = _verbalize_residual_digits_ar(dialog)
 
     return dialog
 
