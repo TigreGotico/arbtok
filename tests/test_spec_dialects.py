@@ -99,10 +99,17 @@ def test_msa_orthography_is_read_correctly_in_every_variety(lang, word, expected
     ("ar-SA-x-najd", "ar-SA-x-najd"),   # exact spec code
     ("ar-sa-x-najd", "ar-SA-x-najd"),   # case-insensitive
     ("ar_SA_x_najd", "ar-SA-x-najd"),   # underscore separators
-    ("ar-EG", "ar-EG"),
+    ("ar-EG", "ar-EG"),                 # region with a single spec
     ("ar-x-gulf", "ar-x-gulf"),
     ("ar", "ar"),
-    ("ar-SA", "ar"),                    # a region with no spec narrows to ar
+    # A bare Saudi region resolves to its most widely spoken variety (Najdi),
+    # not to MSA — ⟨ar-SA⟩ is the natural code for Saudi Arabic.
+    ("ar-SA", "ar-SA-x-najd"),
+    # A dialect named in a private-use subtag is matched by name, even though
+    # BCP-47 tag distance ignores private-use content.
+    ("ar-x-najdi", "ar-SA-x-najd"),
+    ("ar-SA-najdi", "ar-SA-x-najd"),    # dialect as a plain subtag
+    ("ar-x-gulfi", "ar-x-gulf"),        # aliased dialect name
     ("ar-ZZ", "ar"),                    # unknown region → MSA, never raises
     ("en", "ar"),                       # not Arabic at all → MSA, never raises
     ("", "ar"),
@@ -110,6 +117,20 @@ def test_msa_orthography_is_read_correctly_in_every_variety(lang, word, expected
 ])
 def test_spec_for_lang(tag, expected):
     assert spec_for_lang(tag) == expected
+
+
+def test_ar_sa_yields_najdi_qaf_end_to_end():
+    """The whole point of the fix: ⟨ar-SA⟩ must phonemize Saudi, not MSA.
+
+    قهوة is /qahwa/ in MSA but /ɡahawa/ in Najdi (qāf → ɡ, gahawa epenthesis).
+    Before the region resolver, the plugin resolved ⟨ar-SA⟩ to the ``ar`` spec
+    and silently produced the MSA /q/. The plugin (not ``word_ipa``, which takes
+    an already-resolved spec code) is what runs ``spec_for_lang``.
+    """
+    najdi = ArbtokG2PPlugin(lang="ar-SA").transcribe_word("قَهْوَة")
+    assert "ɡ" in najdi and "q" not in najdi
+    assert najdi == ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")
+    assert najdi != ArbtokG2PPlugin().transcribe_word("قَهْوَة")  # MSA still /q/
 
 
 # ─── the plugin surface ─────────────────────────────────────────────────
