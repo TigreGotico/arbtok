@@ -691,26 +691,29 @@ _AR_INDIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01
 _RESIDUAL_NUM = re.compile(r"(?<![A-Za-z])(\d+)(\s*%)?(?![A-Za-z])")
 # A lone percent sign (ASCII "%" or Arabic "٪") left behind once its number was verbalized.
 _RESIDUAL_PERCENT = re.compile(r"\s*[%٪]")
+# Spoken form of "%".
+_PERCENT_WORD_AR = "بالمئة"
 
 
 def _verbalize_residual_digits_ar(text: str) -> str:
     """Guarantee no digit reaches the phoneme map: verbalize every remaining digit run.
 
     Runs after the locale number pass, so it only catches what that pass missed — numbers glued
-    to punctuation ("10،"), a stray "%", or Arabic-Indic digits. Arabizi digits (glued to Latin
-    letters) are left untouched for the Arabizi transcription path.
+    to punctuation ("10،"), a stray "%", or Arabic-Indic digits. Number-to-words conversion is
+    delegated to ovos-number-parser (as everywhere else in this module); arbtok only decides which
+    digits are numbers. Arabizi digits (glued to Latin letters) are left untouched for the Arabizi
+    transcription path.
     """
-    from arbtok.num2words import num2words, PERCENT_DIAC
     text = text.translate(_AR_INDIC_DIGITS)
 
     def repl(m: "re.Match") -> str:
-        words = num2words(m.group(1), handle_percent=False, apply_tashkeel=True)
-        return f"{words} {PERCENT_DIAC}" if m.group(2) else words
+        words = pronounce_number(int(m.group(1)), lang="ar")
+        return f"{words} {_PERCENT_WORD_AR}" if m.group(2) else words
 
     text = _RESIDUAL_NUM.sub(repl, text)
     # A percent sign that survived the number pass (the digit was verbalized but the "%" was
     # left behind) must still be spoken, never reach the phoneme map as a bare symbol.
-    text = _RESIDUAL_PERCENT.sub(f" {PERCENT_DIAC}", text)
+    text = _RESIDUAL_PERCENT.sub(f" {_PERCENT_WORD_AR}", text)
     return text
 
 
