@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a60](https://github.com/TigreGotico/arbtok/tree/0.0.0a60) (2026-07-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a59...0.0.0a60)
+
+**Merged pull requests:**
+
+- fix: resolve region and dialect Arabic codes to the closest spec [\#70](https://github.com/TigreGotico/arbtok/pull/70) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a59](https://github.com/TigreGotico/arbtok/tree/0.0.0a59) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a58...0.0.0a59)
