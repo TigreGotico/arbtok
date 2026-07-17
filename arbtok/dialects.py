@@ -140,32 +140,119 @@ def consonant_ipa(grapheme: str, lang: str, default: str) -> str:
 #: The spec code used when a caller names no variety.
 DEFAULT_LANG = "ar"
 
+#: When a region carries several sibling specs, the one a bare region tag
+#: resolves to. Saudi Arabia has six varieties in the data set; Najdi is the
+#: most widely spoken, so ``ar-SA`` (and ``ar-SA-najdi``, ``ar-x-najdi``, …)
+#: land on it rather than on whichever sibling happens to sort first.
+_REGION_DEFAULTS = ("ar-SA-x-najd",)
+
+#: Dialect names that a caller may write where the spec uses a different
+#: private-use token. langcodes ignores private-use content when it measures
+#: tag distance, so ``ar-x-najdi`` would otherwise fall through to MSA; these
+#: map the spoken adjective to the spec's own token.
+_DIALECT_NAME_ALIASES = {
+    "najdi": "najd",
+    "hejazi": "hejaz",
+    "hijazi": "hejaz",
+    "hijaz": "hejaz",
+    "qassimi": "qassim",
+    "gulf": "gulf",
+    "gulfi": "gulf",
+    "khaleeji": "gulf",
+    "levantine": "levantine",
+    "levant": "levantine",
+    "shami": "levantine",
+    "maghrebi": "maghrebi",
+    "maghribi": "maghrebi",
+}
+
+
+def _arabic_codes() -> List[str]:
+    """Available Arabic spec codes, ordered to steer ``closest_match`` ties.
+
+    :func:`langcodes.closest_match` breaks equal-distance ties by list order, so
+    the order encodes two preferences: MSA (:data:`DEFAULT_LANG`) leads, so an
+    unmatched region (``ar-ZZ`` — equidistant from MSA and every regional spec)
+    settles on MSA rather than an arbitrary dialect; then the
+    :data:`_REGION_DEFAULTS`, so a bare region matching several private-use
+    siblings at distance zero (``ar-SA``) settles on the declared default
+    (Najdi) rather than whichever sibling sorts first; then the rest, by code.
+    """
+    from orthography2ipa import available_codes
+
+    codes = [c for c in available_codes() if _is_arabic_code(c)]
+    return sorted(
+        codes,
+        key=lambda c: (c != DEFAULT_LANG, c not in _REGION_DEFAULTS, c),
+    )
+
+
+def _dialect_index(codes: List[str]) -> Dict[str, str]:
+    """Map a dialect token (spec private-use tokens + aliases) to its spec code."""
+    index: Dict[str, str] = {}
+    for code in codes:
+        if "-x-" in code:
+            index.setdefault(code.split("-x-")[-1].lower(), code)
+    for alias, token in _DIALECT_NAME_ALIASES.items():
+        target = index.get(token)
+        if target:
+            index[alias] = target
+    return index
+
 
 def spec_for_lang(lang: Optional[str]) -> str:
     """Resolve a language tag to an orthography2ipa Arabic spec code.
 
     An exact spec code wins (``ar-SA-x-najd``, ``ar-EG``, ``ar-x-gulf``), so a
     caller can name any variety the data set carries. Otherwise the tag is
-    narrowed a subtag at a time (``ar-SA-x-najd`` → ``ar-SA`` → ``ar``) until a
-    spec exists. A tag naming no Arabic spec at all falls back to the ``ar``
-    leaf rather than raising: an unknown region is MSA.
-    """
-    from orthography2ipa import available_codes
+    matched to the closest available spec:
 
+    * a dialect named in a subtag — private-use or not — resolves to that
+      variety's spec (``ar-x-najdi`` and ``ar-SA-najdi`` → ``ar-SA-x-najd``),
+      even though BCP-47 tag distance ignores private-use content;
+    * a region resolves to that region's spec, defaulting to the most widely
+      spoken variety when the region carries several (``ar-SA`` → Najdi,
+      ``ar-EG`` → Egyptian) via subtag-aware BCP-47 matching;
+    * anything with no Arabic match — an unknown region, a non-Arabic tag —
+      falls back to the ``ar`` (MSA) leaf rather than raising.
+    """
     if not lang:
         return DEFAULT_LANG
-    codes = set(available_codes())
+
+    codes = _arabic_codes()
+    normalized = lang.replace("_", "-")
+
+    # 1. Exact spec code (case-insensitive) — a caller naming a variety directly.
     lowered = {code.lower(): code for code in codes}
-    parts = lang.replace("_", "-").split("-")
-    for stop in range(len(parts), 0, -1):
-        candidate = "-".join(parts[:stop])
-        if candidate.endswith("-x"):  # a bare private-use marker is not a code
+    exact = lowered.get(normalized.lower())
+    if exact:
+        return exact
+
+    # 2. A dialect named in a subtag. Private-use content is invisible to tag
+    #    distance, so it has to be matched by name here.
+    dialects = _dialect_index(codes)
+    for token in normalized.lower().split("-"):
+        if token in ("ar", "x"):
             continue
-        if candidate in codes:
-            return candidate
-        match = lowered.get(candidate.lower())
+        match = dialects.get(token)
         if match:
             return match
+
+    # 3. Closest region-bearing spec via subtag-aware BCP-47 matching. Codes
+    #    with a subtag langcodes cannot parse (a private-use token over eight
+    #    characters) are dropped from the pool — they are only ever reached by
+    #    the exact-code path above, and one of them would abort the whole match.
+    from langcodes import closest_match
+
+    matchable = [c for c in codes
+                 if all(len(sub) <= 8 for sub in c.split("-"))]
+    try:
+        best, _ = closest_match(normalized, matchable)
+    except Exception:
+        best = "und"
+    if best in codes:
+        return best
+
     return DEFAULT_LANG
 
 
