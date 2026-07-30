@@ -1,9 +1,9 @@
 # Varieties
 
-A variety is an **orthography2ipa spec**, named by its code — and each variety's
+A variety is an **orthography2ipa spec**, named by its code, and each variety's
 spec does more than allophony: its grapheme table is the **licensing filter**
 that makes arbtok's tashkeel dialect-aware (the fusion scorer picks the model's
-most probable reading the variety's orthography admits — see
+most probable reading the variety's orthography admits, see
 [rawi-fusion.md](rawi-fusion.md)):
 
 ```python
@@ -19,7 +19,7 @@ instance default. A tag that names no Arabic spec narrows a subtag at a time
 (`ar-SA-x-najd` → `ar-SA` → `ar`) and ultimately falls back to the `ar` leaf, so
 an unknown region is MSA rather than an error.
 
-Any Arabic spec orthography2ipa carries can be named — `ar`, `arb` (Classical),
+Any Arabic spec orthography2ipa carries can be named, `ar`, `arb` (Classical),
 the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
 `ar-x-maghrebi`, `ar-x-mashriqi`), and the leaves (`ar-SA-x-najd`,
 `ar-SA-x-hejaz`, `ar-EG`, `ar-IQ`, `ar-MA`, …).
@@ -27,7 +27,7 @@ the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
 ## What `lang=` resolves to
 
 `arbtok.supported_lects()` enumerates every variety `lang=` accepts, each with
-the orthography2ipa `quality` tier of its spec — so the list tracks the
+the orthography2ipa `quality` tier of its spec, so the list tracks the
 installed data set rather than a table in arbtok. The tier reports how far the
 spec's cited rule set has been taken (`research` vs `skeleton`/`stub`), not a
 promise about arbtok's cascade.
@@ -60,7 +60,7 @@ for lect in arbtok.supported_lects():
 | | | `ar-x-peninsular` | skeleton |
 
 (The `skeleton`-tier grouping nodes and Maghrebi/Sudanic leaves resolve and read
-their grapheme layer, but their allophone rule sets are not at research tier; the
+their grapheme layer, but their allophone rule sets are not at research tier. The
 tier is a property of the installed orthography2ipa spec, not of arbtok.)
 
 ## Pipeline order: MSA restoration before dialect allophony
@@ -96,7 +96,7 @@ had already turned to IPA. `tests/test_pipeline_order.py` pins this.
 
 Two layers, both read from the spec:
 
-**The grapheme table** gives each letter its realization — the qāf reflex
+**The grapheme table** gives each letter its realization, the qāf reflex
 (MSA /q/, Najdi and Hejazi /ɡ/, Cairene /ʔ/), the interdental treatment, the
 jīm. Both the word lattice and the sentence cascade read this.
 
@@ -109,7 +109,7 @@ segments in context:
 |---|---|---|
 | Najdi | velar affrication /k/ → [ts] by a front vowel (Ingham 1994) | كِتَاب → `tsitaːb` |
 | Najdi | gahawa-syndrome epenthesis after a guttural coda (Ingham 1994) | قَهْوَة → `ɡahawa` |
-| Hejazi | monophthongization /aj/ → [eː] (Omar 1975; Abdoh 2010) | بَيْت → `beːt` |
+| Hejazi | monophthongization /aj/ → [eː] (Omar 1975. Abdoh 2010) | بَيْت → `beːt` |
 | Gulf | kashkasha /k/ → [tʃ] by a high front vowel | كِتَاب → `tʃitaːb` |
 | all Peninsular | emphatic spreading (Watson 2002) | صَبْر → `sˤɑbr` |
 
@@ -122,15 +122,15 @@ A Latin-script (or other non-Arabic) run is read as a **loanword**: phonemized
 with its donor spec (English by default) and *nativized* into the matrix lect's
 phonology, out of that lect's own declared inventory (`arbtok.translit`). A lect
 adapts a loan as its own loanword literature says it does, so the nativization
-table is chosen by walking the orthography2ipa **parent chain** — no hardcoded
-lang→zone map — and the first ancestor carrying a table wins:
+table is chosen by walking the orthography2ipa **parent chain**, no hardcoded
+lang→zone map, and the first ancestor carrying a table wins:
 
 | table | keyed at | inherited by | source |
 |---|---|---|---|
-| Najdi | `ar-SA-x-najd` | — | Alhoody (2019) |
-| Egyptian | `ar-EG` | — | Hafez (1996); Watson (2002) |
-| Levantine | `ar-x-levantine` | `ar-LB`, `ar-SY`, `ar-PS`, `ar-JO` | Al-Saidat (2011); Cowell (1964) |
-| default | `ar` | every un-tabled lect (e.g. `ar-KW` → `ar-x-gulf` → `ar-x-peninsular` → …) | Watson (2002); Holes (2004) |
+| Najdi | `ar-SA-x-najd` |, | Alhoody (2019) |
+| Egyptian | `ar-EG` |, | Hafez (1996). Watson (2002) |
+| Levantine | `ar-x-levantine` | `ar-LB`, `ar-SY`, `ar-PS`, `ar-JO` | Al-Saidat (2011). Cowell (1964) |
+| default | `ar` | every un-tabled lect (e.g. `ar-KW` → `ar-x-gulf` → `ar-x-peninsular` → …) | Watson (2002). Holes (2004) |
 
 ```python
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'manaɡar'  (Cairene stop ǧīm)
@@ -138,14 +138,14 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manadʒar' (
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("think")           # 'tink'     (interdental merger)
 ```
 
-Whatever a table emits must be realizable in the matrix lect's inventory; a symbol
+Whatever a table emits must be realizable in the matrix lect's inventory. A symbol
 the lect does not declare is **refused** (`transliterate` returns `None`) rather
 than emitted as an unpronounceable token. So Najdi's `[-inɡ]` reading of *meeting*
 is refused for MSA (which has no /ɡ/), and the Egyptian interdental merger is what
 lets *think* be realized at all in `ar-EG` (which has no /θ/).
 
 `nativize=True` is the TTS default. `nativize=False` leaves a Latin run in place,
-untranscribed — for linguistic output that must not invent a pronunciation:
+untranscribed, for linguistic output that must not invent a pronunciation:
 
 ```python
 ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meeting")
@@ -154,12 +154,14 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meetin
 
 ## Known limits
 
-- The **sentence cascade has no allophone pass** — it reads the grapheme layer
+- The **sentence cascade has no allophone pass**, it reads the grapheme layer
   only. Word-level transcription (`transcribe_word`, `arbtok.lattice.word_ipa`)
   is where a variety's rules fire.
 - A diphthong **split across slots** is not one segment, so a rule targeting it
   cannot see it: يَوْم tokenizes as يَ|وْ|م = `ja|w|m`, and Hejazi
-  monophthongization targets an /aw/ atom, so it does not fire (بَيْت works —
-  ⟨َي⟩ is a single digraph slot).
+  monophthongization targets an /aw/ atom, so it does not fire (بَيْت works, ⟨َي⟩ is a single digraph slot).
 - Spec `quality` is `research`, not `production`, for the Arabic varieties, and
   their gold has not been validated by a native speaker.
+
+---
+[← Rawi-lattice fusion](rawi-fusion.md) · [Home](../README.md) · [Arabizi →](arabizi.md)
