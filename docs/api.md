@@ -5,7 +5,7 @@ module-qualified (`from arbtok.plugin import ArbtokG2PPlugin`).
 
 ## `arbtok.plugin`
 
-The primary entry point — the full engine, including automatic diacritization,
+The primary entry point, the full engine, including automatic diacritization,
 dialects, loanword nativization, and Arabizi.
 
 ### `ArbtokG2PPlugin(lang="ar", diacritize=True, stress=True, lexicon=..., dialect_lexicon=True, nativize=True, arabizi=True, pausal=None, register="pausal", fusion=True)`
@@ -17,13 +17,13 @@ Constructs an Arabic G2P engine. Every argument is a policy switch:
 | `lang` | `"ar"` | The variety: any orthography2ipa Arabic spec code (`ar`, `arb`, `ar-EG`, `ar-SA-x-najd`, …). Resolves by narrowing subtags, falling back to `ar`. |
 | `diacritize` | `True` | Restore the marks bare text omits before transcribing. |
 | `stress` | `True` | Mark the stressed syllable (quantity-sensitive, read off the transcription). |
-| `lexicon` | default HF id | Diacritized-stem lexicon consulted before the model — a path, URL, `hf://` id, or `None`. |
+| `lexicon` | default HF id | Diacritized-stem lexicon consulted before the model, a path, URL, `hf://` id, or `None`. |
 | `dialect_lexicon` | `True` | Consult the lect's closed-class lexicon (function words) as a hard prior. |
 | `nativize` | `True` | Read a Latin-script run as a loanword, nativized into the lect's phonology. |
 | `arabizi` | `True` | Read a digit-guttural Latin run (`7abibi`) as Arabic (see [arabizi.md](arabizi.md)). |
-| `register` | `"pausal"` | The waqf policy by name: `"pausal"` (the TTS register — Wright I §372; Ryding 2005 §2.4) or `"full"` (continuous full-iʿrāb passthrough: waqf reductions disabled, every written ending read out — recitation/pedagogy, and MSA gold that keeps its iʿrāb). MSA/Classical only; a dialect lect has no iʿrāb to drop under either value. |
-| `pausal` | `None` | The same switch as an explicit boolean (`True` = pausal, `False` = full); wins over `register` when passed. |
-| `fusion` | `True` | Score the diacritizer distribution under dialect licensing (see [rawi-fusion.md](rawi-fusion.md)); `False` for the plain generator. |
+| `register` | `"pausal"` | The waqf policy by name: `"pausal"` (the TTS register, Wright I §372. Ryding 2005 §2.4) or `"full"` (continuous full-iʿrāb passthrough: waqf reductions disabled, every written ending read out, recitation/pedagogy, and MSA gold that keeps its iʿrāb). MSA/Classical only. A dialect lect has no iʿrāb to drop under either value. |
+| `pausal` | `None` | The same switch as an explicit boolean (`True` = pausal, `False` = full). Wins over `register` when passed. |
+| `fusion` | `True` | Score the diacritizer distribution under dialect licensing (see [rawi-fusion.md](rawi-fusion.md)). `False` for the plain generator. |
 
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
@@ -49,9 +49,9 @@ transcribes whatever diacritics are already present rather than raising.
 
 ## `arbtok.tokenizer`
 
-The phonemization core. Three dataclasses form a three-level hierarchy —
-`Sentence` holds `WordToken`s, each `WordToken` holds `CharToken`s — linked
-bidirectionally so phonology can read neighbours.
+The phonemization core. Three dataclasses form a three-level hierarchy:
+`Sentence` holds `WordToken`s, and each `WordToken` holds `CharToken`s, linked
+bidirectionally so phonology can read neighbors.
 
 ### `Sentence(surface: str)`
 
@@ -67,7 +67,7 @@ s = Sentence("قَالَ ٱلْمَلِكُ")
 | --- | --- | --- |
 | `surface` | `str` | The original text you passed in. |
 | `normalized` | `str` | NFC-normalized text with diacritics reordered (consonant → shadda → vowel). |
-| `tokens` | `List[WordToken]` | Words and punctuation as linked `WordToken`s; whitespace is dropped, punctuation kept as its own token. |
+| `tokens` | `List[WordToken]` | Words and punctuation as linked `WordToken`s. Whitespace is dropped, punctuation kept as its own token. |
 | `ipa` | `str` | The IPA transcription of the whole sentence. **This is what you want.** |
 
 ```python
@@ -79,22 +79,22 @@ print(len(s.tokens))      # word + punctuation tokens
 
 ### `WordToken(surface: str, word_idx: int, prev_word=None, next_word=None)`
 
-One word (or one punctuation mark). You rarely construct these directly — read
-them off `Sentence.tokens` — but the properties are useful for inspection.
+One word (or one punctuation mark). You rarely construct these directly, read
+them off `Sentence.tokens`, but the properties are useful for inspection.
 
 | Member | Type | Description |
 | --- | --- | --- |
 | `surface` | `str` | The word text. |
 | `word_idx` | `int` | Position in the sentence. |
-| `prev_word` / `next_word` | `Optional[WordToken]` | Neighbours in the linked list. |
+| `prev_word` / `next_word` | `Optional[WordToken]` | Neighbors in the linked list. |
 | `tokens` | `List[CharToken]` | The word's characters as linked `CharToken`s (cached). |
 | `normalized` | `str` | NFC-normalized surface. |
 | `is_punct` | `bool` | True if the surface is a punctuation token. |
 | `is_first_word` / `is_last_word` | `bool` | Sentence boundary checks (last accounts for trailing punctuation). |
 | `has_definite_article` | `bool` | Starts with `ال` (alif + lam). |
-| `is_proclitic` | `bool` | Short clitic heuristic (1–2 chars starting with a clitic base, e.g. `و`, `بِ`). |
+| `is_proclitic` | `bool` | Short clitic heuristic (1-2 chars starting with a clitic base, e.g. `و`, `بِ`). |
 | `is_sun` | `bool` | First real letter (after any article) is a sun letter. |
-| `end_with_vowel` | `bool` | Final char's IPA is a vowel — used for wasl elision. |
+| `end_with_vowel` | `bool` | Final char's IPA is a vowel, used for wasl elision. |
 | `ipa` | `str` | IPA for this word (consults `WORD_EXCEPTIONS` first). |
 
 ```python
@@ -105,8 +105,8 @@ print(word.ipa)                    # IPA for the word
 
 ### `CharToken(surface, char_idx, prev_token=None, next_token=None, word=None)`
 
-One character — a letter, a diacritic, or punctuation. The IPA of a character
-depends on its neighbours, so these are linked both ways and back to their
+One character, a letter, a diacritic, or punctuation. The IPA of a character
+depends on its neighbors, so these are linked both ways and back to their
 `word`.
 
 Boolean properties: `is_first_char`, `is_last_char`, `is_first_word`,
@@ -139,7 +139,7 @@ and the token classes use it internally via their `.normalized` property.
 
 The module also re-exports named grapheme constants (`ALIF`, `LAM`, `SHADDA`,
 `SUKUN`, `FATHA`, `KASRA`, `WAW`, `TANWIN_FATH`, `SUN_LETTERS`, …) for readable
-rule code — see `arbtok/constants.py`.
+rule code, see `arbtok/constants.py`.
 
 ## `arbtok.util`
 
@@ -158,7 +158,7 @@ normalize("I'm Dr. 3/3", "en")          # "I am Doctor three thirds"
 
 ### `match_lang(target_lang, valid_langs) -> Tuple[str, int]`
 
-Find the closest supported language tag. Returns `(lang, distance)`; returns
+Find the closest supported language tag. Returns `(lang, distance)`. Returns
 `("und", 10000)` when nothing matches well.
 
 ```python
@@ -176,7 +176,7 @@ full_lang)` wrap the OVOS date parser.
 ### `num2words(text, handle_percent=True, apply_tashkeel=True) -> str`
 
 Convert digit sequences in `text` to Arabic words. With `apply_tashkeel=True`
-the inserted words are diacritized; `handle_percent` replaces `%` with the
+the inserted words are diacritized. `handle_percent` replaces `%` with the
 spoken percent word.
 
 ```python
@@ -217,12 +217,12 @@ A baseline phonemizer that shells out to the `espeak-ng` binary, for comparison
 against the rule-based path. See [advanced.md](advanced.md#espeak-baseline).
 Key symbols: `EspeakPhonemizer`, `EspeakError`.
 
-## `arbtok.o2i_plugins` — the orthography2ipa step plugins
+## `arbtok.o2i_plugins`, the orthography2ipa step plugins
 
 arbtok is an engine built *on* orthography2ipa, but the pieces it owns are exactly
 the steps orthography2ipa made pluggable. Installing arbtok registers three
 entry-point plugins so plain orthography2ipa can transcribe **undiacritized**
-Arabic — which it cannot do alone, since its input contract is diacritized text:
+Arabic, which it cannot do alone, since its input contract is diacritized text:
 
 | entry-point group | class | contribution |
 | --- | --- | --- |
@@ -230,8 +230,8 @@ Arabic — which it cannot do alone, since its input contract is diacritized tex
 | `orthography2ipa.rescore` | `ArbtokRescorers` | sun-letter assimilation, hamzat al-waṣl, hamza carrier, accusative alif |
 | `orthography2ipa.sandhi` | `ArbtokSandhi` | cross-word idghām/iqlāb, pausal case-ending drop, waṣl |
 
-The plugin is **named**, not implicit — installing arbtok does not silently change
-what orthography2ipa says about Arabic; the caller opts in at the call site:
+The plugin is **named**, not implicit, installing arbtok does not silently change
+what orthography2ipa says about Arabic. The caller opts in at the call site:
 
 ```python
 from orthography2ipa import G2P
@@ -242,8 +242,11 @@ G2P("ar", plugins={"normalize": "arbtok"}).transcribe("كتب")  # 'ˈkatab' —
 
 ## Where next
 
-- [quickstart.md](quickstart.md) — install and the core idea
-- [tashkeel.md](tashkeel.md) — the diacritizer subsystem
-- [rawi-fusion.md](rawi-fusion.md) — the fusion scorer
-- [dialects.md](dialects.md) — varieties and per-lect phonology
-- [advanced.md](advanced.md) — internals, espeak baseline, recipes, gotchas
+- [quickstart.md](quickstart.md), install and the core idea
+- [tashkeel.md](tashkeel.md), the diacritizer subsystem
+- [rawi-fusion.md](rawi-fusion.md), the fusion scorer
+- [dialects.md](dialects.md), varieties and per-lect phonology
+- [advanced.md](advanced.md), internals, espeak baseline, recipes, gotchas
+
+---
+[← Code-switched gold](gold-code-switched.md) · [Home](../README.md) · [Advanced →](advanced.md)

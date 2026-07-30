@@ -2,10 +2,10 @@
 
 Two benchmarks live in `scripts/benchmark_stack.py`.
 
-- **default mode** — the MSA stack question: is arbtok better than its parts and
+- **default mode**, the MSA stack question: is arbtok better than its parts and
   than espeak-ng on the WikiPron `ara_arab_broad` word set? See the module
   docstring.
-- **`--lect` mode** — the dialect question this page reports: does a *dialect*
+- **`--lect` mode**, the dialect question this page reports: does a *dialect*
   sentence, diacritized or bare, come out the way the requested lect's cited
   rules say it should?
 
@@ -24,16 +24,16 @@ skeleton, and a reference `ipa`. It covers 25 lects with 5 sentences each.
 
 **Its provenance is load-bearing and must be quoted with every number.** The
 reference IPA is **LLM-generated from the specs' cited rules, then
-rule-anchored** — it is an o2i-regression snapshot, **not native-speaker–validated
+rule-anchored**, it is an o2i-regression snapshot, **not native-speaker-validated
 ground truth.** So every figure here is *engine similarity to cited-rule o2i
 output*: a lect where arbtok scores well means "arbtok reproduces what o2i's
 rules predict for it", never "a native speaker signed off". Native word-level
-gold is what would turn these into truth claims; until then, read these as a
+gold is what would turn these into truth claims. Until then, read these as a
 consistency check between arbtok's lattice and the specs it consults.
 
 espeak-ng has **no dialect voices**, so every lect is scored against its single
-`ar` (MSA) voice. That is honestly apples-to-oranges — espeak is not being asked
-the dialect question, it has no way to answer it — and the gap is the point, not
+`ar` (MSA) voice. That is honestly apples-to-oranges, espeak is not being asked
+the dialect question, it has no way to answer it, and the gap is the point, not
 a fair contest. espeak is fed the *vocalized* sentence (vowels handed to it),
 which if anything flatters the baseline.
 
@@ -41,15 +41,15 @@ which if anything flatters the baseline.
 
 Both sides are stress-stripped and punctuation-stripped before scoring.
 
-- **PER** — character edit distance / gold characters, over the whole lect.
-- **WER** — word edit distance / gold words. A TTS voice gets no partial credit
+- **PER**, character edit distance / gold characters, over the whole lect.
+- **WER**, word edit distance / gold words. A TTS voice gets no partial credit
   for a word it mispronounces, so WER is the harsher, more honest headline.
 
 Two arbtok arms run the full default stack (diacritizer + stem lexicon) on the
 variety's own spec:
 
-- **diac** — input is the vocalized `sentence` (the marks are already there).
-- **bare** — input is the `raw` abjad skeleton; the diacritizer must restore the
+- **diac**, input is the vocalized `sentence` (the marks are already there).
+- **bare**, input is the `raw` abjad skeleton. The diacritizer must restore the
   vowels the writing omits. This is the everyday-input question.
 - **ΔPER** = bare − diac: the price of the missing harakat, per lect.
 
@@ -87,34 +87,34 @@ Sorted best-to-worst by arbtok diacritized PER.
 
 ## Interpretation
 
-**Diacritized path — arbtok reproduces the specs, and beats the MSA baseline
-everywhere.** With the marks present, arbtok's PER sits at 0.01–0.08 and beats
-espeak-ng's MSA voice on every single lect, by 5–20× on PER. Read honestly, this
+**Diacritized path, arbtok reproduces the specs, and beats the MSA baseline
+everywhere.** With the marks present, arbtok's PER sits at 0.01-0.08 and beats
+espeak-ng's MSA voice on every single lect, by 5-20× on PER. Read honestly, this
 is largely *self-consistency*: the reference IPA is generated from the same cited
 spec rules arbtok's lattice consults, so a low number confirms the lattice
-faithfully executes the specs — it is not independent evidence about native
+faithfully executes the specs, it is not independent evidence about native
 pronunciation. The espeak gap is real but expected: espeak has no reflexes for
 qāf→/g/, gīm→/g/, interdental shifts, or imāla, so it mistranscribes exactly the
 segments that define a dialect.
 
 **The two worst diacritized rows are `ar` (MSA) and `arb` (Classical), not a
-skeleton dialect.** Their WER (0.37–0.38) is far above any dialect's. Diagnosis:
+skeleton dialect.** Their WER (0.37-0.38) is far above any dialect's. Diagnosis:
 these gold sentences carry full iʿrāb case endings and hamzat-waṣl that
 arbtok's pausal-TTS defaults resolve away, so word-final segments disagree with a
 gold that kept them. This is a policy seam (pausal vs full iʿrāb),
 not a dialect-rule failure.
 
-**Undiacritized path (D1) — stripping harakat costs +0.06 to +0.20 PER.** The
+**Undiacritized path (D1), stripping harakat costs +0.06 to +0.20 PER.** The
 MSA-trained diacritizer and stem lexicon do not know dialectal vowels, so the
 bare-skeleton input is where the real dialect work remains. The largest ΔPER
 falls on the lects with the heaviest vowel reduction / syncope, where the abjad
-skeleton underdetermines the most — Egyptian (+0.197), Libyan (+0.194), Tunisian
+skeleton underdetermines the most, Egyptian (+0.197), Libyan (+0.194), Tunisian
 (+0.191), Syrian (+0.190). The smallest ΔPER is Classical `arb` (+0.059) and
 Iraqi qeltu (+0.069), whose fuller vocalism the MSA diacritizer handles closer to
 right. The closed-class dialect lexicons are what narrow this residual.
 
 **On the bare path, arbtok still beats espeak on most lects, but loses on MSA.**
-For `ar`, espeak's bare-input PER (0.176) beats arbtok's (0.245) — espeak's engine
+For `ar`, espeak's bare-input PER (0.176) beats arbtok's (0.245), espeak's engine
 *is* MSA-tuned, so on the one target it was built for, arbtok's diacritizer adds
 noise rather than removing it. Every dialect bare row where espeak looks close
 (TN, NG, TD) is espeak scoring an MSA reading against a dialect gold and getting
@@ -124,26 +124,26 @@ lucky on shared segments, not reading the dialect.
 
 Best (lattice tracks the cited rules almost exactly):
 
-- **ar-SA-x-najd** 0.009 — Najdi reflexes (qāf→/g/, gahawa-syndrome epenthesis)
-  are among the most fully cited specs; the lattice reproduces them cleanly.
-- **ar-JO** 0.010 — Jordanian's moderate consonant shifts and light reduction
+- **ar-SA-x-najd** 0.009, Najdi reflexes (qāf→/g/, gahawa-syndrome epenthesis)
+  are among the most fully cited specs. The lattice reproduces them cleanly.
+- **ar-JO** 0.010, Jordanian's moderate consonant shifts and light reduction
   leave little for the transcription to disagree about.
-- **ar-OM** 0.015 — Omani's conservative vocalism maps closely to the spec's
+- **ar-OM** 0.015, Omani's conservative vocalism maps closely to the spec's
   predicted segments.
 
-Worst (by diacritized PER — a policy/register issue, not broken dialect rules):
+Worst (by diacritized PER, a policy/register issue, not broken dialect rules):
 
-- **ar** (MSA) 0.083 / WER 0.368 — full iʿrāb and waṣl in the gold vs arbtok's
-  pausal-TTS defaults; the disagreement is word-final case endings.
-- **arb** (Classical) 0.055 / WER 0.378 — same iʿrāb/register seam, sharpened by
+- **ar** (MSA) 0.083 / WER 0.368, full iʿrāb and waṣl in the gold vs arbtok's
+  pausal-TTS defaults. The disagreement is word-final case endings.
+- **arb** (Classical) 0.055 / WER 0.378, same iʿrāb/register seam, sharpened by
   Classical's fully-marked endings.
-- **ar-IQ** (gilit) 0.037 — Iraqi gilit has the richest set of reflexes (kāf→/tʃ/,
+- **ar-IQ** (gilit) 0.037, Iraqi gilit has the richest set of reflexes (kāf→/tʃ/,
   qāf→/g/, affrication) and the most room for a single segment to diverge.
 
 ### The MSA rows are a register seam, and the waqf policy prices it
 
-The `ar`/`arb` gold keeps the full iʿrāb; arbtok's default is the declared
-pausal (waqf) policy — `ArbtokG2PPlugin(pausal=True)`, Wright I §372 — which
+The `ar`/`arb` gold keeps the full iʿrāb. Arbtok's default is the declared
+pausal (waqf) policy, `ArbtokG2PPlugin(pausal=True)`, Wright I §372, which
 drops the endings a TTS voice should not read out. Scoring the right register
 against the right gold (`--full-irab`, i.e. `pausal=False`) removes almost the
 whole gap:
@@ -163,6 +163,9 @@ seam, not the register. The waqf policy is one flag consulted in one place
 
 These are engine-similarity numbers on an LLM-origin gold, so they are reported,
 not used as a pass/fail gate. A CI regression gate belongs on native word-level
-gold; wiring `--lect` into CI against this gold would only gate arbtok against its
+gold. Wiring `--lect` into CI against this gold would only gate arbtok against its
 own specs. `tests/test_lect_benchmark.py` pins that the runner works (2 lects × 3
 sentences, no network), not any score.
+
+---
+[← Advanced](advanced.md) · [Home](../README.md)

@@ -18,10 +18,10 @@ for ch in word.tokens:
           "sun" if ch.is_sun else "moon")
 ```
 
-Each `CharToken` decides its IPA from neighbours: the article's `ل` assimilates
+Each `CharToken` decides its IPA from neighbors: the article's `ل` assimilates
 before sun letters and doubles them, tanwin resolves to `aː`/silence in pausal
 position, and `ن` undergoes idgham/iqlab before `ر ي ل م ب`. None of this is
-configurable — it is the rule set — but reading `.ipa` per character tells you
+configurable, it is the rule set, but reading `.ipa` per character tells you
 exactly which rule fired.
 
 ## Sun vs moon letters
@@ -38,7 +38,7 @@ print(Sentence("الْقَمَر").ipa)    # moon letter: the ل is pronounced
 
 ## Wasl and clitics across word boundaries
 
-The article's initial `a` elides after a vowel or a proclitic, modelling
+The article's initial `a` elides after a vowel or a proclitic, modeling
 connected speech. Proclitics (`و`, `بِ`, `لِ`, `كَ`, …) are detected by
 `WordToken.is_proclitic` and joined to the following word's IPA:
 
@@ -66,7 +66,7 @@ print(Sentence(spoken).ipa)
 ```
 
 `normalize` also serves other languages (`"en"`, `"pt"`, `"es"`, `"fr"`, `"de"`)
-for contractions, titles and locale-aware decimal separators — handy when the
+for contractions, titles and locale-aware decimal separators, handy when the
 same front-end handles mixed-language metadata.
 
 ## espeak baseline
@@ -89,31 +89,30 @@ else:
 
 Key methods:
 
-- `phonemize(text, lang="ar") -> list[list[str]]` — chunks text, phonemizes each
+- `phonemize(text, lang="ar") -> list[list[str]]`, chunks text, phonemizes each
   chunk, returns phonemes grouped by sentence. For Arabic it diacritizes first
   via the bundled tashkeel model.
-- `phonemize_string(text, lang) -> str` — raw espeak IPA string.
-- `phonemize_to_list(text, lang="ar") -> List[str]` — that string as a char list.
-- `add_diacritics(text, lang="ar") -> str` — diacritize Arabic input (pass-through
+- `phonemize_string(text, lang) -> str`, raw espeak IPA string.
+- `phonemize_to_list(text, lang="ar") -> List[str]`, that string as a char list.
+- `add_diacritics(text, lang="ar") -> str`, diacritize Arabic input (pass-through
   for other langs).
-- `get_lang(target_lang) -> str` — closest supported espeak voice.
+- `get_lang(target_lang) -> str`, closest supported espeak voice.
 
 `EspeakError` wraps a missing binary or a non-zero espeak exit.
 
 ## Gotchas
 
 - **Diacritics are mandatory for vowels.** `Sentence` reads vowels from combining
-  marks. Undiacritized text phonemizes to a consonant skeleton — diacritize first
+  marks. Undiacritized text phonemizes to a consonant skeleton, diacritize first
   (see [tashkeel.md](tashkeel.md)).
 - **Accuracy is experimental and unverified.** The rule set and the IPA gold set
   (`tests/test_msa_pausal.py::ALL_TEST_CASES`) are LLM-generated, since revised
   case-by-case under the declared waqf policy (Wright I §372) with the disputed
   rows resolved and justified in that module. Passing tests is still not
   native-speaker validation.
-- **Reuse the diacritizer.** `TashkeelDiacritizer()` loads an ONNX session; build
+- **Reuse the diacritizer.** `TashkeelDiacritizer()` loads an ONNX session. Build
   one and keep it, don't construct per sentence.
-- **Vendored deps.** `arbtok.pyarabic` and `arbtok.tashkeel` are vendored copies;
-  import them from `arbtok`, not from a system package.
+- **Vendored deps.** `arbtok.pyarabic` and `arbtok.tashkeel` are vendored copies. Import them from `arbtok`, not from a system package.
 - **`Sentence` is the low-level core.** It does the phonology only, on
   already-diacritized text. For everyday (bare) input, dialects, nativization and
   Arabizi, use `ArbtokG2PPlugin`, which diacritizes first and then runs the same
@@ -121,6 +120,9 @@ Key methods:
 
 ## Where next
 
-- [quickstart.md](quickstart.md) — the core path
-- [api.md](api.md) — full public surface
-- [tashkeel.md](tashkeel.md) — diacritizer details
+- [quickstart.md](quickstart.md), the core path
+- [api.md](api.md), full public surface
+- [tashkeel.md](tashkeel.md), diacritizer details
+
+---
+[← API reference](api.md) · [Home](../README.md) · [Benchmarks →](benchmarks.md)
