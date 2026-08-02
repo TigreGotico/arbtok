@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a62](https://github.com/TigreGotico/arbtok/tree/0.0.0a62) (2026-08-02)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a61...0.0.0a62)
+
+**Merged pull requests:**
+
+- feat: IqraEval Qur'anic gold benchmark [\#72](https://github.com/TigreGotico/arbtok/pull/72) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a61](https://github.com/TigreGotico/arbtok/tree/0.0.0a61) (2026-07-30)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a60...0.0.0a61)
