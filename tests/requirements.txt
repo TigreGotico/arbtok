@@ -1,2 +1,4 @@
 jiwer
 phonnx
+pandas
+pyarrow

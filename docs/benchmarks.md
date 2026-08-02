@@ -167,5 +167,105 @@ gold. Wiring `--lect` into CI against this gold would only gate arbtok against i
 own specs. `tests/test_lect_benchmark.py` pins that the runner works (2 lects × 3
 sentences, no network), not any score.
 
+## IqraEval Qur'anic gold (`scripts/benchmark_iqraeval.py`)
+
+The gold is
+[`IqraEval/Iqra_train`](https://huggingface.co/datasets/IqraEval/Iqra_train)
+(74k rows, built for the IqraEval Qur'an-recitation-assessment shared task).
+Only its text columns are read — `sentence` (bare), `tashkeel_sentence`
+(fully diacritized) and `phoneme_ref` (a custom phoneme notation) — via
+`pyarrow` column projection over `huggingface_hub.HfFileSystem`, so the
+multi-gigabyte `audio` column is never fetched. **No gold is vendored**;
+`scripts/.cache_iqraeval/` is a run-time HTTP cache, gitignored like
+`benchmark_gold20.py`'s own cache dir.
+
+`phoneme_ref` turned out to be Nawar Halabi's Arabic-Phonetiser output notation
+(the rule-based G2P vendored as `mantoq/buck/phonetise_buckwalter.py` in
+phoonnx's thirdparty tree, adapted from
+[nawarhalabi/Arabic-Phonetiser](https://github.com/nawarhalabi/Arabic-Phonetiser),
+CC BY-NC 4.0) — verified symbol-by-symbol against all 67 distinct tokens found
+in a 5,050-row sample (full dev split + 2,462 train rows); see
+`benchmark_iqraeval.NOTATION` and its module docstring for the full mapping
+table and citation.
+
+### Results
+
+Two arbtok arms, `register="full"` (continuous Qur'anic recitation keeps case
+endings; arbtok's spoken-register `pausal` default would drop them):
+
+| split | arm | input | PER |
+|---|---|---|---|
+| dev (2,588 rows, full) | diac | `tashkeel_sentence`, `diacritize=False` | 0.132 |
+| dev (2,588 rows, full) | bare | `sentence`, `diacritize=True` | 0.166 |
+| train (5,000-row sample) | diac | `tashkeel_sentence`, `diacritize=False` | 0.133 |
+| train (5,000-row sample) | bare | `sentence`, `diacritize=True` | 0.163 |
+
+The dev and 5k train sample agree closely, so the dev split (scored in full) is
+the number to cite. **Convention-adjusted PER** — dev `diac`, after excluding
+the two confusion classes below that are documented tajwīd conventions rather
+than arbtok errors — is **0.098** (raw 0.132), from the top-20 gold→pred
+character-substitution counts (a `difflib`-based diagnostic, not a full
+re-score; see caveat below).
+
+### Honesty: real gaps vs recitation-convention mismatches
+
+Qur'anic recitation gold encodes tajwīd conventions a plain-MSA/Classical G2P
+has no reason to reproduce. Classified from the top-20 confusion pairs
+(dev, `diac` arm):
+
+**Excluded as documented recitation conventions:**
+
+- `'ː' → {n, l, j, b, r, d, m, s, t}` (dev: 2,555 of 13,011 error chars; train
+  5k: similar share) — gold gemination the arbtok output doesn't produce at a
+  word junction. The likely source is Qur'an-specific **idghām/ikhfāʾ** rules
+  for nūn sākinah/tanwīn before the throat and "ikhfāʾ" letter classes — a
+  tajwīd-only elaboration on top of the general assimilation arbtok's
+  `arbtok.sandhi` already models (`min baʿd → membaʕd`, tested in
+  `scripts/metrics.py`). Cited in Ibn al-Jazarī's *al-Muqaddimah al-Jazarīyyah*
+  (classical tajwīd treatise; the idghām/ikhfāʾ/iqlāb rules for nūn sākinah and
+  tanwīn) — a recitation-register elaboration, not an MSA/Classical phonology
+  rule arbtok's specs claim to cover.
+- `'∅' → {in, un, tan}` (dev: 761 chars; train 5k: 1,605 chars) — arbtok adds a
+  tanwīn ending the gold lacks. The muṣḥaf marks mid-āyah **waqf** (pause)
+  signs (e.g. `ج`, `صلى`, `قلى`) that force a locally pausal reading even
+  inside otherwise-continuous recitation; arbtok's `pausal`/`register` switch
+  is declared as "ONE flag for the whole stack" (`arbtok/plugin.py`) and has no
+  notion of a mid-utterance waqf mark, so it defaults to the syntactic full
+  ending everywhere in `register="full"`. Cited in Ibn al-Jazarī's waqf
+  classification and al-Sijāwandī's classical waqf catalogue
+  (*al-Waqf wa-l-Ibtidāʾ fī al-Qurʾān al-Karīm*).
+
+**Kept as a real arbtok/o2i gap (not excluded):**
+
+- `'ɑ'→'a'`, `'ɪ'→'i'`, `'ʊ'→'u'` (dev: 2,813 of 13,011 error chars — the
+  single largest share) — Halabi's notation marks the lowered/backed vowel
+  allophone triggered by a neighbouring pharyngealized consonant (tafkhīm /
+  emphasis spreading: Watson, *The Phonology and Morphology of Arabic*, OUP
+  2002, ch. 2), and o2i's `ar` IPA output does not distinguish it from the
+  plain vowel. This is ordinary MSA/Classical phonetics, not a Qur'an-specific
+  convention, so it is **not** excluded from PER — it is the clearest single
+  lever for a future o2i/arbtok improvement (mark emphasis-spread vowel
+  backing in the `ar` spec's allophone rules).
+- `'∅'→{'a','i','u'}` insertions and `'ʔ'→'∅'` / `'a'→'∅'` deletions (dev:
+  ~2,700 chars combined) — arbtok assigning a default full-iʿrāb case ending
+  or hamza where the actual grammatical role (which arbtok has no parser for)
+  or a wasl elision would say otherwise. A genuine limitation, not tajwīd.
+
+**Caveat on the method:** the confusion table comes from a `difflib`
+character-alignment diagnostic (`benchmark_iqraeval.confusion_pairs`), not a
+phoneme-level alignment — a gemination gap can show up attributed to a
+neighbouring segment rather than the missing length mark itself. The
+convention-adjusted PER above is therefore an estimate from the top-20
+classes, not a rescoring of every row; it is reported as a bound on how much
+of the raw PER is attributable to the two cited conventions, not a claim that
+0.098 is what a tajwīd-aware arbtok would score.
+
+### License
+
+`IqraEval/Iqra_train`'s HF card has an empty `README.md` — no license is
+declared upstream. The benchmark only reads the dataset at run time (see
+above), nothing is bundled or redistributed, and this doc states the gap
+rather than assuming a license.
+
 ---
 [← Advanced](advanced.md) · [Home](../README.md)
