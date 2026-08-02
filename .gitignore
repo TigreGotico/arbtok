@@ -14,3 +14,6 @@ scripts/.cache_ara_arab_broad.tsv
 
 # gold20 benchmark cache (pulled from HF at runtime; never vendor gold)
 scripts/.cache_gold20/
+
+# IqraEval benchmark cache (pulled from HF at runtime; never vendor gold)
+scripts/.cache_iqraeval/
