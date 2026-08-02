@@ -188,6 +188,19 @@ in a 5,050-row sample (full dev split + 2,462 train rows); see
 `benchmark_iqraeval.NOTATION` and its module docstring for the full mapping
 table and citation.
 
+**Provenance caveat — partially competitor-derived.** Running the vendored
+Halabi phonetiser on a gold row's `tashkeel_sentence` reproduces the same
+notation family (`f ii0 h i0 + ...` vs the gold's `f ii h i ...`): the gold's
+base layer IS Halabi's rule engine, post-processed (stress digits and word
+separators removed, cross-word tajwid sandhi such as idgham gemination
+applied, in a recitation-assessment task grounded in audio). A PER against it
+therefore partly measures disagreement with Halabi's rules, not correctness
+alone — the same class of caveat orthography2ipa applies to espeak-derived
+gold. The tajwid layer and audio grounding make it stronger than raw G2P
+output, but it cannot by itself certify a pronunciation Halabi's rules get
+wrong.
+
+
 ### Results
 
 Two arbtok arms, `register="full"` (continuous Qur'anic recitation keeps case
