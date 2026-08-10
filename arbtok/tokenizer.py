@@ -42,6 +42,55 @@ def _reorder_diacritics(text: str) -> str:
     return "".join(chars)
 
 
+#: ⟨مائة⟩ "hundred" and everything built on it. The alif is written and not
+#: said — the word is /miʔa/ — and the spelling is a scribal survival, not a
+#: phonological fact; the phonetic spelling ⟨مئة⟩ is the same word. So the two
+#: are made one before anything reads them, and the morpheme transcribes
+#: identically wherever it stands: bare ⟨مائة⟩, the dual ⟨مائتان⟩, ⟨بالمائة⟩
+#: "per cent", and the fused hundreds ⟨ثلاثمائة⟩ … ⟨تسعمائة⟩, which is where a
+#: whole-word exception could never reach it.
+#:
+#: The pattern is deliberately narrow: a mīm (bearing kasra or nothing) + alif
+#: + hamza-on-yāʾ, and only when what follows the hamza seat is the tāʾ
+#: marbūṭa, or a plain tāʾ that itself continues into a long vowel (alif or
+#: yāʾ, skipping over any short-vowel diacritics — fatḥa, ḍamma, kasra, shadda,
+#: sukūn — in between, but NOT tanwīn: a hundred's tāʾ is never indefinite, so
+#: tanwīn on it is never this word either). That second arm is what the whole
+#: ⟨مائة⟩ paradigm shares: the dual ⟨مائتان⟩/⟨مائتين⟩, the construct
+#: ⟨مائتا⟩/⟨مائتي⟩ and the pausal ⟨مِائَتَيْنِ⟩ all carry the tāʾ into -ā- or -ay-
+#: (Wright, *A Grammar of the Arabic Language*, 3rd ed., I §319). A bare tāʾ
+#: with nothing long after it is not this word — it is the participle ⟨مائت⟩
+#: "dying/mortal" (of ماتَ يموتُ), which ends right there or takes its own
+#: short-vowel inflection (⟨مائتة⟩, ⟨مائتون⟩), never a following long vowel on
+#: that same tāʾ. Its indefinite accusative ⟨مائتًا⟩ carries tanwīn on that
+#: same tāʾ instead — a shape no hundred's tāʾ can take — which is the other
+#: reason tanwīn is excluded from the skip class. That leaves every alif that
+#: IS pronounced alone — ⟨مَائِدَة⟩ "table" keeps its /aː/, because its mīm
+#: carries fatḥa and no tāʾ follows the hamza at all.
+#:
+#: Two unpointed spellings stay genuinely ambiguous without a lexicon —
+#: ⟨مائتاً⟩ (hundred-construct accusative vs. the participle's tanwīn, which
+#: this pattern also declines to collapse since the tanwīn precedes the alif,
+#: not the tāʾ) and unpointed ⟨مائتي⟩ (hundred-construct vs. participle dual
+#: oblique) — and are resolved toward the far more frequent hundreds reading,
+#: same as `dev` did before this fix existed: the boundary is mapped, not
+#: missed, and left where a lexicon, not a regex, would have to draw it.
+#:
+#: Ryding, *A Reference Grammar of Modern Standard Arabic*, CUP 2005, §15.3.
+_SILENT_ALIF_MIA = re.compile(
+    f"{M}({KASRA}?){ALIF}({YA_HAMZA}{FATHA}?(?:{TA_MARBUTA}|{T}(?=[َ-ْ]*[اي])))"
+)
+
+
+def elide_silent_alif(text: str) -> str:
+    """Drop the unpronounced alif of the ⟨مائة⟩ morpheme.
+
+    ⟨مِائَة⟩ → ⟨مِئَة⟩, ⟨ثَلَاثُمِائَة⟩ → ⟨ثَلَاثُمِئَة⟩, ⟨بِالْمِائَة⟩ → ⟨بِالْمِئَة⟩.
+    Any other alif is left where it is.
+    """
+    return _SILENT_ALIF_MIA.sub(f"{M}\\1\\2", text)
+
+
 def normalize_unicode(text: str) -> str:
     """
     Normalize unicode to NFC (Normalization Form Canonical Composition).
@@ -56,7 +105,10 @@ def normalize_unicode(text: str) -> str:
     # 1. Standard Unicode normalization (NFC)
     text = unicodedata.normalize("NFC", text)
     # 2. Enforce Consonant -> Shadda -> Vowel order
-    return _reorder_diacritics(text)
+    text = _reorder_diacritics(text)
+    # 3. Collapse the two spellings of the ⟨مائة⟩ morpheme onto the one that
+    #    says what is pronounced (see :func:`elide_silent_alif`).
+    return elide_silent_alif(text)
 
 
 @dataclasses.dataclass
