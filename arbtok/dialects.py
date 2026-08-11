@@ -341,7 +341,11 @@ WORD_EXCEPTIONS = {
     "الرَّحْمَٰن": "arraħmaːn",  # Ar-Rahman
 
     # Irregular pronunciations
-    "مِائَة": "miʔa",  # mi'a (hundred) - silent extra Alif in spelling
+    # NOTE: ⟨مِائَة⟩ "hundred" used to need an entry here for its silent alif,
+    # but arbtok.tokenizer.normalize_unicode now collapses that spelling onto
+    # ⟨مئة⟩ before any lexicon lookup runs (see elide_silent_alif), so the
+    # normal grapheme-to-IPA path already reads it correctly. This exception
+    # would never fire.
     "عَمْرٌو": "ʕamrun",  # 'Amr - final Waw is silent (differentiates from 'Umar)
     "أُولِي": "ʔuliː",  # 'uli (owners of) - silent Waw
     "أُولُو": "ʔuluː",  # 'ulu - silent Waw
