@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a64](https://github.com/TigreGotico/arbtok/tree/0.0.0a64) (2026-08-11)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a63...0.0.0a64)
+
+**Merged pull requests:**
+
+- fix\(gold\): re-pin Arabic gold to the o2i emphasis-spread allophony [\#75](https://github.com/TigreGotico/arbtok/pull/75) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a63](https://github.com/TigreGotico/arbtok/tree/0.0.0a63) (2026-08-03)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a62...0.0.0a63)
