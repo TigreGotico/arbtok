@@ -190,7 +190,7 @@ INTERNAL_HAMZA = [
 ]
 
 GEMINATION = [
-    ("يُصَلِّي", "jusˤalliː", "Gemination + emphatic"),
+    ("يُصَلِّي", "jʊsˤalliː", "Gemination + emphatic"),
     ("ظَلَّ", "ðˤalla", "Final geminate + vowel (no written pause: kept)"),
     ("طَبَق", "tˤabaq", "Emphatic onset"),
 ]
@@ -200,9 +200,9 @@ LOANWORDS = [
 ]
 
 MULTIWORD = [
-    ("مُعَلِّمُ الطِّفْل", "muʕallimu tˤtˤifl", "Construct + article sun letter"),
+    ("مُعَلِّمُ الطِّفْل", "muʕallimu tˤtˤɪfl", "Construct + article sun letter"),
     ("رِسَالَةُ النَّاس", "risaːlatu nnaːs", "Construct tāʾ marbūṭa voiced by its ending"),
-    ("مَدِينَةُ الطِّفْل", "madiːnatu tˤtˤifl", "Construct + sun letter"),
+    ("مَدِينَةُ الطِّفْل", "madiːnatu tˤtˤɪfl", "Construct + sun letter"),
     ("فِي الشَّمْس", "fiː ʃʃams", "Waṣl + sun letter"),
 ]
 
@@ -278,7 +278,7 @@ RESOLVED = [
     ("مَأْسَاة", "maʔsaː", "pausal tāʾ marbūṭa silent"),
     ("أَبُو الْقُرْآن", "ʔabuː lqurʔaːn", "ḍamma+wāw = long uː"),
     ("الرِّسَالَة", "arrisaːla", "alif mater lectionis = aː"),
-    ("عَلَى الشَّاطِئ", "ʕalaː ʃʃaːtˤiʔ", "alif maqṣūra = long aː"),
+    ("عَلَى الشَّاطِئ", "ʕalaː ʃʃaːtˤɪʔ", "alif maqṣūra = long aː; tafkhim ɪ after tˤ"),
     ("فِي الضَّوْءِ", "fiː dˤdˤawʔi", "ض = dˤ; kasra kept, no written pause"),
     ("تِيكْنُولُوجْيَا", "tiːknuːluːdʒjaː", "ḍamma+wāw = long uː"),
     ("اِسْوَدَّ", "ʔiswadda", "Form IX ends in short fatḥa"),
@@ -348,8 +348,9 @@ def test_risala_has_long_a():
 def test_ala_ends_long():
     """Legacy gold *ʕala ʃʃaːtˤiʔ* was flagged disputed in the file: عَلَى
     ends in alif maqṣūra = long /aː/, exactly as the passing إِلَى الرَّجُل
-    row already had it → *ʕalaː ʃʃaːtˤiʔ*."""
-    check("عَلَى الشَّاطِئ", "ʕalaː ʃʃaːtˤiʔ")
+    row already had it → *ʕalaː ʃʃaːtˤɪʔ* (the /i/ is laxed to [ɪ] by
+    emphasis spread from the preceding ط, orthography2ipa #732)."""
+    check("عَلَى الشَّاطِئ", "ʕalaː ʃʃaːtˤɪʔ")
 
 
 def test_dad_is_dˤ_and_iraab_kept_without_pause():

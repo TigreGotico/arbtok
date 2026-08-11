@@ -162,7 +162,7 @@ def test_geminated_glide_after_homorganic_vowel(word, expected):
 
 def test_word_final_glide_is_a_long_vowel():
     """A word-final ي reads as the long vowel, not the consonant /j/."""
-    assert word_ipa("يُصَلِّي") == "juˈsˤɑlliː"
+    assert word_ipa("يُصَلِّي") == "jʊˈsˤɑlliː"
 
 
 def test_presentation_ligature_never_empty():

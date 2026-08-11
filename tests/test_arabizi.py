@@ -147,7 +147,9 @@ class TestPluginWiring:
         p = ArbtokG2PPlugin(lang="ar-EG")
         out = p.transcribe("عِنْدِي meeting مَعَ manager")
         assert "miːtinɡ" in out
-        assert "manaɡar" in out
+        # donor English reading is non-rhotic (o2i #846): manager's final /r/
+        # is absent from the donor IPA, so the Cairene reflex is manaɡa.
+        assert "manaɡa" in out
 
     def test_hint_true_routes_all_alpha_to_arabizi(self):
         p = ArbtokG2PPlugin(lang="ar-EG")
