@@ -121,9 +121,13 @@ class TestEgyptianTable:
 
     def test_loan_dʒ_lands_on_the_cairene_stop_gim(self):
         """The Cairene ǧīm is the stop [ɡ] (Watson 2002), so a loan /dʒ/ adapts
-        to it: *manager* → [manaɡar], where the Najdi keeps the affricate."""
-        assert transliterate("manager", EG) == "manaɡar"
-        assert transliterate("manager", NAJD) == "manadʒar"
+        to it: *manager* → [manaɡa], where the Najdi keeps the affricate. The
+        donor English reading is non-rhotic (o2i #846), so the final /r/ of
+        *manager* is absent from the donor IPA in both dialects — this is a
+        donor-reading fact upstream of the ǧīm reflex under test here, not a
+        Cairene-vs-Najdi difference."""
+        assert transliterate("manager", EG) == "manaɡa"
+        assert transliterate("manager", NAJD) == "manadʒa"
         assert transliterate("manager", EG) != transliterate("manager", NAJD)
 
     def test_interdental_merges_into_the_dental_stop(self):

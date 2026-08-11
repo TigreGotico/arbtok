@@ -4,5 +4,5 @@ quebra-frases
 langcodes
 ovos-number-parser>=0.18.5a1
 ovos-date-parser>=0.6.4a1
-orthography2ipa>=7.31.0a1
+orthography2ipa>=7.65.2a2
 huggingface_hub

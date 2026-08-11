@@ -41,7 +41,7 @@ class TestRestoreNisba:
 
 class TestTranscription:
     def test_nisba_reads_as_ijj(self, ipa):
-        assert ipa("مصري") == "misˤrijj"
+        assert ipa("مصري") == "mɪsˤrijj"  # /i/ → [ɪ] before emphatic ص
         assert ipa("آشوري") == "ʔaːʃuːrijj"
 
     def test_defective_participle_keeps_its_long_vowel(self, ipa):
