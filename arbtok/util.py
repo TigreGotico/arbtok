@@ -456,8 +456,11 @@ def _normalize_number_word(word: str, full_lang: str, rbnf_engine) -> str:
     elif decimal_separator in temp_cleaned_word and is_numeric(temp_cleaned_word.replace(decimal_separator, ".", 1)):
         # Handle cases like '1,2' -> '1.2'
         temp_cleaned_word = temp_cleaned_word.replace(decimal_separator, ".")
-    elif thousands_separator in temp_cleaned_word and is_numeric(temp_cleaned_word.replace(thousands_separator, "", 1)):
-        # Handle cases like '1.234' -> '1234'
+    elif thousands_separator in temp_cleaned_word and is_numeric(temp_cleaned_word.replace(thousands_separator, "")):
+        # Handle cases like '1.234' -> '1234' and '14,000,000' -> '14000000'.
+        # The guard strips every separator, not the first: a number grouped more
+        # than once stays non-numeric after one strip and falls through with its
+        # separators intact, which reads the groups as separate numbers.
         temp_cleaned_word = temp_cleaned_word.replace(thousands_separator, "")
 
     # Check if the word is a valid number after processing
