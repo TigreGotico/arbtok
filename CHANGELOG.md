@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a67](https://github.com/TigreGotico/arbtok/tree/0.0.0a67) (2026-09-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a66...0.0.0a67)
+
+**Merged pull requests:**
+
+- fix\(lattice\): the sun-letter rescorer only fires on a real article, and keeps the reading it turned down [\#77](https://github.com/TigreGotico/arbtok/pull/77) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a66](https://github.com/TigreGotico/arbtok/tree/0.0.0a66) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a65...0.0.0a66)
