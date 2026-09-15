@@ -130,6 +130,20 @@ def _is_article_position(context: RescoreContext) -> bool:
     )
 
 
+def _prefer_only(slot: SegmentSlot, ipa: str, keep) -> Sequence[Candidate]:
+    """Like :func:`_prefer`, but keeping only the alternatives *keep* admits.
+
+    A rescorer that has ruled out a reading on phonological grounds should drop
+    that reading; one that has merely chosen between readings that are both
+    real should not. This expresses both in one place, so a rescorer says which
+    of its alternatives survive rather than deleting the set wholesale.
+    """
+    kept = [Candidate(ipa=ipa, cost=0.0)]
+    kept += [Candidate(ipa=c.ipa, cost=max(c.cost, 1.0))
+             for c in slot.candidates if c.ipa != ipa and keep(c.ipa)]
+    return tuple(kept)
+
+
 def _prefer(slot: SegmentSlot, ipa: str) -> Sequence[Candidate]:
     """The slot's candidates with ``ipa`` made cheapest, none discarded.
 
@@ -228,8 +242,16 @@ class WaslRescorer(LatticeRescorer):
             return ()
         if nxt is not None and _is_consonant_ipa(nxt.top.ipa):
             # Bare waṣl-alif directly before a consonant takes the /i/ helper
-            # vowel (انْتِمَاء → intimāʔ); its spec ʔ/aː readings are wrong.
-            return (Candidate(ipa="i", cost=0.0),)
+            # vowel (انْتِمَاء → intimāʔ). The spec's ``aː`` reading is wrong
+            # here — the alif is a prosthetic support, not a long vowel — but
+            # its ``ʔi`` is not: waṣl elides only in connection, and the same
+            # word spoken utterance-initially carries the glottal onset
+            # (Wright I §19 on the two environments; Ryding §2.4). So the
+            # helper vowel is preferred and the glottal reading is kept behind
+            # it, rather than the slot being told there was never a choice —
+            # which is what a lattice consumer reading candidate sets, or a
+            # CTC pass over an alternatives graph, would otherwise be taught.
+            return _prefer_only(slot, "i", keep=lambda ipa: ipa.startswith("ʔ"))
         return slot.candidates
 
 
