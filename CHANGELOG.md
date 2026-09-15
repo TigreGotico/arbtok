@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a68](https://github.com/TigreGotico/arbtok/tree/0.0.0a68) (2026-09-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a67...0.0.0a68)
+
+**Merged pull requests:**
+
+- test\(gold\): re-pin the code-switched gold to the current pipeline [\#78](https://github.com/TigreGotico/arbtok/pull/78) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a67](https://github.com/TigreGotico/arbtok/tree/0.0.0a67) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a66...0.0.0a67)
