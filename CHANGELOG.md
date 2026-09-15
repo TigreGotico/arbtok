@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a70](https://github.com/TigreGotico/arbtok/tree/0.0.0a70) (2026-09-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a69...0.0.0a70)
+
+**Merged pull requests:**
+
+- fix\(lattice\): hamzat al-waṣl keeps the glottal reading behind the helper vowel [\#81](https://github.com/TigreGotico/arbtok/pull/81) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a69](https://github.com/TigreGotico/arbtok/tree/0.0.0a69) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a68...0.0.0a69)
