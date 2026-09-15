@@ -109,6 +109,45 @@ def _is_consonant_ipa(ipa: str) -> bool:
     return bool(ipa) and ipa[0] not in "aiueoɑəː"
 
 
+#: One-consonant proclitics that can stand between the word edge and a real
+#: definite article (wa-, fa-, bi-, ka-, li-, sa-). ``والشمس`` is the article
+#: behind ⟨و⟩; ``فقالت`` is ⟨ف⟩ + a stem whose ⟨ال⟩ is not.
+_ARTICLE_PROCLITICS = frozenset("وفبكلس")
+
+
+def _is_article_position(context: RescoreContext) -> bool:
+    """True when the ⟨ال⟩ at this slot can be the definite article.
+
+    The article opens its word, optionally behind one-consonant proclitics.
+    An ⟨ال⟩ anywhere else spans two stem letters — the alif and the lām of
+    خالد, مزالت, فقالت — and assimilating it deletes a root consonant.
+    ``is_word_initial`` alone is too strict: it would refuse ``والشمس``,
+    which is a real article.
+    """
+    return all(
+        all(ch in _ARTICLE_PROCLITICS for ch in s.grapheme)
+        for s in context.slots[: context.index]
+    )
+
+
+def _prefer(slot: SegmentSlot, ipa: str) -> Sequence[Candidate]:
+    """The slot's candidates with ``ipa`` made cheapest, none discarded.
+
+    A rescorer states a preference; it does not get to delete the reading it
+    turned down. Dropping the alternative is invisible to a caller reading
+    the winner and total to one reading candidate sets — which is how a
+    dialect attribution over this lattice loses the variation it exists to
+    measure. Cost is the mechanism the lattice already has for exactly this
+    (0.0 canonical, 1.0 next; see :mod:`orthography2ipa.weights`).
+    """
+    kept = [Candidate(ipa=ipa, cost=0.0)]
+    kept += [
+        Candidate(ipa=c.ipa, cost=max(c.cost, 1.0))
+        for c in slot.candidates if c.ipa != ipa
+    ]
+    return tuple(kept)
+
+
 class SunLetterRescorer(LatticeRescorer):
     """Sun-letter assimilation of the definite article (idghām ash-shamsiyya).
 
@@ -144,6 +183,11 @@ class SunLetterRescorer(LatticeRescorer):
         #   them, so nothing can be read off the (absent) pointing: the letter
         #   class is the only signal, and the classical rule applies —
         #   assimilate before a sun letter, keep the lām before a moon.
+        if not _is_article_position(context):
+            # A stem-internal ⟨ال⟩: the alif and lām belong to the root, so
+            # neither assimilation nor the article reading applies. Left to
+            # the spec's own candidates rather than rescored.
+            return slot.candidates
         if nxt.grapheme == LAM:
             # ⟨ال⟩ + a lām slot is the relative/geminate-lām class — اللِي
             # written with two lāms, or الّي whose written shadda the
@@ -151,14 +195,14 @@ class SunLetterRescorer(LatticeRescorer):
             # second lām (erasing the mark before this rescorer can see it).
             # Either spelling is read /all-/ (orthography2ipa: ``alliː``);
             # assimilating would swallow the geminate.
-            return (Candidate(ipa="al", cost=0.0),)
+            return _prefer(slot, "al")
         if nxt.grapheme in SUN_LETTERS and not any(
                 ch in _HARAKAT or ch == SHADDA
                 for s in context.slots for ch in s.grapheme):
             # bare word: lām assimilates, article realises as bare /a/ (the
             # sun letter's gemination is likewise unwritten and unrealised).
-            return (Candidate(ipa="a", cost=0.0),)
-        return (Candidate(ipa="al", cost=0.0),)
+            return _prefer(slot, "a")
+        return _prefer(slot, "al")
 
 
 class WaslRescorer(LatticeRescorer):
