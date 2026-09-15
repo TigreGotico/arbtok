@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a66](https://github.com/TigreGotico/arbtok/tree/0.0.0a66) (2026-09-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a65...0.0.0a66)
+
+**Merged pull requests:**
+
+- fix: a number grouped more than once reads as its value [\#76](https://github.com/TigreGotico/arbtok/pull/76) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a65](https://github.com/TigreGotico/arbtok/tree/0.0.0a65) (2026-08-11)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a64...0.0.0a65)
