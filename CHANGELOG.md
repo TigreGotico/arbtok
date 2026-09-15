@@ -1,12 +1,21 @@
 # Changelog
 
+## [0.0.0a69](https://github.com/TigreGotico/arbtok/tree/0.0.0a69) (2026-09-15)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a68...0.0.0a69)
+
+**Merged pull requests:**
+
+- feat\(translit\): bundle an English donor lexicon so loanwords take their real readings [\#80](https://github.com/TigreGotico/arbtok/pull/80) ([JarbasAl](https://github.com/JarbasAl))
+- Revert "test\(gold\): re-pin the code-switched gold to the current pipeline" [\#79](https://github.com/TigreGotico/arbtok/pull/79) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a68](https://github.com/TigreGotico/arbtok/tree/0.0.0a68) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a67...0.0.0a68)
 
 **Merged pull requests:**
 
-- test\(gold\): re-pin the code-switched gold to the current pipeline [\#78](https://github.com/TigreGotico/arbtok/pull/78) ([JarbasAl](https://github.com/JarbasAl))
+- HOLD test\(gold\): re-pin the code-switched gold to the current pipeline [\#78](https://github.com/TigreGotico/arbtok/pull/78) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a67](https://github.com/TigreGotico/arbtok/tree/0.0.0a67) (2026-09-15)
 
