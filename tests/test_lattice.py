@@ -274,3 +274,32 @@ def test_the_rescorers_choice_is_still_the_cheapest_candidate(word, winner):
     slot = _article_slot(word)
     best = min(slot.candidates, key=lambda c: c.cost)
     assert best.ipa == winner, (word, slot.candidates)
+
+
+# ---------------------------------------------------------------------------
+# Hamzat al-waṣl: a choice between two real readings, not a ruling
+# ---------------------------------------------------------------------------
+
+def _alif_slot(word):
+    return next(s for s in word_lattice(word, "ar") if s.grapheme == "ا")
+
+
+@pytest.mark.parametrize("word", ["اجتمع", "استقبال", "انتماء"])
+def test_wasl_keeps_the_glottal_reading_behind_the_helper_vowel(word):
+    """Waṣl elides only in connection: the same word spoken utterance-initially
+    carries the glottal onset (Wright I §19). So ``ʔi`` is an alternative, not
+    an error, and deleting it tells a consumer reading candidate sets — or a
+    CTC pass over an alternatives graph — that there was never a choice. The
+    spec's ``aː`` reading IS wrong here and stays dropped."""
+    cands = {c.ipa: c.cost for c in _alif_slot(word).candidates}
+    assert "i" in cands and cands["i"] == 0.0
+    assert any(ipa.startswith("ʔ") for ipa in cands), cands
+    assert "aː" not in cands, cands
+
+
+@pytest.mark.parametrize("word, expected", [
+    ("اجتمع", "ˈidʒtmʕ"), ("استقبال", "ˈistqbal"),
+])
+def test_wasl_still_chooses_the_helper_vowel(word, expected):
+    """The guard: keeping the alternative must not change what is chosen."""
+    assert word_ipa(word, "ar") == expected
