@@ -130,6 +130,8 @@ __all__ = ["nativize", "transliterate", "is_latin", "guest_script", "segment_ipa
 #: source of live code-switching in Gulf Arabic, and it is the donor the map is
 #: measured for — but it is a DEFAULT, not an assumption baked into the code:
 #: :func:`transliterate` takes any orthography2ipa language as its donor.
+from arbtok.donor_lexicon import ensure_registered  # noqa: E402
+
 DONOR_LANG = "en-GB"
 
 #: A guess at the donor from the script alone, for a caller who has not said. This
@@ -453,6 +455,10 @@ def transliterate(
         script = guest_script(word)
         donor = DONOR_BY_SCRIPT.get(script or "", DONOR_LANG)
 
+    # The donor's own lexicon, if this package ships one for it. English rules
+    # cannot reach the right reading from spelling alone, and a caller who has
+    # registered their own lexicon keeps it — see arbtok.donor_lexicon.
+    ensure_registered(donor)
     try:
         donor_ipa = G2P(donor).transcribe_word(word)
     except Exception:

@@ -32,7 +32,7 @@ class TestNativization:
         No geminate: English orthographic doubling is not gemination (Venezky
         1999), so the donor reading has a single /z/ — the Italian /ts/ is a
         lexical fact, lexicon territory, not a rule."""
-        assert transliterate("pizza", NAJD) == "biza"
+        assert transliterate("pizza", NAJD) == "biːtsa"      # p→b; /ts/ kept
 
     def test_v_becomes_f(self):
         assert transliterate("video", NAJD).startswith("f")
@@ -73,7 +73,7 @@ class TestInSentence:
         """أحب keeps its real shape — final geminate /bb/ (root ḥ-b-b) with the
         stress the weight rule assigns it — while the loan is nativized."""
         p = ArbtokG2PPlugin(lang=NAJD, diacritize=True)
-        assert p.transcribe("أحب pizza") == "ʔaˈħabb biza"
+        assert p.transcribe("أحب pizza") == "ʔaˈħabb biːtsa"
 
 
 class TestTableSelection:
@@ -113,7 +113,7 @@ class TestEgyptianTable:
 
     def test_p_becomes_b(self):
         """/p/ → [b] (Hafez p. 383)."""
-        assert transliterate("pizza", EG) == "biza"
+        assert transliterate("pizza", EG) == "biːsa"        # p→b; Cairene has no /ts/
 
     def test_v_becomes_f(self):
         """/v/ → [f] (Hafez p. 385)."""
@@ -126,8 +126,8 @@ class TestEgyptianTable:
         *manager* is absent from the donor IPA in both dialects — this is a
         donor-reading fact upstream of the ǧīm reflex under test here, not a
         Cairene-vs-Najdi difference."""
-        assert transliterate("manager", EG) == "manaɡa"
-        assert transliterate("manager", NAJD) == "manadʒa"
+        assert transliterate("manager", EG) == "maniɡa"     # /dʒ/→[ɡ] in Cairene
+        assert transliterate("manager", NAJD) == "manidʒa"  # Najdi keeps the affricate
         assert transliterate("manager", EG) != transliterate("manager", NAJD)
 
     def test_interdental_merges_into_the_dental_stop(self):
@@ -161,8 +161,8 @@ class TestLevantineTable:
         """The native mid long vowels [eː]/[oː] (Cowell 1964) give /eɪ/ → [eː],
         which the three-vowel Egyptian map has no target for — so *email* differs
         between the two lects."""
-        assert transliterate("email", "ar-LB") == "imeːl"
-        assert transliterate("email", EG) == "imil"
+        assert transliterate("email", "ar-LB") == "iːmeːl"  # /eɪ/→[eː]
+        assert transliterate("email", EG) == "iːmil"
 
     def test_interdentals_are_kept(self):
         """The Levantine group declares /θ/ /ð/ (unlike Cairene), so they are
@@ -179,7 +179,7 @@ class TestDefaultTable:
 
     def test_default_still_nativizes_the_pan_arabic_core(self):
         """/p/ → [b], /v/ → [f] hold in the default too."""
-        assert transliterate("pizza", "ar") == "biza"
+        assert transliterate("pizza", "ar") == "biːsa"
         assert transliterate("video", "ar").startswith("f")
 
 
@@ -200,3 +200,15 @@ class TestNativizeFlag:
                               nativize=False).transcribe("عندي meeting الساعة")
         assert "meeting" in out
         assert out == "ˈʕindiː meeting asˈsaːʕa"
+
+
+# NOTE on the loanword strings above. They moved when the English donor lexicon
+# was bundled (arbtok/donor_lexicon.py): the readings these tables adapt are now
+# looked up rather than derived from English spelling, and English spelling was
+# getting them wrong. ⟨pizza⟩ is /ˈpiːtsə/, not /ˈpɪzə/, so the /ts/ reaches the
+# Najdi table (which keeps it) and the Cairene one (which has no /ts/);
+# ⟨manager⟩ is /ˈmænɪdʒə/, so its second vowel is [i], not [a]; ⟨email⟩ is
+# /ˈiːmeɪl/, so its first vowel is long. Every property these tests were written
+# to assert — p→b, Cairene /dʒ/→[ɡ] against the Najdi affricate, /eɪ/→[eː] —
+# still holds in the new strings, which is why the expectations moved rather
+# than the tests being dropped.
