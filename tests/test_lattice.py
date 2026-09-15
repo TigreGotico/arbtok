@@ -213,3 +213,64 @@ def test_rescorers_are_pure_no_ops_off_target():
         got = PhonetokTokenizer(get("ar")).ipa_lattice(
             "قَلَم", rescorer=[rescorer])
         assert "".join(s.top.ipa for s in got) == base_ipa
+
+
+# ---------------------------------------------------------------------------
+# The article test: an ⟨ال⟩ inside a stem is not the definite article
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("word, keeps, name", [
+    ("خالد", "xald", "Khalid — the lām is the stem's second radical"),
+    ("مزالت", "mazalt", "ma-zalat — ⟨ال⟩ spans stem letters"),
+    ("فقالت", "faqalt", "fa-qalat — likewise, behind a proclitic"),
+])
+def test_a_stem_internal_alif_lam_keeps_its_consonant(word, keeps, name):
+    """`SunLetterRescorer` assimilates any ⟨ال⟩ before a sun letter in an
+    unpointed word. In these the ⟨ال⟩ is stem-internal, not the article, so
+    dropping the lām deletes a root consonant: خالد reads `xad`."""
+    ipa = word_ipa(word, "ar")
+    assert "l" in ipa, (name, word, ipa)
+
+
+def test_the_article_still_assimilates_when_it_really_is_the_article():
+    """The control. The fix must not cost the behaviour the rescorer exists
+    for, at word start or behind a proclitic."""
+    assert "l" not in word_ipa("الشمس", "ar")
+    assert "l" not in word_ipa("والشمس", "ar")
+
+
+def test_a_word_with_both_keeps_the_stem_lam_and_drops_the_articles():
+    """الثالث: the initial ⟨ال⟩ is the article before a sun letter ث and
+    assimilates; the second is the stem's own alif-lām and must survive."""
+    assert "l" in word_ipa("الثالث", "ar")
+
+
+# ---------------------------------------------------------------------------
+# A rescorer expresses a preference as cost, not as deletion
+# ---------------------------------------------------------------------------
+
+def _article_slot(word):
+    return next(s for s in word_lattice(word, "ar") if s.grapheme == "ال")
+
+
+@pytest.mark.parametrize("word", ["الشمس", "القمر", "خالِد"])
+def test_the_rescorer_keeps_the_alternative_it_did_not_choose(word):
+    """Every branch of the rescorer returns a one-element tuple, so the base
+    lattice's two readings collapse to one at every ⟨ال⟩ — including the
+    moon-letter and pointed cases where nothing is being assimilated. A
+    consumer reading candidate sets rather than winners loses what was
+    possible. A rescorer that has decided should say so in cost."""
+    slot = _article_slot(word)
+    assert len(slot.candidates) >= 2, (word, slot.candidates)
+
+
+@pytest.mark.parametrize("word, winner", [
+    ("الشمس", "a"),
+    ("القمر", "al"),
+    ("خالِد", "al"),
+])
+def test_the_rescorers_choice_is_still_the_cheapest_candidate(word, winner):
+    """Keeping the alternative must not change what gets chosen."""
+    slot = _article_slot(word)
+    best = min(slot.candidates, key=lambda c: c.cost)
+    assert best.ipa == winner, (word, slot.candidates)
