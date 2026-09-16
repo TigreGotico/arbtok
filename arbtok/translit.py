@@ -355,6 +355,15 @@ def _targets(lang: str) -> Tuple[str, ...]:
     ))
 
 
+#: Where the feature metric cannot discriminate. A mid vowel raises to the high
+#: vowel of its own backness and rounding, which is what the three-quality systems
+#: do with the donor's mid vowels (Alhoody 2019 §5.2 for Najdi; Hafez 1996 p. 388
+#: for Egyptian) and what every cited table in this module already does with them.
+#: It is consulted only on a tie, so a lect that declares the quality, or anything
+#: nearer it, is unaffected.
+_RAISED = {"o": "u", "ɔ": "u", "e": "i", "ɛ": "i", "ø": "i", "œ": "i"}
+
+
 @functools.lru_cache(maxsize=4096)
 def _project(segment: str, lang: str) -> Optional[str]:
     """The phoneme of *lang* that is closest to *segment*, by phonological features.
@@ -369,7 +378,21 @@ def _project(segment: str, lang: str) -> Optional[str]:
         return None
     if segment in targets:
         return segment
-    return min(targets, key=lambda t: segment_distance(segment, t))
+    scored = [(segment_distance(segment, t), t) for t in targets]
+    best = min(d for d, _ in scored)
+    tied = sorted(t for d, t in scored if d == best)
+    if len(tied) == 1:
+        return tied[0]
+    # The metric could not tell these apart. It returns one constant for every
+    # candidate when the guest's quality is absent from the matrix altogether, and
+    # `min` over a tie returns whichever sorts first -- so [o] landed on [a] rather
+    # than [u] on every lect declaring no /o/, and *video* came out `fidiaː`.
+    base, length = (segment[:-1], segment[-1]) if segment.endswith("ː") else (segment, "")
+    raised = _RAISED.get(base)
+    for candidate in (raised + length, raised) if raised else ():
+        if candidate in targets:
+            return candidate
+    return tied[0]
 
 
 def _map_segments(segments: Sequence[str], lang: str) -> List[str]:
