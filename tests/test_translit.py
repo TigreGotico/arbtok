@@ -121,13 +121,16 @@ class TestEgyptianTable:
 
     def test_loan_dʒ_lands_on_the_cairene_stop_gim(self):
         """The Cairene ǧīm is the stop [ɡ] (Watson 2002), so a loan /dʒ/ adapts
-        to it: *manager* → [manaɡa], where the Najdi keeps the affricate. The
-        donor English reading is non-rhotic (o2i #846), so the final /r/ of
-        *manager* is absent from the donor IPA in both dialects — this is a
-        donor-reading fact upstream of the ǧīm reflex under test here, not a
-        Cairene-vs-Najdi difference."""
-        assert transliterate("manager", EG) == "maniɡa"     # /dʒ/→[ɡ] in Cairene
-        assert transliterate("manager", NAJD) == "manidʒa"  # Najdi keeps the affricate
+        to it: *manager* → [maniɡar], where the Najdi keeps the affricate.
+
+        The final /r/ is present in both. o2i #846 established that o2i's English
+        G2P is RP and non-rhotic, and that citation used to stand here — but it is
+        a statement about English output, not about what an Arabic loan keeps.
+        Arabic has /r/ and writes these loans with the rāʾ, so the donor lexicon
+        is rhoticised and the /r/ survives adaptation. It is upstream of the ǧīm
+        reflex under test either way, and not a Cairene-vs-Najdi difference."""
+        assert transliterate("manager", EG) == "maniɡar"     # /dʒ/→[ɡ] in Cairene
+        assert transliterate("manager", NAJD) == "manidʒar"  # Najdi keeps the affricate
         assert transliterate("manager", EG) != transliterate("manager", NAJD)
 
     def test_interdental_merges_into_the_dental_stop(self):
