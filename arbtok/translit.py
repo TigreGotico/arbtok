@@ -298,6 +298,63 @@ _NG = "ŋ"
 _LATIN = re.compile(r"[A-Za-z]")
 
 
+#: Loans that are already Arabic words, keyed by donor tag then by the donor spelling
+#: lowercased. The value is the settled Arabic reading, before the matrix lect's own
+#: inventory is applied to it.
+#:
+#: Nativisation adapts a donor pronunciation. That is the right account of a nonce
+#: borrowing and the wrong one of an established loan: `model` did not enter Arabic
+#: from modern English /ˈmɒdəl/, it entered long ago and has been an Arabic word since,
+#: with a lexicalised form that no longer tracks the donor. Adapting the English reading
+#: gives *mudal*, which nobody says; the Arabic word is *muːdiːl*, which this package's
+#: own Arabic lexicon already carries as الْمُودِيلُ → aːlmuːdiːl. Integrated loans are
+#: looked up, nonce borrowings are derived (Poplack & Sankoff 1984).
+#:
+#: The value is IPA and not the Arabic spelling, which was tried first and is wrong.
+#: Arabic has no letters for [o] and [e], so a loan spelling presses و ي ا into those
+#: roles, and reading it with the native mater-lectionis rules lengthens vowels that are
+#: not long -- أوتوماتيك comes out [ʔuːtuːmaːtiːk] where the shipped gold pins
+#: [ʔotomaˈtik] for that very spelling in both ar-JO and ar-LB, and فيديو ends in [o]
+#: rather than [uː], as the bundled Arabic lexicon has it twice (فيديو → feːdiːjo,
+#: الفيديو → ælfiːdiːjo).
+#:
+#: Keyed by donor rather than by lect. The borrowing route is the donor's, so a French
+#: *automatique* and an English *automatic* need not land on the same reading -- but no
+#: French entries ship, because none of the values could be cited.
+#:
+#: A value is returned as it stands, WITHOUT the inventory projection a nativised form
+#: goes through. That projection lands a donor phone on the nearest thing the matrix
+#: declares; these are not donor phones, they are the Arabic word, and putting them
+#: through it lengthened أوتوماتيك to ʔoːtoːmatik on the 22 lects declaring /oː/ and no
+#: short /o/.
+ESTABLISHED_LOANS: Dict[str, Dict[str, str]] = {
+    "en-GB": {
+        "model": "muːdiːl",
+        "video": "fiːdjo",
+        "automatic": "ʔotomatik",
+    },
+}
+# A French donor table was here with three entries -- automatique, modele, video -- and
+# it is removed rather than kept. Its values were mine, not cited: no gold row pins a
+# French-route reading, no lexicon carries one, and the Maghrebi form otomatik that
+# motivated it is asserted in this module's own comments and nowhere else. Three
+# uncited values live on every lect is a worse trade than a French token taking the
+# ordinary donor path, which is at least a reading somebody can point at. It returns
+# with a source or not at all.
+
+
+def _established(word: str, donor: str) -> Optional[str]:
+    """The settled reading for *word*, or None. Accent- and case-insensitive."""
+    table = ESTABLISHED_LOANS.get(donor)
+    if table is None and "-" in donor:
+        table = ESTABLISHED_LOANS.get(donor.split("-", 1)[0])
+    if not table:
+        return None
+    key = unicodedata.normalize("NFD", word.strip().lower())
+    key = "".join(c for c in key if not unicodedata.combining(c))
+    return table.get(key)
+
+
 def is_latin(word: str) -> bool:
     """True when *word* is written in Latin letters."""
     return bool(_LATIN.search(word))
@@ -502,18 +559,41 @@ def transliterate(
         script = guest_script(word)
         donor = DONOR_BY_SCRIPT.get(script or "", DONOR_LANG)
 
-    # The donor's own lexicon, if this package ships one for it. English rules
-    # cannot reach the right reading from spelling alone, and a caller who has
-    # registered their own lexicon keeps it — see arbtok.donor_lexicon.
-    ensure_registered(donor)
-    try:
-        donor_ipa = G2P(donor).transcribe_word(word)
-    except Exception:
-        return None
-    if not donor_ipa:
-        return None
+    # An established loan is looked up before the donor is consulted at all: it is not
+    # adapted from the donor, it is already an Arabic word. It still goes through the
+    # inventory check below, because a settled reading is settled for Arabic and not
+    # for every lect of it.
+    settled = _established(word, donor)
+    if settled is not None:
+        # Returned WITHOUT the inventory projection below. That projection exists to
+        # land a DONOR phone on the nearest thing the matrix declares; an established
+        # loan's value is not a donor phone, it is already the Arabic word, and putting
+        # it through the donor machinery lengthens vowels the loan does not have.
+        # أوتوماتيك came out ʔoːtoːmatik on the 22 lects that declare /oː/ and no short
+        # /o/, where the hand-authored gold for ar-JO and ar-LB reads ʔotomaˈtik. Those
+        # two rows are marked known-wrong precisely because the Arabic-script path does
+        # not reach them either -- it gives ʔuːtuːmaːˈtiːk -- so the lengthening is in
+        # both paths and this fixes the one it owns.
+        #
+        # A lect whose declared inventory lacks the quality still receives it, and that
+        # is the point: an established loan is a lexical fact about that lect rather
+        # than a guest sound being adapted, and the inventory under-declares the loan
+        # phones. Where that is wrong the table entry is wrong, not the projection.
+        return settled
+    adapted = None
+    if adapted is None:
+        # The donor's own lexicon, if this package ships one for it. English rules
+        # cannot reach the right reading from spelling alone, and a caller who has
+        # registered their own lexicon keeps it — see arbtok.donor_lexicon.
+        ensure_registered(donor)
+        try:
+            donor_ipa = G2P(donor).transcribe_word(word)
+        except Exception:
+            return None
+        if not donor_ipa:
+            return None
 
-    adapted = nativize(donor_ipa, lang, donor=donor)
+        adapted = nativize(donor_ipa, lang, donor=donor)
 
     spec = G2P(lang).spec
     declared = phoneme_inventory(spec)
