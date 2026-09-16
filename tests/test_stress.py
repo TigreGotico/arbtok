@@ -113,7 +113,7 @@ def test_nun_assimilates_to_what_follows(text, expected, rule):
     ("قَهْوَةً.", "qahwa", "the tāʾ was only voiced by the ending that just left"),
     ("كِتَابًا.", "kitaːbaː", "tanwīn al-fatḥ lengthens rather than vanishing"),
     ("مُؤْمِن", "muʔmin", "-in here is the WORD, not a case ending"),
-    ("مِنْ لَبَن", "millaban", "…and so is the -an of laban"),
+    ("مِنْ لَبَن", "mil laban", "…and so is the -an of laban"),
 ])
 def test_the_pause_removes_only_a_case_ending(text, expected, why):
     """Driven by the spelling. A tanwīn is written; guessing it from the last two
