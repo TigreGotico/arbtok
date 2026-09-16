@@ -38,3 +38,44 @@ def test_a_lect_that_declares_the_quality_is_untouched():
     """The tie-break fires only on a tie: ar-SA-x-najd declares /o/ and keeps it."""
     assert translit._project("o", "ar-SA-x-najd") == "o"
     assert translit._project("oː", "ar-EG") == "oː"
+
+
+# ---------------------------------------------------------------------------
+# A cited table beats the metric, whether or not the metric was undecided
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("lect", ["ar-MA", "ar-DZ"])
+def test_an_interdental_lands_where_the_citations_put_it(lect):
+    """ð on a lect declaring neither interdental.
+
+    The metric has a UNIQUE answer here and it is [dʒ], so this is not a tie and the
+    tie-break never saw it: `the`, `this`, `mother`, `father` read dʒa, dʒis, madʒar,
+    faːdʒar on Moroccan and Algerian -- 445 lexicon entries a lect -- while their own
+    parent ar-x-maghrebi says [d] and every cited table naming ð says [d].
+    """
+    assert translit._project("ð", lect) == "d"
+    assert translit._project("θ", lect) == "t"
+
+
+@pytest.mark.parametrize("word, expected", [
+    ("the", "da"), ("this", "dis"), ("mother", "madar"), ("father", "faːdar"),
+])
+def test_the_words_that_showed_it(word, expected):
+    for lect in ("ar-MA", "ar-DZ", "ar-x-maghrebi"):
+        assert translit.transliterate(word, lect) == expected, lect
+
+
+def test_the_maghrebi_parent_keeps_its_own_reading():
+    """The tripwire for #85's undisclosed ð→d on ar-x-maghrebi, 450 lexicon words.
+
+    It moved no gold row, so nothing in the corpus pins it; without this the next
+    projection change could move it back and no test would notice.
+    """
+    assert translit._project("ð", "ar-x-maghrebi") == "d"
+
+
+@pytest.mark.parametrize("lect", ["ar", "ar-TN", "ar-LY"])
+def test_a_lect_that_declares_the_interdentals_keeps_them(lect):
+    """Only a lect that does not declare the segment reaches the projection at all."""
+    assert translit.transliterate("think", lect) == "θink"
+    assert translit.transliterate("mother", lect).count("ð") == 1

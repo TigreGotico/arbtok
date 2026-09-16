@@ -392,6 +392,22 @@ def _project(segment: str, lang: str) -> Optional[str]:
         return None
     if segment in targets:
         return segment
+    # The cited tables are asked BEFORE the metric, not only when the metric cannot
+    # decide. This function's docstring already says a cited map beats feature
+    # arithmetic wherever one exists; consulting it only on a tie applied that rule in
+    # the one case where it changes least. On ar-MA and ar-DZ the metric has a UNIQUE
+    # answer for ð and it is [dʒ], so `the`, `this`, `mother` and `father` read dʒa,
+    # dʒis, madʒar and faːdʒar -- 445 lexicon entries a lect -- while their own parent
+    # ar-x-maghrebi says [d] and every cited table naming ð says [d] too.
+    #
+    # Only a lect that does NOT declare the segment reaches here, so a lect keeping its
+    # own interdentals is untouched. Where several tables name it they have so far
+    # agreed; the first that the matrix can pronounce wins, and that order is arbitrary
+    # if they ever disagree.
+    for table in _TABLES.values():
+        cited = table.get(segment)
+        if cited is not None and cited in targets:
+            return cited
     scored = [(segment_distance(segment, t), t) for t in targets]
     best = min(d for d, _ in scored)
     tied = sorted(t for d, t in scored if d == best)
@@ -401,16 +417,6 @@ def _project(segment: str, lang: str) -> Optional[str]:
     # candidate when the guest's quality is absent from the matrix altogether, and
     # `min` over a tie returns whichever sorts first -- so [o] landed on [a] rather
     # than [u] on every lect declaring no /o/, and *video* came out `fidiaː`.
-    # Ask the cited tables first. A lect with no table of its own falls back to the
-    # conservative default, and the default does not carry every decision a studied
-    # lect has made -- Hafez (1996 p.385) has /θ/ → [t] for Egyptian, and a lect that
-    # also lacks /θ/ is better served by that than by whichever target sorts first.
-    # Only a lect that does NOT declare the segment reaches here, so a lect keeping
-    # its own interdentals is untouched.
-    for table in _TABLES.values():
-        cited = table.get(segment)
-        if cited is not None and cited in targets:
-            return cited
     base, length = (segment[:-1], segment[-1]) if segment.endswith("ː") else (segment, "")
     raised = _RAISED.get(base)
     for candidate in (raised + length, raised) if raised else ():
