@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a73](https://github.com/TigreGotico/arbtok/tree/0.0.0a73) (2026-09-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a72...0.0.0a73)
+
+**Merged pull requests:**
+
+- fix\(translit\): the English donor lexicon is rhotic, because Arabic loans are [\#84](https://github.com/TigreGotico/arbtok/pull/84) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a72](https://github.com/TigreGotico/arbtok/tree/0.0.0a72) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a71...0.0.0a72)
