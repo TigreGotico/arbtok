@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a71](https://github.com/TigreGotico/arbtok/tree/0.0.0a71) (2026-09-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a70...0.0.0a71)
+
+**Merged pull requests:**
+
+- fix\(tokenizer\): a word boundary survives assimilation, and a shadda geminates a consonant [\#82](https://github.com/TigreGotico/arbtok/pull/82) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a70](https://github.com/TigreGotico/arbtok/tree/0.0.0a70) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a69...0.0.0a70)
