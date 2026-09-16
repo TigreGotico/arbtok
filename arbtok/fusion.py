@@ -74,6 +74,11 @@ from arbtok.lattice import word_lattice
 from arbtok.nisba import restore_nisba
 from arbtok.tokenizer import normalize_unicode
 
+#: Letters a writer may leave a hamza off. Alif carries it silently all the time
+#: (اكل for أكل); و and ي do not -- an unwritten hamza there would change which
+#: letter is on the page, not merely which mark.
+_HAMZA_SEATS = frozenset("\u0627")
+
 __all__ = ["FusionDiacritizer", "Hypothesis", "logprobs"]
 
 def logprobs(row: np.ndarray) -> np.ndarray:
@@ -239,7 +244,13 @@ class FusionDiacritizer:
             if marks:                            # spelled hamza/madda: restricted
                 pins.append(set(allowed_classes(classes, marks)))
                 continue
-            pins.append(None)                    # silent: the model's to decide
+            # Silent: the model picks the vowel. It may also RESTORE a hamza the
+            # writer omitted -- but only on alif, which is the case the restoration
+            # exists for and the only one its own docstring claims. On a bare و or ي
+            # a restored hamza is not a missing mark, it is a different letter: the
+            # mater lectionis of الموديل becomes ؤ and the long [uː] is read [ʔ].
+            pins.append(set(allowed_classes(classes, marks,
+                                            allow_restoration=ch in _HAMZA_SEATS)))
         return pins
 
     def _beam_search(self, bare_word: str, word_logits: np.ndarray,
