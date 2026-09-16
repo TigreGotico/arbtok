@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a72](https://github.com/TigreGotico/arbtok/tree/0.0.0a72) (2026-09-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a71...0.0.0a72)
+
+**Merged pull requests:**
+
+- fix\(translit\): a guest vowel with no counterpart lands on its own quality [\#83](https://github.com/TigreGotico/arbtok/pull/83) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a71](https://github.com/TigreGotico/arbtok/tree/0.0.0a71) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a70...0.0.0a71)
