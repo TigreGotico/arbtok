@@ -161,11 +161,19 @@ class TestLevantineTable:
     Grammar of Syrian Arabic*."""
 
     def test_front_diphthong_monophthongises_to_the_native_mid_vowel(self):
-        """The native mid long vowels [eː]/[oː] (Cowell 1964) give /eɪ/ → [eː],
-        which the three-vowel Egyptian map has no target for — so *email* differs
-        between the two lects."""
+        """The native mid long vowels [eː]/[oː] (Cowell 1964) give /eɪ/ → [eː].
+
+        Cairene has them too — *bēt*, *yōm* — and its spec declares both, so the
+        two lects agree here. This used to assert that they differed, on the
+        ground that Egyptian is a three-vowel system with no target for [eː].
+        That is not what Egyptian is, and it is not what Hafez (1996 p. 388) says
+        either: the donor's /e/ and /o/ fall into the EA set. The difference came
+        from `_EGYPTIAN_MAP` alone lacking the `eɪ`/`əʊ` entries every other table
+        carries, which sent the segment to a projection that could not tell its
+        candidates apart and returned whichever sorted first.
+        """
         assert transliterate("email", "ar-LB") == "iːmeːl"  # /eɪ/→[eː]
-        assert transliterate("email", EG) == "iːmil"
+        assert transliterate("email", EG) == "iːmeːl"
 
     def test_interdentals_are_kept(self):
         """The Levantine group declares /θ/ /ð/ (unlike Cairene), so they are

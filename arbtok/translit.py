@@ -355,12 +355,26 @@ def _targets(lang: str) -> Tuple[str, ...]:
     ))
 
 
-#: Where the feature metric cannot discriminate. A mid vowel raises to the high
-#: vowel of its own backness and rounding, which is what the three-quality systems
-#: do with the donor's mid vowels (Alhoody 2019 §5.2 for Najdi; Hafez 1996 p. 388
-#: for Egyptian) and what every cited table in this module already does with them.
-#: It is consulted only on a tie, so a lect that declares the quality, or anything
-#: nearer it, is unaffected.
+#: Where the feature metric cannot discriminate, and ONLY there. A tie means the
+#: matrix declares nothing of that quality at all: every candidate comes back at the
+#: same constant distance, and `min` would then return whichever sorts first. A mid
+#: vowel with nowhere mid to go takes the high vowel of its own backness and
+#: rounding rather than the low one alphabetical order lands on.
+#:
+#: This is NOT the general behaviour of three-quality systems, and an earlier version
+#: of this comment said it was, citing Alhoody 2019 §5.2 and Hafez 1996 p. 388.
+#: Both citations were wrong: §5.2 is the consonant hierarchy, and Hafez describes a
+#: six-quality Egyptian inventory that keeps mid vowels in loans (kwafeer, doktoor)
+#: and does not treat English /əʊ/ at all. Alhoody's vowel section is §6.1.8 (p. 121),
+#: and it says the opposite for a lect that HAS [oː]: English /əʊ, ɔː/ take the
+#: closest quality, [oː], in 44 of 64 tokens. His short [u] appears only when prosody
+#: forces a short vowel into a slot with no short mid vowel to fill it.
+#:
+#: What licenses this table is the narrow end of that rule — no mid quality available,
+#: so the nearest high one of the same backness and rounding — plus the orthography of
+#: the loans themselves, which write the wāw: داونلود, موبايل, أوكي. A lect that
+#: declares a mid vowel never reaches here, and reading the pan-Arabic default as [oː]
+#: instead would be a different change needing its own evidence.
 _RAISED = {"o": "u", "ɔ": "u", "e": "i", "ɛ": "i", "ø": "i", "œ": "i"}
 
 
@@ -387,6 +401,16 @@ def _project(segment: str, lang: str) -> Optional[str]:
     # candidate when the guest's quality is absent from the matrix altogether, and
     # `min` over a tie returns whichever sorts first -- so [o] landed on [a] rather
     # than [u] on every lect declaring no /o/, and *video* came out `fidiaː`.
+    # Ask the cited tables first. A lect with no table of its own falls back to the
+    # conservative default, and the default does not carry every decision a studied
+    # lect has made -- Hafez (1996 p.385) has /θ/ → [t] for Egyptian, and a lect that
+    # also lacks /θ/ is better served by that than by whichever target sorts first.
+    # Only a lect that does NOT declare the segment reaches here, so a lect keeping
+    # its own interdentals is untouched.
+    for table in _TABLES.values():
+        cited = table.get(segment)
+        if cited is not None and cited in targets:
+            return cited
     base, length = (segment[:-1], segment[-1]) if segment.endswith("ː") else (segment, "")
     raised = _RAISED.get(base)
     for candidate in (raised + length, raised) if raised else ():
