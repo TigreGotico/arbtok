@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a75](https://github.com/TigreGotico/arbtok/tree/0.0.0a75) (2026-09-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a74...0.0.0a75)
+
+**Merged pull requests:**
+
+- fix\(fusion\): a hamza is restored onto alif, not onto a mater lectionis [\#86](https://github.com/TigreGotico/arbtok/pull/86) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a74](https://github.com/TigreGotico/arbtok/tree/0.0.0a74) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a73...0.0.0a74)
