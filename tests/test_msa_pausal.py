@@ -145,13 +145,22 @@ TANWIN_NO_PAUSE = [
     ("مَاءٌ", "maːʔun", "Tanwīn kept after hamza"),
 ]
 
+# Four of these rows used to pin a JOINED form -- mimbaʕd, mijjawm, millaban,
+# mintaħt -- and the gold contradicted itself on the same rule: مِنْ بَيْتِكَ was
+# spaced (*mim bajtika*) while مِنْ بَعْد was joined (*mimbaʕd*), both plain iqlāb;
+# مَنْ يَقُولُ was spaced (*maj jaquːlu*) while مِنْ يَوْم was joined, both plain
+# idghām. What decided it was not phonology but whether a substring replacement in
+# the tokenizer happened to match: "mim baʕ" matched بَعْد and not بَيْتِكَ, "mij j"
+# matched مِن and not مَن. The gold was fitted to the defect. مِنْ تَحْت is the
+# clearest case -- n does not assimilate before t at all, so nothing but the
+# replacement ever joined it.
 SANDHI = [
     ("بِ الظَّرْف", "bi ðˤðˤarf", "Assimilation across a written boundary"),
     ("مِنَ النَّاس", "mina nnaːs", "min + article + sun letter"),
     ("مِنْ رَبِّهِمْ", "mir rabbihim", "Idghām: n + r → rr"),
     ("مَنْ يَقُولُ", "maj jaquːlu", "Idghām: n + j → jj (no written pause: -u kept)"),
     ("مِنْ بَيْتِكَ", "mim bajtika", "Iqlāb: n → m before b (no written pause: -a kept)"),
-    ("مِنْ بَعْد", "mimbaʕd", "Iqlāb joined"),
+    ("مِنْ بَعْد", "mim baʕd", "Iqlāb: n → m before b, and the boundary stays"),
     ("إِلَى الرَّجُل", "ʔilaː arradʒul",
      "Waṣl + sun letter after ʔilaː: light stem, stress on the article (ˈarradʒul), "
      "so the seat vowel is kept — as orthography2ipa reads it"),
@@ -249,8 +258,8 @@ MISC = [
     ("وِلْد", "wild", "No epenthesis needed"),
     ("كِتَابٌ قَدِيم", "kitaːbun qadiːm", "No assimilation before uvular"),
     ("كِتَابٌ جَدِيد", "kitaːbun dʒadiːd", "No assimilation before dʒ"),
-    ("مِنْ يَوْم", "mijjawm", "Idghām with ghunna into glide"),
-    ("مِنْ لَبَن", "millaban", "Idghām into lām"),
+    ("مِنْ يَوْم", "mij jawm", "Idghām with ghunna into glide, boundary kept"),
+    ("مِنْ لَبَن", "mil laban", "Idghām into lām, boundary kept"),
     ("أَبْوَاب", "ʔabwaːb", "Plural pattern"),
     ("مَدِينَة", "madiːna", "Bare tāʾ marbūṭa silent (spec-level, both modes)"),
     ("رِسَالَة", "risaːla", "Bare tāʾ marbūṭa silent"),
@@ -410,8 +419,10 @@ def test_dad_is_dˤ():
 
 def test_teh_is_plain_t():
     """Legacy gold *mintˤaħt* was flagged disputed in the file: the consonant
-    is ت /t/, not ط /tˤ/ → *mintaħt*."""
-    check("مِنْ تَحْت", "mintaħt")
+    is ت /t/, not ط /tˤ/. And مِن does not assimilate before ت at all, so the two
+    words simply stay two words → *min taħt*. The joined form this pinned came
+    from a substring replacement, not from a rule."""
+    check("مِنْ تَحْت", "min taħt")
 
 
 def test_narrative_wasl_and_full_iraab():

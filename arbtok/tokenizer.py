@@ -328,6 +328,9 @@ class CharToken:
                 else:
                     return "aw"
 
+            # A shadda proves this letter is a consonant -- see the ya branch below.
+            if self.has_shada:
+                return "w"
             # If previous IPA ends with 'u' (short u) then WAW likely lengthens it.
             if self.prev_token and self.prev_token.ipa.endswith('u'):
                 return "ː"
@@ -337,6 +340,15 @@ class CharToken:
 
         # --- Ya (ي) ---
         if s == YA:
+            # A shadda proves this letter is a CONSONANT: gemination sits on a
+            # consonant, never on vowel length. Without this the mater rule below
+            # fires first and ⟨ـِيّ⟩ reads as `i` + `ː` (the ya) + `ː` (the shadda
+            # duplicating it) -- the doubled length mark `iːː`, which is not a
+            # phone and which a character-level reader cannot even see, since a
+            # doubled `ː` is simply two symbols to it. The lattice path already
+            # reads the same word correctly as `tijj`.
+            if self.has_shada:
+                return "j"
             # 1) Lengthening prev vowel (i -> i:)
             if self.prev_token and self.prev_token.ipa.endswith('i'):
                 return "ː"
@@ -405,8 +417,19 @@ class CharToken:
                 return ""
             # Return the IPA of the previous token.
             if self.prev_token:
-                return self.prev_token.ipa
-            return ":"
+                prev = self.prev_token.ipa
+                # A length mark cannot be geminated. If the previous letter still
+                # rendered as one, it was read as a mater lectionis despite carrying
+                # gemination, and duplicating it would emit `ːː`. The ya/waw branches
+                # above prevent that at source; this refuses to manufacture the
+                # malformation if any other path reaches here.
+                if prev == "ː":
+                    return ""
+                return prev
+            # A shadda with nothing before it has nothing to geminate. This used to
+            # return an ASCII ":" -- not the IPA length mark and not a phone at all,
+            # so it entered the inventory as its own symbol.
+            return ""
 
         # --- Non-Arabic fallback ---
         # For maintainability and to avoid losing non-Arabic characters, return ASCII letters/digits/punct as-is.
@@ -524,9 +547,10 @@ class WordToken:
             return lattice_ipa
 
         ipa = "".join([tok.ipa for tok in self.tokens])
-        # HACK: Normalize double length markers if they occur
-        # TODO: improve CharToken.ipa to avoid these mistakes in the first place
-        # experimentally determined to reduce CER
+        # The doubled length mark this once claimed to normalise is fixed at source
+        # in CharToken.ipa: a ya or waw carrying a shadda is a consonant, so ⟨ـِيّ⟩
+        # is `ijj` and never `iːː`. What is left is one experimentally determined
+        # cluster repair, kept because it is a real reading rather than a symptom.
         replacements = {
             #"dˤdˤ": "ðˤ", # debatable
             "idʒt": "ijt",
@@ -660,13 +684,23 @@ class Sentence:
 
         ipa_str = " ".join(pieces).replace(" ː", "ː ").strip()
 
-        # HACK: experimentally determined
-        # TODO - handle remove whitespaces better
+        # A word boundary survives assimilation. مِن before a sonorant or a labial
+        # takes that consonant's shape -- `apply_cross_word` has already done it,
+        # مِن بَعْد is *mim baʕd* -- and in connected speech the result is a geminate
+        # spanning the boundary. It is still two words, and this transcription is
+        # read per word: by the aligner, whose targets are word-aligned, and by the
+        # label builder, which pairs five lect tables word by word and can pair
+        # nothing if one table returns a different count.
+        #
+        # This used to be four blind substring replacements on the whole sentence
+        # ("mij j"->"mijj", "mil l"->"mill", "mim baʕ"->"mimbaʕ", "min t"->"mint"),
+        # marked HACK and TODO by their author. They did not test for مِن at all, so
+        # they fired on any word ending in those letters: كامل لبن ("whole milk",
+        # no مِن in it) came out as the single token *kaːˈmillaban*, and عامل لحم as
+        # *ʕaːmilˈlaħm*. Across the multilect label set they collapsed the word
+        # count on 2,200 rows, every one of which had to be dropped because no
+        # alternative could be sited against a table that had merged two words.
         hacked = ipa_str
-        hacked = hacked.replace("mij j", "mijj")
-        hacked = hacked.replace("mil l", "mill")
-        hacked = hacked.replace("mim baʕ", "mimbaʕ")
-        hacked = hacked.replace("min t", "mint")
 
         if not self.stress:
             return hacked
