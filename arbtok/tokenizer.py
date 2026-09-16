@@ -102,6 +102,13 @@ def normalize_unicode(text: str) -> str:
     a Shadda + Fatha sequence is combined or ordered consistently.
     This tokenizer relies on this standard order.
     """
+    # 0. Tatweel (U+0640) is kashida: a typographic stretch with no sound and no
+    #    letter identity. Left in, it is not a letter the tokenizer knows, so it
+    #    breaks its word in two -- المـرء reads `ˈalm ˈraʔ` where المرء reads
+    #    `alˈmarʔ`, and all five lect tables agree on the split, so the
+    #    disagreement guard never sees it. It is removed before anything else
+    #    looks at the string.
+    text = text.replace("\u0640", "")
     # 1. Standard Unicode normalization (NFC)
     text = unicodedata.normalize("NFC", text)
     # 2. Enforce Consonant -> Shadda -> Vowel order
