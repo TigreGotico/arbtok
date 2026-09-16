@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a74](https://github.com/TigreGotico/arbtok/tree/0.0.0a74) (2026-09-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a73...0.0.0a74)
+
+**Merged pull requests:**
+
+- fix\(translit\): re-cite the tie-break, and let it consult the tables it belongs to [\#85](https://github.com/TigreGotico/arbtok/pull/85) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a73](https://github.com/TigreGotico/arbtok/tree/0.0.0a73) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a72...0.0.0a73)
