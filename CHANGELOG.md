@@ -1,12 +1,20 @@
 # Changelog
 
+## [0.0.0a80](https://github.com/TigreGotico/arbtok/tree/0.0.0a80) (2026-09-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a79...0.0.0a80)
+
+**Merged pull requests:**
+
+- fix\(translit\): no tie is decided by sort order, and the page locators go [\#91](https://github.com/TigreGotico/arbtok/pull/91) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a79](https://github.com/TigreGotico/arbtok/tree/0.0.0a79) (2026-09-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a78...0.0.0a79)
 
 **Merged pull requests:**
 
-- fix\(plugin\): a token that is only partly Latin is split into its script runs [\#90](https://github.com/TigreGotico/arbtok/pull/90) ([JarbasAl](https://github.com/JarbasAl))
+- fix\(arabizi\): derive the digit gate from the tables that can write it [\#90](https://github.com/TigreGotico/arbtok/pull/90) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a78](https://github.com/TigreGotico/arbtok/tree/0.0.0a78) (2026-09-17)
 
