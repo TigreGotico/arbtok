@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.0a76](https://github.com/TigreGotico/arbtok/tree/0.0.0a76) (2026-09-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a75...0.0.0a76)
+
+**Merged pull requests:**
+
+- fix\(translit\): a cited table beats the metric, not only when the metric is unsure [\#89](https://github.com/TigreGotico/arbtok/pull/89) ([JarbasAl](https://github.com/JarbasAl))
+- fix\(tokenizer\): tatweel is a stretch, not a letter, and a bare letter has a name [\#88](https://github.com/TigreGotico/arbtok/pull/88) ([JarbasAl](https://github.com/JarbasAl))
+- feat\(translit\): an established loan is looked up, not adapted from the donor [\#87](https://github.com/TigreGotico/arbtok/pull/87) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a75](https://github.com/TigreGotico/arbtok/tree/0.0.0a75) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a74...0.0.0a75)
