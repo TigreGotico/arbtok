@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a81](https://github.com/TigreGotico/arbtok/tree/0.0.0a81) (2026-09-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a80...0.0.0a81)
+
+**Merged pull requests:**
+
+- fix\(arbtok\): restore what two stale merges dropped, and fix what they exposed [\#92](https://github.com/TigreGotico/arbtok/pull/92) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a80](https://github.com/TigreGotico/arbtok/tree/0.0.0a80) (2026-09-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a79...0.0.0a80)
