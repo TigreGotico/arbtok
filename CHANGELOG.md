@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.0a77](https://github.com/TigreGotico/arbtok/tree/0.0.0a77) (2026-09-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a76...0.0.0a77)
+
 ## [0.0.0a76](https://github.com/TigreGotico/arbtok/tree/0.0.0a76) (2026-09-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a75...0.0.0a76)
