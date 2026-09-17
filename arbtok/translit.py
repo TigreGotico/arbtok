@@ -318,22 +318,29 @@ _LATIN = re.compile(r"[A-Za-z]")
 #: rather than [uː], as the bundled Arabic lexicon has it twice (فيديو → feːdiːjo,
 #: الفيديو → ælfiːdiːjo).
 #:
-#: Keyed by donor, not by lect, because the borrowing route is the donor's: Maghrebi
-#: *automatique* comes through French and keeps [otomatik] without the prothetic hamza
-#: the MSA-route form carries. Differences below that are the inventory's to make, and
-#: every value goes through the same projection the nativised form does.
+#: Keyed by donor rather than by lect. The borrowing route is the donor's, so a French
+#: *automatique* and an English *automatic* need not land on the same reading -- but no
+#: French entries ship, because none of the values could be cited.
+#:
+#: A value is returned as it stands, WITHOUT the inventory projection a nativised form
+#: goes through. That projection lands a donor phone on the nearest thing the matrix
+#: declares; these are not donor phones, they are the Arabic word, and putting them
+#: through it lengthened أوتوماتيك to ʔoːtoːmatik on the 22 lects declaring /oː/ and no
+#: short /o/.
 ESTABLISHED_LOANS: Dict[str, Dict[str, str]] = {
     "en-GB": {
         "model": "muːdiːl",
         "video": "fiːdjo",
         "automatic": "ʔotomatik",
     },
-    "fr": {
-        "automatique": "otomatik",
-        "modele": "muːdiːl",
-        "video": "fiːdjo",
-    },
 }
+# A French donor table was here with three entries -- automatique, modele, video -- and
+# it is removed rather than kept. Its values were mine, not cited: no gold row pins a
+# French-route reading, no lexicon carries one, and the Maghrebi form otomatik that
+# motivated it is asserted in this module's own comments and nowhere else. Three
+# uncited values live on every lect is a worse trade than a French token taking the
+# ordinary donor path, which is at least a reading somebody can point at. It returns
+# with a source or not at all.
 
 
 def _established(word: str, donor: str) -> Optional[str]:
@@ -577,7 +584,24 @@ def transliterate(
     # adapted from the donor, it is already an Arabic word. It still goes through the
     # inventory check below, because a settled reading is settled for Arabic and not
     # for every lect of it.
-    adapted = _established(word, donor)
+    settled = _established(word, donor)
+    if settled is not None:
+        # Returned WITHOUT the inventory projection below. That projection exists to
+        # land a DONOR phone on the nearest thing the matrix declares; an established
+        # loan's value is not a donor phone, it is already the Arabic word, and putting
+        # it through the donor machinery lengthens vowels the loan does not have.
+        # أوتوماتيك came out ʔoːtoːmatik on the 22 lects that declare /oː/ and no short
+        # /o/, where the hand-authored gold for ar-JO and ar-LB reads ʔotomaˈtik. Those
+        # two rows are marked known-wrong precisely because the Arabic-script path does
+        # not reach them either -- it gives ʔuːtuːmaːˈtiːk -- so the lengthening is in
+        # both paths and this fixes the one it owns.
+        #
+        # A lect whose declared inventory lacks the quality still receives it, and that
+        # is the point: an established loan is a lexical fact about that lect rather
+        # than a guest sound being adapted, and the inventory under-declares the loan
+        # phones. Where that is wrong the table entry is wrong, not the projection.
+        return settled
+    adapted = None
     if adapted is None:
         # The donor's own lexicon, if this package ships one for it. English rules
         # cannot reach the right reading from spelling alone, and a caller who has

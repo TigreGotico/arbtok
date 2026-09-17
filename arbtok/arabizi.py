@@ -136,6 +136,9 @@ _CONSONANTS = {
     "g": "ق",   # v1 default: qāf reflex (Gulf/Bedouin); Egyptian ǧīm not modelled
     "l": "ل", "m": "م", "n": "ن", "h": "ه", "w": "و", "y": "ي",
     "2": "ء", "v": "ف", "p": "ب", "c": "ك",
+    # 6 is the standard Arabizi ṭāʾ and had no entry, so it fired the old hand-typed
+    # gate and then could not be written: `6ayyib` lost its first consonant.
+    "6": "ط",
     "S": "ص", "D": "ض", "T": "ط", "Z": "ظ",
 }
 
@@ -144,7 +147,21 @@ _CONSONANTS = {
 #: word shape; the length is under-determined and fusion adjusts it.
 _VOWELS_SINGLE = {"a": "ا", "e": "ي", "i": "ي", "o": "و", "u": "و"}
 
-_HAS_DIGIT_GUTTURAL = re.compile(r"[234567]|3'|7'|6'")
+#: The digit-gutturals this gate fires on, DERIVED from the tables that can actually
+#: write them rather than typed out beside them. Three sets had drifted apart: the gate
+#: matched 2 3 4 5 6 7, the mapper knew 2 3 5 7 8 9, and the docstring below said
+#: 2 3 5 6 7 9. Every disagreement was reachable. A 4 fired the gate and had no mapping,
+#: so `X4` reverse-transliterated to a skeleton that dropped both characters and read
+#: `ʔarbaʕa` with the X gone; a 6 fired and could not be written either; an 8 could be
+#: written but never fired; and 9, the standard ṣād, fired in the docstring alone.
+#: Deriving the pattern removes the class: a digit fires this gate exactly when
+#: something downstream can spell it.
+_GUTTURAL_DIGITS = sorted(
+    {k for k in _CONSONANTS if k.isdigit()} | {k for k in _PRIME_DIGITS if k[0].isdigit()}
+)
+_HAS_DIGIT_GUTTURAL = re.compile(
+    "|".join(re.escape(d) for d in sorted(_GUTTURAL_DIGITS, key=len, reverse=True))
+)
 _LATIN = re.compile(r"[A-Za-z]")
 _STRIP = ".,;:!?()[]\"'،؛؟-"
 
@@ -170,6 +187,29 @@ def is_arabizi(word: str, hint: Optional[bool] = None) -> bool:
     if hint is not None:
         return hint
     return bool(_HAS_DIGIT_GUTTURAL.search(word))
+
+
+def arabizi_covers(word: str) -> bool:
+    """True when every letter of *word* has a reverse-transliteration.
+
+    The skeleton mapper drops what it cannot map, silently. `x` has no Arabizi value --
+    Arabizi spells خ as `kh` or `5` -- so `X2` reverse-transliterated to a bare `ء` and
+    the X left no trace: the token read `ʔ`, one glottal stop where a model name had
+    been. A dropped letter is the same failure as a word transcribing to the empty
+    string; nothing downstream can tell it from a letter that was never there.
+
+    So coverage is checked before the Arabizi path is taken, and a token the mapper
+    cannot spell whole goes to the loanword path instead. This is not a new guess about
+    which tokens are Arabizi -- it is the mapper declining a word it cannot write.
+    """
+    w = word.strip(_STRIP)
+    if not w:
+        return False
+    known = set()
+    for table in (_PRIME_DIGITS, _DIGRAPHS, _CONSONANTS, _VOWELS_SINGLE):
+        for key in table:
+            known |= {key, key.lower(), key.upper()}
+    return all(c in known or c.lower() in known for c in w if c.isalnum())
 
 
 def to_arabic_skeleton(word: str) -> str:

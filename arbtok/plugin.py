@@ -56,11 +56,16 @@ import re as _re
 #: guest word and it belongs with the Arabic run.
 _ARABIC_RUN = _re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
 _LATIN_RUN = _re.compile(r"[A-Za-z]")
+#: IPA symbols that are their ASCII letter wearing a different codepoint.
+_LOOKALIKE = {"\u0261": "g", "\u0279": "r", "\u026a": "i", "\u028a": "u"}
+_SCRIPT_RUN = _re.compile(
+    r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+"
+    r"|[^\s\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+")
 _MIXED_RUN = _re.compile(
     r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+"
     r"|[A-Za-z][A-Za-z'\u2019-]*"
     r"|[^\s\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z]+")
-from arbtok.arabizi import is_arabizi, to_arabic_skeleton
+from arbtok.arabizi import arabizi_covers, is_arabizi, to_arabic_skeleton
 
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
 from arbtok.util import normalize as normalize_speech
@@ -276,7 +281,13 @@ class ArbtokG2PPlugin:
         elif arabizi is not None:
             arabizi_mode = arabizi
         else:
-            arabizi_mode = any(is_arabizi(t) for t in latin)
+            # and the mapper must be able to spell it: a token it cannot write whole
+            # loses the letters it cannot map, silently.
+            # Decided over the RUNS, not the whole tokens: a glued الـ7abibi is not
+            # itself coverable -- its Arabic half is not Arabizi -- so asking the token
+            # answered no and the Arabizi word inside it went down the loanword path.
+            arabizi_mode = any(is_arabizi(r) and arabizi_covers(r)
+                               for t in text.split() for r in _SCRIPT_RUN.findall(t))
 
         def flush_arabic():
             if buffer:
@@ -285,19 +296,57 @@ class ArbtokG2PPlugin:
                                       pausal=self.pausal).ipa)
                 buffer.clear()
 
-        def runs(tok):
-            """A token split into its Arabic and Latin runs, in order.
+        def _donor_knows(tok):
+            from orthography2ipa import G2P
+            from arbtok.translit import DONOR_LANG
+            from arbtok.donor_lexicon import ensure_registered
+            try:
+                ensure_registered(DONOR_LANG)
+                # The donor has no lexicon-membership call, so ask it to read the
+                # word and see whether it gave a reading or handed the letters back:
+                # `ok` comes out ˌəʊkˈeɪ and `bmw` comes out ˈbmw, which is the input.
+                got = G2P(DONOR_LANG).transcribe_word(tok.lower()) or ""
+                # Strip stress, then fold the IPA symbols that merely LOOK like their
+                # ASCII letters: the donor hands `gps` back as ɡps with a script g
+                # (U+0261), which compares unequal to the input and made a passthrough
+                # look like a reading -- GPS then stayed whole and read `kbs`.
+                bare = "".join(_LOOKALIKE.get(c, c) for c in got if c not in "ˈˌ")
+                return bool(got) and bare != tok.lower()
+            except Exception:
+                return False
 
-            `is_latin` is true of any token CONTAINING a Latin letter, so a token that
-            is only partly Latin went whole to `transliterate`, which cannot look it up:
-            الـcharger read `ʃaːdʒa` -- the guest word off the rules rather than the donor
-            lexicon, and the Arabic article dropped from the output altogether. Written
-            with a space, ال charger was always correct, so the two spellings of the same
-            phrase disagreed.
+        def _spelled_out(tok):
+            """An all-caps Latin run the donor does not know is a spelling: BMW read
+            `bmw`, its letters passed through as if they were already phones."""
+            return (tok.isascii() and tok.isalpha() and tok.isupper() and len(tok) > 1
+                    and not _donor_knows(tok))
+
+        def runs(tok):
+            """A token split into the parts that take different paths.
+
+            Two passes, and the order matters. First the script boundary, because
+            `is_latin` is true of any token CONTAINING a Latin letter and a mixed token
+            went whole to `transliterate`, which cannot look it up -- الـcharger read
+            `ʃaːdʒa` with the Arabic article dropped from the output altogether.
+
+            Then, within each non-Arabic run only, the letter/digit boundary -- but NOT
+            when that run is Arabizi the mapper can write whole. `7abibi` carries its
+            guttural as a digit, so splitting it yields `7` and `abibi` and reads the
+            seven as a number. A glued الـ7abibi is exactly the case that needs both
+            passes and only one of them: the article separates, the Arabizi word does
+            not.
             """
-            if not (_ARABIC_RUN.search(tok) and _LATIN_RUN.search(tok)):
-                return [tok]
-            return [m.group(0) for m in _MIXED_RUN.finditer(tok)]
+            out = []
+            for run in (m.group(0) for m in _SCRIPT_RUN.finditer(tok)):
+                if _ARABIC_RUN.search(run):
+                    out.append(run)
+                elif is_arabizi(run) and arabizi_covers(run):
+                    out.append(run)                       # Arabizi: never split
+                else:
+                    pieces = [m.group(0) for m in _MIXED_RUN.finditer(run)] or [run]
+                    for piece in pieces:
+                        out.extend(list(piece) if _spelled_out(piece) else [piece])
+            return out or [tok]
 
         for token in [r for t in text.split() for r in runs(t)]:
             if is_latin(token):
