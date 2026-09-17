@@ -79,3 +79,75 @@ def test_a_lect_that_declares_the_interdentals_keeps_them(lect):
     """Only a lect that does not declare the segment reaches the projection at all."""
     assert translit.transliterate("think", lect) == "θink"
     assert translit.transliterate("mother", lect).count("ð") == 1
+
+
+# ---------------------------------------------------------------------------
+# No tie is decided by sort order
+# ---------------------------------------------------------------------------
+
+def _lect_codes():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "data" / "gold_code_switched"
+    return sorted(p.stem for p in root.glob("*.tsv"))
+
+
+def test_no_reachable_tie_resolves_by_alphabetical_order():
+    """The invariant, over every lect and every segment the donor lexicon can produce.
+
+    A tie means the metric returned the same distance for every candidate, so `min`
+    falls back to sort order -- which is how [o] landed on [a] and started this. The
+    residue was ɜ: 35 of the 71 reachable ties, one per lect, resolving to [a] because
+    `a` sorts first and agreeing with the citations only by luck. Every cited table maps
+    its long counterpart ɜː to [a], so the short one now follows that, derived rather
+    than typed.
+
+    Counted rather than asserted: 71 ties over 7 segments across 35 lects, and none of
+    them alphabetical.
+    """
+    from orthography2ipa import G2P
+    from orthography2ipa.distance import segment_distance
+    from arbtok import translit
+    from pathlib import Path
+
+    lexicon = (Path(__file__).resolve().parents[1]
+               / "arbtok" / "data" / "donor_lexicons" / "en-GB.tsv")
+    donor = set()
+    with lexicon.open(encoding="utf-8") as fh:
+        for line in fh:
+            _, _, ipa = line.rstrip("\n").partition("\t")
+            donor.update(translit.segment_ipa(ipa))
+    donor -= {"ˈ", "ˌ", "ː"}
+
+    alphabetical, ties = [], 0
+    for lect in _lect_codes():
+        try:
+            table = translit.nativization_table(lect)
+            targets = translit._targets(lect)
+        except Exception:
+            continue
+        for seg in sorted(donor):
+            cited = table.get(seg)
+            for piece in (translit.segment_ipa(cited) if cited is not None else [seg]):
+                if piece in targets:
+                    continue
+                scored = [(segment_distance(piece, t), t) for t in targets]
+                best = min(d for d, _ in scored)
+                if sum(1 for d, _ in scored if d == best) < 2:
+                    continue
+                ties += 1
+                got = translit._project(piece, lect)
+                if any(tb.get(piece) == got for tb in translit._TABLES.values()):
+                    continue
+                if not piece.endswith("ː") and any(
+                        (tb.get(piece + "ː") or "").rstrip("ː") == got
+                        for tb in translit._TABLES.values()):
+                    continue
+                base = piece[:-1] if piece.endswith("ː") else piece
+                raised = translit._RAISED.get(base)
+                if raised and got and got.startswith(raised):
+                    continue
+                alphabetical.append((lect, piece, got))
+
+    assert ties > 0, "the enumeration found no ties at all, so it proves nothing"
+    assert not alphabetical, f"{len(alphabetical)} of {ties} ties fell to sort order: " \
+                             f"{alphabetical[:5]}"

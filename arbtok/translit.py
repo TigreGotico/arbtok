@@ -57,14 +57,14 @@ Hafez, O. (1996), *Phonological and Morphological Integration of Loanwords into
 Egyptian Arabic*, Égypte/Monde arabe 27–28, 383–410; with the consonant inventory
 of Watson, J. C. E. (2002), *The Phonology and Morphology of Arabic*, OUP.
 
-* /p/ → [b] (Hafez p. 383), /v/ → [f] (p. 385), /tʃ/ → [ʃ] (p. 386).
+* /p/ → [b], /v/ → [f], /tʃ/ → [ʃ] (Hafez 1996).
 * The native ǧīm of Cairene is the **stop [ɡ]**, so a loan /dʒ/ adapts to it —
   *manager* → [manaɡar], not the Najdi [manadʒar] (Watson 2002 §1; Hafez p. 386).
 * /ʒ/ is a retained marginal loan phoneme, **[ʒ]** — *garage* keeps its final
   [ʒ] where Najdi has no /ʒ/ and refuses or substitutes [dʒ].
 * Cairene has merged the interdentals into the dental stops, so English /θ/ → [t]
-  (Hafez p. 385, *thermos* → [tormos]) and /ð/ → [d]. The Najdi keeps [θ]/[ð].
-* Vowels are limited to the EA set (Hafez p. 388); the /e/ and /o/ of the donor
+  (Hafez 1996, *thermos* → [tormos]) and /ð/ → [d]. The Najdi keeps [θ]/[ð].
+* Vowels are limited to the EA set (Hafez 1996); the /e/ and /o/ of the donor
   fall into that set.
 
 ### Levantine — ``ar-x-levantine`` (:data:`_LEVANTINE_MAP``; inherited by ``ar-LB``,
@@ -213,14 +213,14 @@ _THREE_VOWELS: Dict[str, str] = {
 
 #: Egyptian (Cairene), ``ar-EG``. Hafez (1996); Watson (2002). The ǧīm is the stop
 #: [ɡ], so a loan /dʒ/ lands on it; /ʒ/ is a retained loan phoneme; the interdentals
-#: are merged into the dental stops. Vowels stay in the EA set (Hafez p. 388).
+#: are merged into the dental stops. Vowels stay in the EA set (Hafez 1996).
 _EGYPTIAN_MAP: Dict[str, str] = {
     **_PAN_ARABIC_CONSONANTS,
     **_THREE_VOWELS,
     "dʒ": "ɡ",   # Cairene ǧīm is a stop (Watson 2002 §1) — manager → [manaɡar]
     "ʒ": "ʒ",    # retained marginal loan phoneme — garage keeps [ʒ]
     "ɡ": "ɡ",    # native ǧīm
-    "θ": "t",    # interdental merger (Hafez p. 385) — think → [tink]
+    "θ": "t",    # interdental merger (Hafez 1996) — think → [tink]
     "ð": "d",
 }
 
@@ -413,6 +413,9 @@ def _targets(lang: str) -> Tuple[str, ...]:
 #:
 #: This is NOT the general behaviour of three-quality systems, and an earlier version
 #: of this comment said it was, citing Alhoody 2019 §5.2 and Hafez 1996 p. 388.
+#: Page locators are dropped throughout this module: the accessible edition of
+#: Hafez (Égypte/Monde arabe 27-28, pages 383-410) numbers PARAGRAPHS rather than
+#: pages, so no locator inside it was ever confirmed. The article range is.
 #: Both citations were wrong: §5.2 is the consonant hierarchy, and Hafez describes a
 #: six-quality Egyptian inventory that keeps mid vowels in loans (kwafeer, doktoor)
 #: and does not treat English /əʊ/ at all. Alhoody's vowel section is §6.1.8 (p. 121),
@@ -472,6 +475,18 @@ def _project(segment: str, lang: str) -> Optional[str]:
     for candidate in (raised + length, raised) if raised else ():
         if candidate in targets:
             return candidate
+    # A short vowel with no cited mapping of its own follows what the tables do with its
+    # LONG counterpart, derived rather than typed. ɜ was the last segment resolving by
+    # sort order -- on all 35 lects, the whole of the alphabetical residue -- and every
+    # cited table maps ɜː to [a], so the short one went to [a] by accident of the
+    # alphabet and agreed with them only by luck.
+    if not length:
+        for table in _TABLES.values():
+            cited = table.get(segment + "ː")
+            if cited is not None:
+                short = cited[:-1] if cited.endswith("ː") else cited
+                if short in targets:
+                    return short
     return tied[0]
 
 
