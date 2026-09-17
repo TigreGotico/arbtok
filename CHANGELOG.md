@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.0a79](https://github.com/TigreGotico/arbtok/tree/0.0.0a79) (2026-09-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a78...0.0.0a79)
+
+**Merged pull requests:**
+
+- fix\(plugin\): a token that is only partly Latin is split into its script runs [\#90](https://github.com/TigreGotico/arbtok/pull/90) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.0a78](https://github.com/TigreGotico/arbtok/tree/0.0.0a78) (2026-09-17)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a77...0.0.0a78)
+
 ## [0.0.0a77](https://github.com/TigreGotico/arbtok/tree/0.0.0a77) (2026-09-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a76...0.0.0a77)
