@@ -56,11 +56,13 @@ import re as _re
 #: guest word and it belongs with the Arabic run.
 _ARABIC_RUN = _re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
 _LATIN_RUN = _re.compile(r"[A-Za-z]")
+#: IPA symbols that are their ASCII letter wearing a different codepoint.
+_LOOKALIKE = {"\u0261": "g", "\u0279": "r", "\u026a": "i", "\u028a": "u"}
 _MIXED_RUN = _re.compile(
     r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+"
     r"|[A-Za-z][A-Za-z'\u2019-]*"
     r"|[^\s\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z]+")
-from arbtok.arabizi import is_arabizi, to_arabic_skeleton
+from arbtok.arabizi import arabizi_covers, is_arabizi, to_arabic_skeleton
 
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
 from arbtok.util import normalize as normalize_speech
@@ -276,7 +278,9 @@ class ArbtokG2PPlugin:
         elif arabizi is not None:
             arabizi_mode = arabizi
         else:
-            arabizi_mode = any(is_arabizi(t) for t in latin)
+            # and the mapper must be able to spell it: a token it cannot write whole
+            # loses the letters it cannot map, silently.
+            arabizi_mode = any(is_arabizi(t) and arabizi_covers(t) for t in latin)
 
         def flush_arabic():
             if buffer:
@@ -284,6 +288,25 @@ class ArbtokG2PPlugin:
                                       lang=self.lang, stress=self.stress,
                                       pausal=self.pausal).ipa)
                 buffer.clear()
+
+        def _donor_knows(tok):
+            from orthography2ipa import G2P
+            from arbtok.translit import DONOR_LANG
+            from arbtok.donor_lexicon import ensure_registered
+            try:
+                ensure_registered(DONOR_LANG)
+                # The donor has no lexicon-membership call, so ask it to read the
+                # word and see whether it gave a reading or handed the letters back:
+                # `ok` comes out ˌəʊkˈeɪ and `bmw` comes out ˈbmw, which is the input.
+                got = G2P(DONOR_LANG).transcribe_word(tok.lower()) or ""
+                # Strip stress, then fold the IPA symbols that merely LOOK like their
+                # ASCII letters: the donor hands `gps` back as ɡps with a script g
+                # (U+0261), which compares unequal to the input and made a passthrough
+                # look like a reading -- GPS then stayed whole and read `kbs`.
+                bare = "".join(_LOOKALIKE.get(c, c) for c in got if c not in "ˈˌ")
+                return bool(got) and bare != tok.lower()
+            except Exception:
+                return False
 
         def runs(tok):
             """A token split into its Arabic and Latin runs, in order.
@@ -295,11 +318,24 @@ class ArbtokG2PPlugin:
             with a space, ال charger was always correct, so the two spellings of the same
             phrase disagreed.
             """
-            if not (_ARABIC_RUN.search(tok) and _LATIN_RUN.search(tok)):
+            runs_ = [m.group(0) for m in _MIXED_RUN.finditer(tok)]
+            if len(runs_) < 2:
+                # One run, but an all-caps Latin word the donor does not know is a
+                # spelling rather than a word: BMW read `bmw`, its letters passed
+                # through as if they were already phones. Split into letters, which the
+                # donor lexicon now carries by name. A word it does know is never split,
+                # however it is capitalised.
+                if (tok.isascii() and tok.isalpha() and tok.isupper() and len(tok) > 1
+                        and not _donor_knows(tok)):
+                    return list(tok)
                 return [tok]
-            return [m.group(0) for m in _MIXED_RUN.finditer(tok)]
+            return runs_
 
-        for token in [r for t in text.split() for r in runs(t)]:
+        # NOT split under Arabizi. An Arabizi token carries its gutturals as digits, so
+        # splitting on script would tear `7abibi` into `7` and `abibi` and read the
+        # seven as a number -- which it did, `ˈsabʕa ʔaˈbiːb`, until this line.
+        tokens = text.split() if arabizi_mode else [r for t in text.split() for r in runs(t)]
+        for token in tokens:
             if is_latin(token):
                 if arabizi_mode:
                     # Arabic-in-Latin: reverse-transliterate to a skeleton and let
