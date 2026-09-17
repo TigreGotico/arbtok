@@ -298,6 +298,56 @@ _NG = "ŋ"
 _LATIN = re.compile(r"[A-Za-z]")
 
 
+#: Loans that are already Arabic words, keyed by donor tag then by the donor spelling
+#: lowercased. The value is the settled Arabic reading, before the matrix lect's own
+#: inventory is applied to it.
+#:
+#: Nativisation adapts a donor pronunciation. That is the right account of a nonce
+#: borrowing and the wrong one of an established loan: `model` did not enter Arabic
+#: from modern English /ˈmɒdəl/, it entered long ago and has been an Arabic word since,
+#: with a lexicalised form that no longer tracks the donor. Adapting the English reading
+#: gives *mudal*, which nobody says; the Arabic word is *muːdiːl*, which this package's
+#: own Arabic lexicon already carries as الْمُودِيلُ → aːlmuːdiːl. Integrated loans are
+#: looked up, nonce borrowings are derived (Poplack & Sankoff 1984).
+#:
+#: The value is IPA and not the Arabic spelling, which was tried first and is wrong.
+#: Arabic has no letters for [o] and [e], so a loan spelling presses و ي ا into those
+#: roles, and reading it with the native mater-lectionis rules lengthens vowels that are
+#: not long -- أوتوماتيك comes out [ʔuːtuːmaːtiːk] where the shipped gold pins
+#: [ʔotomaˈtik] for that very spelling in both ar-JO and ar-LB, and فيديو ends in [o]
+#: rather than [uː], as the bundled Arabic lexicon has it twice (فيديو → feːdiːjo,
+#: الفيديو → ælfiːdiːjo).
+#:
+#: Keyed by donor, not by lect, because the borrowing route is the donor's: Maghrebi
+#: *automatique* comes through French and keeps [otomatik] without the prothetic hamza
+#: the MSA-route form carries. Differences below that are the inventory's to make, and
+#: every value goes through the same projection the nativised form does.
+ESTABLISHED_LOANS: Dict[str, Dict[str, str]] = {
+    "en-GB": {
+        "model": "muːdiːl",
+        "video": "fiːdjo",
+        "automatic": "ʔotomatik",
+    },
+    "fr": {
+        "automatique": "otomatik",
+        "modele": "muːdiːl",
+        "video": "fiːdjo",
+    },
+}
+
+
+def _established(word: str, donor: str) -> Optional[str]:
+    """The settled reading for *word*, or None. Accent- and case-insensitive."""
+    table = ESTABLISHED_LOANS.get(donor)
+    if table is None and "-" in donor:
+        table = ESTABLISHED_LOANS.get(donor.split("-", 1)[0])
+    if not table:
+        return None
+    key = unicodedata.normalize("NFD", word.strip().lower())
+    key = "".join(c for c in key if not unicodedata.combining(c))
+    return table.get(key)
+
+
 def is_latin(word: str) -> bool:
     """True when *word* is written in Latin letters."""
     return bool(_LATIN.search(word))
@@ -508,18 +558,24 @@ def transliterate(
         script = guest_script(word)
         donor = DONOR_BY_SCRIPT.get(script or "", DONOR_LANG)
 
-    # The donor's own lexicon, if this package ships one for it. English rules
-    # cannot reach the right reading from spelling alone, and a caller who has
-    # registered their own lexicon keeps it — see arbtok.donor_lexicon.
-    ensure_registered(donor)
-    try:
-        donor_ipa = G2P(donor).transcribe_word(word)
-    except Exception:
-        return None
-    if not donor_ipa:
-        return None
+    # An established loan is looked up before the donor is consulted at all: it is not
+    # adapted from the donor, it is already an Arabic word. It still goes through the
+    # inventory check below, because a settled reading is settled for Arabic and not
+    # for every lect of it.
+    adapted = _established(word, donor)
+    if adapted is None:
+        # The donor's own lexicon, if this package ships one for it. English rules
+        # cannot reach the right reading from spelling alone, and a caller who has
+        # registered their own lexicon keeps it — see arbtok.donor_lexicon.
+        ensure_registered(donor)
+        try:
+            donor_ipa = G2P(donor).transcribe_word(word)
+        except Exception:
+            return None
+        if not donor_ipa:
+            return None
 
-    adapted = nativize(donor_ipa, lang, donor=donor)
+        adapted = nativize(donor_ipa, lang, donor=donor)
 
     spec = G2P(lang).spec
     declared = phoneme_inventory(spec)
