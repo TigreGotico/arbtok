@@ -53,3 +53,34 @@ def test_the_guest_keeps_its_lexicon_reading():
 def test_unmixed_tokens_are_untouched(text, unchanged):
     """A pure-Arabic or pure-Latin token never reaches the split."""
     assert _plugin().transcribe(text) == unchanged
+
+
+# ---------------------------------------------------------------------------
+# Two passes in one token: the interactions the separate PRs never saw
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("glued, spaced", [
+    ("الـ7abibi", "ال 7abibi"),      # article + Arabizi: split the article, not the word
+    ("الـBMW", "ال BMW"),            # article + acronym: the acronym still spells out
+    ("الـX4", "ال X4"),              # article + alphanumeric
+])
+def test_a_glued_token_agrees_with_its_spaced_form(glued, spaced):
+    """Each fix went green alone and none had seen the others in one token.
+
+    الـ7abibi read `ˈal ˈsabʕa abibi` — the article separated correctly and then the
+    Arabizi word was torn at its guttural and the seven read as a number, because the
+    Arabizi decision was taken over whole tokens and the glued one is not itself
+    coverable. الـBMW read `ˈal bmw`, the acronym rule never reaching a run that came
+    out of a split.
+    """
+    p = _plugin()
+    assert p.transcribe(glued) == p.transcribe(spaced)
+
+
+def test_an_arabizi_word_survives_a_glued_article():
+    assert "ħaːˈbiːb" in _plugin().transcribe("الـ7abibi")
+    assert "sabʕa" not in _plugin().transcribe("الـ7abibi")
+
+
+def test_an_acronym_survives_a_glued_article():
+    assert "biː im dabaljuː" in _plugin().transcribe("الـBMW")
