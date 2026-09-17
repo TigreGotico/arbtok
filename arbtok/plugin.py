@@ -48,6 +48,18 @@ from arbtok.lattice import defers_to_cascade, word_ipa
 from arbtok.lexicon import DEFAULT_LEXICON
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.translit import is_latin, transliterate
+import re as _re
+
+#: Script runs inside one whitespace token. Tatweel is stripped before this by
+#: `normalize_unicode`, but a token is split here before normalisation runs, so the
+#: connector is named explicitly: الـcharger carries one between the article and the
+#: guest word and it belongs with the Arabic run.
+_ARABIC_RUN = _re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
+_LATIN_RUN = _re.compile(r"[A-Za-z]")
+_MIXED_RUN = _re.compile(
+    r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+"
+    r"|[A-Za-z][A-Za-z'\u2019-]*"
+    r"|[^\s\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z]+")
 from arbtok.arabizi import is_arabizi, to_arabic_skeleton
 
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
@@ -273,7 +285,21 @@ class ArbtokG2PPlugin:
                                       pausal=self.pausal).ipa)
                 buffer.clear()
 
-        for token in text.split():
+        def runs(tok):
+            """A token split into its Arabic and Latin runs, in order.
+
+            `is_latin` is true of any token CONTAINING a Latin letter, so a token that
+            is only partly Latin went whole to `transliterate`, which cannot look it up:
+            الـcharger read `ʃaːdʒa` -- the guest word off the rules rather than the donor
+            lexicon, and the Arabic article dropped from the output altogether. Written
+            with a space, ال charger was always correct, so the two spellings of the same
+            phrase disagreed.
+            """
+            if not (_ARABIC_RUN.search(tok) and _LATIN_RUN.search(tok)):
+                return [tok]
+            return [m.group(0) for m in _MIXED_RUN.finditer(tok)]
+
+        for token in [r for t in text.split() for r in runs(t)]:
             if is_latin(token):
                 if arabizi_mode:
                     # Arabic-in-Latin: reverse-transliterate to a skeleton and let
