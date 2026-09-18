@@ -6,10 +6,12 @@ Latin-script word embedded in dialectal Arabic is read as a loan and mapped into
 the matrix lect's phonology out of that lect's own cited table
 (`arbtok.translit`), never spliced in as raw English.
 
-Every `ar*` spec `arbtok.supported_lects()` resolves is covered (33 lects,
-including the Saudi sub-lects `ar-SA-x-qassim`, `ar-SA-x-rijal-alma` and
-`ar-SA-x-sharqiyya`), with
-one deliberate exclusion: **`ar-Latn-buckwalter`**. That code is a Latin
+Every `ar*` spec `arbtok.supported_lects()` resolves is covered, the Saudi,
+Bahraini and Yemeni sub-lects among them. The roster is not a number kept here:
+it is whatever the installed orthography2ipa resolves, so a spec added upstream
+is a missing gold file until `scripts/gold_code_switched.py build <lect>` is run,
+and `tests/test_gold_code_switched.py` is what says so. One deliberate exclusion:
+**`ar-Latn-buckwalter`**. That code is a Latin
 romanization *of* Arabic, so a mixed Arabic/Latin sentence has no stable Arabic
 run to phonemise, the whole line would read as Latin. It is a machine-readable
 regression anchor, not a spoken lect, and code-switching into it is undefined.
