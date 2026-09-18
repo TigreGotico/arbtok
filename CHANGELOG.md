@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.0a84](https://github.com/TigreGotico/arbtok/tree/0.0.0a84) (2026-09-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a83...0.0.0a84)
+
+**Merged pull requests:**
+
+- fix\(aligner\): drop a dead path insert, and say the Levantine row was re-derived [\#95](https://github.com/TigreGotico/arbtok/pull/95) ([JarbasAl](https://github.com/JarbasAl))
+- fix\(deps\): floor ovos-utils and ovos-config, so the broken pair cannot be installed [\#93](https://github.com/TigreGotico/arbtok/pull/93) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a83](https://github.com/TigreGotico/arbtok/tree/0.0.0a83) (2026-09-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a82...0.0.0a83)
