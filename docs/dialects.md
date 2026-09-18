@@ -237,3 +237,37 @@ filtered on the lect label:
 ```python
 kept = [w for w in out.words if w.lect_constrained]
 ```
+
+## Which generator answers a word nobody has written down
+
+Two exist. `LatticeDiacritizer` tokenizes one constrained-argmax guess from rawi and
+refuses it when the variety's grapheme table does not license it. `FusionDiacritizer`
+enumerates the licensed readings and lets rawi **score** them, so an unlicensed argmax
+loses to the best licensed alternative rather than throwing the whole distribution away.
+
+**The lattice is the default, and that is a measurement rather than an inheritance.**
+On the shipped code-switched gold — 881 rows, 44 lects, scored per character position
+against the editor-authored vocalization:
+
+| generator | rows unscorable | positions | DER |
+|---|---|---|---|
+| rawi alone | 67 (7.6%) | 21,292 | 0.1757 |
+| lattice | 11 (1.2%) | 22,802 | **0.0989** |
+| fusion | 11 (1.2%) | 22,809 | 0.1012 |
+
+Fusion is 52 positions in 22,800 behind the simpler path, about one standard error
+before within-sentence correlation widens the interval — this gold cannot separate them,
+and a tie goes to the cheaper path.
+
+Read the rawi-alone row carefully: an unscorable row is one where the system **rewrote
+letters**, so its output cannot be aligned to the reference at all. rawi does that on
+7.6% of rows against the lattice's 1.2%, and those rows are *excluded* from its DER. So
+rawi is scored on the rows it did not mangle, and the gap above understates the guard.
+
+```bash
+ARBTOK_DIACRITIZER=fusion   # select the other path
+```
+
+A value that is neither raises rather than falling back: a typo that silently kept the
+default reads exactly like the setting working, and a comparison run that way would
+compare one path with itself.
