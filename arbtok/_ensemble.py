@@ -159,6 +159,30 @@ class EnsembleDiacritizer:
 
 
 @lru_cache(maxsize=None)
-def get_ensemble() -> EnsembleDiacritizer:
-    """A shared, lazily-built ensemble reader (the ONNX session is built once)."""
-    return EnsembleDiacritizer()
+def _build_ensemble(model_path, vocab_path) -> EnsembleDiacritizer:
+    kwargs = {}
+    if model_path is not None:
+        kwargs["model_path"] = model_path
+    if vocab_path is not None:
+        kwargs["vocab_path"] = vocab_path
+    return EnsembleDiacritizer(**kwargs)
+
+
+def get_ensemble(model_path=None, vocab_path=None) -> EnsembleDiacritizer:
+    """A shared, lazily-built ensemble reader (the ONNX session is built once).
+
+    Both paths default to the bundled artifacts. They are arguments rather than
+    constants because the class has always accepted them and nothing could reach
+    them: this factory took none, and the diacritizers call this factory, so a
+    register-tuned rawi could not be loaded without editing the library or
+    monkeypatching it. A re-export that emits pre-argmax logits over the same
+    class vocabulary drops in here (``tools/build_ensemble_logits_onnx.py``
+    reproduces the export).
+
+    Cached per (model_path, vocab_path), so asking for the bundled pair twice
+    still builds one session.
+    """
+    # Normalised before the cache: caching get_ensemble itself would make
+    # get_ensemble() and get_ensemble(None, None) different keys and build a second
+    # ONNX session for callers that never asked for one.
+    return _build_ensemble(model_path, vocab_path)

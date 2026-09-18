@@ -210,8 +210,15 @@ class LatticeDiacritizer:
         waqf: bool = True,
         lexicon: Optional[str] = DEFAULT_LEXICON,
         dialect_lexicon: bool = True,
+        model_path: Optional[str] = None,
+        vocab_path: Optional[str] = None,
     ) -> None:
         self.lang = lang
+        #: An alternative rawi export and its class vocabulary, or None for the
+        #: bundled pair. Here so a register-tuned model can be measured against the
+        #: bundled one without editing the library.
+        self.model_path = model_path
+        self.vocab_path = vocab_path
         self.waqf = waqf
         self._diacritizer = None
         self._spec = get(lang)
@@ -237,7 +244,7 @@ class LatticeDiacritizer:
     def diacritizer(self):
         if self._diacritizer is None:
             from arbtok._ensemble import get_ensemble
-            self._diacritizer = get_ensemble()
+            self._diacritizer = get_ensemble(self.model_path, self.vocab_path)
         return self._diacritizer
 
     def _propose(self, word: str) -> str:
