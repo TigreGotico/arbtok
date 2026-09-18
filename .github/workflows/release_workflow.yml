@@ -22,7 +22,11 @@ jobs:
       version_file: 'arbtok/version.py'
       update_changelog: true
       publish_prerelease: true
-      propose_release: true
+      # arbtok has no stable branch and never has had one: `dev` is the trunk and the
+      # alpha on PyPI is the release. The shared workflow's `base_branch` defaults to
+      # `master`, so proposing a release asked git for a ref that does not exist and
+      # the job died with `fatal: couldn't find remote ref master` on every merge.
+      propose_release: false
       changelog_max_issues: 100
       publish_pypi: true
       notify_matrix: true
