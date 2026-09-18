@@ -198,9 +198,12 @@ the field is what lets a caller see it. `w.lect_constrained` excludes `model` an
 The veto is not inert, and the distinction matters. Over the 636 model-path words of the
 shipped gold, **5 carry a reading at least one lect in the roster would reject** — the
 narrower Omani and southern Saudi specs among them. So `model` means the lect *did not*
-object, not that it *could not*; the mechanism has teeth, on about eight words in a
-thousand. Not objecting is weaker evidence than choosing, which is what the exclusion
-records.
+object, not that it *could not*; the mechanism has teeth.
+
+Five is enough to refute "the veto never fires on a model reading" and **not enough to
+say how often it does**: a numerator of 5 over 636, on one gold, is not a rate, and
+quoting it as one would give it a precision the sample cannot carry. Not objecting is
+weaker evidence than choosing, which is what the exclusion records.
 
 Measured over the shipped code-switched gold, 4,622 words across 44 lects:
 

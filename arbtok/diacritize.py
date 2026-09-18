@@ -244,6 +244,8 @@ class DiacritizedWord:
         four dialect specs, zero rejections. The veto is not *inert*, though: over the
         636 model-path words of the shipped gold, 5 carry a reading at least one lect in
         the roster would reject, the narrower Omani and southern Saudi specs among them.
+        Five is enough to refute "the veto never fires" and not enough to say how often
+        it does: a numerator of 5 over 636, on one gold, is not a rate.
         So ``model`` means the lect did not object, not that it could not — and not
         objecting is weaker evidence than choosing, which is why it does not count here.
         """
