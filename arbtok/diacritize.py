@@ -238,8 +238,14 @@ class DiacritizedWord:
     def lect_constrained(self) -> bool:
         """True when something the lect declares chose this word's marks.
 
-        ``model`` is excluded deliberately: licensing is a veto over letters, not a
-        preference over readings, so a licensed MSA vocalization passes it untouched.
+        ``model`` is excluded deliberately, and the reason is measured rather than
+        argued. Licensing is a veto over letters, not a preference over readings, so a
+        well-formed MSA vocalization passes it untouched — six MSA vocalizations against
+        four dialect specs, zero rejections. The veto is not *inert*, though: over the
+        636 model-path words of the shipped gold, 5 carry a reading at least one lect in
+        the roster would reject, the narrower Omani and southern Saudi specs among them.
+        So ``model`` means the lect did not object, not that it could not — and not
+        objecting is weaker evidence than choosing, which is why it does not count here.
         """
         return self.provenance in ("closed-class", "author", "proclitic")
 

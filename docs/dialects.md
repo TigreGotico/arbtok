@@ -195,6 +195,13 @@ from the lect opposing it. That is not a bug report; it is the shape of the casc
 the field is what lets a caller see it. `w.lect_constrained` excludes `model` and
 `model-repaired` for exactly this reason.
 
+The veto is not inert, and the distinction matters. Over the 636 model-path words of the
+shipped gold, **5 carry a reading at least one lect in the roster would reject** — the
+narrower Omani and southern Saudi specs among them. So `model` means the lect *did not*
+object, not that it *could not*; the mechanism has teeth, on about eight words in a
+thousand. Not objecting is weaker evidence than choosing, which is what the exclusion
+records.
+
 Measured over the shipped code-switched gold, 4,622 words across 44 lects:
 
 | provenance | share |
