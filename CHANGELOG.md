@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a82](https://github.com/TigreGotico/arbtok/tree/0.0.0a82) (2026-09-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a81...0.0.0a82)
+
+**Merged pull requests:**
+
+- feat\(deps\): pin orthography2ipa 7.95.1a1, and record what the bump changes [\#94](https://github.com/TigreGotico/arbtok/pull/94) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a81](https://github.com/TigreGotico/arbtok/tree/0.0.0a81) (2026-09-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a80...0.0.0a81)
