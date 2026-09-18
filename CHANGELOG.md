@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.0a83](https://github.com/TigreGotico/arbtok/tree/0.0.0a83) (2026-09-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a82...0.0.0a83)
+
+**Merged pull requests:**
+
+- fix\(gold\): gold files for the nine lects orthography2ipa added, which broke dev [\#96](https://github.com/TigreGotico/arbtok/pull/96) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.0a82](https://github.com/TigreGotico/arbtok/tree/0.0.0a82) (2026-09-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a81...0.0.0a82)
