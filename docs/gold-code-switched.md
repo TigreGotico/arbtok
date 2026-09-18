@@ -76,6 +76,11 @@ One candidate is a trap. سَكَن differs today, ˈsatsan against ˈsakan, but
 word-medial cell, which orthography2ipa withdraws because the source does not attest
 it. A gold row built on سَكَن would go red on a correct upstream change.
 
+**This is an open item, not a property of the file.** `ar-SA-x-shamali` is expected to
+gain a discriminating frame; until it does, a passing fixture for that lect means the
+pipeline ran, not that the spec is intact. A reader six months from now should be able
+to tell a shortfall waiting on work from a decision that was taken.
+
 Contrast `ar-BH-x-baharna`, which does distinguish itself on the frames it shares with
 `ar-BH`: ˈhaðaː → ˈhadaː on the dhāl and ˈnʃuːfak → naˈʃuːfatʃ on the kāf.
 
