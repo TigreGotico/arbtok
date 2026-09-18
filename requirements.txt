@@ -4,5 +4,14 @@ quebra-frases
 langcodes
 ovos-number-parser>=0.18.5a1
 ovos-date-parser>=0.6.4a1
+# Transitive, floored here because the combination is otherwise installable and breaks
+# on import rather than on resolve. ovos-config below 3.5.1a1 imports
+# `ovos_utils.xdg_utils`, which ovos-utils 0.0.14a5 does not ship, so `arbtok.plugin`
+# raises ModuleNotFoundError while `import arbtok` succeeds and the distribution reports
+# a healthy version. A worker pool whose initializer imports the plugin then hangs
+# instead of failing. Measured: `arbtok==0.0.0a81 ovos-utils==0.0.14a5` resolves without
+# complaint and reproduces it; with these floors it resolves to the working pair instead.
+ovos-utils>=0.15.1a1
+ovos-config>=3.5.1a1
 orthography2ipa>=7.95.1a1
 huggingface_hub
