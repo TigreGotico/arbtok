@@ -57,6 +57,28 @@ can carry IPA the pipeline does **not** produce, without hiding that fact:
 `known-wrong` / `unsupported` rows are still schema-, `raw`- and dedup-checked
 but are not re-run against `transcribe`.
 
+## A file can keep the roster complete without distinguishing its lect
+
+`ar-SA-x-shamali` produces output identical to `ar-SA-x-najd` on every frame the two
+share. That is correct rather than a defect in the file: Northern Najdi's only delta
+from its parent is /k/ affrication before a central vowel, and no frame in this set
+puts a /k/ in that environment. The file earns its place by keeping the roster complete
+and the pipeline exercised — a missing gold file fails `test_gold_matches_pipeline`
+outright — but it would not catch a regression that reverted the Shamali spec.
+
+It is one row from earning it properly. Measured against the two specs, كَلْب →
+ˈtsalb against ˈkalb, مَكَان → maˈtsaːn against maˈkaːn, and كَاتِب → ˈtsaːtib against
+ˈkaːtib all discriminate; كِتَاب and دِيك do not, because the front-vowel rule both
+varieties share already fires there. A frame carrying one of the first three makes the
+fixture discriminating for every lect at once, since frames are shared.
+
+One candidate is a trap. سَكَن differs today, ˈsatsan against ˈsakan, but that is the
+word-medial cell, which orthography2ipa withdraws because the source does not attest
+it. A gold row built on سَكَن would go red on a correct upstream change.
+
+Contrast `ar-BH-x-baharna`, which does distinguish itself on the frames it shares with
+`ar-BH`: ˈhaðaː → ˈhadaː on the dhāl and ˈnʃuːfak → naˈʃuːfatʃ on the kāf.
+
 ## Provenance & honesty
 
 - **Editor-authored, pipeline-verified, not native-validated.** The Arabic
