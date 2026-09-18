@@ -165,3 +165,65 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meetin
 
 ---
 [← Rawi-lattice fusion](rawi-fusion.md) · [Home](../README.md) · [Arabizi →](arabizi.md)
+
+## Diacritizing without phonemizing, and knowing who decided
+
+`arbtok.vocalize(text, lect)` returns the diacritized text and a record per word:
+
+```python
+import arbtok
+
+out = arbtok.vocalize("عندي meeting مهم", "ar-EG")
+str(out)                                        # the vocalized string
+[(w.surface, w.provenance) for w in out.words]  # who decided each word
+```
+
+Each `DiacritizedWord` carries `surface`, `output` and `provenance` — one of
+`author`, `closed-class`, `stem-lexicon`, `proclitic`, `model`, `model-repaired`,
+`refused`, `not-arabic`.
+
+### Why the provenance is the point
+
+The orthography licenses **letters, not readings**. `_is_licensed` asks whether every
+letter and mark in a proposal is declared by the variety's spec, and every Arabic spec
+declares every ḥaraka — so a well-formed Modern Standard vocalization passes the check
+untouched, whatever variety was asked for. Measured: six MSA vocalizations against
+`ar-EG`, `ar-SA-x-najd`, `ar-MA` and `ar-x-gulf`, zero rejections.
+
+So `provenance == "model"` means the model's MSA prior decided that word with nothing
+from the lect opposing it. That is not a bug report; it is the shape of the cascade, and
+the field is what lets a caller see it. `w.lect_constrained` excludes `model` and
+`model-repaired` for exactly this reason.
+
+Measured over the shipped code-switched gold, 4,622 words across 44 lects:
+
+| provenance | share |
+|---|---|
+| `not-arabic` | 32.5% |
+| `stem-lexicon` | 31.0% |
+| `author` | 19.8% |
+| `model` | 13.2% |
+| `closed-class` | 2.9% |
+| `model-repaired` | 0.6% |
+| `refused` | 0.04% |
+
+Two readings worth taking from that. The closed-class lexicon — the only mechanism that
+supplies a *dialectal reading* rather than permitting one — decides fewer than three
+words in a hundred, and ranges from 22% (`ar-TN`) to none at all (`ar-x-peninsular`).
+And genuine refusals are two words in 4,622: the cascade does not fail, it defaults.
+
+### `not-arabic` is not a failure
+
+A token with no Arabic letter — a Latin embed, a number, punctuation — never had a
+diacritization to attempt. It is separated from `refused` because on this gold every
+single refusal in `ar-EG` was an English embed, so a caller filtering `refused` for
+failures got a page of English. Use `w.is_failure`, which counts only `refused`.
+
+### Filtering a corpus
+
+A corpus filtered to words the lect actually constrained is a different corpus from one
+filtered on the lect label:
+
+```python
+kept = [w for w in out.words if w.lect_constrained]
+```
