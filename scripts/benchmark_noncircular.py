@@ -16,10 +16,9 @@ grapheme mapping's:
   * diacritized input  -- both engines see the vowels; this compares phone mapping alone
   * bare input         -- the marks are stripped; arbtok points the text, plain o2i cannot
 """
-import argparse, json, os, sys, unicodedata
+import argparse, json, sys, unicodedata
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts"))
-from benchmark_iqraeval import load_gold, normalize, phoneme_ref_to_ipa, score  # noqa: E402
+from benchmark_iqraeval import load_gold, normalize, phoneme_ref_to_ipa, score
 
 MARKS = set("ًٌٍَُِّْٰ")
 
