@@ -1,8 +1,8 @@
 # Changelog
 
-## [0.0.0a84](https://github.com/TigreGotico/arbtok/tree/0.0.0a84) (2026-09-18)
+## [0.0.0a85](https://github.com/TigreGotico/arbtok/tree/0.0.0a85) (2026-09-18)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a83...0.0.0a84)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a83...0.0.0a85)
 
 **Merged pull requests:**
 
