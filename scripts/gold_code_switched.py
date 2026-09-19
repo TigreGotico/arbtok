@@ -98,6 +98,20 @@ def _fill(template: str, zone: str) -> str:
 
 # domain, template (vocalised Arabic + inline Latin), gloss, english words
 FRAMES = [
+    # Carries BARE كَلْب on purpose. Northern Najdi affricates /k/ before a central
+    # vowel and Central Najdi does not, so this is the one row that makes
+    # ar-SA-x-shamali distinguishable from ar-SA-x-najd — without it that file is a
+    # fixture that cannot fail for a reason specific to its own lect.
+    #
+    # It must be bare. الْكَلْب puts the /k/ word-medially, which is the cell
+    # orthography2ipa does NOT claim (Alshammari could not attest it), so the article
+    # version comes back alˈkalb and demonstrates nothing while looking correct. The
+    # first draft of this frame had the article.
+    #
+    # كَاتِب and مَكَان would serve equally. سَكَن would not: it differs only through
+    # that same word-medial cell, so a row built on it goes red on a correct change.
+    ("home", "كَلْب صَغِير عِنْدُه checkup {NOW}",
+     "a small dog has a checkup now", ["checkup"]),
     ("tech", "{WANT} أَبْعَت email لِلْمُدِير {NOW}",
      "I want to send an email to the manager now", ["email"]),
     ("tech", "عِنْدِي laptop جَدِيد بَسّ wifi بَطِيء",
