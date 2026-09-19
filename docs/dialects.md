@@ -125,13 +125,29 @@ adapts a loan as its own loanword literature says it does, so the nativization
 table is chosen by walking the orthography2ipa **parent chain**, no hardcoded
 lang→zone map, and the first ancestor carrying a table wins:
 
-| table | keyed at | inherited by | source |
-|---|---|---|---|
-| Najdi | `ar-SA-x-najd` |, | Alhoody (2019) |
-| Egyptian | `ar-EG` |, | Hafez (1996). Watson (2002) |
-| Levantine | `ar-x-levantine` | `ar-LB`, `ar-SY`, `ar-PS`, `ar-JO` | Al-Saidat (2011). Cowell (1964) |
-| Maghrebi | `ar-x-maghrebi` | `ar-MA`, `ar-DZ`, `ar-TN` (not `ar-LY`, not `ar-MR`) | Kenstowicz & Louriz (2009). Ziadna (2018). Oueslati (2021). Heath (2020) |
-| default | `ar` | every un-tabled lect (e.g. `ar-KW` → `ar-x-gulf` → `ar-x-peninsular` → …) | Watson (2002). Holes (2004) |
+| table | keyed at | source |
+|---|---|---|
+| Najdi | `ar-SA-x-najd` | Alhoody (2019) |
+| Egyptian | `ar-EG` | Hafez (1996). Watson (2002) |
+| Levantine | `ar-x-levantine` | Al-Saidat (2011). Cowell (1964) |
+| Maghrebi | `ar-x-maghrebi` | Kenstowicz & Louriz (2009). Ziadna (2018). Oueslati (2021). Heath (2020) |
+| default | `ar` | Watson (2002). Holes (2004) |
+
+Which leaves inherit which table is not listed here, and deliberately. The answer
+comes from orthography2ipa's genealogy, so it changes whenever that package ships
+a spec — `ar-SA-x-shamali` and three `ar-EG-x-*` lects exist on newer releases than
+this repository's floor pin and would already have made a written-out list wrong.
+Ask the code:
+
+```python
+from arbtok.translit import nativization_table, SEGMENT_MAP
+nativization_table("ar-SA-x-qassim") is SEGMENT_MAP   # True — inherits Najdi
+```
+
+Two leaves are held out of their group's table by naming the default ahead of
+their parent: `ar-LY`, whose donor is Italian rather than French (Benkato 2020),
+and `ar-MR`, whose Hassaniya declares /ʁ/ where the Maghrebi table would rewrite
+it.
 
 ```python
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'manaɡar'  (Cairene stop ǧīm)
@@ -173,11 +189,26 @@ to a vowel plus a nasal is uncontested, the vowel quality is not (Moroccan
 borrows from Italian rather than French (Benkato 2020), and Mauritanian Hassaniya
 declares /ʁ/, so the table would rewrite a segment it actually has.
 
-Whatever a table emits must be realizable in the matrix lect's inventory. A symbol
-the lect does not declare is **refused** (`transliterate` returns `None`) rather
-than emitted as an unpronounceable token. So Najdi's `[-inɡ]` reading of *meeting*
-is refused for MSA (which has no /ɡ/), and the Egyptian interdental merger is what
-lets *think* be realized at all in `ar-EG` (which has no /θ/).
+Whatever a table emits must be realizable in the matrix lect's inventory, and a
+symbol the lect does not declare never reaches the output. By default it is
+**projected** onto the nearest sound the lect does declare, because loanword
+adaptation does not drop a word — a speaker says *something*. So Najdi's `[-inɡ]`
+reading of *meeting* comes out `miːtink` for MSA, which has no /ɡ/, and the
+Egyptian interdental merger is what lets *think* be realized at all in `ar-EG`,
+which has no /θ/.
+
+`strict=True` refuses that projection instead, returning `None`, for a linguistic
+caller for whom a nearest-sound guess is worse than no answer:
+
+```python
+transliterate("meeting", "ar")                # 'miːtink'  — /ɡ/ projected onto /k/
+transliterate("meeting", "ar", strict=True)   # None       — MSA declares no /ɡ/
+transliterate("meeting", "ar-SA-x-najd")      # 'miːtinɡ'  — Najdi declares it
+```
+
+`strict` governs that one decision and nothing else. `None` also comes back,
+whatever `strict` says, when the donor produces no reading at all — an empty
+string, digits, punctuation.
 
 `nativize=True` is the TTS default. `nativize=False` leaves a Latin run in place,
 untranscribed, for linguistic output that must not invent a pronunciation:
