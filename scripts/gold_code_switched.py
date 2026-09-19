@@ -33,6 +33,7 @@ ipa (pipeline output), gloss_en, cs_words (semicolon Latin list), notes
 """
 import argparse
 import csv
+import os
 import re
 import sys
 import unicodedata
@@ -265,29 +266,85 @@ def _refresh_pinned(lect, path):
         fields, rows = reader.fieldnames, list(reader)
 
     plugin = ArbtokG2PPlugin(lang=lect, diacritize=True, nativize=True, pausal=True)
-    refreshed, recovered = 0, []
+    from arbtok.translit import transliterate
+
+    cite = _table_citation(lect)
+    refreshed, recited, recovered, stale_notes = 0, 0, [], []
     for row in rows:
         status = (row.get("pipeline_status") or "pinned").strip()
         got = plugin.transcribe(row["sentence"])
-        if status == "pinned":
-            if got != row["ipa"]:
-                row["ipa"] = got
-                refreshed += 1
-        elif got == row["ipa"]:
+        changed = status == "pinned" and got != row["ipa"]
+        if changed:
+            row["ipa"] = got
+            refreshed += 1
+        elif status != "pinned" and got == row["ipa"]:
             recovered.append(row["id"])
+        # The notes carry the table the reading came from, and a lect that gains a
+        # table keeps attributing its readings to the old one. The citation is
+        # derived, not curated, so it is refreshed on every row including the
+        # known-wrong ones -- what those rows pin is the IPA, not the provenance.
+        # `table: n/a` is a deliberate placeholder on a row with no Latin embed, so
+        # no table applies to it; only a real citation that has gone out of date is
+        # replaced.
+        head, sep, tail = (row.get("notes") or "").rpartition(". table: ")
+        if sep and tail != cite and tail in _TABLE_CITE.values():
+            row["notes"] = head + sep + cite
+            recited += 1
+        # The word arrows in the notes carry hand-written annotation on top of the
+        # derived reading -- `laptop→labtub (/p/→[b])` names a rule that may no
+        # longer apply -- so a stale one is reported rather than rewritten.
+        #
+        # Reported only for a row this run just changed. Across the shipped gold
+        # about two hundred rows carry an arrow that drifted from the reading long
+        # before any of this, and printing those on every build buries the handful
+        # a person actually has to look at.
+        if changed:
+            for word in [w for w in (row.get("cs_words") or "").split(";") if w]:
+                reading = transliterate(word, lect)
+                if reading and f"{word}→" in head and f"{word}→{reading}" not in head:
+                    stale_notes.append(row["id"])
+                    break
 
-    if refreshed:
-        with open(path, "w", encoding="utf-8", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=fields, delimiter="\t",
-                               lineterminator="\n")
-            w.writeheader()
-            w.writerows(rows)
+    if refreshed or recited:
+        _write_rows(path, fields, rows)
 
-    note = f"refreshed {refreshed} pinned row(s)"
+    note = f"refreshed {refreshed} pinned row(s), {recited} table citation(s)"
+    if stale_notes:
+        note += (f"; {len(stale_notes)} row(s) whose notes still describe the old "
+                 f"reading and are hand-annotated: {', '.join(stale_notes)}")
     if recovered:
         note += (f"; {len(recovered)} row(s) marked known-wrong now reproduce "
                  f"and are a person's call to promote: {', '.join(recovered)}")
     return note
+
+
+def _write_rows(path, fields, rows):
+    """Write the gold back byte for byte, without going through `csv`.
+
+    `csv.DictWriter` defaults to QUOTE_MINIMAL, so one row whose notes contain a
+    double quote came back wrapped and internally doubled -- `ar-LB-cs-008` holds
+    `hedged as "sometimes"` and rewriting its file reformatted a row nothing had
+    touched. QUOTE_NONE is not the answer either: the writer raises on the
+    quotechar, not only on the delimiter, and `open(path, "w")` has already
+    truncated by then. That left ar-LB.tsv at 8 of its 21 lines -- data loss, in the
+    one file the quoting was being fixed for.
+
+    The format is tab-separated with no quoting, so a join is exact and cannot
+    raise. The pre-check guarantees no field carries a tab or a newline, and the
+    write goes to a sibling and is moved into place, so a failure here leaves the
+    original file alone.
+    """
+    for row in rows:
+        for field in fields:
+            value = row.get(field) or ""
+            if "\t" in value or "\n" in value or "\r" in value:
+                raise ValueError(f"{row.get('id')}: {field} contains a tab or newline")
+    lines = ["\t".join(fields)]
+    lines += ["\t".join(row.get(f) or "" for f in fields) for row in rows]
+    body = "\n".join(lines) + "\n"
+    tmp = Path(str(path) + ".tmp")
+    tmp.write_text(body, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def cmd_build(args):

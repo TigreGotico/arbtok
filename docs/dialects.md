@@ -159,9 +159,9 @@ that MSA and Gulf have no /ʒ/. The front rounded vowels go **/y/ → [i]**, **/
 [u]**, **/œ/ → [u]**.
 
 **/p/ and /v/ carry no rule**, deliberately. Substitution to [b] and [f] is the
-majority outcome in every corpus — 83.8% of 74 /p/ tokens in Ziadna's Algerian
-data — but the conditioning is loan age and the speaker's access to French, and
-neither is recoverable from an input string. The specs declare both segments, so
+majority outcome in every corpus — 59 of 74 /p/ tokens in Ziadna's Algerian data —
+but the conditioning is loan age and the speaker's access to French, and neither is
+recoverable from an input string. The specs declare both segments, so
 they pass through. This path fires on a *Latin-script* run, which is a code-switch
 or a recent loan, the register where retention is reported; the established
 stratum is written in Arabic letters and never reaches here.

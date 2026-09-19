@@ -69,3 +69,29 @@ def test_roster_excludes_buckwalter():
     """ar-Latn-buckwalter is a romanisation anchor, not a code-switch lect."""
     assert "ar-Latn-buckwalter" not in _lects()
     assert "ar-Latn-buckwalter" in gcs.SKIP
+
+
+def test_a_gold_row_holding_a_double_quote_survives_a_rewrite(tmp_path):
+    """`_write_rows` must not lose data on the one file it exists to protect.
+
+    `ar-LB-cs-008`'s notes contain `hedged as "sometimes"`. Through `csv` that row
+    either came back reformatted (QUOTE_MINIMAL wraps it and doubles the quotes) or
+    took the file down with it: QUOTE_NONE raises on the quotechar, and `open(path,
+    "w")` has already truncated by then, which left the file at 8 of its 21 lines.
+    """
+    import csv as _csv
+    import scripts.gold_code_switched as gcs
+
+    src = gcs.GOLD_DIR / "ar-LB.tsv"
+    original = src.read_bytes()
+    path = tmp_path / "ar-LB.tsv"
+    path.write_bytes(original)
+
+    with open(path, encoding="utf-8") as fh:
+        reader = _csv.DictReader(fh, delimiter="\t")
+        fields, rows = reader.fieldnames, list(reader)
+    quoted = [r for r in rows if '"' in (r.get("notes") or "")]
+    assert quoted, "ar-LB.tsv no longer holds a row with a double quote; pick another"
+
+    gcs._write_rows(path, fields, rows)
+    assert path.read_bytes() == original, "rewriting an untouched gold changed its bytes"
