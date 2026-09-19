@@ -161,11 +161,19 @@ def strip_tashkeel(text: str) -> str:
 
 # ── nativisation-note derivation (pipeline-derived, honest about refusals) ──
 
+_DEFAULT_CITE = "default pan-Arabic (Watson 2002; Holes 2004)"
+
 _TABLE_CITE = {
     "ar-SA-x-najd": "Najdi (Alhoody 2019)",
     "ar-EG": "Egyptian (Hafez 1996; Watson 2002)",
     "ar-x-levantine": "Levantine (Al-Saidat 2011; Cowell 1964)",
-    "ar": "default pan-Arabic (Watson 2002; Holes 2004)",
+    "ar-x-maghrebi": ("Maghrebi (Kenstowicz & Louriz 2009; Ziadna 2018; "
+                      "Oueslati 2021; Heath 2020)"),
+    # Held out of the Maghrebi table by naming the default ahead of their parent,
+    # so they own a _TABLES entry and need a citation of their own.
+    "ar-LY": _DEFAULT_CITE,
+    "ar-MR": _DEFAULT_CITE,
+    "ar": _DEFAULT_CITE,
 }
 
 
@@ -232,6 +240,56 @@ def _build_rows(lect):
     return rows
 
 
+def _refresh_pinned(lect, path):
+    """Re-read the pipeline for the ``pinned`` rows of a hand-authored file.
+
+    The blanket refusal to touch a file with a ``pipeline_status`` column protects
+    the ``known-wrong`` and ``unsupported`` rows, which exist precisely where the
+    pipeline cannot reach the right value and where regenerating would replace a
+    curated fact with the output it was written to correct.
+
+    A ``pinned`` row is the opposite: it holds live pipeline output, and the test
+    asserts it byte for byte. So a legitimate pipeline change leaves the file
+    failing and the tool refusing to fix it. This refreshes exactly those rows and
+    leaves every other byte alone.
+
+    It also reports the rows that go the other way — a ``known-wrong`` row the
+    pipeline now reproduces is a defect that has been fixed, and promoting it to
+    ``pinned`` is a judgement about the reading, so it is printed for a person
+    rather than applied.
+    """
+    from arbtok.plugin import ArbtokG2PPlugin
+
+    with open(path, encoding="utf-8") as fh:
+        reader = csv.DictReader(fh, delimiter="\t")
+        fields, rows = reader.fieldnames, list(reader)
+
+    plugin = ArbtokG2PPlugin(lang=lect, diacritize=True, nativize=True, pausal=True)
+    refreshed, recovered = 0, []
+    for row in rows:
+        status = (row.get("pipeline_status") or "pinned").strip()
+        got = plugin.transcribe(row["sentence"])
+        if status == "pinned":
+            if got != row["ipa"]:
+                row["ipa"] = got
+                refreshed += 1
+        elif got == row["ipa"]:
+            recovered.append(row["id"])
+
+    if refreshed:
+        with open(path, "w", encoding="utf-8", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=fields, delimiter="\t",
+                               lineterminator="\n")
+            w.writeheader()
+            w.writerows(rows)
+
+    note = f"refreshed {refreshed} pinned row(s)"
+    if recovered:
+        note += (f"; {len(recovered)} row(s) marked known-wrong now reproduce "
+                 f"and are a person's call to promote: {', '.join(recovered)}")
+    return note
+
+
 def cmd_build(args):
     GOLD_DIR.mkdir(parents=True, exist_ok=True)
     lects = args.lects or _roster()
@@ -243,7 +301,7 @@ def cmd_build(args):
         if not args.lects and existing.is_file():
             with open(existing, encoding="utf-8") as fh:
                 if "pipeline_status" in (fh.readline()):
-                    print(f"skip {lect}: hand-authored (has pipeline_status)")
+                    print(f"{lect}: hand-authored — {_refresh_pinned(lect, existing)}")
                     continue
         rows = _build_rows(lect)
         with open(GOLD_DIR / f"{lect}.tsv", "w", encoding="utf-8", newline="") as f:
