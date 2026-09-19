@@ -250,6 +250,69 @@ _DEFAULT_MAP: Dict[str, str] = {
     "əʊ": "oː",
 }
 
+#: Maghrebi, ``ar-x-maghrebi`` (inherited by ``ar-MA``/``ar-DZ``/``ar-TN``, and by
+#: the ISO codes ``ary``/``arq``/``aeb`` that share the parent). These lects borrow
+#: from French, so this table answers segments no other table has had to: the uvular
+#: rhotic and the front rounded vowels. Reach them by naming the donor --
+#: ``transliterate(word, "ar-MA", donor="fr-FR")``.
+#:
+#: Built from :data:`_DEFAULT_MAP` so that every line below is a divergence with a
+#: source, and the rest of the lect's behaviour is unchanged.
+#:
+#: * **/ʁ/ → [r]**, not the [ɣ] the feature metric picks. Three corpora, three
+#:   countries, no counterexample: Kenstowicz, M. & Louriz, N. (2009), *Reverse
+#:   Engineering: Emphatic Consonants and the Adaptation of Vowels in French
+#:   Loanwords into Moroccan Arabic*, Brill's Annual of Afroasiatic Languages and
+#:   Linguistics 1, 41-74, whose Moroccan forms contain no ɣ at all (*train* >
+#:   [tran], *carrefour* > [kaRfur]); Ziadna, T. (2018), *On the How, What, and Why
+#:   of the Adaptation of French Loanwords in Algerian Arabic*, PhD dissertation,
+#:   University of Wisconsin-Madison, p. 185, which states the alternative and
+#:   rejects it -- Algerian has /ɣ/ and does not use it here, *garage* > [gɑːrˤɑːʤ]
+#:   (p. 196); Oueslati, J. (2021), *French Loans in Tunisian Arabic from Phonetic
+#:   and Phonological Perspective*, Rocznik Orientalistyczny LXXIV(1), 95-113,
+#:   p. 100, *bureau* > [biːru], *comptoir* > [kuntwaːr].
+#: * **/ʒ/ retained.** The Maghrebi ǧīm is [ʒ] and the lects declare it; the
+#:   pan-Arabic default maps it to [dʒ] for the stated reason that MSA and Gulf have
+#:   no /ʒ/, which is not true here. Kenstowicz & Louriz 2009 keep it in every loan
+#:   they print (*stage* > [STaʒ], *bagage* > [bagaʒ]) and affricate none; Oueslati
+#:   2021 likewise (*rouge* > [ruːʒ], *jupe* > [ʒiːb]).
+#:   Algeria is the one place this is a CHOICE rather than a fact: Ziadna 2018
+#:   p. 177 reports the split -- urban dialects (Algiers, Skikda, Annaba) have [ʒ],
+#:   rural and Bedouin ones affricate to [dʒ]. [ʒ] covers the urban north; it does
+#:   not cover his own Setifian.
+#: * **/y/ → [i], /ø/ → [u], /œ/ → [u].** Four corpora agreeing. Heath, J. (2020),
+#:   *Moroccan Arabic*, in Lucas & Manfredi (eds.), *Arabic and Contact-Induced
+#:   Change*, Language Science Press, p. 217: "French {i ü e ɛ} merge as MA i.
+#:   French {u o ɔ œ} merge as MA u."; Kenstowicz & Louriz 2009 pp. 53-54
+#:   (*jupe* > [ʒipp-a], *pneu* > [pnu], *meuble* > [mubəl]); Ziadna 2018
+#:   pp. 196-197 (*bureau* > [biːruː], *moteur* > [muːtuːr]); Oueslati 2021
+#:   pp. 101-102 (*bureau* > [biːru], *chauffeur* > [ʃifuːr]).
+#:   /y/ → [u] is a real competing outcome at roughly 40% in both the Moroccan and
+#:   the Algerian counts. A table holds one value; [i] is the plurality in both.
+#:
+#: **/p/ and /v/ carry no rule at all**, and their absence is the decision. Every
+#: corpus makes substitution the majority outcome -- Ziadna 2018 counts /p/ → [b]
+#: at 83.8% of 74 tokens (p. 172) and /v/ → [f] at 89.7% of 39 (p. 177) -- but the
+#: conditioning he and Oueslati both name is loan age and the speaker's access to
+#: French, neither of which is recoverable from an input string. The specs declare
+#: /p/ and /v/, so omitting them here passes them through unchanged, and that is the
+#: right side to land on for THIS path: it fires on a Latin-script run, which is a
+#: code-switch or a recent loan, the register where retention is reported. The
+#: established stratum is written in Arabic letters and never reaches here.
+#:
+#: Nasal vowels are NOT handled. The unpacking of /ɑ̃ ɔ̃ ɛ̃/ to a vowel plus a nasal
+#: consonant is uncontested across all three corpora, but the vowel quality is not:
+#: Moroccan gives ɛ̃ > [an] and Tunisian ɛ̃ > [in], both well attested. It needs a
+#: context rule and per-lect rows, and it is left out rather than guessed.
+_MAGHREBI_MAP: Dict[str, str] = {
+    **{k: v for k, v in _DEFAULT_MAP.items() if k not in ("p", "v")},
+    "ʒ": "ʒ",
+    "ʁ": "r",
+    "y": "i",
+    "ø": "u",
+    "œ": "u",
+}
+
 #: Nativisation tables keyed by the o2i spec code they are cited FOR. Selection
 #: (:func:`nativization_table`) resolves the matrix tag to a spec, then walks its
 #: parent chain and takes the first code carrying a table — so a leaf inherits its
@@ -259,6 +322,13 @@ _TABLES: Dict[str, Dict[str, str]] = {
     "ar-SA-x-najd": SEGMENT_MAP,      # Alhoody (2019)
     "ar-EG": _EGYPTIAN_MAP,           # Hafez (1996), Watson (2002)
     "ar-x-levantine": _LEVANTINE_MAP,  # Al-Saidat (2011), Cowell (1964)
+    # Two Maghrebi leaves are held OUT of the Maghrebi table by naming the default
+    # ahead of their parent. The walk takes the first code carrying a table, so this
+    # is the whole mechanism -- an exclusion needs no code of its own.
+    "ar-LY": _DEFAULT_MAP,            # Italian, not French — Benkato (2020) 199, 201
+    "ar-MR": _DEFAULT_MAP,            # Hassaniya declares /ʁ/; no source read covers it
+    "ar-x-maghrebi": _MAGHREBI_MAP,   # Kenstowicz & Louriz (2009), Ziadna (2018),
+                                      # Oueslati (2021), Heath (2020)
     "ar": _DEFAULT_MAP,               # conservative pan-Arabic default
 }
 
