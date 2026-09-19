@@ -237,3 +237,52 @@ filtered on the lect label:
 ```python
 kept = [w for w in out.words if w.lect_constrained]
 ```
+
+## Which generator answers a word nobody has written down
+
+Two exist. `LatticeDiacritizer` tokenizes one constrained-argmax guess from rawi and
+refuses it when the variety's grapheme table does not license it. `FusionDiacritizer`
+enumerates the licensed readings and lets rawi **score** them, so an unlicensed argmax
+loses to the best licensed alternative rather than throwing the whole distribution away.
+
+**The lattice is the default, and that is a measurement rather than an inheritance.**
+On the shipped code-switched gold — 881 rows, 44 lects, scored per character position
+against the editor-authored vocalization:
+
+| generator | rows unscorable | positions | DER |
+|---|---|---|---|
+| rawi alone | 67 (7.6%) | 21,292 | 0.1757 |
+| lattice | 11 (1.2%) | 22,802 | **0.0989** |
+| fusion | 11 (1.2%) | 22,809 | 0.1012 |
+
+Fusion is 52 positions in 22,800 behind the simpler path, about one standard error
+before within-sentence correlation widens the interval — this gold cannot separate them,
+and a tie goes to the cheaper path.
+
+Read the rawi-alone row carefully. An unscorable row is one whose bare skeleton does not
+match the reference's, so the two cannot be aligned position by position — and those rows
+are *excluded* from that system's DER, which means rawi is scored on the rows it did not
+disturb and the gap above understates the guard.
+
+What the disturbance actually is, measured: **66 of the 67 differ only in hamza
+carriers**, and they are the model adding a hamza the writing does not have —
+وايد → وأيد, التاير → التأير. One row differs for some other reason.
+
+That is not letter mangling and it is not free either. The orthographic mask permits
+hamza restoration on purpose (restoring it to a defectively-spelled alif is a documented
+part of the task), but on dialectal and loan spellings the permission is usually wrong:
+وايد is Gulf *wayed* and التاير is a tyre, and neither takes a hamza. `repair_skeleton`
+in the lattice path is what puts the written letter back, which is why 7.6% becomes
+1.2%.
+
+So the lattice's advantage over the bare model on this gold is mostly **undoing spurious
+hamza restoration**, not correcting ḥarakāt. A mask that knew the variety could refuse
+the restoration where the orthography does not use it, and would not need the repair.
+
+```bash
+ARBTOK_DIACRITIZER=fusion   # select the other path
+```
+
+A value that is neither raises rather than falling back: a typo that silently kept the
+default reads exactly like the setting working, and a comparison run that way would
+compare one path with itself.
