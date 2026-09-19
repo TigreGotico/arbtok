@@ -33,6 +33,7 @@ ipa (pipeline output), gloss_en, cs_words (semicolon Latin list), notes
 """
 import argparse
 import csv
+import os
 import re
 import sys
 import unicodedata
@@ -61,10 +62,11 @@ SKIP = {"ar-Latn-buckwalter"}
 ZONES = {
     "eg":   ["ar-EG"],
     "lev":  ["ar-SY", "ar-LB", "ar-JO", "ar-PS", "ar-x-levantine"],
-    "gulf": ["ar-KW", "ar-AE", "ar-BH", "ar-QA", "ar-OM", "ar-x-gulf",
-             "ar-SA-x-najd", "ar-SA-x-hejaz", "ar-SA-x-qassim",
-             "ar-SA-x-rijal-alma", "ar-SA-x-sharqiyya", "ar-SA-x-dawasir",
-             "ar-SA-x-tihama-qahtan", "ar-YE", "ar-x-peninsular"],
+    "gulf": ["ar-KW", "ar-AE", "ar-BH", "ar-BH-x-baharna", "ar-QA", "ar-OM",
+             "ar-x-gulf", "ar-SA-x-najd", "ar-SA-x-shamali", "ar-SA-x-hejaz",
+             "ar-SA-x-qassim", "ar-SA-x-rijal-alma", "ar-SA-x-sharqiyya",
+             "ar-SA-x-dawasir", "ar-SA-x-tihama-qahtan", "ar-YE",
+             "ar-x-peninsular"],
     "iraq": ["ar-IQ", "ar-IQ-x-qeltu", "ar-x-mashriqi"],
     "magh": ["ar-MA", "ar-TN", "ar-DZ", "ar-LY", "ar-MR", "ar-x-maghrebi"],
     "sd":   ["ar-SD", "ar-TD", "ar-NG"],
@@ -97,6 +99,20 @@ def _fill(template: str, zone: str) -> str:
 
 # domain, template (vocalised Arabic + inline Latin), gloss, english words
 FRAMES = [
+    # Carries BARE كَلْب on purpose. Northern Najdi affricates /k/ before a central
+    # vowel and Central Najdi does not, so this is the one row that makes
+    # ar-SA-x-shamali distinguishable from ar-SA-x-najd — without it that file is a
+    # fixture that cannot fail for a reason specific to its own lect.
+    #
+    # It must be bare. الْكَلْب puts the /k/ word-medially, which is the cell
+    # orthography2ipa does NOT claim (Alshammari could not attest it), so the article
+    # version comes back alˈkalb and demonstrates nothing while looking correct. The
+    # first draft of this frame had the article.
+    #
+    # كَاتِب and مَكَان would serve equally. سَكَن would not: it differs only through
+    # that same word-medial cell, so a row built on it goes red on a correct change.
+    ("home", "كَلْب صَغِير عِنْدُه checkup {NOW}",
+     "a small dog has a checkup now", ["checkup"]),
     ("tech", "{WANT} أَبْعَت email لِلْمُدِير {NOW}",
      "I want to send an email to the manager now", ["email"]),
     ("tech", "عِنْدِي laptop جَدِيد بَسّ wifi بَطِيء",
@@ -146,11 +162,19 @@ def strip_tashkeel(text: str) -> str:
 
 # ── nativisation-note derivation (pipeline-derived, honest about refusals) ──
 
+_DEFAULT_CITE = "default pan-Arabic (Watson 2002; Holes 2004)"
+
 _TABLE_CITE = {
     "ar-SA-x-najd": "Najdi (Alhoody 2019)",
     "ar-EG": "Egyptian (Hafez 1996; Watson 2002)",
     "ar-x-levantine": "Levantine (Al-Saidat 2011; Cowell 1964)",
-    "ar": "default pan-Arabic (Watson 2002; Holes 2004)",
+    "ar-x-maghrebi": ("Maghrebi (Kenstowicz & Louriz 2009; Ziadna 2018; "
+                      "Oueslati 2021; Heath 2020)"),
+    # Held out of the Maghrebi table by naming the default ahead of their parent,
+    # so they own a _TABLES entry and need a citation of their own.
+    "ar-LY": _DEFAULT_CITE,
+    "ar-MR": _DEFAULT_CITE,
+    "ar": _DEFAULT_CITE,
 }
 
 
@@ -217,6 +241,112 @@ def _build_rows(lect):
     return rows
 
 
+def _refresh_pinned(lect, path):
+    """Re-read the pipeline for the ``pinned`` rows of a hand-authored file.
+
+    The blanket refusal to touch a file with a ``pipeline_status`` column protects
+    the ``known-wrong`` and ``unsupported`` rows, which exist precisely where the
+    pipeline cannot reach the right value and where regenerating would replace a
+    curated fact with the output it was written to correct.
+
+    A ``pinned`` row is the opposite: it holds live pipeline output, and the test
+    asserts it byte for byte. So a legitimate pipeline change leaves the file
+    failing and the tool refusing to fix it. This refreshes exactly those rows and
+    leaves every other byte alone.
+
+    It also reports the rows that go the other way — a ``known-wrong`` row the
+    pipeline now reproduces is a defect that has been fixed, and promoting it to
+    ``pinned`` is a judgement about the reading, so it is printed for a person
+    rather than applied.
+    """
+    from arbtok.plugin import ArbtokG2PPlugin
+
+    with open(path, encoding="utf-8") as fh:
+        reader = csv.DictReader(fh, delimiter="\t")
+        fields, rows = reader.fieldnames, list(reader)
+
+    plugin = ArbtokG2PPlugin(lang=lect, diacritize=True, nativize=True, pausal=True)
+    from arbtok.translit import transliterate
+
+    cite = _table_citation(lect)
+    refreshed, recited, recovered, stale_notes = 0, 0, [], []
+    for row in rows:
+        status = (row.get("pipeline_status") or "pinned").strip()
+        got = plugin.transcribe(row["sentence"])
+        changed = status == "pinned" and got != row["ipa"]
+        if changed:
+            row["ipa"] = got
+            refreshed += 1
+        elif status != "pinned" and got == row["ipa"]:
+            recovered.append(row["id"])
+        # The notes carry the table the reading came from, and a lect that gains a
+        # table keeps attributing its readings to the old one. The citation is
+        # derived, not curated, so it is refreshed on every row including the
+        # known-wrong ones -- what those rows pin is the IPA, not the provenance.
+        # `table: n/a` is a deliberate placeholder on a row with no Latin embed, so
+        # no table applies to it; only a real citation that has gone out of date is
+        # replaced.
+        head, sep, tail = (row.get("notes") or "").rpartition(". table: ")
+        if sep and tail != cite and tail in _TABLE_CITE.values():
+            row["notes"] = head + sep + cite
+            recited += 1
+        # The word arrows in the notes carry hand-written annotation on top of the
+        # derived reading -- `laptop→labtub (/p/→[b])` names a rule that may no
+        # longer apply -- so a stale one is reported rather than rewritten.
+        #
+        # Reported only for a row this run just changed. Across the shipped gold
+        # about two hundred rows carry an arrow that drifted from the reading long
+        # before any of this, and printing those on every build buries the handful
+        # a person actually has to look at.
+        if changed:
+            for word in [w for w in (row.get("cs_words") or "").split(";") if w]:
+                reading = transliterate(word, lect)
+                if reading and f"{word}→" in head and f"{word}→{reading}" not in head:
+                    stale_notes.append(row["id"])
+                    break
+
+    if refreshed or recited:
+        _write_rows(path, fields, rows)
+
+    note = f"refreshed {refreshed} pinned row(s), {recited} table citation(s)"
+    if stale_notes:
+        note += (f"; {len(stale_notes)} row(s) whose notes still describe the old "
+                 f"reading and are hand-annotated: {', '.join(stale_notes)}")
+    if recovered:
+        note += (f"; {len(recovered)} row(s) marked known-wrong now reproduce "
+                 f"and are a person's call to promote: {', '.join(recovered)}")
+    return note
+
+
+def _write_rows(path, fields, rows):
+    """Write the gold back byte for byte, without going through `csv`.
+
+    `csv.DictWriter` defaults to QUOTE_MINIMAL, so one row whose notes contain a
+    double quote came back wrapped and internally doubled -- `ar-LB-cs-008` holds
+    `hedged as "sometimes"` and rewriting its file reformatted a row nothing had
+    touched. QUOTE_NONE is not the answer either: the writer raises on the
+    quotechar, not only on the delimiter, and `open(path, "w")` has already
+    truncated by then. That left ar-LB.tsv at 8 of its 21 lines -- data loss, in the
+    one file the quoting was being fixed for.
+
+    The format is tab-separated with no quoting, so a join is exact and cannot
+    raise. The pre-check guarantees no field carries a tab or a newline, and the
+    write goes to a sibling and is moved into place, so a failure here leaves the
+    original file alone.
+    """
+    for row in rows:
+        for field in fields:
+            value = row.get(field) or ""
+            if "\t" in value or "\n" in value or "\r" in value:
+                raise ValueError(f"{row.get('id')}: {field} contains a tab or newline")
+    lines = ["\t".join(fields)]
+    lines += ["\t".join(row.get(f) or "" for f in fields) for row in rows]
+    body = "\n".join(lines) + "\n"
+    tmp = Path(str(path) + ".tmp")
+    tmp.write_text(body, encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def cmd_build(args):
     GOLD_DIR.mkdir(parents=True, exist_ok=True)
     lects = args.lects or _roster()
@@ -228,7 +358,7 @@ def cmd_build(args):
         if not args.lects and existing.is_file():
             with open(existing, encoding="utf-8") as fh:
                 if "pipeline_status" in (fh.readline()):
-                    print(f"skip {lect}: hand-authored (has pipeline_status)")
+                    print(f"{lect}: hand-authored — {_refresh_pinned(lect, existing)}")
                     continue
         rows = _build_rows(lect)
         with open(GOLD_DIR / f"{lect}.tsv", "w", encoding="utf-8", newline="") as f:

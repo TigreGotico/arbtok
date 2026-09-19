@@ -6,10 +6,12 @@ Latin-script word embedded in dialectal Arabic is read as a loan and mapped into
 the matrix lect's phonology out of that lect's own cited table
 (`arbtok.translit`), never spliced in as raw English.
 
-Every `ar*` spec `arbtok.supported_lects()` resolves is covered (33 lects,
-including the Saudi sub-lects `ar-SA-x-qassim`, `ar-SA-x-rijal-alma` and
-`ar-SA-x-sharqiyya`), with
-one deliberate exclusion: **`ar-Latn-buckwalter`**. That code is a Latin
+Every `ar*` spec `arbtok.supported_lects()` resolves is covered, the Saudi,
+Bahraini and Yemeni sub-lects among them. The roster is not a number kept here:
+it is whatever the installed orthography2ipa resolves, so a spec added upstream
+is a missing gold file until `scripts/gold_code_switched.py build <lect>` is run,
+and `tests/test_gold_code_switched.py` is what says so. One deliberate exclusion:
+**`ar-Latn-buckwalter`**. That code is a Latin
 romanization *of* Arabic, so a mixed Arabic/Latin sentence has no stable Arabic
 run to phonemise, the whole line would read as Latin. It is a machine-readable
 regression anchor, not a spoken lect, and code-switching into it is undefined.
@@ -54,6 +56,33 @@ can carry IPA the pipeline does **not** produce, without hiding that fact:
 `validate` (and the pytest gate) only pin `pipeline_status == "pinned"` rows.
 `known-wrong` / `unsupported` rows are still schema-, `raw`- and dedup-checked
 but are not re-run against `transcribe`.
+
+## A file can keep the roster complete without distinguishing its lect
+
+`ar-SA-x-shamali` produces output identical to `ar-SA-x-najd` on every frame the two
+share. That is correct rather than a defect in the file: Northern Najdi's only delta
+from its parent is /k/ affrication before a central vowel, and no frame in this set
+puts a /k/ in that environment. The file earns its place by keeping the roster complete
+and the pipeline exercised — a missing gold file fails `test_gold_matches_pipeline`
+outright — but it would not catch a regression that reverted the Shamali spec.
+
+It is one row from earning it properly. Measured against the two specs, كَلْب →
+ˈtsalb against ˈkalb, مَكَان → maˈtsaːn against maˈkaːn, and كَاتِب → ˈtsaːtib against
+ˈkaːtib all discriminate; كِتَاب and دِيك do not, because the front-vowel rule both
+varieties share already fires there. A frame carrying one of the first three makes the
+fixture discriminating for every lect at once, since frames are shared.
+
+One candidate is a trap. سَكَن differs today, ˈsatsan against ˈsakan, but that is the
+word-medial cell, which orthography2ipa withdraws because the source does not attest
+it. A gold row built on سَكَن would go red on a correct upstream change.
+
+**This is an open item, not a property of the file.** `ar-SA-x-shamali` is expected to
+gain a discriminating frame; until it does, a passing fixture for that lect means the
+pipeline ran, not that the spec is intact. A reader six months from now should be able
+to tell a shortfall waiting on work from a decision that was taken.
+
+Contrast `ar-BH-x-baharna`, which does distinguish itself on the frames it shares with
+`ar-BH`: ˈhaðaː → ˈhadaː on the dhāl and ˈnʃuːfak → naˈʃuːfatʃ on the kāf.
 
 ## Provenance & honesty
 
