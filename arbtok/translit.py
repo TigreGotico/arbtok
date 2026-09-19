@@ -404,11 +404,18 @@ def _targets(lang: str) -> Tuple[str, ...]:
     spells a whole syllable contributes its whole reading — and those are not
     phonemes and cannot be projection targets. A guest segment must land on a
     single sound.
+
+    The cut is :func:`segment_ipa`, not ``ipa_tokenize``. Asking the spec whether
+    one of its own declared readings is a single token is circular — it answers yes
+    *because* it declared it — so ``al``, ``bil``, ``kal``, ``ʔa`` and 2,744 other
+    article and clitic readings across the Arabic specs were offered to the
+    projector as if they were sounds. French /y/ came back ``bi``: one guest vowel
+    replaced by a syllable, on 34 lects. A phoneme is what this module cuts
+    everywhere else, so it is what decides membership here.
     """
     spec = G2P(lang).spec
     return tuple(sorted(
-        p for p in phoneme_inventory(spec)
-        if p and len(ipa_tokenize(p, spec)) == 1 and len(p) <= 3
+        p for p in phoneme_inventory(spec) if p and len(segment_ipa(p)) == 1
     ))
 
 
