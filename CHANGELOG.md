@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.1a8](https://github.com/TigreGotico/arbtok/tree/0.0.1a8) (2026-09-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a7...0.0.1a8)
+
+**Merged pull requests:**
+
+- fix: the Maghrebi table must not answer for lects it was not cited for [\#114](https://github.com/TigreGotico/arbtok/pull/114) ([JarbasAl](https://github.com/JarbasAl))
+- docs: the loanword path projects by default, it does not refuse [\#110](https://github.com/TigreGotico/arbtok/pull/110) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a7](https://github.com/TigreGotico/arbtok/tree/0.0.1a7) (2026-09-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a6...0.0.1a7)
