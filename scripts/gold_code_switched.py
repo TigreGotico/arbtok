@@ -161,11 +161,19 @@ def strip_tashkeel(text: str) -> str:
 
 # ── nativisation-note derivation (pipeline-derived, honest about refusals) ──
 
+_DEFAULT_CITE = "default pan-Arabic (Watson 2002; Holes 2004)"
+
 _TABLE_CITE = {
     "ar-SA-x-najd": "Najdi (Alhoody 2019)",
     "ar-EG": "Egyptian (Hafez 1996; Watson 2002)",
     "ar-x-levantine": "Levantine (Al-Saidat 2011; Cowell 1964)",
-    "ar": "default pan-Arabic (Watson 2002; Holes 2004)",
+    "ar-x-maghrebi": ("Maghrebi (Kenstowicz & Louriz 2009; Ziadna 2018; "
+                      "Oueslati 2021; Heath 2020)"),
+    # Held out of the Maghrebi table by naming the default ahead of their parent,
+    # so they own a _TABLES entry and need a citation of their own.
+    "ar-LY": _DEFAULT_CITE,
+    "ar-MR": _DEFAULT_CITE,
+    "ar": _DEFAULT_CITE,
 }
 
 
@@ -232,6 +240,104 @@ def _build_rows(lect):
     return rows
 
 
+def _refresh_pinned(lect, path):
+    """Re-read the pipeline for the ``pinned`` rows of a hand-authored file.
+
+    The blanket refusal to touch a file with a ``pipeline_status`` column protects
+    the ``known-wrong`` and ``unsupported`` rows, which exist precisely where the
+    pipeline cannot reach the right value and where regenerating would replace a
+    curated fact with the output it was written to correct.
+
+    A ``pinned`` row is the opposite: it holds live pipeline output, and the test
+    asserts it byte for byte. So a legitimate pipeline change leaves the file
+    failing and the tool refusing to fix it. This refreshes exactly those rows and
+    leaves every other byte alone.
+
+    It also reports the rows that go the other way — a ``known-wrong`` row the
+    pipeline now reproduces is a defect that has been fixed, and promoting it to
+    ``pinned`` is a judgement about the reading, so it is printed for a person
+    rather than applied.
+    """
+    from arbtok.plugin import ArbtokG2PPlugin
+
+    with open(path, encoding="utf-8") as fh:
+        reader = csv.DictReader(fh, delimiter="\t")
+        fields, rows = reader.fieldnames, list(reader)
+
+    plugin = ArbtokG2PPlugin(lang=lect, diacritize=True, nativize=True, pausal=True)
+    from arbtok.translit import transliterate
+
+    cite = _table_citation(lect)
+    refreshed, recited, recovered, stale_notes = 0, 0, [], []
+    for row in rows:
+        status = (row.get("pipeline_status") or "pinned").strip()
+        got = plugin.transcribe(row["sentence"])
+        changed = status == "pinned" and got != row["ipa"]
+        if changed:
+            row["ipa"] = got
+            refreshed += 1
+        elif status != "pinned" and got == row["ipa"]:
+            recovered.append(row["id"])
+        # The notes carry the table the reading came from, and a lect that gains a
+        # table keeps attributing its readings to the old one. The citation is
+        # derived, not curated, so it is refreshed on every row including the
+        # known-wrong ones -- what those rows pin is the IPA, not the provenance.
+        # `table: n/a` is a deliberate placeholder on a row with no Latin embed, so
+        # no table applies to it; only a real citation that has gone out of date is
+        # replaced.
+        head, sep, tail = (row.get("notes") or "").rpartition(". table: ")
+        if sep and tail != cite and tail in _TABLE_CITE.values():
+            row["notes"] = head + sep + cite
+            recited += 1
+        # The word arrows in the notes carry hand-written annotation on top of the
+        # derived reading -- `laptop→labtub (/p/→[b])` names a rule that may no
+        # longer apply -- so a stale one is reported rather than rewritten.
+        #
+        # Reported only for a row this run just changed. Across the shipped gold
+        # about two hundred rows carry an arrow that drifted from the reading long
+        # before any of this, and printing those on every build buries the handful
+        # a person actually has to look at.
+        if changed:
+            for word in [w for w in (row.get("cs_words") or "").split(";") if w]:
+                reading = transliterate(word, lect)
+                if reading and f"{word}→" in head and f"{word}→{reading}" not in head:
+                    stale_notes.append(row["id"])
+                    break
+
+    if refreshed or recited:
+        _write_rows(path, fields, rows)
+
+    note = f"refreshed {refreshed} pinned row(s), {recited} table citation(s)"
+    if stale_notes:
+        note += (f"; {len(stale_notes)} row(s) whose notes still describe the old "
+                 f"reading and are hand-annotated: {', '.join(stale_notes)}")
+    if recovered:
+        note += (f"; {len(recovered)} row(s) marked known-wrong now reproduce "
+                 f"and are a person's call to promote: {', '.join(recovered)}")
+    return note
+
+
+def _write_rows(path, fields, rows):
+    """Write the gold back without quoting anything.
+
+    ``csv.DictWriter`` defaults to QUOTE_MINIMAL, so one row whose notes contain a
+    double quote comes back wrapped and internally doubled -- ``ar-LB-cs-008`` holds
+    ``hedged as "sometimes"`` and rewriting its file reformatted a row nothing had
+    touched. The format is tab-separated with no quoting at all, so it is written
+    that way, and the fields are checked for the two characters that would need it.
+    """
+    for row in rows:
+        for field in fields:
+            value = row.get(field) or ""
+            if "\t" in value or "\n" in value:
+                raise ValueError(f"{row.get('id')}: {field} contains a tab or newline")
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fields, delimiter="\t",
+                           lineterminator="\n", quoting=csv.QUOTE_NONE)
+        w.writeheader()
+        w.writerows(rows)
+
+
 def cmd_build(args):
     GOLD_DIR.mkdir(parents=True, exist_ok=True)
     lects = args.lects or _roster()
@@ -243,7 +349,7 @@ def cmd_build(args):
         if not args.lects and existing.is_file():
             with open(existing, encoding="utf-8") as fh:
                 if "pipeline_status" in (fh.readline()):
-                    print(f"skip {lect}: hand-authored (has pipeline_status)")
+                    print(f"{lect}: hand-authored — {_refresh_pinned(lect, existing)}")
                     continue
         rows = _build_rows(lect)
         with open(GOLD_DIR / f"{lect}.tsv", "w", encoding="utf-8", newline="") as f:

@@ -130,6 +130,7 @@ lang→zone map, and the first ancestor carrying a table wins:
 | Najdi | `ar-SA-x-najd` |, | Alhoody (2019) |
 | Egyptian | `ar-EG` |, | Hafez (1996). Watson (2002) |
 | Levantine | `ar-x-levantine` | `ar-LB`, `ar-SY`, `ar-PS`, `ar-JO` | Al-Saidat (2011). Cowell (1964) |
+| Maghrebi | `ar-x-maghrebi` | `ar-MA`, `ar-DZ`, `ar-TN` (not `ar-LY`, not `ar-MR`) | Kenstowicz & Louriz (2009). Ziadna (2018). Oueslati (2021). Heath (2020) |
 | default | `ar` | every un-tabled lect (e.g. `ar-KW` → `ar-x-gulf` → `ar-x-peninsular` → …) | Watson (2002). Holes (2004) |
 
 ```python
@@ -137,6 +138,40 @@ ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'manaɡar'  (
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manadʒar' (Najdi affricate)
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("think")           # 'tink'     (interdental merger)
 ```
+
+### The Maghreb borrows from French
+
+The donor is still guessed from the script, so a Latin run defaults to English
+everywhere. Name the donor to read a French loan as one:
+
+```python
+from arbtok.translit import transliterate
+transliterate("garage", "ar-MA", donor="fr-FR")     # 'ɡaraʒ'
+transliterate("bureau", "ar-MA", donor="fr-FR")     # 'biro'
+transliterate("chauffeur", "ar-MA", donor="fr-FR")  # 'ʃofur'
+```
+
+The Maghrebi table diverges from the pan-Arabic default on four segments and
+carries no rule for two more. French /ʁ/ becomes **[r]**, not the [ɣ] a feature
+metric picks — these lects declare /ɣ/ and do not use it for a French rhotic. The
+ǧīm **[ʒ] is retained**, where the default maps it to [dʒ] for the stated reason
+that MSA and Gulf have no /ʒ/. The front rounded vowels go **/y/ → [i]**, **/ø/ →
+[u]**, **/œ/ → [u]**.
+
+**/p/ and /v/ carry no rule**, deliberately. Substitution to [b] and [f] is the
+majority outcome in every corpus — 59 of 74 /p/ tokens in Ziadna's Algerian data —
+but the conditioning is loan age and the speaker's access to French, and neither is
+recoverable from an input string. The specs declare both segments, so
+they pass through. This path fires on a *Latin-script* run, which is a code-switch
+or a recent loan, the register where retention is reported; the established
+stratum is written in Arabic letters and never reaches here.
+
+Two limits. **Nasal vowels are not unpacked**: *camion* comes out `kamjo`,
+denasalized, which is one documented outcome but not the dominant one — unpacking
+to a vowel plus a nasal is uncontested, the vowel quality is not (Moroccan
+/ɛ̃/ → [an], Tunisian → [in]). And **`ar-LY` and `ar-MR` are held out**: Libya
+borrows from Italian rather than French (Benkato 2020), and Mauritanian Hassaniya
+declares /ʁ/, so the table would rewrite a segment it actually has.
 
 Whatever a table emits must be realizable in the matrix lect's inventory. A symbol
 the lect does not declare is **refused** (`transliterate` returns `None`) rather
