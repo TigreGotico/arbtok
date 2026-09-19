@@ -1,12 +1,20 @@
 # Changelog
 
+## [0.0.1a3](https://github.com/TigreGotico/arbtok/tree/0.0.1a3) (2026-09-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a2...0.0.1a3)
+
+**Merged pull requests:**
+
+- feat\(gold\): a frame that makes the Shamali fixture able to fail for its own lect [\#104](https://github.com/TigreGotico/arbtok/pull/104) ([JarbasAl](https://github.com/JarbasAl))
+- feat\(ensemble\): let a caller name the rawi export, so a fine-tune can be measured [\#101](https://github.com/TigreGotico/arbtok/pull/101) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a2](https://github.com/TigreGotico/arbtok/tree/0.0.1a2) (2026-09-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a1...0.0.1a2)
 
 **Merged pull requests:**
 
-- feat\(ensemble\): let a caller name the rawi export, so a fine-tune can be measured [\#101](https://github.com/TigreGotico/arbtok/pull/101) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(diacritize\): arbtok.vocalize\(text, lect\) returning per-word provenance [\#100](https://github.com/TigreGotico/arbtok/pull/100) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a1](https://github.com/TigreGotico/arbtok/tree/0.0.1a1) (2026-09-18)
