@@ -48,7 +48,8 @@ something upstream has regressed.
 from __future__ import annotations
 
 import re
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import List, Optional, Sequence
 
 from orthography2ipa import get, is_underdetermined, underdetermined_positions
 from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
@@ -59,7 +60,8 @@ from arbtok.nisba import restore_nisba
 from arbtok.dialects import DEFAULT_LANG
 from arbtok.tokenizer import normalize_unicode
 
-__all__ = ["LatticeDiacritizer", "strip_marks", "repair_skeleton"]
+__all__ = ["LatticeDiacritizer", "DiacritizedWord", "DiacritizedText",
+           "diacritize", "strip_marks", "repair_skeleton"]
 
 #: Every Arabic mark a diacritizer may add. Anything else it emits is a letter.
 _MARKS = set("ًٌٍَُِّْٰٓ")
@@ -193,6 +195,89 @@ def _skeleton_is_preserved(original: str, diacritized: str) -> bool:
     return True
 
 
+#: Where a word's marks came from. The one that matters is ``model``: it says the
+#: lect contributed nothing but a veto, and the veto cannot fire on a well-formed
+#: MSA reading — every Arabic spec declares every ḥaraka — so the model's Modern
+#: Standard prior decided the word unopposed. A corpus filtered to words the lect
+#: actually constrained is a different corpus from one filtered on the lect label,
+#: and this field is what tells them apart.
+PROVENANCE = (
+    "author",          # the writing already said it; nothing was added
+    "closed-class",    # the lect's own lexicon, a hard prior over the model
+    "stem-lexicon",    # somebody wrote this stem down
+    "proclitic",       # marked but for a bare leading clitic the spec reads bare
+    "model",           # rawi proposed it and the orthography licensed it
+    "model-repaired",  # rawi rewrote a letter; the marks were kept and the letter put back
+    "refused",         # unrepairable or unlicensed: left as written
+    "not-arabic",      # no Arabic letter in it: a Latin embed, a number, punctuation
+)
+
+
+def _has_arabic(word: str) -> bool:
+    """True when *word* contains a letter in an Arabic block.
+
+    A token with none is not a diacritization failure and must not be counted as
+    one. On the code-switched gold every single refusal in ar-EG was an English
+    embed — the words that set exists to carry — so a caller filtering on
+    ``refused`` to find failures got a pile of English instead.
+    """
+    return any("\u0600" <= c <= "\u06ff" or "\u0750" <= c <= "\u077f"
+               or "\ufb50" <= c <= "\ufdff" or "\ufe70" <= c <= "\ufeff"
+               for c in word)
+
+
+@dataclass(frozen=True)
+class DiacritizedWord:
+    """One word, its result, and which stage decided it."""
+
+    surface: str
+    output: str
+    provenance: str
+
+    @property
+    def lect_constrained(self) -> bool:
+        """True when something the lect declares chose this word's marks.
+
+        ``model`` is excluded deliberately, and the reason is measured rather than
+        argued. Licensing is a veto over letters, not a preference over readings, so a
+        well-formed MSA vocalization passes it untouched — six MSA vocalizations against
+        four dialect specs, zero rejections. The veto is not *inert*, though: over the
+        636 model-path words of the shipped gold, 5 carry a reading at least one lect in
+        the roster would reject, the narrower Omani and southern Saudi specs among them.
+        Five is enough to refute "the veto never fires" and not enough to say how often
+        it does: a numerator of 5 over 636, on one gold, is not a rate.
+        So ``model`` means the lect did not object, not that it could not — and not
+        objecting is weaker evidence than choosing, which is why it does not count here.
+        """
+        return self.provenance in ("closed-class", "author", "proclitic")
+
+    @property
+    def is_failure(self) -> bool:
+        """True only for an Arabic word the pipeline could not mark.
+
+        ``not-arabic`` is excluded: a Latin embed has no diacritization to fail at.
+        """
+        return self.provenance == "refused"
+
+
+@dataclass(frozen=True)
+class DiacritizedText:
+    """The diacritized string and a record per word, in order."""
+
+    text: str
+    words: Sequence[DiacritizedWord]
+
+    def __str__(self) -> str:
+        return self.text
+
+    @property
+    def by_provenance(self) -> dict:
+        out: dict = {}
+        for w in self.words:
+            out.setdefault(w.provenance, []).append(w.surface)
+        return out
+
+
 class LatticeDiacritizer:
     """Diacritize a word only where the writing is silent, and only if licensed.
 
@@ -298,6 +383,18 @@ class LatticeDiacritizer:
     def diacritize_word(self, word: str) -> str:
         """Return *word* diacritized, or unchanged if it needs nothing or the
         proposal is refused."""
+        return self.diacritize_word_record(word).output
+
+    def diacritize_word_record(self, word: str) -> DiacritizedWord:
+        """*word* diacritized, with the stage that decided it.
+
+        The same pipeline as :meth:`diacritize_word` — this is where it lives, and
+        that method reads the ``output`` off this one, so the two cannot drift."""
+        # (0) Nothing Arabic in it — a Latin embed, a number, punctuation. Not a
+        # refusal: there was never a diacritization to attempt.
+        if not _has_arabic(word):
+            return DiacritizedWord(word, word, "not-arabic")
+
         normalized = normalize_unicode(word)
         # (1) The writing already says it — never overwrite a human's marks. A
         # word is "already said" when every silent position is the definite
@@ -306,7 +403,7 @@ class LatticeDiacritizer:
         # ``_author_complete``).
         positions = underdetermined_positions(normalized, self._spec)
         if _author_complete(normalized, positions):
-            return word
+            return DiacritizedWord(word, word, "author")
 
         # (2a) The lect writes this word in MSA orthography but does not say it
         # the MSA way — a closed-class function word whose dialect vocalization
@@ -316,7 +413,7 @@ class LatticeDiacritizer:
         dialect = self._dialect_lookup(normalized)
         if dialect is not None:
             self.dialect_looked_up.append(word)
-            return dialect
+            return DiacritizedWord(word, dialect, "closed-class")
 
         # (2b) Somebody already wrote this word down. A lexicon entry is a pausal
         # stem, so it answers the waqf question and no other: with the case
@@ -324,7 +421,7 @@ class LatticeDiacritizer:
         entry = self._lookup(normalized)
         if entry is not None:
             self.looked_up.append(word)
-            return entry
+            return DiacritizedWord(word, entry, "stem-lexicon")
 
         # (2c) Author-near-complete: everything is marked except a bare leading
         # proclitic. The spec path reads that clitic without a vowel (وكَان →
@@ -332,9 +429,10 @@ class LatticeDiacritizer:
         # register fatḥa the author did not write. Checked after the lexicons
         # so a short closed-class word still gets its recorded vocalization.
         if _proclitic_complete(normalized, positions):
-            return word
+            return DiacritizedWord(word, word, "proclitic")
 
         proposed = self._propose(normalized)
+        how = "model"
 
         # (3) A diacritizer marks; it does not rewrite. When it did rewrite a
         # letter, the marks are usually still right — so keep them and put our
@@ -345,9 +443,10 @@ class LatticeDiacritizer:
             repaired = repair_skeleton(normalized, proposed)
             if repaired is None:
                 self.rejected.append(word)
-                return word
+                return DiacritizedWord(word, word, "refused")
             self.repaired.append(word)
             proposed = repaired
+            how = "model-repaired"
 
         # (4) The nisba's shadda is not printed, and the model does not restore
         # it: عربي comes back as a bare yāʾ and reads /ʕarbiː/, not /ʕarabijj/.
@@ -358,15 +457,63 @@ class LatticeDiacritizer:
         # (5) The orthography must license the result.
         if not self._is_licensed(proposed):
             self.rejected.append(word)
-            return word
+            return DiacritizedWord(word, word, "refused")
 
-        return proposed
+        return DiacritizedWord(word, proposed, how)
 
     def diacritize(self, text: str) -> str:
         """Diacritize each word of *text*, guarding every one of them."""
-        return " ".join(
-            self.diacritize_word(w) if w.strip() else w
-            for w in text.split(" ")
-        )
+        return self.diacritize_text(text).text
+
+    def diacritize_text(self, text: str) -> DiacritizedText:
+        """*text* diacritized, with a record per word in order.
+
+        Whitespace-only tokens keep their place in the string and carry no record,
+        so ``words`` is the words and ``text`` is what a caller would have got from
+        :meth:`diacritize`."""
+        out, records = [], []
+        for w in text.split(" "):
+            if not w.strip():
+                out.append(w)
+                continue
+            rec = self.diacritize_word_record(w)
+            records.append(rec)
+            out.append(rec.output)
+        return DiacritizedText(" ".join(out), tuple(records))
 
     __call__ = diacritize
+
+
+#: Diacritizers are cached per lect: the ONNX session and the lexicons are built
+#: once and a caller asking for the same variety twice gets the same reader.
+_BY_LECT: dict = {}
+
+
+def diacritize(text: str, lect: str = DEFAULT_LANG, **kwargs) -> DiacritizedText:
+    """Diacritize *text* as *lect* speaks it, with a record per word.
+
+    The lect-aware entry point a caller wants when it needs marks rather than
+    phones: no phonemization, no IPA, just the vocalized text and where each
+    word's marks came from.
+
+        >>> out = diacritize("كتاب جديد", "ar-EG")       # doctest: +SKIP
+        >>> str(out)                                      # doctest: +SKIP
+        'كِتَاب جَدِيد'
+        >>> [(w.surface, w.provenance) for w in out.words]  # doctest: +SKIP
+        [('كتاب', 'model'), ('جديد', 'model')]
+
+    ``provenance`` is the reason this exists rather than a convenience. A word
+    marked ``model`` was decided by rawi's Modern Standard prior with nothing from
+    the lect opposing it — the orthography licenses letters, not readings, and
+    every Arabic spec declares every ḥaraka, so a well-formed MSA vocalization
+    passes the check untouched. Filtering a corpus to
+    ``w.lect_constrained`` keeps the words the variety actually decided.
+
+    Keyword arguments are passed to :class:`LatticeDiacritizer` (``waqf``,
+    ``lexicon``, ``dialect_lexicon``); a call that passes any is not cached.
+    """
+    if kwargs:
+        return LatticeDiacritizer(lang=lect, **kwargs).diacritize_text(text)
+    if lect not in _BY_LECT:
+        _BY_LECT[lect] = LatticeDiacritizer(lang=lect)
+    return _BY_LECT[lect].diacritize_text(text)
