@@ -136,11 +136,11 @@ def test_no_reachable_tie_resolves_by_alphabetical_order():
                     continue
                 ties += 1
                 got = translit._project(piece, lect)
-                if any(tb.get(piece) == got for tb in translit._TABLES.values()):
+                if any(tb.get(piece) == got for tb in translit._BORROWABLE_TABLES):
                     continue
                 if not piece.endswith("ː") and any(
                         (tb.get(piece + "ː") or "").rstrip("ː") == got
-                        for tb in translit._TABLES.values()):
+                        for tb in translit._BORROWABLE_TABLES):
                     continue
                 base = piece[:-1] if piece.endswith("ː") else piece
                 raised = translit._RAISED.get(base)
