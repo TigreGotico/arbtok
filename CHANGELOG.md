@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a11](https://github.com/TigreGotico/arbtok/tree/0.0.1a11) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a10...0.0.1a11)
+
+**Merged pull requests:**
+
+- feat: normalize\_asr with a boolean per rule, and normalize\_for\_tts [\#119](https://github.com/TigreGotico/arbtok/pull/119) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a10](https://github.com/TigreGotico/arbtok/tree/0.0.1a10) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a9...0.0.1a10)
