@@ -12,8 +12,9 @@ pip install arbtok
 ```
 
 That pulls the runtime deps (`numpy`, `onnxruntime`, `orthography2ipa`,
-`quebra-frases`, `langcodes`, `ovos-number-parser`, `ovos-date-parser`) and the
-bundled rawi diacritizer ensemble.
+`quebra-frases`, `langcodes`, `ovos-number-parser`, `ovos-date-parser`,
+`ovos-utils`, `ovos-config`, `huggingface_hub`) and the bundled rawi diacritizer
+ensemble. `arbtok.__version__` is the installed version.
 
 ## 2. The one call to know
 
@@ -24,7 +25,7 @@ short vowels for you, so **you do not have to diacritize the input first**:
 from arbtok.plugin import ArbtokG2PPlugin
 
 p = ArbtokG2PPlugin()                       # Modern Standard Arabic
-print(p.transcribe("ذهب الولد الى المدرسة"))   # ˈðahab ˈalwalad ˈalaː ˈlmudrasa
+print(p.transcribe("ذهب الولد الى المدرسة"))   # ˈðahab ˈalwalad ˈalaː lˈmudrasa
 ```
 
 The input here is **bare**, no ḥarakāt, the way Arabic is normally typed. arbtok
@@ -45,8 +46,8 @@ from arbtok.plugin import ArbtokG2PPlugin
 najdi = ArbtokG2PPlugin(lang="ar-SA-x-najd")
 tunis = ArbtokG2PPlugin(lang="ar-TN")
 
-print(najdi.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈɡahawa ˈfiː ˈlbajt
-print(tunis.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈqahwa ˈfiː ˈlbiːt
+print(najdi.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈɡahawa fiː lˈbajt
+print(tunis.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈqahwa fiː lˈbiːt
 ```
 
 Najdi reads qāf as /ɡ/ and inserts the *gahawa* epenthetic vowel. Tunisian keeps
@@ -56,25 +57,21 @@ resolution rules.
 
 ## 4. Normalize numbers, dates and units first
 
-TTS text is rarely clean. `normalize()` expands numbers, dates, times, units and
-fractions into spoken words before you phonemize:
+TTS text is rarely clean. `normalize_for_tts()` expands numbers, dates, times,
+units and fractions into spoken words before you phonemize, and it is what the
+plugin runs on the way in:
 
 ```python
-from arbtok.util import normalize
+from arbtok import normalize_for_tts
 from arbtok.plugin import ArbtokG2PPlugin
 
-spoken = normalize("عندي 3 كتب", "ar")     # عندي ثلاثة كتب
+spoken = normalize_for_tts("عندي 3 كتب")     # عندي ثلاثة كتب
 print(ArbtokG2PPlugin().transcribe(spoken))
 ```
 
-For Arabic-specific number-to-words (with gender/case variants and percent
-handling) reach for `num2words`:
-
-```python
-from arbtok.num2words import num2words
-
-print(num2words("عندي 25 كتاب"))            # diacritized Arabic words
-```
+A reply that reads out prices, phone numbers and booking references needs those
+told apart from quantities, and a lect says its cardinals its own way. Both are
+config on a `TtsNorm`; see [normalization.md](normalization.md).
 
 ## 5. The low-level core (already-diacritized text)
 

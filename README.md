@@ -55,8 +55,8 @@ its per-character **distribution**, and arbtok
 scores that distribution against **each variety's own phonological licensing**:
 the orthography2ipa grapheme table and allophone rules of the target lect
 (`docs/rawi-fusion.md`). The chosen tashkeel is the model's most probable
-reading *that the dialect's orthography actually admits*, for all 33 supported
-lects, from Najdi and Hejazi to Tunisian, Egyptian, and the qeltu Iraqi of
+reading *that the dialect's orthography actually admits*, for every supported
+lect, from Najdi and Hejazi to Tunisian, Egyptian, and the qeltu Iraqi of
 Mosul (`docs/dialects.md`).
 
 So the same bare sentence receives variety-appropriate marks and IPA:
@@ -65,12 +65,12 @@ So the same bare sentence receives variety-appropriate marks and IPA:
 from arbtok.plugin import ArbtokG2PPlugin
 
 bare = "ذهب الولد الى المدرسة"                    # undiacritized input
-ArbtokG2PPlugin(lang="ar").transcribe(bare)           # ˈðahab ˈalwalad ˈalaː ˈlmudrasa
-ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)        # ˈðahab ˈalwalad ˈalɛː ˈlmudrasa
+ArbtokG2PPlugin(lang="ar").transcribe(bare)           # ˈðahab ˈalwalad ˈalaː lˈmudrasa
+ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)        # ˈðahab ˈalwalad ˈalɛː lˈmudrasa
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("يشرب القهوة في البيت")
-# ˈjaʃrab alˈɡahawa ˈfiː ˈlbajt   — Najdi /g/ for qāf, epenthetic gahawa vowel
+# ˈjaʃrab alˈɡahawa fiː lˈbajt   — Najdi /g/ for qāf, epenthetic gahawa vowel
 ArbtokG2PPlugin(lang="ar-TN").transcribe("يشرب القهوة في البيت")
-# ˈjaʃrab alˈqahwa ˈfiː ˈlbiːt    — Tunisian monophthong /iː/ in bayt
+# ˈjaʃrab alˈqahwa fiː lˈbiːt    — Tunisian monophthong /iː/ in bayt
 ```
 
 Measured on the bare-input TTS gold (33 lects × 20 sentences, mean per-sentence
@@ -86,7 +86,7 @@ Three capabilities define the engine:
    and a letter the writing spells is never rewritten.
 2. **Per-lect cited loanword nativization**: code-switched Latin words are
    read out of the *matrix lect's own* inventory, per published loanword
-   literature (Cairene `[manaɡar]` vs Najdi `[manadʒar]`, see below).
+   literature (Cairene `[maniɡar]` vs Najdi `[manidʒar]`, see below).
 3. **Waqf / register policy**: one declared switch between the spoken pausal
    register (the TTS default) and full-iʿrāb recitation (see below).
 
@@ -180,7 +180,7 @@ supported list, and the pinned pipeline order.
 import arbtok
 from arbtok.plugin import ArbtokG2PPlugin
 
-arbtok.supported_lects()[:2]                                   # [Lect('ar', 'research'), …]
+arbtok.supported_lects()[:2]                                   # [Lect(code='ar', tier='research'), …]
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")  # 'ˈɡahawa'
 ```
 
@@ -227,14 +227,16 @@ run is read as a **loanword**: phonemized with its donor spec (English by defaul
 and *nativized* into the matrix lect's phonology, out of that lect's own declared
 inventory. The nativization table is chosen by walking the orthography2ipa parent
 chain, so each lect adapts as its loanword literature says it does. Cairene reads
-*manager* with the native stop ǧīm `[manaɡar]` and merges the interdental of *think*
-to `[tink]`, while Najdi keeps the affricate `[manadʒar]` and the interdental
-`[θink]`. A symbol the matrix lect cannot realize is refused (`None`) rather than
-emitted unpronounceable.
+*manager* with the native stop ǧīm `[maniɡar]` and merges the interdental of *think*
+to `[tink]`, while Najdi keeps the affricate `[manidʒar]` and the interdental
+`[θink]`. A symbol the matrix lect does not declare is projected onto the nearest
+sound it does, because a speaker says *something*. `strict=True` refuses the
+projection and returns `None` instead, for a caller for whom a nearest-sound guess
+is worse than no answer.
 
 ```python
-ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")        # 'manaɡar'
-ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager") # 'manadʒar'
+ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")        # 'maniɡar'
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager") # 'manidʒar'
 ```
 
 `nativize=True` is the default (a TTS voice needs a pronounceable reading). Pass
@@ -247,9 +249,10 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meetin
 ```
 
 Cited tables ship for Najdi (`ar-SA-x-najd`, Alhoody 2019), Egyptian (`ar-EG`,
-Hafez 1996 / Watson 2002) and Levantine (`ar-x-levantine`, Al-Saidat 2011 / Cowell
-1964). A lect with no table of its own (e.g. `ar-KW`) falls back to a conservative
-pan-Arabic default.
+Hafez 1996 / Watson 2002), Levantine (`ar-x-levantine`, Al-Saidat 2011 / Cowell
+1964) and the Maghreb (`ar-x-maghrebi`, Kenstowicz & Louriz 2009 / Ziadna 2018 /
+Oueslati 2021 / Heath 2020). A lect with no table of its own (e.g. `ar-KW`) falls
+back to a conservative pan-Arabic default.
 
 ### Diacritization only
 

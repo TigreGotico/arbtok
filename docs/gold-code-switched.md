@@ -1,9 +1,9 @@
 # Code-switched Arabic gold set
 
-`data/gold_code_switched/<lect>.tsv`, 20 realistic Arabic/English code-switched
-sentences per lect, pinning arbtok's **loanword-nativization** pipeline: a
-Latin-script word embedded in dialectal Arabic is read as a loan and mapped into
-the matrix lect's phonology out of that lect's own cited table
+`data/gold_code_switched/<lect>.tsv`, twenty or so realistic Arabic/English
+code-switched sentences per lect, pinning arbtok's **loanword-nativization**
+pipeline: a Latin-script word embedded in dialectal Arabic is read as a loan and
+mapped into the matrix lect's phonology out of that lect's own cited table
 (`arbtok.translit`), never spliced in as raw English.
 
 Every `ar*` spec `arbtok.supported_lects()` resolves is covered, the Saudi,
@@ -33,12 +33,10 @@ TSV, tab-separated, UTF-8, header row:
 
 ### `pipeline_status`, pinned vs. authentic-but-unpinned rows
 
-The template files (frame-built, one reused frame set per zone) omit the column
-entirely and every row is implicitly `pinned`: `validate` re-runs
-`transcribe(sentence)` and asserts equality, so the file is a pure regression
-gate. Hand-authored *authentic* files (e.g. `ar-EG`, written in the lect's real
-code-switching register rather than the shared frames) add the column so a row
-can carry IPA the pipeline does **not** produce, without hiding that fact:
+A file that omits the column entirely is implicitly `pinned` throughout:
+`validate` re-runs `transcribe(sentence)` and asserts equality, so the file is a
+pure regression gate. A file carrying rows the pipeline does **not** produce adds
+the column, so that fact is on the row rather than hidden:
 
 - `pinned`, `ipa` **is** the pipeline output. Re-run and asserted equal (the
   regression pin, and the no-Latin-leakage check). This is the status the
@@ -49,40 +47,32 @@ can carry IPA the pipeline does **not** produce, without hiding that fact:
   wrong output and the divergence are spelled out in `notes`. Never ship wrong
   IPA as gold, the correct value is pinned and the bug is documented for a later
   `arbtok.translit` fix.
-- `unsupported`, an Arabizi row (Latin-written Arabic, *3arabi/7abibi* style).
-  The pipeline never sniffs a Latin run as Arabic, so it has no path for these.
-  `ipa` is the derived Cairene reading of the Arabic the row spells.
+- `unsupported`, an Arabizi row (Latin-written Arabic, *3arabi/7abibi* style),
+  three to a file. The pipeline sniffs a Latin run as Arabic only on a
+  digit-guttural or an explicit hint, so it has no path for most of these. `ipa`
+  is the derived reading, in the file's own lect, of the Arabic the row spells.
 
 `validate` (and the pytest gate) only pin `pipeline_status == "pinned"` rows.
 `known-wrong` / `unsupported` rows are still schema-, `raw`- and dedup-checked
 but are not re-run against `transcribe`.
 
-## A file can keep the roster complete without distinguishing its lect
+## A file has to distinguish its lect to be worth running
 
-`ar-SA-x-shamali` produces output identical to `ar-SA-x-najd` on every frame the two
-share. That is correct rather than a defect in the file: Northern Najdi's only delta
-from its parent is /k/ affrication before a central vowel, and no frame in this set
-puts a /k/ in that environment. The file earns its place by keeping the roster complete
-and the pipeline exercised — a missing gold file fails `test_gold_matches_pipeline`
-outright — but it would not catch a regression that reverted the Shamali spec.
+A gold file for a sub-lect that reproduces its parent's output on every row keeps the
+roster complete and the pipeline exercised, but it would not catch a regression that
+reverted the sub-lect's spec. What makes it worth running is a frame that puts the
+sub-lect's own reflex in the environment that fires it.
 
-It is one row from earning it properly. Measured against the two specs, كَلْب →
-ˈtsalb against ˈkalb, مَكَان → maˈtsaːn against maˈkaːn, and كَاتِب → ˈtsaːtib against
-ˈkaːtib all discriminate; كِتَاب and دِيك do not, because the front-vowel rule both
-varieties share already fires there. A frame carrying one of the first three makes the
-fixture discriminating for every lect at once, since frames are shared.
+`ar-SA-x-shamali` is the case that shows what that takes. Northern Najdi's only delta
+from its parent is /k/ affrication before a central vowel, so a frame has to carry a
+word in that environment: كَلْب → ˈtsalb against Najdi's ˈkalb, مَكَان → maˈtsaːn
+against maˈkaːn, كَاتِب → ˈtsaːtib against ˈkaːtib. كِتَاب and دِيك discriminate
+nothing, because the front-vowel rule both varieties share already fires there. And
+سَكَن is a trap: it reads ˈsakan under both specs, since orthography2ipa withdraws the
+word-medial cell the source does not attest, so a row built on it would say nothing.
 
-One candidate is a trap. سَكَن differs today, ˈsatsan against ˈsakan, but that is the
-word-medial cell, which orthography2ipa withdraws because the source does not attest
-it. A gold row built on سَكَن would go red on a correct upstream change.
-
-**This is an open item, not a property of the file.** `ar-SA-x-shamali` is expected to
-gain a discriminating frame; until it does, a passing fixture for that lect means the
-pipeline ran, not that the spec is intact. A reader six months from now should be able
-to tell a shortfall waiting on work from a decision that was taken.
-
-Contrast `ar-BH-x-baharna`, which does distinguish itself on the frames it shares with
-`ar-BH`: ˈhaðaː → ˈhadaː on the dhāl and ˈnʃuːfak → naˈʃuːfatʃ on the kāf.
+`ar-BH-x-baharna` distinguishes itself the same way against `ar-BH`: ˈhaðaː → ˈhadaː
+on the dhāl and ˈnʃuːfak → naˈʃuːfatʃ on the kāf.
 
 ## Provenance & honesty
 
@@ -99,11 +89,11 @@ Contrast `ar-BH-x-baharna`, which does distinguish itself on the frames it share
   hacking). The `known-wrong` and `unsupported` rows (see `pipeline_status`) carry
   hand-authored, source-cited IPA precisely because the pipeline cannot produce
   the right value yet. They are documented, not hidden, and are not pinned.
-- **Frames are reused across lects** with per-zone dialectal adaptation of the
-  surrounding function words. The embedded English words and their nativized
-  reflexes, the point of the set, are identical inputs across lects, so the
-  files are directly comparable and every cross-lect delta is a real phonology
-  difference (e.g. *manager* → Cairene `manaɡar` vs `manadʒar` elsewhere.
+- **A core of loans recurs in almost every file**, *meeting*, *laptop*, *email*,
+  *manager*, *password* and a dozen more, each embedded in the lect's own
+  dialectal frame rather than a shared one. Those recurring words are the
+  comparable inputs: a cross-lect delta on one of them is a real phonology
+  difference (e.g. *manager* → Cairene `maniɡar` vs `manidʒar` elsewhere.
   *think* → Cairene `tink` by the interdental merger).
 
 ## Nativization tables (the cited maps that fire)
@@ -113,39 +103,42 @@ table (`arbtok.translit.nativization_table`):
 
 | table | keyed at | inherited by | source |
 |---|---|---|---|
-| Najdi | `ar-SA-x-najd` | `ar-SA-x-qassim` (its parent, Alhoody's variety *is* Qassimi) | Alhoody (2019), *Phonological Adaptation of English Loanwords into Qassimi Arabic*, PhD, Newcastle |
-| Egyptian | `ar-EG` |, | Hafez (1996), *Phonological and Morphological Integration of Loanwords into Egyptian Arabic*. Watson (2002), *The Phonology and Morphology of Arabic* |
+| Najdi | `ar-SA-x-najd` | `ar-SA-x-qassim` and the other Najdi leaves (Alhoody's variety *is* Qassimi) | Alhoody (2019), *Phonological Adaptation of English Loanwords into Qassimi Arabic*, PhD, Newcastle |
+| Egyptian | `ar-EG` | the Egyptian leaves | Hafez (1996), *Phonological and Morphological Integration of Loanwords into Egyptian Arabic*. Watson (2002), *The Phonology and Morphology of Arabic* |
 | Levantine | `ar-x-levantine` | `ar-LB`, `ar-SY`, `ar-PS`, `ar-JO` | Al-Saidat (2011), *English Loanwords in Jordanian Arabic*. Cowell (1964), *A Reference Grammar of Syrian Arabic* |
-| default | `ar` | every un-tabled lect (Gulf, Iraqi, Maghrebi, Sudanic, MSA, Classical) | Watson (2002). Holes (2004), *Modern Arabic: Structures, Functions and Varieties* |
+| Maghrebi | `ar-x-maghrebi` | `ar-MA`, `ar-TN`, `ar-DZ` | Kenstowicz & Louriz (2009). Ziadna (2018). Oueslati (2021). Heath (2020) |
+| default | `ar` | every un-tabled lect (Gulf, Iraqi, Sudanic, MSA, Classical), and `ar-LY` and `ar-MR`, which name it ahead of their Maghrebi parent | Watson (2002). Holes (2004), *Modern Arabic: Structures, Functions and Varieties* |
 
-## Refusals are inventory-driven, not designed-in
+## What a loan comes out as is a map of the lect's inventory
 
-`transliterate` returns `None` when the nativized form would need a phoneme the
-matrix lect does **not** declare. `transcribe` then drops the word rather than
-leaking an unpronounceable token. Whether a given loan refuses is therefore a
-**map of the lect's inventory**, and the set reports it honestly rather than
-engineering a target count:
+A nativized form that would need a phoneme the matrix lect does **not** declare is
+projected onto the nearest sound it does, because loanword adaptation does not drop a
+word — a speaker says *something*. So the reading a lect gives a common loan is a map
+of its inventory, and the set reports what each one does rather than engineering a
+target count:
 
-- **Rich-inventory lects realise the whole common loan set, zero refusals.**
-  The Gulf group (`ar-KW`, `ar-AE`, `ar-BH`, `ar-QA`, `ar-OM`, `ar-x-gulf`,
-  `ar-SA-x-hejaz`, `ar-SA-x-qassim`, `ar-SA-x-sharqiyya`, `ar-YE`),
-  Egyptian (`ar-EG`), the Iraqi *gilit* lects
-  (`ar-IQ`, `ar-IQ-x-qeltu`) and the Levantine grouping node all declare /ɡ/,
-  the mid long vowels /eː oː/, and /ʒ/ or /dʒ/, so *meeting* `miːtinɡ`,
-  *email* `imeːl`/`imil` and *garage* `ɡaːradʒ`/`ɡaːraɡ` all pass.
-- **Three-vowel / no-/ɡ/ lects refuse the /ɡ/-final and /eː/-bearing loans.**
-  MSA (`ar`) and Classical (`arb`) have neither /ɡ/ nor /eː/, so *meeting*
-  (needs final [ɡ]), *email* (needs [eː]) and *garage* (needs [ɡ]) are all
-  refused and dropped, while *manager* still surfaces as `manadʒar`. The Najdi
-  (`ar-SA-x-najd`), Maghrebi (`ar-MA`, `ar-TN`, `ar-DZ`, `ar-LY`, `ar-MR`,
-  `ar-x-maghrebi`), Sudanic (`ar-SD`, `ar-TD`, `ar-NG`) and Rijāl Almaʿ
-  (`ar-SA-x-rijal-alma`, the conservative /q/-retaining ʿAsīr variety) lects
-  refuse *email* (no [eː]). The Levantine *leaves* `ar-LB`/`ar-SY` refuse *meeting*
-  and *garage* where the grouping node does not, a genuine leaf-vs-group
-  inventory difference.
+- **Rich-inventory lects realise the whole common loan set unaltered.** The Gulf
+  group (`ar-KW`, `ar-AE`, `ar-BH`, `ar-QA`, `ar-OM`, `ar-x-gulf`,
+  `ar-SA-x-hejaz`, `ar-SA-x-qassim`, `ar-SA-x-sharqiyya`, `ar-YE`), Egyptian
+  (`ar-EG`), the Iraqi lects (`ar-IQ`, `ar-IQ-x-qeltu`) and the whole Levantine
+  branch declare /ɡ/, the mid long vowels /eː oː/, and /ʒ/ or /dʒ/, so *meeting*
+  `miːtinɡ`, *email* `iːmeːl` and *garage* `ɡaraːdʒ`/`ɡaraːɡ` all come out whole.
+- **Three-vowel / no-/ɡ/ lects show the projection instead.** MSA (`ar`) and
+  Classical (`arb`) have neither /ɡ/ nor /eː/, so *meeting* reads `miːtink`,
+  *garage* `karaːdʒ` and *email* `iːmiːl`, while *manager* needs nothing they lack
+  and surfaces as `manidʒar`. Najdi (`ar-SA-x-najd`), Mauritanian (`ar-MR`), the
+  Sudanic lects (`ar-TD`, `ar-NG`) and Rijāl Almaʿ (`ar-SA-x-rijal-alma`, the
+  conservative /q/-retaining ʿAsīr variety) raise *email* to `iːmiːl` for want of
+  [eː]; the Maghrebi leaves (`ar-MA`, `ar-TN`, `ar-DZ`) read it `iːmel` on their
+  own short mid vowel.
 
-Every refused word is spelled out in the row's `notes` with the exact missing
-segment, e.g. `meeting REFUSED—needs [ɡ] (not in inventory), dropped`.
+Each row's `notes` name the reflex every switched word takes and the table it came
+from, and say where a segment was projected rather than realized, e.g.
+`meeting→miːtink: final /ŋ/→[nk] — MSA has no /ɡ/`.
+
+`transliterate(word, lect, strict=True)` refuses the projection instead and returns
+`None`, for a linguistic caller for whom a nearest-sound guess is worse than no
+answer.
 
 ## Tooling
 

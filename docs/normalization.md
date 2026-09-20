@@ -290,10 +290,10 @@ normalize_for_tts("سيارة Hyundai Sonata", "ar", TtsNorm().with_lexicon(bund
 Those spellings are as published, which is unpointed. They replace Latin letters
 with Arabic ones, and their short vowels are still the diacritizer's to supply.
 
-A second bundled lexicon, `common-en`, holds English terms in everyday use:
-`WiFi`, `Bluetooth`, `Apple`, `CarPlay`, `Online`, `WhatsApp`, `Cruise Control`
-and about fifty more. Each has its conventional Arabic spelling and a pointed
-one:
+A second bundled lexicon, `common-en`, holds a little over fifty English terms in
+everyday use: `WiFi`, `Bluetooth`, `Apple`, `CarPlay`, `Online`, `WhatsApp`,
+`Cruise Control` and the rest. Each has its conventional Arabic spelling and a
+pointed one:
 
 ```python
 said = bundled_tts_lexicon("common-en")
@@ -386,8 +386,9 @@ normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", KSA_VOICE_AGENT, d
 # 'السعر تلت مية وخمسين ريال'
 ```
 
-A table ships for Hijazi and for the Gulf. Every row in one is quoted from a
-published grammar with its page, and the spelling chosen for each pronunciation
+A table ships for Hijazi, for the Gulf and for Cairene Egyptian;
+`arbtok.number_forms.bundled_lects()` names them. Every row in one is quoted from
+a published grammar with its page, and the spelling chosen for each pronunciation
 is the most frequent written form of it in a corpus of Saudi speech; the tables
 are `arbtok/data/number_forms/*.tsv` and each says its source on the row. A lect
 inherits its group's table, so Kuwaiti and Qatari read the Gulf one. **A lect
@@ -413,8 +414,9 @@ is not an identifier word. `KSA_PHONE_SHAPES`, `KSA_PHONE_PREFIXES` and
 `IDENTIFIER_WORDS` are plain tuples; pass your own for another country or
 another vocabulary.
 
-The rules from `speak_percent` to `identifier_words` write Arabic words, so they
-raise `ValueError` for a `lang` that is not Arabic.
+The rules from `speak_percent` to `identifier_words`, and `dialect_numbers` and
+`number_forms` with them, write Arabic words, so they raise `ValueError` for a
+`lang` that is not Arabic.
 
 `KSA_VOICE_AGENT` leaves `spoken_forms` and `canonical_unicode` off, because it
 speaks the numbers itself. `TtsNorm.describe()` gives the string to record, as

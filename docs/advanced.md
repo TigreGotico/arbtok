@@ -45,32 +45,31 @@ connected speech. Proclitics (`و`, `بِ`, `لِ`, `كَ`, …) are detected by
 ```python
 from arbtok.tokenizer import Sentence
 
-print(Sentence("قَالَ ٱلْمَلِكُ").ipa)   # "qaːla lmaliku" — article 'a' gone
+print(Sentence("قَالَ ٱلْمَلِكُ").ipa)   # "ˈqaːla lˈmaliku" — article 'a' gone
 ```
 
 ## Normalizing real TTS input
 
 `arbtok.normalize_for_tts` is the one call for this, and [normalization.md](normalization.md)
-covers it together with its inverse for recognizer output. The pieces it is built from:
+covers it together with its inverse for recognizer output.
 
-Raw sentences carry numbers, dates, units and percent signs. Run `normalize`
-(language-aware) and, for Arabic numerals specifically, `num2words` before
-phonemizing:
+Raw sentences carry numbers, dates, units and percent signs. `normalize_for_tts`
+writes them as words, and `speak_percent` is what turns the sign into one:
 
 ```python
-from arbtok.util import normalize
-from arbtok.num2words import num2words
+from arbtok import TtsNorm, normalize_for_tts
 from arbtok.tokenizer import Sentence
 
 raw = "عندي 3 كتب و 50%"
-spoken = num2words(normalize(raw, "ar"))
+spoken = normalize_for_tts(raw, "ar", TtsNorm(speak_percent=True))
 print(spoken)
 print(Sentence(spoken).ipa)
 ```
 
-`normalize` also serves other languages (`"en"`, `"pt"`, `"es"`, `"fr"`, `"de"`)
-for contractions, titles and locale-aware decimal separators, handy when the
-same front-end handles mixed-language metadata.
+`arbtok.util.normalize` is the language-agnostic layer underneath, and it serves
+other languages (`"en"`, `"pt"`, `"es"`, `"fr"`, `"de"`) for contractions, titles
+and locale-aware decimal separators, handy when the same front-end handles
+mixed-language metadata.
 
 ## espeak baseline
 
@@ -115,7 +114,9 @@ Key methods:
   native-speaker validation.
 - **Reuse the diacritizer.** `TashkeelDiacritizer()` loads an ONNX session. Build
   one and keep it, don't construct per sentence.
-- **Vendored deps.** `arbtok.pyarabic` and `arbtok.tashkeel` are vendored copies. Import them from `arbtok`, not from a system package.
+- **The diacritizer rides inside the wheel.** `arbtok.tashkeel` reads the bundled
+  rawi ensemble ONNX from `arbtok/models`. There is no external diacritization
+  package to install and no model to download.
 - **`Sentence` is the low-level core.** It does the phonology only, on
   already-diacritized text. For everyday (bare) input, dialects, nativization and
   Arabizi, use `ArbtokG2PPlugin`, which diacritizes first and then runs the same
