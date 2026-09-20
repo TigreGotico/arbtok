@@ -311,6 +311,25 @@ package's own and cites no source; every row of
 reading the tokenizer gives the pointed form so that a change to it is seen.
 Lexicons combine with `{**cars, **common, **yours}`, later entries winning.
 
+Four more bundled lexicons come from Unicode CLDR, pinned to one release, every row
+carrying the release file it was read from, that file's digest and the licence:
+`units-cldr` (unit names), `currencies-cldr` (names and ISO codes, so `SAR` reads
+`ريال سعودي`), `territories-cldr` and `languages-cldr`. The loader keeps only names
+a voice can say, since CLDR gives some units a symbol or a Latin abbreviation as
+their Arabic name, and leaves out CLDR's pseudo-locales. These tables read one way:
+`bundled_asr_lexicon` refuses them, because read backwards they would translate
+Arabic words into English.
+
+```python
+money = bundled_tts_lexicon("currencies-cldr")
+normalize_for_tts("السعر 500 SAR", "ar", TtsNorm().with_lexicon(money))
+```
+
+A unit symbol is read only where it follows a number, because `in` and `m` in running
+text are not units. `spoken_forms` does that for Arabic from the same CLDR table
+(`cldr_units()`): `المسافة 5 km` becomes `المسافة خمسة كيلومتر`. The unit takes its
+CLDR display name; it is not inflected for the number before it.
+
 ### Numbers a voice agent reads out
 
 A reply holds prices, phone numbers and booking references, and a plain

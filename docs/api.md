@@ -188,6 +188,11 @@ is the bundle for a Saudi voice agent's replies; `KSA_PHONE_SHAPES`,
 Each Latin capital and ASCII digit mapped to its spoken English name in pointed
 Arabic. Raises `ValueError` for a language with no bundled table.
 
+### `cldr_units(lang="ar") -> Dict[str, str]`
+
+English unit symbols (`km`, `kg`, `hp`) mapped to the unit's Arabic name from Unicode
+CLDR. `arbtok.util.normalize` reads a symbol that follows a number from it.
+
 ### `bundled_asr_lexicon(name="cars-sa")`, `bundled_tts_lexicon(name="cars-sa", pointed=True) -> Dict[str, str]`
 
 A bundled term lexicon read in each direction: every Arabic spelling to its name,

@@ -406,6 +406,12 @@ UNITS = {
     }
 }
 
+# Arabic unit names come from Unicode CLDR rather than from a list kept here; see
+# arbtok.textnorm.cldr_units and data/term_lexicons/units-cldr.tsv.
+from arbtok.textnorm import cldr_units  # noqa: E402
+
+UNITS["ar"] = cldr_units("ar")
+
 
 def _get_number_separators(full_lang: str) -> tuple[str, str]:
     """

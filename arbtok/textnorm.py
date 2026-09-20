@@ -32,7 +32,7 @@ __all__ = ["AsrNorm", "TtsNorm", "normalize_asr", "normalize_for_tts",
            "TRUTH_CHECK", "CER_STRIP", "CER_NORM", "CER_MARKS_FIRST", "CER_NORM_MARKS_FIRST",
            "INTELLIGIBILITY_GATE", "KSA_VOICE_AGENT", "KSA_PHONE_SHAPES", "KSA_PHONE_PREFIXES",
            "IDENTIFIER_WORDS", "ASR_NORM_VERSION", "TTS_NORM_VERSION", "spelled_codes",
-           "bundled_asr_lexicon", "bundled_tts_lexicon"]
+           "bundled_asr_lexicon", "bundled_tts_lexicon", "cldr_units"]
 
 _HARAKAT = "\u064B-\u0652"
 _EXTENDED_MARKS = "\u0653-\u065F\u0670"
@@ -433,8 +433,53 @@ def _term_rows(name: str):
         have = sorted(p.stem for p in path.parent.glob("*.tsv"))
         raise ValueError(f"no bundled term lexicon {name!r}; bundled: {have}")
     lines = path.read_text(encoding="utf-8").splitlines()
-    columns = [line for line in lines if line.startswith("# latin\t")][0][2:].split("\t")
-    return tuple(dict(zip(columns, line.split("\t"))) for line in lines if line and not line.startswith("#"))
+    # The header names the columns, as a comment line or as the first row of the table.
+    header = [line for line in lines if line.startswith(("# latin\t", "latin\t"))][0]
+    columns = header.lstrip("# ").split("\t")
+    return tuple(dict(zip(columns, line.split("\t"))) for line in lines
+                 if line and not line.startswith("#") and line != header)
+
+
+# A CLDR display name that a voice can say: Arabic letters, their marks, spaces. Some are
+# a symbol, a Latin abbreviation, or carry a slash or digits, and are names only on paper.
+_SPEAKABLE = re.compile("[\u0621-\u064A\u064B-\u0652\u0670\u0671 ]+")
+# Codes CLDR names for its own use: the two pseudo-locales and the unknown region.
+_NOT_A_PLACE = ("XA", "XB", "ZZ")
+
+
+def _cldr_rows(name: str):
+    """The rows of a CLDR table worth saying: a speakable Arabic name for a real thing, the
+    long form where CLDR gives several widths, one row per Latin name."""
+    rows = [r for r in _term_rows(name) if _SPEAKABLE.fullmatch(r["arabic_form"])
+            and r["cldr_key"].split("/")[-1] not in _NOT_A_PLACE
+            and (not r["cldr_key"].startswith("units/") or r["cldr_key"].startswith("units/long/"))]
+    return sorted(rows, key=lambda r: (len(r["cldr_key"]), r["cldr_key"]))
+
+
+@functools.lru_cache(maxsize=None)
+def cldr_units(lang: str = "ar") -> Dict[str, str]:
+    """Unit symbols as English writes them, ``km`` ``kg`` ``hp``, each mapped to the unit's
+    name in ``lang`` from Unicode CLDR. For reading a unit that follows a number; a bare
+    ``in`` or ``m`` in running text is not a unit, which is why this is not a lexicon."""
+    if lang.split("-")[0] != "ar":
+        raise ValueError(f"no bundled CLDR unit names for {lang!r}")
+    rows = _term_rows("units-cldr")
+    names = {r["cldr_key"].split("/")[2]: r["arabic_form"] for r in rows
+             if r["cldr_key"].startswith("units/long/") and _SPEAKABLE.fullmatch(r["arabic_form"])}
+    symbols: Dict[str, str] = {}
+    for r in rows:
+        width, unit = r["cldr_key"].split("/")[1:3]
+        symbol = r["latin"]
+        # One Latin letter after a number is as often a model or a grade as a unit
+        # (`15 S`, `Class 5 C`); only the metre is common enough to read.
+        if len(symbol) == 1 and symbol.isascii() and symbol.isalpha() and symbol != "m":
+            continue
+        # A percentage is already spoken, in this package's settled spelling of مئة.
+        if symbol in ("%", "\u066A"):
+            continue
+        if width != "long" and unit in names and not any(c.isdigit() for c in symbol):
+            symbols.setdefault(symbol, names[unit])
+    return symbols
 
 
 def bundled_asr_lexicon(name: str = "cars-sa") -> Dict[str, str]:
@@ -446,6 +491,9 @@ def bundled_asr_lexicon(name: str = "cars-sa") -> Dict[str, str]:
     any of them. ``common-en`` holds English terms in everyday use in their
     conventional Arabic spelling.
     """
+    if name.endswith("-cldr"):
+        raise ValueError(f"{name!r} holds Arabic names of things, not spellings of Latin-script terms: "
+                         "read backwards it would translate Arabic words into English")
     return {row["arabic_form"]: row["latin"] for row in _term_rows(name)}
 
 
@@ -461,6 +509,13 @@ def bundled_tts_lexicon(name: str = "cars-sa", pointed: bool = True) -> Dict[str
     ``pointed`` chooses between them. Its pointing is authored by this package and
     cites no source; the file says so on every row.
     """
+    if name.endswith("-cldr"):
+        lexicon: Dict[str, str] = {}
+        for row in _cldr_rows(name):
+            lexicon.setdefault(row["latin"], row["arabic_form"])
+            if row["cldr_key"].startswith("numbers/currencies/"):
+                lexicon.setdefault(row["cldr_key"].split("/")[2], row["arabic_form"])  # SAR, USD
+        return lexicon
     chosen: Dict[str, Tuple[int, str]] = {}
     for row in _term_rows(name):
         rank = _PUBLISHED_BY.index(row["form_kind"]) if "form_kind" in row else 0
