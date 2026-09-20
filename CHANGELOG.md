@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a22](https://github.com/TigreGotico/arbtok/tree/0.0.1a22) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a21...0.0.1a22)
+
+**Merged pull requests:**
+
+- fix: floor the number parser at the release that reads colloquial teens [\#141](https://github.com/TigreGotico/arbtok/pull/141) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a21](https://github.com/TigreGotico/arbtok/tree/0.0.1a21) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a20...0.0.1a21)
