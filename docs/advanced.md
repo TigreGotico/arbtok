@@ -50,6 +50,9 @@ print(Sentence("قَالَ ٱلْمَلِكُ").ipa)   # "qaːla lmaliku" — ar
 
 ## Normalizing real TTS input
 
+`arbtok.normalize_for_tts` is the one call for this, and [normalization.md](normalization.md)
+covers it together with its inverse for recognizer output. The pieces it is built from:
+
 Raw sentences carry numbers, dates, units and percent signs. Run `normalize`
 (language-aware) and, for Arabic numerals specifically, `num2words` before
 phonemizing:
