@@ -1,8 +1,20 @@
 # Changelog
 
+## [0.0.1a10](https://github.com/TigreGotico/arbtok/tree/0.0.1a10) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a9...0.0.1a10)
+
+**Merged pull requests:**
+
+- fix: read a long run of context-dependent characters without recursion [\#117](https://github.com/TigreGotico/arbtok/pull/117) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a9](https://github.com/TigreGotico/arbtok/tree/0.0.1a9) (2026-09-19)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a7...0.0.1a9)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a8...0.0.1a9)
+
+## [0.0.1a8](https://github.com/TigreGotico/arbtok/tree/0.0.1a8) (2026-09-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a7...0.0.1a8)
 
 **Merged pull requests:**
 
