@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a14](https://github.com/TigreGotico/arbtok/tree/0.0.1a14) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a13...0.0.1a14)
+
+**Merged pull requests:**
+
+- fix: a unit symbol after a number is read in any case [\#125](https://github.com/TigreGotico/arbtok/pull/125) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a13](https://github.com/TigreGotico/arbtok/tree/0.0.1a13) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a12...0.0.1a13)
