@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.1a26](https://github.com/TigreGotico/arbtok/tree/0.0.1a26) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a25...0.0.1a26)
+
+**Merged pull requests:**
+
+- Let one module own idgham and iqlab of a final nun [\#150](https://github.com/TigreGotico/arbtok/pull/150) ([JarbasAl](https://github.com/JarbasAl))
+- Read a ya through the branches that decide something [\#149](https://github.com/TigreGotico/arbtok/pull/149) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a25](https://github.com/TigreGotico/arbtok/tree/0.0.1a25) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a24...0.0.1a25)
