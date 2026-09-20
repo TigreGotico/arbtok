@@ -366,8 +366,38 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `leave_unspeakable_numbers` | a number that cannot be spoken is left as written and the rest is still read; otherwise the error is raised |
 | `oblique_numbers` | cardinals in the oblique case, the one connected speech uses |
 | `space_fused_hundreds` | in those cardinals `ثلاثمئة` becomes `ثلاث مئة`; a synthesizer keeps the spaced form and garbles the fused one |
+| `dialect_numbers` | the cardinals and the digit-by-digit readings take the words the lect `lang` names uses, from its bundled table |
+| `number_forms` | your own words for values, `{100: "مية"}`, over the lect's table or instead of one; set with `with_number_forms` |
 | `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
+
+### Numbers in the words a lect actually uses
+
+The number parser speaks Standard Arabic. A lect does not: where the parser says
+`خمسة عشر` for 15, Jidda and Abu Dhabi both say `خمسطعش`, and where it says
+`ثلاثمئة` Jidda says `تلتمية` and Abu Dhabi `ثلاثمية`. `dialect_numbers` lays the
+lect's own words over the cardinal the parser composed, so the parser still does
+the composing and a table names only the words that differ.
+
+```python
+normalize_for_tts("السعر 350 ريال", "ar", KSA_VOICE_AGENT)
+# 'السعر ثلاث مئة وخمسين ريال'
+normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", KSA_VOICE_AGENT, dialect_numbers=True)
+# 'السعر تلت مية وخمسين ريال'
+```
+
+A table ships for Hijazi and for the Gulf. Every row in one is quoted from a
+published grammar with its page, and the spelling chosen for each pronunciation
+is the most frequent written form of it in a corpus of Saudi speech; the tables
+are `arbtok/data/number_forms/*.tsv` and each says its source on the row. A lect
+inherits its group's table, so Kuwaiti and Qatari read the Gulf one. **A lect
+with no cited table keeps the parser's Standard Arabic**, Najdi included: no
+source has been read for it, and a form no source gives is not written.
+
+The flag is off everywhere by default, so a number spoken before it existed is
+spoken the same way now. `with_number_forms` gives your own words for values,
+with or without a table under them, and `describe()` names both the tables and
+your words so a run says which words it used.
 
 A price and a phone number cannot be told apart by length, so nothing here
 guesses from length alone below eleven digits: a phone number is known by its

@@ -527,13 +527,17 @@ def test_every_tts_rule_changes_some_output(flag):
     # A grouped phone number is what phone_shapes alone catches, 25 is a number whose
     # case shows, and spoken_forms has something to say only where the cardinals are off.
     texts = ["نص\u200bنص", "X5", "4.5%", "MG 5", "055 123 4567", "12345678901", "8001000341", "الكود 4729",
-             "300 ريال", "25 ريال", "٣٠٠", "المـرء"]
+             "300 ريال", "25 ريال", "٣٠٠", "المـرء", "15 رسالة", "350 ريال"]
     off = dataclasses.replace(KSA, spoken_forms=False, canonical_unicode=False, strip_controls=False,
                               spell_out_codes=False, cardinal_numbers=flag != "spoken_forms")
-    value = {"phone_shapes": (), "phone_prefixes": (), "identifier_words": ()}.get(flag)
+    # A rule that reads a lect's own words has nothing to say under a tag that names no lect.
+    lang = "ar-SA-x-hejaz" if flag == "dialect_numbers" else "ar"
+    # What a non-boolean rule holds when it is on: turning it on and off is what this compares.
+    when_on = {"phone_shapes": textnorm.KSA_PHONE_SHAPES, "phone_prefixes": textnorm.KSA_PHONE_PREFIXES,
+               "identifier_words": textnorm.IDENTIFIER_WORDS, "number_forms": ((15, "خمستاشر"),)}
     current = getattr(off, flag)
-    other = (not current) if isinstance(current, bool) else (value if current else textnorm.KSA_PHONE_SHAPES)
-    assert any(normalize_for_tts(t, "ar", off) != normalize_for_tts(t, "ar", dataclasses.replace(off, **{flag: other}))
+    other = (not current) if isinstance(current, bool) else (() if current else when_on[flag])
+    assert any(normalize_for_tts(t, lang, off) != normalize_for_tts(t, lang, dataclasses.replace(off, **{flag: other}))
                for t in texts)
 
 

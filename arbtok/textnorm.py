@@ -98,6 +98,19 @@ def _as_lexicon(lexicon) -> Tuple[Tuple[str, str], ...]:
     return entries
 
 
+def _as_number_forms(forms) -> Tuple[Tuple[int, str], ...]:
+    """A mapping from a value to a word, as sorted pairs; a bool is not a value."""
+    pairs = forms.items() if isinstance(forms, Mapping) else forms
+    out = {}
+    for value, word in pairs:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise TypeError(f"a number form is keyed by a non-negative int, not {value!r}")
+        if not isinstance(word, str) or not word.strip():
+            raise TypeError(f"the form for {value} is {word!r}; it must be a word")
+        out[value] = word.strip()
+    return tuple(sorted(out.items()))
+
+
 def _as_text(text, function: str) -> str:
     if not isinstance(text, str):
         raise TypeError(f"{function} takes a str, got {type(text).__name__}: a missing text is the "
@@ -555,7 +568,11 @@ _FUSED_HUNDREDS = {fused + spelling: spaced + " مئة"
                    for fused, spaced in (("ثلاث", "ثلاث"), ("أربع", "أربع"), ("خمس", "خمس"), ("ست", "ست"),
                                          ("سبع", "سبع"), ("ثمان", "ثمان"), ("تسع", "تسع"))
                    for spelling in ("مئة", "مائة")}
-_FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, _FUSED_HUNDREDS)))
+# The colloquial hundreds a lect's number table writes, spaced the same way and for the same reason.
+_FUSED_HUNDREDS.update({stem + "مية": stem + " مية"
+                        for stem in ("ثلاث", "ثلث", "تلت", "تلات", "اربع", "أربع", "خمس", "ست", "سبع", "ثمن",
+                                     "ثمان", "تمن", "تمان", "تسع")})
+_FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, sorted(_FUSED_HUNDREDS, key=len, reverse=True))))
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*[%٪]")
 _LONG_RUN = re.compile(r"(?<![0-9])\d{11,}(?![0-9])")
 _CODE_DIGITS = re.compile(r"(?<![0-9A-Za-z])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))(?![0-9A-Za-z])")
@@ -590,7 +607,8 @@ def is_arabic_lang(lang: str) -> bool:
 
 
 #: Rules whose output is Arabic words whatever ``lang`` says.
-_ARABIC_ONLY = ("speak_percent", "phone_shapes", "long_digit_runs", "phone_prefixes", "identifier_words")
+_ARABIC_ONLY = ("speak_percent", "phone_shapes", "long_digit_runs", "phone_prefixes", "identifier_words",
+                "dialect_numbers", "number_forms")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -635,6 +653,14 @@ class TtsNorm:
     #: synthesizer keeps the spaced form and garbles the fused one. Number words the
     #: author wrote are left as written.
     space_fused_hundreds: bool = False
+    #: The cardinals and the digit-by-digit readings take the words of the lect ``lang``
+    #: names, from :func:`arbtok.number_forms.number_forms`: ``ar-SA`` and ``ar-EG`` do
+    #: not say 15 alike. With no table for the lect, or with plain ``ar``, the words are
+    #: the parser's. Runs before ``space_fused_hundreds``.
+    dialect_numbers: bool = False
+    #: Your own words for values, ``{100: "مية"}``, laid over the lect's table, or used
+    #: alone when ``dialect_numbers`` is off. Set with :meth:`with_number_forms`.
+    number_forms: Tuple[Tuple[int, str], ...] = ()
     #: Dates, times, numbers and units as words in ``lang``.
     spoken_forms: bool = True
     #: Tatweel dropped, NFC, shadda ordered before its vowel, the spellings of مائة settled.
@@ -644,6 +670,7 @@ class TtsNorm:
 
     def __post_init__(self):
         object.__setattr__(self, "lexicon", _as_lexicon(self.lexicon))
+        object.__setattr__(self, "number_forms", _as_number_forms(self.number_forms))
         for name in ("phone_shapes", "phone_prefixes", "identifier_words"):
             object.__setattr__(self, name, tuple(getattr(self, name)))
 
@@ -651,14 +678,22 @@ class TtsNorm:
         """This config with ``lexicon``, a mapping from a term to its spoken form."""
         return dataclasses.replace(self, lexicon=_as_lexicon(lexicon))
 
+    def with_number_forms(self, forms: Mapping[int, str]) -> "TtsNorm":
+        """This config with ``forms``, a mapping from a value to the word said for it."""
+        return dataclasses.replace(self, number_forms=_as_number_forms(forms))
+
     def describe(self) -> str:
         """A stable string naming the rule set, what is on, and the lexicon by content."""
         on = [f.name if getattr(self, f.name) is True
               else f"{f.name}={hashlib.sha256(repr(getattr(self, f.name)).encode()).hexdigest()[:8]}"
               for f in dataclasses.fields(self) if getattr(self, f.name) and f.name != "lexicon"]
         speaks = self.cardinal_numbers or self.spoken_forms
+        tables = ""
+        if self.dialect_numbers:
+            from arbtok.number_forms import tables_digest
+            tables = f"; number tables {tables_digest()}"
         return (f"arbtok-tts-norm {TTS_NORM_VERSION}: {','.join(on) or 'none'}"
-                + _describe_lexicon(self.lexicon) + (_describe_parser() if speaks else ""))
+                + _describe_lexicon(self.lexicon) + tables + (_describe_parser() if speaks else ""))
 
 
 #: Names the rule set of :func:`normalize_for_tts`, computed the way
@@ -693,8 +728,28 @@ def _tts_patterns(config: TtsNorm):
     return phones, prefixes, context
 
 
-def _digit_by_digit(run: str) -> str:
-    return " ".join(_DIGIT_WORDS[d] for d in run.translate(_EASTERN_DIGITS) if d in _DIGIT_WORDS)
+@functools.lru_cache(maxsize=64)
+def _lect_forms(lang: str, config: TtsNorm):
+    """The words this call says for values, and the pattern that finds the parser's word
+    for each inside a cardinal it composed. The parser's word is asked of the parser, in
+    the case the config speaks, so a table is keyed by value and never by a spelling."""
+    forms: Dict[int, str] = {}
+    if config.dialect_numbers:
+        from arbtok.number_forms import number_forms
+        forms.update(number_forms(lang))
+    forms.update(config.number_forms)
+    if not forms:
+        return forms, None, {}
+    from ovos_number_parser import pronounce_number
+    case = {"case": "oblique"} if config.oblique_numbers else {}
+    said = {pronounce_number(value, lang=lang, **case): word for value, word in forms.items()}
+    pattern = re.compile(r"(?<!\S)(و?)(" + "|".join(re.escape(w) for w in sorted(said, key=len, reverse=True))
+                         + r")(?!\S)")
+    return forms, pattern, said
+
+
+def _digit_by_digit(run: str, forms: Mapping[int, str] = {}) -> str:
+    return " ".join(forms.get(int(d), _DIGIT_WORDS[d]) for d in run.translate(_EASTERN_DIGITS) if d in _DIGIT_WORDS)
 
 
 def _cardinal(number: str, lang: str, config: TtsNorm) -> str:
@@ -702,6 +757,11 @@ def _cardinal(number: str, lang: str, config: TtsNorm) -> str:
     value = float(number) if "." in number else int(number)
     words = pronounce_number(value, lang=lang, case="oblique") if config.oblique_numbers \
         else pronounce_number(value, lang=lang)
+    forms, pattern, said = _lect_forms(lang, config)
+    if isinstance(value, int) and value in forms:
+        words = forms[value]
+    elif pattern:
+        words = pattern.sub(lambda m: m.group(1) + said[m.group(2)], words)
     if config.space_fused_hundreds:
         words = _FUSED_HUNDREDS_RE.sub(lambda m: _FUSED_HUNDREDS[m.group(0)], words)
     return words
@@ -758,6 +818,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     speaks_arabic = [name for name in _ARABIC_ONLY if getattr(config, name)]
     if speaks_arabic and not is_arabic_lang(lang):
         raise ValueError(f"{', '.join(speaks_arabic)} speak Arabic and lang is {lang!r}")
+    digit_forms = _lect_forms(lang, dataclasses.replace(config, lexicon=()))[0]
     phones, prefixes, context = _tts_patterns(dataclasses.replace(config, lexicon=()) if config.lexicon else config)
     if config.strip_controls:
         text = _CONTROLS.sub("", text)
@@ -780,17 +841,17 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             return placeholder
         text = _CODE_DIGITS.sub(hold, text)
     if phones:
-        text = phones.sub(lambda m: _digit_by_digit(m.group(0)), text)
+        text = phones.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
     if config.long_digit_runs:
-        text = _LONG_RUN.sub(lambda m: _digit_by_digit(m.group(0)), text)
+        text = _LONG_RUN.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
     if prefixes or context:
         whole = text
         def reference(m):
             run = m.group(0)
             if prefixes and (run.startswith("+") or prefixes.fullmatch(run)):
-                return _digit_by_digit(run)
+                return _digit_by_digit(run, digit_forms)
             if context and context.search(whole[:m.start()]):
-                return _digit_by_digit(run)
+                return _digit_by_digit(run, digit_forms)
             return run
         text = _DIGIT_RUN.sub(reference, text)
     if config.cardinal_numbers:
