@@ -167,6 +167,23 @@ transliterate("bureau", "ar-MA", donor="fr-FR")     # 'biro'
 transliterate("chauffeur", "ar-MA", donor="fr-FR")  # 'ʃofur'
 ```
 
+French spelling does not say which final consonants are silent, and the words that
+recur in every switched sentence are the ones it gets wrong. A closed-class French
+lexicon ships with the package and is registered when `fr-FR` is the donor, so
+these are read from a dictionary rather than from their letters:
+
+```python
+transliterate("déjà", "ar-MA", donor="fr-FR")    # 'deʒa'   (spelling alone: 'deʒ')
+transliterate("voilà", "ar-MA", donor="fr-FR")   # 'vwala'  (spelling alone: 'vwal')
+transliterate("dix", "ar-MA", donor="fr-FR")     # 'dis'    (spelling alone: 'di')
+```
+
+It covers articles, prepositions, conjunctions, pronouns, determiners, negation,
+common adverbs, discourse words, the conversational forms of nine verbs and the
+numbers; open-class words are still read by rule. Its source and its limits are in
+`arbtok/data/donor_lexicons/README.md`. A lexicon you register for `fr-FR` yourself
+takes its place.
+
 The Maghrebi table diverges from the pan-Arabic default on four segments and
 carries no rule for two more. French /ʁ/ becomes **[r]**, not the [ɣ] a feature
 metric picks — these lects declare /ɣ/ and do not use it for a French rhotic. The

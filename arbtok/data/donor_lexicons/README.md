@@ -43,3 +43,37 @@ are in `us_gold` (*aluminum*, *analog*, *aging*) and 591 are in neither (the `-i
 family: *accessorise*, *acclimatise*, *agonise*). Their origin is not established.
 Rebuilding from `gb_gold` alone would therefore drop those 1,487 words, which is why
 the rhoticisation was applied in place rather than by a rebuild.
+
+## fr-FR.tsv — the French closed-class donor lexicon
+
+Maghrebi Arabic switches into French the way Gulf Arabic switches into English, and
+the French words that recur in every such sentence are the grammatical ones: *les*,
+*des*, *et*, *est*, *déjà*, *voilà*, *dix*. French spelling leaves their final
+consonants silent or sounded word by word, so a rule system reads *les* as `l`,
+*déjà* as `deʒ` and *dix* as `di`. This file gives those words their dictionary
+reading. It holds the closed classes only — articles, prepositions, conjunctions,
+pronouns, determiners, negation, common adverbs, discourse words, the forms of
+*être*, *avoir*, *aller*, *faire*, *pouvoir*, *vouloir*, *devoir*, *savoir* and
+*falloir* that a conversation uses, and the numbers — because those are a finite list
+that can be checked by eye, and an open-class French dictionary is not.
+
+**Provenance.** Every reading is the highest-probability pronunciation of the word in
+the French MFA dictionary v3.0.0 (McAuliffe and Sonderegger 2024), distributed under
+CC BY 4.0. `fr-FR.sources.tsv` records, for each word, its class, the reading written
+here, the dictionary's own phone string and the probability it carries, so every row
+can be traced to the line it came from. Rebuild both files with
+`scripts/build_french_donor_lexicon.py <french_mfa.dict> <out_dir>`; the word list is
+in that script, grouped by class.
+
+**Phones.** The dictionary writes the fronted allophones of /k/ and /ɡ/ before front
+vowels as `c` and `ɟ`, a palatalised `mʲ`, and `ʎ` for the *li* of *lieu*. These are
+written back to `k`, `ɡ`, `m` and `lj`, which is the phonemic inventory the `fr-FR`
+spec and the adaptation maps in `arbtok.translit` are stated in. Nothing else is
+changed.
+
+**What is left out, and what does not take effect.** orthography2ipa splits a word at
+an apostrophe before it consults a lexicon, so an entry for *l'*, *c'est* or
+*aujourd'hui* would never be read; the build script reports these elided forms and
+writes none of them. *là-bas* and *peut-être* are not in the dictionary. And the
+`fr-FR` spec's own inline word readings outrank any lexicon, so for *le*, *de*, *je*,
+*ne* and *que* the spec's schwa is what is spoken, not the `ø` this dictionary gives.
