@@ -2,7 +2,7 @@ import dataclasses
 import re
 import string
 import unicodedata
-from typing import List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 # helper constants, make it more readable for non-arabic speakers (me)
 # each represent an arabic grapheme that maps to a IPA phoneme in ARABIC_TO_IPA
@@ -118,6 +118,10 @@ def normalize_unicode(text: str) -> str:
     return elide_silent_alif(text)
 
 
+class _PrevTokenNeeded(Exception):
+    """Raised inside CharToken._ipa when the previous token's fragment is not resolved yet."""
+
+
 @dataclasses.dataclass
 class CharToken:
     """
@@ -210,6 +214,28 @@ class CharToken:
         Context-sensitive adjustments that span *words* are handled in WordToken.
         Context-sensitive adjustments between *chars* (like Alif lengthening) happen here.
         """
+        # A fragment can depend on the previous token's, which can depend on the one
+        # before it, for as long as the run lasts. Resolved with a loop and a table
+        # local to this call: a run of any length stays off the call stack, and each
+        # token in it is read once instead of once per rule that asks for it.
+        known: Dict[int, str] = {}
+        pending = [self]
+        while pending:
+            tok = pending[-1]
+            try:
+                known[id(tok)] = tok._ipa(known)
+                pending.pop()
+            except _PrevTokenNeeded:
+                pending.append(tok.prev_token)
+        return known[id(self)]
+
+    def _prev_ipa(self, known: Dict[int, str]) -> str:
+        try:
+            return known[id(self.prev_token)]
+        except KeyError:
+            raise _PrevTokenNeeded from None
+
+    def _ipa(self, known: Dict[int, str]) -> str:
         s = self.surface
 
         if self.is_punct:
@@ -278,7 +304,7 @@ class CharToken:
                 return "i"
 
             # Medial: Lengthens preceding vowel (mater lectionis after fatha)
-            if self.prev_token and self.prev_token.ipa == "a":
+            if self.prev_token and self._prev_ipa(known) == "a":
                 return "ː"
 
             # Medial ALIF after a non-'a' vowel (kasra 'i' or damma 'u') within a word:
@@ -287,7 +313,7 @@ class CharToken:
             # Example: وَبِاسْمِ (wa+bi+ism) → the ا of اسم is silent after 'i' of bi.
             if (not self.is_first_char
                     and self.prev_token
-                    and self.prev_token.ipa in {"i", "u"}
+                    and self._prev_ipa(known) in {"i", "u"}
                     and s == ALIF):
                 return ""
 
@@ -339,7 +365,7 @@ class CharToken:
             if self.has_shada:
                 return "w"
             # If previous IPA ends with 'u' (short u) then WAW likely lengthens it.
-            if self.prev_token and self.prev_token.ipa.endswith('u'):
+            if self.prev_token and self._prev_ipa(known).endswith('u'):
                 return "ː"
 
             # Default: consonant /w/
@@ -357,7 +383,7 @@ class CharToken:
             if self.has_shada:
                 return "j"
             # 1) Lengthening prev vowel (i -> i:)
-            if self.prev_token and self.prev_token.ipa.endswith('i'):
+            if self.prev_token and self._prev_ipa(known).endswith('i'):
                 return "ː"
             # 2) Diphthong: FATHA + YA -> /aj/ glide
             if self.prev_token and self.prev_token.surface == FATHA and (not self.next_token or self.next_token.surface not in VOWEL_MAP):
@@ -377,7 +403,7 @@ class CharToken:
             return "aː"
 
         # --- Vowels ---
-        if self.prev_token and self.prev_token.ipa == "i" and s == KASRA:
+        if s == KASRA and self.prev_token and self._prev_ipa(known) == "i":
             return ""
         if s in VOWEL_MAP:
             return VOWEL_MAP[s]
@@ -424,7 +450,7 @@ class CharToken:
                 return ""
             # Return the IPA of the previous token.
             if self.prev_token:
-                prev = self.prev_token.ipa
+                prev = self._prev_ipa(known)
                 # A length mark cannot be geminated. If the previous letter still
                 # rendered as one, it was read as a mater lectionis despite carrying
                 # gemination, and duplicating it would emit `ːː`. The ya/waw branches
