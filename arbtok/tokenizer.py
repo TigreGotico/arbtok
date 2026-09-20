@@ -241,8 +241,12 @@ def _waw_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
 
 
 def _ya_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
-    """The reading of a ya: the consonant /j/, the glide of a diphthong, or a
-    length mark on the vowel before it.
+    """The reading of a ya: a length mark on the vowel before it, or [j].
+
+    [j] is two readings the character layer does not have to separate: the
+    consonant, and the glide of a diphthong -- a ya after fatha is the second
+    half of /aj/, and that glide IS [j]. Only the mater lectionis is a
+    different phone, so only it needs a branch.
     """
     # A shadda proves this letter is a CONSONANT: gemination sits on a
     # consonant, never on vowel length. Without this the mater rule below
@@ -253,13 +257,9 @@ def _ya_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
     # reads the same word correctly as `tijj`.
     if tok.has_shada:
         return "j"
-    # 1) Lengthening prev vowel (i -> i:)
+    # Lengthening prev vowel (i -> i:)
     if tok.prev_token and tok._prev_ipa(known).endswith('i'):
         return "ː"
-    # 2) Diphthong: FATHA + YA -> /aj/ glide
-    if tok.prev_token and tok.prev_token.surface == FATHA and (not tok.next_token or tok.next_token.surface not in VOWEL_MAP):
-        return "j"
-    # 3) Consonantal /j/
     return "j"
 
 
