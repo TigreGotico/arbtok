@@ -162,7 +162,18 @@ CER_NORM.with_lexicon(LEXICON).describe()
 
 The name after `arbtok-asr-norm` is `ASR_NORM_VERSION`: a digest of the flags in
 their order and of every pattern and table the rules use. It changes when a rule
-or the order changes, and nobody sets it by hand.
+or the order changes, and nobody sets it by hand. `TTS_NORM_VERSION` is computed
+the same way.
+
+**Record the `describe()` string, not the version alone.** The version names the
+rules. What a config carries as values is configuration and is outside it: which
+flags are on, a lexicon, and for `normalize_for_tts` the phone shapes, phone
+prefixes and identifier words (`KSA_PHONE_SHAPES`, `KSA_PHONE_PREFIXES`,
+`IDENTIFIER_WORDS` or your own). `describe()` names each of those, the tuples and
+the lexicon by a digest of their content, so two runs that differ in any of them
+describe themselves differently while sharing one version. If the number parser's
+version cannot be read, `describe()` says `ovos-number-parser unknown` and still
+returns.
 
 ### Every rule
 
