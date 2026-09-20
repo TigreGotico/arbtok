@@ -1,12 +1,19 @@
 # Changelog
 
+## [0.0.1a21](https://github.com/TigreGotico/arbtok/tree/0.0.1a21) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a20...0.0.1a21)
+
+**Merged pull requests:**
+
+- arbtok: expose \_\_version\_\_ from the same VERSION\_STR the build reads [\#138](https://github.com/TigreGotico/arbtok/pull/138) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a20](https://github.com/TigreGotico/arbtok/tree/0.0.1a20) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a19...0.0.1a20)
 
 **Merged pull requests:**
 
-- arbtok: expose \_\_version\_\_ from the same VERSION\_STR the build reads [\#138](https://github.com/TigreGotico/arbtok/pull/138) ([JarbasAl](https://github.com/JarbasAl))
 - arbtok: is\_arabic\_lang normalises an underscore to a hyphen [\#137](https://github.com/TigreGotico/arbtok/pull/137) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a19](https://github.com/TigreGotico/arbtok/tree/0.0.1a19) (2026-09-20)
