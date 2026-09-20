@@ -8,7 +8,7 @@ import pytest
 from arbtok.tokenizer import CharToken, WordToken
 
 ALIF, FATHA, KASRA, BA = "ا", "َ", "ِ", "ب"
-ZERO_WIDTH_SPACE, RIGHT_TO_LEFT_MARK = "​", "‏"
+ZERO_WIDTH_SPACE, RIGHT_TO_LEFT_MARK = "\u200B", "\u200F"
 
 
 @pytest.mark.parametrize("run", [

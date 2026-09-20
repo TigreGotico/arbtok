@@ -100,7 +100,7 @@ class TestSkeleton:
 
     def test_produces_arabic_script(self):
         skel = to_arabic_skeleton("sh7alek")
-        assert all("؀" <= c <= "ۿ" for c in skel)
+        assert all("\u0600" <= c <= "\u06FF" for c in skel)
 
 
 class TestDetectionGate:
