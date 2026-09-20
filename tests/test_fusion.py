@@ -112,7 +112,7 @@ def test_three_lects_end_to_end(lect):
     out = plug.transcribe("ذهب الولد الى المدرسة")
     assert out and isinstance(out, str)
     # produced IPA, not passed the Arabic through untranscribed
-    assert not any("؀" <= ch <= "ۿ" for ch in out)
+    assert not any("\u0600" <= ch <= "\u06FF" for ch in out)
 
 
 def test_alignment_mismatch_falls_back_to_guarded_pipeline():

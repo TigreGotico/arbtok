@@ -562,11 +562,11 @@ def test_the_public_names_exist():
     assert all(hasattr(textnorm, name) for name in textnorm.__all__) and len(set(textnorm.__all__)) == len(textnorm.__all__)
 
 
-def test_no_source_file_of_this_module_hides_a_format_character():
+def test_no_test_source_and_not_this_module_hides_a_format_character():
     """Zero-width and bidirectional characters belong in escapes, where a reader can see them."""
     import unicodedata
     from pathlib import Path
-    for path in (Path(textnorm.__file__), Path(__file__)):
+    for path in (Path(textnorm.__file__), *sorted(Path(__file__).parent.glob("*.py"))):
         hidden = [(n, f"U+{ord(c):04X}") for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
                   for c in line if unicodedata.category(c) == "Cf"]
         assert not hidden, f"{path.name}: {hidden[:5]}"
