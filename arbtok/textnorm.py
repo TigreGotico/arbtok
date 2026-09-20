@@ -565,6 +565,30 @@ _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])([٠-٩]{1,3}(?:[،٬][٠-٩
                              r"|[٠-٩]+(?:[.٫][٠-٩]+)?)(?![0-9٠-٩A-Za-z])")
 _PROCLITIC = r"[بولك]?ا?ل?"
 _HELD_DIGITS = 0xE000  # private-use characters stand in for digits a rule must not read
+#: ISO 639-3 codes for the individual Arabic languages. They are listed because they
+#: cannot be recognized by shape: they sort beside ``arc`` (Aramaic) and ``arn``
+#: (Mapudungun), which are unrelated languages. Source: ISO 639-3 code table,
+#: https://iso639-3.sil.org/code_tables/639/data, read for the macrolanguage ``ara``.
+ARABIC_LANGUAGE_CODES = frozenset({
+    "arb",  # Standard Arabic
+    "aao", "abh", "abv", "acm", "acq", "acw", "acx", "acy", "adf", "aeb",
+    "aec", "afb", "ajp", "apc", "apd", "arq", "ars", "ary", "arz", "auz",
+    "avl", "ayh", "ayl", "ayn", "ayp", "bbz", "pga", "shu", "ssh",
+})
+
+
+def is_arabic_lang(lang: str) -> bool:
+    """Whether ``lang`` names an Arabic variety: ``ar`` and every ``ar-…`` tag, plus the
+    ISO 639-3 code of an individual Arabic language (``arb``, ``arz``, ``ary``, ``ars``).
+    Case does not matter, as it does not in BCP-47.
+
+    This asks what the caller wrote. :func:`arbtok.spec_for_lang` cannot answer it: it
+    resolves an unknown tag to MSA, so it calls every language on earth Arabic.
+    """
+    lang = lang.lower()
+    return lang == "ar" or lang.startswith("ar-") or lang in ARABIC_LANGUAGE_CODES
+
+
 #: Rules whose output is Arabic words whatever ``lang`` says.
 _ARABIC_ONLY = ("speak_percent", "phone_shapes", "long_digit_runs", "phone_prefixes", "identifier_words")
 
@@ -732,7 +756,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         config = dataclasses.replace(config, **flags)
     text = _as_text(text, "normalize_for_tts")
     speaks_arabic = [name for name in _ARABIC_ONLY if getattr(config, name)]
-    if speaks_arabic and lang.split("-")[0].lower() != "ar":
+    if speaks_arabic and not is_arabic_lang(lang):
         raise ValueError(f"{', '.join(speaks_arabic)} speak Arabic and lang is {lang!r}")
     phones, prefixes, context = _tts_patterns(dataclasses.replace(config, lexicon=()) if config.lexicon else config)
     if config.strip_controls:
