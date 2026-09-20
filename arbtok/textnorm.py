@@ -597,12 +597,18 @@ ARABIC_LANGUAGE_CODES = frozenset({
 def is_arabic_lang(lang: str) -> bool:
     """Whether ``lang`` names an Arabic variety: ``ar`` and every ``ar-…`` tag, plus the
     ISO 639-3 code of an individual Arabic language (``arb``, ``arz``, ``ary``, ``ars``).
-    Case does not matter, as it does not in BCP-47.
+    Case does not matter, as it does not in BCP-47, and neither does an underscore
+    written where a hyphen belongs (``ar_SA``), the same normalization
+    :func:`arbtok.spec_for_lang` applies before it resolves a tag.
+
+    ``ara``, the ISO 639-3 code of the Arabic macrolanguage, is deliberately not in
+    :data:`ARABIC_LANGUAGE_CODES`: that set holds individual-language codes, and the
+    macrolanguage is already named by ``ar``.
 
     This asks what the caller wrote. :func:`arbtok.spec_for_lang` cannot answer it: it
     resolves an unknown tag to MSA, so it calls every language on earth Arabic.
     """
-    lang = lang.lower()
+    lang = lang.lower().replace("_", "-")
     return lang == "ar" or lang.startswith("ar-") or lang in ARABIC_LANGUAGE_CODES
 
 
