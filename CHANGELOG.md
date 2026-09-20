@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a16](https://github.com/TigreGotico/arbtok/tree/0.0.1a16) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a15...0.0.1a16)
+
+**Merged pull requests:**
+
+- fix: an Arabic variety named by its own language code is Arabic [\#131](https://github.com/TigreGotico/arbtok/pull/131) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a15](https://github.com/TigreGotico/arbtok/tree/0.0.1a15) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a14...0.0.1a15)
