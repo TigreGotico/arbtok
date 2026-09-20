@@ -68,7 +68,7 @@ _MIXED_RUN = _re.compile(
 from arbtok.arabizi import arabizi_covers, is_arabizi, to_arabic_skeleton
 
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
-from arbtok.util import normalize as normalize_speech
+from arbtok.textnorm import normalize_for_tts
 
 class ArbtokG2PPlugin:
     """Arabic G2P via the orthography2ipa shared lattice.
@@ -203,8 +203,7 @@ class ArbtokG2PPlugin:
     # ─── lifecycle hooks ─────────────────────────────────────────────
 
     def normalize(self, text: str) -> str:
-        text = normalize_speech(text, "ar")
-        text = normalize_unicode(text)
+        text = normalize_for_tts(text, "ar")
         if self.diacritize:
             text = self._diacritize(text)
         return text

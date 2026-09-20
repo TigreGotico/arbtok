@@ -297,8 +297,10 @@ rather than native-validated truth.
 ## Documentation
 
 [`docs/`](docs/quickstart.md) covers the diacritizer, the fusion scorer,
-dialect resolution, Arabizi input, the code-switched gold set, the full API,
-and advanced usage.
+dialect resolution, Arabizi input, the code-switched gold set, text
+normalization for recognizer output and for speech
+([`docs/normalization.md`](docs/normalization.md)), the full API, and advanced
+usage.
 
 ## License
 

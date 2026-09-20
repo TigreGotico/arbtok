@@ -141,6 +141,61 @@ The module also re-exports named grapheme constants (`ALIF`, `LAM`, `SHADDA`,
 `SUKUN`, `FATHA`, `KASRA`, `WAW`, `TANWIN_FATH`, `SUN_LETTERS`, …) for readable
 rule code, see `arbtok/constants.py`.
 
+## `arbtok.textnorm`
+
+Text normalization in both directions; usage and recipes are in
+[normalization.md](normalization.md). `normalize_asr`, `normalize_for_tts`,
+`AsrNorm` and `TtsNorm` are also exported from `arbtok`.
+
+### `normalize_asr(text, config=None, *, lang="ar", **flags) -> str`
+
+Normalize a transcript. `config` is an `AsrNorm` (a named bundle or your own),
+`**flags` override it, and `lang` is the language whose number words
+`spoken_numbers_to_digits` reads. With nothing on, `text` comes back unchanged.
+An unknown flag raises `TypeError`, and so does a `text` that is not a `str`.
+
+### `AsrNorm(**flags)`
+
+A frozen dataclass with one boolean per rule, all `False` by default; the rules
+and their order are listed in [normalization.md](normalization.md#every-rule).
+`with_lexicon(mapping)` returns the config with a lexicon of Arabic-script
+spellings and the terms they stand for, and `AsrNorm(lexicon=mapping)` builds one
+directly; the functions take a lexicon no other way. An entry with an empty
+spelling raises `ValueError`.
+`describe() -> str` returns the string to record beside an error rate, lexicon
+included. Named bundles: `TRUTH_CHECK`, `CER_STRIP`, `CER_NORM`, `CER_MARKS_FIRST`,
+`CER_NORM_MARKS_FIRST`, `INTELLIGIBILITY_GATE`. `ASR_NORM_VERSION` names the
+rule set and is computed from it.
+
+### `normalize_for_tts(text, lang="ar", config=None, **flags) -> str`
+
+Prepare text to be spoken. `config` is a `TtsNorm`; with none it runs
+`spoken_forms` and `canonical_unicode`, which is what `ArbtokG2PPlugin.normalize`
+calls before diacritizing. `**flags` override the config. An unknown flag raises `TypeError`.
+
+### `TtsNorm(**flags)`
+
+A frozen dataclass of the rules, listed with their order in
+[normalization.md](normalization.md#numbers-a-voice-agent-reads-out).
+`with_lexicon(mapping)` sets the Latin-script terms and their spoken Arabic
+forms; `describe() -> str` returns the string to record. `KSA_VOICE_AGENT`
+is the bundle for a Saudi voice agent's replies; `KSA_PHONE_SHAPES`,
+`KSA_PHONE_PREFIXES` and `IDENTIFIER_WORDS` are the tuples it is built from.
+`TTS_NORM_VERSION` names the rule set.
+
+### `spelled_codes(lang="ar") -> Dict[str, str]`
+
+Each Latin capital and ASCII digit mapped to its spoken English name in pointed
+Arabic. Raises `ValueError` for a language with no bundled table.
+
+### `bundled_asr_lexicon(name="cars-sa")`, `bundled_tts_lexicon(name="cars-sa", pointed=True) -> Dict[str, str]`
+
+A bundled term lexicon read in each direction: every Arabic spelling to its name,
+and each name to one spelling. `cars-sa` holds car makes and models as public
+Saudi sites spell them; `common-en` holds everyday English terms, with an
+authored pointed spelling that `pointed` selects. Raises `ValueError`, naming
+the bundled lexicons, for a name that is not one.
+
 ## `arbtok.util`
 
 ### `normalize(text: str, lang: str) -> str`
@@ -246,6 +301,7 @@ G2P("ar", plugins={"normalize": "arbtok"}).transcribe("كتب")  # 'ˈkatab' —
 - [tashkeel.md](tashkeel.md), the diacritizer subsystem
 - [rawi-fusion.md](rawi-fusion.md), the fusion scorer
 - [dialects.md](dialects.md), varieties and per-lect phonology
+- [normalization.md](normalization.md), cleaning recognizer output and preparing text to be spoken
 - [advanced.md](advanced.md), internals, espeak baseline, recipes, gotchas
 
 ---
