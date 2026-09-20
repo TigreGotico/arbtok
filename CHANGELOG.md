@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a19](https://github.com/TigreGotico/arbtok/tree/0.0.1a19) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a18...0.0.1a19)
+
+**Merged pull requests:**
+
+- feat: Cairene Egyptian cardinals, with the source's age priced in [\#132](https://github.com/TigreGotico/arbtok/pull/132) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a18](https://github.com/TigreGotico/arbtok/tree/0.0.1a18) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a17...0.0.1a18)
