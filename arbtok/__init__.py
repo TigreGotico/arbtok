@@ -21,6 +21,7 @@ its orthography2ipa quality tier.
 
 from arbtok.dialects import Lect, spec_for_lang, supported_lects
 from arbtok.textnorm import AsrNorm, TtsNorm, is_arabic_lang, normalize_asr, normalize_for_tts
+from arbtok.version import VERSION_STR as __version__
 
 
 def vocalize(text, lect="ar", **kwargs):
@@ -38,5 +39,5 @@ def vocalize(text, lect="ar", **kwargs):
     return _d(text, lect, **kwargs)
 
 
-__all__ = ["AsrNorm", "Lect", "TtsNorm", "is_arabic_lang", "normalize_asr", "normalize_for_tts", "spec_for_lang",
-           "supported_lects", "vocalize"]
+__all__ = ["AsrNorm", "Lect", "TtsNorm", "__version__", "is_arabic_lang", "normalize_asr", "normalize_for_tts",
+           "spec_for_lang", "supported_lects", "vocalize"]
