@@ -1,0 +1,199 @@
+# French MFA dictionary v3.0.0 (McAuliffe and Sonderegger 2024), CC BY 4.0
+# word	class	ipa	dictionary_phones	dictionary_probability
+a	auxiliary	a	a	0.99
+ai	auxiliary	e	e	0.99
+alors	adverb	alɔʁ	a l ɔ ʁ	0.99
+après	preposition	apʁɛ	a p ʁ ɛ	0.99
+as	auxiliary	a	a	0.99
+assez	adverb	ase	a s e	0.99
+au	article	o	o	0.99
+aucun	negation	okɛ̃	o c ɛ̃	0.99
+aucune	negation	okyn	o k y n	0.99
+aussi	adverb	osi	o s i	0.99
+autre	determiner	otʁə	o t ʁ ə	0.99
+autres	determiner	otʁə	o t ʁ ə	0.99
+aux	article	o	o	0.99
+avant	preposition	avɑ̃	a v ɑ̃	0.99
+avec	preposition	avɛk	a v ɛ k	0.99
+avez	auxiliary	ave	a v e	0.99
+avons	auxiliary	avɔ̃	a v ɔ̃	0.99
+bah	discourse	ba	b a	0.99
+beaucoup	adverb	boku	b o k u	0.99
+ben	discourse	bɛn	b ɛ n	0.99
+bien	adverb	bjɛ̃	b j ɛ̃	0.99
+bon	discourse	bɔ̃	b ɔ̃	0.99
+bonjour	discourse	bɔ̃ʒuʁ	b ɔ̃ ʒ u ʁ	0.99
+bonsoir	discourse	bɔ̃swaʁ	b ɔ̃ s w a ʁ	0.99
+bref	discourse	bʁɛf	b ʁ ɛ f	0.99
+car	conjunction	kaʁ	k a ʁ	0.99
+ce	pronoun	sə	s ə	0.99
+ceci	pronoun	səsi	s ə s i	0.99
+cela	pronoun	səla	s ə l a	0.99
+celle	pronoun	sɛl	s ɛ l	0.99
+celles	pronoun	sɛl	s ɛ l	0.99
+celui	pronoun	səlɥi	s ə l ɥ i	0.99
+cent	number	sɑ̃	s ɑ̃	0.99
+ces	determiner	se	s e	0.99
+cet	determiner	sɛt	s ɛ t	0.99
+cette	determiner	sɛt	s ɛ t	0.99
+ceux	pronoun	sø	s ø	0.99
+chaque	determiner	ʃak	ʃ a k	0.99
+chez	preposition	ʃe	ʃ e	0.99
+cinq	number	sɛ̃k	s ɛ̃ k	0.99
+comme	conjunction	kɔm	k ɔ m	0.99
+contre	preposition	kɔ̃tʁ	k ɔ̃ t ʁ	0.99
+dans	preposition	dɑ̃	d ɑ̃	0.99
+de	preposition	də	d ə	0.99
+demain	adverb	dəmɛ̃	d ə m ɛ̃	0.99
+depuis	preposition	dəpɥi	d ə p ɥ i	0.99
+derrière	preposition	dɛʁjɛʁ	d ɛ ʁ j ɛ ʁ	0.99
+des	article	de	d e	0.99
+deux	number	dø	d ø	0.99
+devant	preposition	dəvɑ̃	d ə v ɑ̃	0.99
+dix	number	dis	d i s	0.99
+donc	conjunction	dɔ̃k	d ɔ̃ k	0.99
+dont	pronoun	dɔ̃	d ɔ̃	0.99
+du	article	dy	d y	0.99
+déjà	adverb	deʒa	d e ʒ a	0.99
+désolé	discourse	dezɔle	d e z ɔ l e	0.99
+elle	pronoun	ɛl	ɛ l	0.99
+elles	pronoun	ɛl	ɛ l	0.99
+en	preposition	ɑ̃	ɑ̃	0.99
+encore	adverb	ɑ̃kɔʁ	ɑ̃ k ɔ ʁ	0.99
+enfin	adverb	ɑ̃fɛ̃	ɑ̃ f ɛ̃	0.99
+ensuite	adverb	ɑ̃sɥit	ɑ̃ s ɥ i t	0.99
+entre	preposition	ɑ̃tʁə	ɑ̃ t ʁ ə	0.99
+es	auxiliary	ɛ	ɛ	0.99
+est	auxiliary	ɛ	ɛ	0.99
+et	conjunction	e	e	0.99
+euh	discourse	œ	œ	0.99
+eux	pronoun	ø	ø	0.99
+exactement	adverb	ɛɡzaktəmɑ̃	ɛ ɡ z a k t ə m ɑ̃	0.99
+franchement	adverb	fʁɑ̃ʃmɑ̃	f ʁ ɑ̃ ʃ m ɑ̃	0.99
+grave	discourse	ɡʁav	ɡ ʁ a v	0.99
+hein	discourse	ɛ̃	ɛ̃	0.99
+hier	adverb	ijɛʁ	i j ɛ ʁ	0.99
+huit	number	ɥit	ɥ i t	0.99
+ici	adverb	isi	i s i	0.99
+il	pronoun	il	i l	0.99
+ils	pronoun	il	i l	0.99
+jamais	negation	ʒamɛ	ʒ a m ɛ	0.99
+je	pronoun	ʒə	ʒ ə	0.99
+justement	adverb	ʒystəmɑ̃	ʒ y s t ə m ɑ̃	0.99
+la	article	la	l a	0.99
+laquelle	pronoun	lakɛl	l a c ɛ l	0.99
+le	article	lø	l ø	0.99
+lequel	pronoun	ləkɛl	l ə c ɛ l	0.99
+les	article	le	l e	0.99
+leur	pronoun	lœʁ	l œ ʁ	0.99
+leurs	determiner	lœʁ	l œ ʁ	0.99
+loin	preposition	lwɛ̃	l w ɛ̃	0.99
+lorsque	conjunction	lɔʁsk	l ɔ ʁ s k	0.99
+lui	pronoun	lɥi	l ɥ i	0.99
+là	adverb	la	l a	0.99
+ma	determiner	ma	m a	0.99
+maintenant	adverb	mɛ̃tnɑ̃	m ɛ̃ t n ɑ̃	0.99
+mais	conjunction	mɛ	m ɛ	0.99
+mal	adverb	mal	m a l	0.99
+malgré	preposition	malɡʁe	m a l ɡ ʁ e	0.99
+me	pronoun	mø	m ø	0.99
+merci	discourse	mɛʁsi	m ɛ ʁ s i	0.99
+mes	determiner	me	m e	0.99
+mille	number	mil	m i l	0.99
+moi	pronoun	mwa	m w a	0.99
+mon	determiner	mɔ̃	m ɔ̃	0.99
+même	determiner	mɛm	m ɛ m	0.99
+ne	negation	nə	n ə	0.99
+neuf	number	nœf	n œ f	0.99
+ni	conjunction	ɲi	ɲ i	0.99
+non	discourse	nɔ̃	n ɔ̃	0.99
+normal	discourse	nɔʁmal	n ɔ ʁ m a l	0.99
+normalement	adverb	nɔʁmalmɑ̃	n ɔ ʁ m a l m ɑ̃	0.99
+nos	determiner	no	n o	0.99
+notre	determiner	nɔtʁə	n ɔ t ʁ ə	0.99
+nous	pronoun	nu	n u	0.99
+ok	discourse	ok	o k	0.99
+on	pronoun	ɔ̃	ɔ̃	0.99
+ont	auxiliary	ɔ̃	ɔ̃	0.99
+or	conjunction	ɔʁ	ɔ ʁ	0.99
+ou	conjunction	u	u	0.99
+oui	discourse	wi	w i	0.99
+où	pronoun	u	u	0.99
+par	preposition	paʁ	p a ʁ	0.99
+parce	conjunction	paʁs	p a ʁ s	0.99
+pardon	discourse	paʁdɔ̃	p a ʁ d ɔ̃	0.99
+parfois	adverb	paʁfwa	p a ʁ f w a	0.99
+pas	negation	pa	p a	0.99
+pendant	preposition	pɑ̃dɑ̃	p ɑ̃ d ɑ̃	0.99
+personne	negation	pɛʁsɔn	p ɛ ʁ s ɔ n	0.99
+peu	adverb	pø	p ø	0.99
+plaît	discourse	plɛ	p l ɛ	0.99
+plus	negation	ply	p l y	0.99
+plusieurs	determiner	plyzjœʁ	p l y z j œ ʁ	0.99
+pour	preposition	puʁ	p u ʁ	0.99
+presque	adverb	pʁɛsk	p ʁ ɛ s k	0.99
+près	preposition	pʁɛ	p ʁ ɛ	0.99
+puis	adverb	pɥi	p ɥ i	0.99
+puisque	conjunction	pɥisk	p ɥ i s k	0.99
+quand	conjunction	kɑ̃	k ɑ̃	0.99
+quatre	number	katʁə	k a t ʁ ə	0.99
+que	conjunction	kə	k ə	0.99
+quel	pronoun	kɛl	c ɛ l	0.99
+quelle	pronoun	kɛl	c ɛ l	0.99
+quelque	determiner	kɛlkə	c ɛ l k ə	0.99
+quelques	determiner	kɛlk	c ɛ l k	0.99
+qui	pronoun	ki	c i	0.99
+quoi	pronoun	kwa	k w a	0.99
+revoir	discourse	ʁəvwaʁ	ʁ ə v w a ʁ	0.99
+rien	negation	ʁjɛ̃	ʁ j ɛ̃	0.99
+sa	determiner	sa	s a	0.99
+salut	discourse	saly	s a l y	0.99
+sans	preposition	sɑ̃	s ɑ̃	0.99
+se	pronoun	sə	s ə	0.99
+selon	preposition	səlɔ̃	s ə l ɔ̃	0.99
+sept	number	sɛt	s ɛ t	0.99
+ses	determiner	se	s e	0.99
+seulement	adverb	sœlmɑ̃	s œ l m ɑ̃	0.99
+si	conjunction	si	s i	0.99
+six	number	si	s i	0.99
+soi	pronoun	swa	s w a	0.99
+sommes	auxiliary	sɔm	s ɔ m	0.99
+son	determiner	sɔ̃	s ɔ̃	0.99
+sont	auxiliary	sɔ̃	s ɔ̃	0.99
+sous	preposition	su	s u	0.99
+souvent	adverb	suvɑ̃	s u v ɑ̃	0.99
+suis	auxiliary	sɥi	s ɥ i	0.99
+sur	preposition	syʁ	s y ʁ	0.99
+sûr	discourse	syʁ	s y ʁ	0.99
+ta	determiner	ta	t a	0.99
+tard	adverb	taʁ	t a ʁ	0.99
+te	pronoun	tə	t ə	0.99
+tes	determiner	te	t e	0.99
+toi	pronoun	twa	t w a	0.99
+ton	determiner	tɔ̃	t ɔ̃	0.99
+toujours	adverb	tuʒuʁ	t u ʒ u ʁ	0.99
+tous	determiner	tu	t u	0.99
+tout	determiner	tu	t u	0.99
+toute	determiner	tut	t u t	0.99
+toutes	determiner	tut	t u t	0.99
+trois	number	tʁwɑ	t ʁ w ɑ	0.99
+trop	adverb	tʁo	t ʁ o	0.99
+très	adverb	tʁɛ	t ʁ ɛ	0.99
+tu	pronoun	ty	t y	0.99
+tôt	adverb	to	t o	0.99
+un	article	ɛ̃	ɛ̃	0.99
+une	article	yn	y n	0.99
+vers	preposition	vɛʁ	v ɛ ʁ	0.99
+vingt	number	vɛ̃	v ɛ̃	0.99
+vite	adverb	vit	v i t	0.99
+voilà	discourse	vwala	v w a l a	0.99
+vos	determiner	vo	v o	0.99
+votre	determiner	vɔtʁə	v ɔ t ʁ ə	0.99
+vous	pronoun	vu	v u	0.99
+vraiment	adverb	vʁɛmɑ̃	v ʁ ɛ m ɑ̃	0.99
+y	pronoun	i	i	0.99
+zéro	number	zeʁo	z e ʁ o	0.99
+à	preposition	a	a	0.99
+ça	pronoun	sa	s a	0.99
+était	auxiliary	etɛ	e t ɛ	0.99
+êtes	auxiliary	ɛt	ɛ t	0.99
