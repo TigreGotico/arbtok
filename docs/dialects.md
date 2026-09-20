@@ -27,10 +27,10 @@ the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
 ## What `lang=` resolves to
 
 `arbtok.supported_lects()` enumerates every variety `lang=` accepts, each with
-the orthography2ipa `quality` tier of its spec, so the list tracks the
-installed data set rather than a table in arbtok. The tier reports how far the
-spec's cited rule set has been taken (`research` vs `skeleton`/`stub`), not a
-promise about arbtok's cascade.
+the orthography2ipa `quality` tier of its spec, so the list tracks the installed
+data set rather than a table in arbtok. Ask the code rather than a page: a spec
+shipped upstream joins the roster without arbtok changing, which is what makes a
+written-out list here wrong within a release or two.
 
 ```python
 import arbtok
@@ -39,29 +39,15 @@ for lect in arbtok.supported_lects():
     print(lect.code, lect.tier)
 ```
 
-| code | tier | code | tier |
-|---|---|---|---|
-| `ar` | research | `ar-QA` | research |
-| `arb` | research | `ar-SA-x-najd` | research |
-| `ar-EG` | research | `ar-SA-x-hejaz` | research |
-| `ar-SD` | research | `ar-YE` | research |
-| `ar-SY` | research | `ar-MA` | research |
-| `ar-LB` | research | `ar-x-gulf` | research |
-| `ar-JO` | research | `ar-x-levantine` | research |
-| `ar-PS` | research | `ar-Latn-buckwalter` | research |
-| `ar-IQ` | research | `ar-DZ` | skeleton |
-| `ar-IQ-x-qeltu` | research | `ar-TN` | skeleton |
-| `ar-KW` | research | `ar-LY` | skeleton |
-| `ar-BH` | research | `ar-MR` | skeleton |
-| `ar-AE` | research | `ar-TD` | skeleton |
-| `ar-OM` | research | `ar-NG` | skeleton |
-| | | `ar-x-maghrebi` | skeleton |
-| | | `ar-x-mashriqi` | skeleton |
-| | | `ar-x-peninsular` | skeleton |
-
-(The `skeleton`-tier grouping nodes and Maghrebi/Sudanic leaves resolve and read
-their grapheme layer, but their allophone rule sets are not at research tier. The
-tier is a property of the installed orthography2ipa spec, not of arbtok.)
+The roster runs from MSA `ar` and Classical `arb` through the grouping nodes
+(`ar-x-gulf`, `ar-x-levantine`, `ar-x-maghrebi`, `ar-x-mashriqi`,
+`ar-x-peninsular`) to the national leaves (`ar-EG`, `ar-IQ`, `ar-MA`, …) and the
+sub-lects below them (`ar-SA-x-najd`, `ar-IQ-x-qeltu`, `ar-BH-x-baharna`, …),
+with the Buckwalter romanization `ar-Latn-buckwalter` among them as a
+machine-readable anchor. Most sit at `research` tier and a handful at `stub`,
+where the grapheme layer resolves but the allophone rule set has not been taken
+as far. The tier is a property of the installed orthography2ipa spec, not of
+arbtok's cascade.
 
 ## Pipeline order: MSA restoration before dialect allophony
 
@@ -150,8 +136,8 @@ and `ar-MR`, whose Hassaniya declares /ʁ/ where the Maghrebi table would rewrit
 it.
 
 ```python
-ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'manaɡar'  (Cairene stop ǧīm)
-ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manadʒar' (Najdi affricate)
+ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'maniɡar'  (Cairene stop ǧīm)
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar' (Najdi affricate)
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("think")           # 'tink'     (interdental merger)
 ```
 
@@ -240,9 +226,6 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meetin
 - The **sentence cascade has no allophone pass**, it reads the grapheme layer
   only. Word-level transcription (`transcribe_word`, `arbtok.lattice.word_ipa`)
   is where a variety's rules fire.
-- A diphthong **split across slots** is not one segment, so a rule targeting it
-  cannot see it: يَوْم tokenizes as يَ|وْ|م = `ja|w|m`, and Hejazi
-  monophthongization targets an /aw/ atom, so it does not fire (بَيْت works, ⟨َي⟩ is a single digraph slot).
 - Spec `quality` is `research`, not `production`, for the Arabic varieties, and
   their gold has not been validated by a native speaker.
 
@@ -288,29 +271,32 @@ say how often it does**: a numerator of 5 over 636, on one gold, is not a rate, 
 quoting it as one would give it a precision the sample cannot carry. Not objecting is
 weaker evidence than choosing, which is what the exclusion records.
 
-Measured over the shipped code-switched gold, 4,622 words across 44 lects:
+Measured over the shipped code-switched gold, 4,687 words across 46 lects:
 
 | provenance | share |
 |---|---|
-| `not-arabic` | 32.5% |
-| `stem-lexicon` | 31.0% |
-| `author` | 19.8% |
-| `model` | 13.2% |
-| `closed-class` | 2.9% |
+| `not-arabic` | 32.3% |
+| `stem-lexicon` | 30.7% |
+| `author` | 20.6% |
+| `model` | 13.0% |
+| `closed-class` | 2.8% |
 | `model-repaired` | 0.6% |
 | `refused` | 0.04% |
 
 Two readings worth taking from that. The closed-class lexicon — the only mechanism that
 supplies a *dialectal reading* rather than permitting one — decides fewer than three
-words in a hundred, and ranges from 22% (`ar-TN`) to none at all (`ar-x-peninsular`).
-And genuine refusals are two words in 4,622: the cascade does not fail, it defaults.
+words in a hundred, and ranges from 22% (`ar-TN`) to none at all in most lects,
+the grouping nodes among them. And genuine refusals are two words in 4,687: the
+cascade does not fail, it defaults.
 
 ### `not-arabic` is not a failure
 
 A token with no Arabic letter — a Latin embed, a number, punctuation — never had a
-diacritization to attempt. It is separated from `refused` because on this gold every
-single refusal in `ar-EG` was an English embed, so a caller filtering `refused` for
-failures got a page of English. Use `w.is_failure`, which counts only `refused`.
+diacritization to attempt. It is separated from `refused` because the two are
+different events and a caller filtering `refused` for failures would otherwise read a
+page of English. Both refusals on this gold are an Arabic article written against a
+Latin word, `الـcharger` and `الـprinter`, where the skeleton guard cannot put the
+written letters back. Use `w.is_failure`, which counts only `refused`.
 
 ### Filtering a corpus
 
@@ -328,9 +314,12 @@ refuses it when the variety's grapheme table does not license it. `FusionDiacrit
 enumerates the licensed readings and lets rawi **score** them, so an unlicensed argmax
 loses to the best licensed alternative rather than throwing the whole distribution away.
 
-**The lattice is the default, and that is a measurement rather than an inheritance.**
-On the shipped code-switched gold — 881 rows, 44 lects, scored per character position
-against the editor-authored vocalization:
+`ArbtokG2PPlugin` runs fusion (`fusion=False` opts out, see
+[rawi-fusion.md](rawi-fusion.md)). The orthography2ipa `normalize` step plugin, which
+answers for callers who reached arbtok through plain orthography2ipa, runs the lattice
+instead, and **that default is a measurement rather than an inheritance**. Over 881
+rows across 44 lects of the code-switched gold, scored per character position against
+the editor-authored vocalization:
 
 | generator | rows unscorable | positions | DER |
 |---|---|---|---|
@@ -363,7 +352,7 @@ hamza restoration**, not correcting ḥarakāt. A mask that knew the variety cou
 the restoration where the orthography does not use it, and would not need the repair.
 
 ```bash
-ARBTOK_DIACRITIZER=fusion   # select the other path
+ARBTOK_DIACRITIZER=fusion   # the step plugin's generator; ArbtokG2PPlugin takes fusion=
 ```
 
 A value that is neither raises rather than falling back: a typo that silently kept the

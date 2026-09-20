@@ -114,8 +114,8 @@ vocalized, the author-complete gate runs first, and a marked surface form never
 matches an undiacritized key.
 
 Unlike the stem lexicon, this data is **hand-authored from the dialect grammars**
-(Harrell, Cowell, Erwin, Ingham, Badawi & Hinds, Holes, Heath, …) rather than
-mined, so it is small, Apache-2.0-clean, and **bundled** in the wheel at
+(Harrell, Cowell, Erwin, Ingham, Badawi & Hinds, Heath, Marçais, Singer, …) rather
+than mined, so it is small, Apache-2.0-clean, and **bundled** in the wheel at
 `arbtok/data/lexicons/<lect>.tsv`. Each row carries its source. A lect inherits
 its ancestors' entries, `ar-MA` sees the pan-Maghrebi function words in
 `ar-x-maghrebi.tsv` *and* its own Moroccan-specific ones, the more specific file
