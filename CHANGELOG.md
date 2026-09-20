@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.0.1a13](https://github.com/TigreGotico/arbtok/tree/0.0.1a13) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a12...0.0.1a13)
+
+**Merged pull requests:**
+
+- fix: describe\(\) is written even when the number parser's version cannot be read [\#122](https://github.com/TigreGotico/arbtok/pull/122) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.1a12](https://github.com/TigreGotico/arbtok/tree/0.0.1a12) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a11...0.0.1a12)
+
+**Merged pull requests:**
+
+- fix: test sources write control characters and range endpoints as escapes [\#121](https://github.com/TigreGotico/arbtok/pull/121) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a11](https://github.com/TigreGotico/arbtok/tree/0.0.1a11) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a10...0.0.1a11)
