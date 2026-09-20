@@ -149,32 +149,6 @@ def _definite_article_ipa(tok: 'CharToken') -> Optional[str]:
     return None
 
 
-def _nun_assimilation_ipa(tok: 'CharToken') -> Optional[str]:
-    """Idgham and iqlab of a nun into the first letter of the next word, or
-    ``None`` where the shape is not the assimilating one.
-    """
-    if not (tok.word.next_word and tok.surface == N
-            and tok.prev_token and tok.prev_token.surface == KASRA
-            and tok.prev_token.prev_token and tok.prev_token.prev_token.surface == M):
-        return None
-
-    onset = tok.word.next_word.tokens[0]
-    # Idgham (n assimilation)
-    if onset == R:
-        # Assimilation n+r -> rr
-        return "r"
-    if onset == YA:
-        # Assimilation n+j -> jj
-        return "j"
-    if onset == LAM:
-        # Assimilation n+l -> ll
-        return "l"
-    # Iqlab: n becomes 'm' before 'b'
-    if onset == B:
-        return "m"
-    return None
-
-
 def _alif_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
     """The reading of a bare, madda-bearing or hamza-below alif: a helper vowel,
     a length mark on the vowel before it, a long /aː/, or nothing.
@@ -468,12 +442,10 @@ class CharToken:
         # Tanwīn is always read in full here (an/un/in): the pausal form is
         # not a property of a character but of a word standing at a pause,
         # and it is applied in ONE place — the sentence-level rescorer
-        # (arbtok.sandhi._pausal) — under the declared waqf policy.
-
-        # Assimilation of n + r/j/l/m
-        assimilated = _nun_assimilation_ipa(self)
-        if assimilated is not None:
-            return assimilated
+        # (arbtok.sandhi._pausal) — under the declared waqf policy. Idghām
+        # and iqlāb of a final /n/ are the same kind of fact and sit in the
+        # same place (arbtok.sandhi.NUN_ASSIMILATION, Wright I §14): a
+        # character cannot see which word it is in, and مِن is a word.
 
         # --- Alif Rules ---
         if s == ALIF or s == ALEF_MADDA or s == ALEF_HAMZA_BELOW:
