@@ -2,7 +2,12 @@ numpy
 onnxruntime
 quebra-frases
 langcodes
-ovos-number-parser>=0.18.5a1
+# Floored at the release that reads the colloquial spellings of numbers. Arabic writes a
+# contracted teen a dozen ways -- خمسطعش, خمستعشر, خمسطاعش -- and below this version the
+# parser read ten of them, all of the -اشر shape, so `normalize_asr(spoken_numbers_to_digits)`
+# left most of the teens in a real transcript as words. Measured on the human transcripts of
+# the SADA corpus: 1,167 one-word teens in 190 spellings, of which the older parser read 66.
+ovos-number-parser>=0.20.4a1
 ovos-date-parser>=0.6.4a1
 # Transitive, floored here because the combination is otherwise installable and breaks
 # on import rather than on resolve. ovos-config below 3.5.1a1 imports
