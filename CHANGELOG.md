@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a18](https://github.com/TigreGotico/arbtok/tree/0.0.1a18) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a17...0.0.1a18)
+
+**Merged pull requests:**
+
+- feat: cardinals in the words a lect uses, from cited tables [\#130](https://github.com/TigreGotico/arbtok/pull/130) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a17](https://github.com/TigreGotico/arbtok/tree/0.0.1a17) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a16...0.0.1a17)
