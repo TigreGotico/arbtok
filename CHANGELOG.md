@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.0.1a25](https://github.com/TigreGotico/arbtok/tree/0.0.1a25) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a24...0.0.1a25)
+
+**Merged pull requests:**
+
+- refactor: split \_ipa into one helper per letter family [\#145](https://github.com/TigreGotico/arbtok/pull/145) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.1a24](https://github.com/TigreGotico/arbtok/tree/0.0.1a24) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a23...0.0.1a24)
+
+**Merged pull requests:**
+
+- docs: correct the claims a reader would act on and find false [\#146](https://github.com/TigreGotico/arbtok/pull/146) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a23](https://github.com/TigreGotico/arbtok/tree/0.0.1a23) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a22...0.0.1a23)
