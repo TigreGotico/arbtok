@@ -394,6 +394,13 @@ inherits its group's table, so Kuwaiti and Qatari read the Gulf one. **A lect
 with no cited table keeps the parser's Standard Arabic**, Najdi included: no
 source has been read for it, and a form no source gives is not written.
 
+**The numeral is all this changes.** Arabic makes the counted noun agree with the
+number, and the dialects the tables cover agree in the same direction: two to ten
+take a plural noun, eleven upwards take a singular, and three to ten drop their final
+vowel before a noun that follows. None of that happens here, because the text around
+the number is the author's and this rewrites a numeral in place. Write the noun the
+way the number you passed in requires.
+
 The flag is off everywhere by default, so a number spoken before it existed is
 spoken the same way now. `with_number_forms` gives your own words for values,
 with or without a table under them, and `describe()` names both the tables and

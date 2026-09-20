@@ -5,6 +5,11 @@
 # (SADA n). The tokenisation is stated because the three defensible ones differ by more than a factor
 # of two on the same spelling, and an unstated method makes a correct count indistinguishable from a
 # wrong one.
+# The course gives a second set of hundreds in common use here and calls it borrowed from Egyptian:
+# xumsumiyya, suttumiyya, subu9miyya, tumunmiyya, tusu9miyya, built on the fraction prefixes. The
+# Egyptian table beside this one is built on those same prefixes from a source that says nothing about
+# Hijazi, so two independent sources agree on the borrowing and the alternates are a real register.
+# The primary set is shipped; a caller who wants the borrowed one passes it through number_forms.
 # value	form	source
 2	اتنين	Omar 1975 p. 59 itneen; SADA n=79
 3	تلاتة	Omar 1975 p. 59 talaata; SADA n=69

@@ -1,0 +1,39 @@
+# Cairene Egyptian cardinals, the values whose word differs from the Standard Arabic oblique form.
+# Pronunciation: Adolf Dirr, Colloquial Egyptian Arabic Grammar, for the Use of Tourists, translated by
+# W. H. Lyall, 1904, printed pages 24 and 26, in the book's own transcription.
+# READ THE SOURCE'S AGE. It is a tourist grammar of 1904 and the only openly readable Egyptian source
+# found, and its letters are not a phonemic transcription: it prints one consonant sign for sounds that
+# its own numerals spell with ayn elsewhere. So the Arabic spelling of every row here is not read off
+# Dirr's letters. It is the form written in modern transcripts, counted whole-word with an optional
+# attached article or conjunction, and the counts are on the row, per corpus and never pooled: masc is
+# the Massive Arabic Speech Corpus, which is Egyptian-leaning, sada is Saudi broadcast speech, omni is
+# the Arabic dialect set of Omnilingual ASR. Every skeleton Dirr prints is still written today, which is
+# what makes a 1904 source usable at all; where the modern corpus writes a different skeleton the row
+# says so and the modern one is shipped.
+# masc writes every ta marbuta as ha (ثلاثه 2338 against ثلاثة 0, and مئة 0), so it cannot choose between
+# the two spellings of a word and its count for a ta-marbuta form is quoted from its ha spelling. The
+# ta marbuta is shipped, which is the ordinary orthography and what the diacritizer expects.
+# value	form	source
+2	اتنين	Dirr 1904 p. 24 etnén; masc 567, sada 79
+3	تلاتة	Dirr 1904 p. 24 telátä; sada 69, omni 88, masc 385 as تلاته
+8	تمانية	Dirr 1904 p. 24 temányä; omni 69, sada 21, masc 10 as تمانيه
+11	حداشر	Dirr 1904 p. 26 ḥaddášar; masc 11, sada 7, omni 17
+12	اتناشر	Dirr 1904 p. 26 etnášar; masc 76, omni 34, sada 5
+13	تلتاشر	Dirr 1904 p. 26 telatášar; masc 11, sada 2. masc writes the syncopated تلتاشر 11 and تلاتاشر 0, so the syncopated form ships
+14	اربعتاشر	Dirr 1904 p. 26 arbaḫtášar; masc 10, omni 13, sada 5
+15	خمستاشر	Dirr 1904 p. 26 ḫamastášar; omni 68, sada 12, masc 6
+16	ستاشر	Dirr 1904 p. 26 sittášar; masc 8, sada 4, omni 2
+17	سبعتاشر	Dirr 1904 p. 26 sab'atášar; sada 14, omni 6, masc 5
+18	تمنتاشر	Dirr 1904 p. 26 temantášar; masc 4, omni 4, sada 2
+19	تسعتاشر	Dirr 1904 p. 26 tis'atášar; masc 5, omni 3, sada 0
+30	تلاتين	Dirr 1904 p. 26 telátín; omni 91, sada 26, masc 25
+80	تمانين	Dirr 1904 p. 26 tamánín; omni 37, masc 22, sada 14
+100	مية	Dirr 1904 p. 26 míya; sada 2154, omni 200, masc 950 as ميه
+200	ميتين	Dirr 1904 p. 26 mítén; sada 800, masc 47, omni 41
+300	تلتمية	Dirr 1904 p. 26 tultêmíya; sada 13, omni 3, masc 22 as تلتميه
+400	ربعمية	Dirr 1904 p. 26 rub'êmíyä; sada 9, omni 3, masc 3 as ربعميه
+500	خمسمية	Dirr 1904 p. 26 ḫumsêmíyä; sada 514, omni 8, masc 10 as خمسميه
+600	ستمية	Dirr 1904 p. 26 suttêmíyä; sada 37, omni 3 as ستميه, masc 5 as ستميه
+700	سبعمية	Dirr 1904 p. 26 sub'êmíyä; sada 79, omni 3, masc 8 as سبعميه
+800	تمنمية	Dirr 1904 p. 26 tumnêmíyä; thin: sada 1, omni 6 as تمنميه, masc 2 as تمنميه
+900	تسعمية	Dirr 1904 p. 26 tus'êmíyä; sada 110, omni 5 as تسعميه, masc 10 as تسعميه
