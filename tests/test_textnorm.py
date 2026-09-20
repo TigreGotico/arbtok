@@ -597,3 +597,64 @@ def test_the_documentation_lists_every_rule_in_the_order_it_runs(config):
               for block in page.split("| Flag | Rule |")[1:]]
     rules = [f.name for f in dataclasses.fields(config) if f.name != "lexicon"]
     assert rules in tables, f"no table of docs/normalization.md lists exactly {rules}"
+
+
+CLDR_TABLES = ["units-cldr", "currencies-cldr", "territories-cldr", "languages-cldr"]
+
+
+@pytest.mark.parametrize("name", CLDR_TABLES)
+def test_every_cldr_row_names_its_release_file_and_licence(name):
+    rows = textnorm._term_rows(name)
+    assert len(rows) > 200
+    for row in rows:
+        assert row["source_url"].startswith("https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/")
+        assert re.fullmatch(r"[0-9a-f]{64}", row["fetch_sha256"]) and row["licence"] == "Unicode-3.0"
+        assert row["latin"] and row["arabic_form"] and row["cldr_key"]
+
+
+@pytest.mark.parametrize("name", CLDR_TABLES)
+def test_a_cldr_lexicon_holds_only_names_a_voice_can_say(name):
+    lexicon = textnorm.bundled_tts_lexicon(name)
+    assert len(lexicon) > 150
+    for latin, arabic in lexicon.items():
+        assert re.fullmatch("[\u0621-\u064A\u064B-\u0652\u0670\u0671 ]+", arabic), (latin, arabic)
+    unsayable = [r for r in textnorm._term_rows(name) if not textnorm._SPEAKABLE.fullmatch(r["arabic_form"])]
+    assert all(r["arabic_form"] not in lexicon.values() for r in unsayable)
+
+
+def test_the_filters_have_something_to_refuse():
+    """CLDR gives some units a symbol or an abbreviation as their Arabic name, and names its pseudo-locales."""
+    assert sum(not textnorm._SPEAKABLE.fullmatch(r["arabic_form"]) for r in textnorm._term_rows("units-cldr")) >= 20
+    assert {"XA", "XB", "ZZ"} <= {r["cldr_key"].split("/")[-1] for r in textnorm._term_rows("territories-cldr")}
+    places = textnorm.bundled_tts_lexicon("territories-cldr")
+    assert "Pseudo-Bidi" not in places and places["Saudi Arabia"] == "المملكة العربية السعودية"
+
+
+def test_a_currency_is_found_by_its_name_and_by_its_code():
+    money = textnorm.bundled_tts_lexicon("currencies-cldr")
+    assert money["SAR"] == money["Saudi Riyal"] == "ريال سعودي"
+    said = normalize_for_tts("السعر 500 SAR", "ar", TtsNorm().with_lexicon(money))
+    assert "ريال سعودي" in said and "SAR" not in said
+
+
+def test_a_cldr_table_is_not_read_backwards():
+    with pytest.raises(ValueError, match="translate"):
+        textnorm.bundled_asr_lexicon("territories-cldr")
+
+
+def test_a_unit_after_a_number_is_read_in_arabic_and_a_bare_symbol_is_left():
+    assert normalize_for_tts("المسافة 5 km") == "المسافة خمسة كيلومتر"
+    assert "كيلوغرام" in normalize_for_tts("الوزن 3 kg")
+    assert normalize_for_tts("in km", spoken_forms=True) == "in km"
+    units = textnorm.cldr_units("ar")
+    assert units["km"] == "كيلومتر" and units["m"] == "متر"
+    assert not [s for s in units if len(s) == 1 and s.isascii() and s.isalpha() and s != "m"]
+    with pytest.raises(ValueError, match="pt"):
+        textnorm.cldr_units("pt")
+
+
+def test_a_percentage_keeps_the_spelling_this_package_already_speaks_it_in():
+    from arbtok.util import normalize
+    assert "%" not in textnorm.cldr_units("ar") and "\u066A" not in textnorm.cldr_units("ar")
+    assert normalize("خصم 30%", "ar") == "خصم ثلاثون بالمئة"
+
