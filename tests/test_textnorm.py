@@ -281,6 +281,23 @@ def test_the_rule_set_name_is_computed_from_the_rules():
     assert textnorm.ASR_NORM_VERSION != textnorm.TTS_NORM_VERSION
 
 
+def test_a_description_is_still_written_when_the_parsers_version_cannot_be_read(monkeypatch):
+    import importlib.metadata
+    def absent(name):
+        raise importlib.metadata.PackageNotFoundError(name)
+    monkeypatch.setattr(importlib.metadata, "version", absent)
+    assert AsrNorm(spoken_numbers_to_digits=True).describe().endswith("; ovos-number-parser unknown")
+    assert textnorm.KSA_VOICE_AGENT.describe().endswith("; ovos-number-parser unknown")
+
+
+def test_the_version_names_the_rules_and_the_description_names_the_configuration():
+    other_words = dataclasses.replace(textnorm.KSA_VOICE_AGENT, identifier_words=("رقم",))
+    other_shapes = dataclasses.replace(textnorm.KSA_VOICE_AGENT, phone_shapes=(r"07[0-9]{8}",))
+    descriptions = {c.describe() for c in (textnorm.KSA_VOICE_AGENT, other_words, other_shapes)}
+    assert len(descriptions) == 3
+    assert all(f"arbtok-tts-norm {textnorm.TTS_NORM_VERSION}: " in d for d in descriptions)
+
+
 def test_a_description_names_the_number_parser_when_numbers_are_read():
     assert "ovos-number-parser " in AsrNorm(spoken_numbers_to_digits=True).describe()
     assert "ovos-number-parser" not in CER_NORM.describe()

@@ -113,8 +113,13 @@ def _describe_lexicon(entries: Tuple[Tuple[str, str], ...]) -> str:
 
 
 def _describe_parser() -> str:
-    from importlib.metadata import version
-    return f"; ovos-number-parser {version('ovos-number-parser')}"
+    # A description is written beside a result after the work is done; it names what it
+    # can and never costs the caller that result.
+    from importlib.metadata import PackageNotFoundError, version
+    try:
+        return f"; ovos-number-parser {version('ovos-number-parser')}"
+    except PackageNotFoundError:
+        return "; ovos-number-parser unknown"
 
 
 def _rule_set(*definitions) -> str:
@@ -213,7 +218,8 @@ _NOTHING = AsrNorm()
 
 #: Names the rule set of :func:`normalize_asr`. It is a digest of the flags in their
 #: order and of every pattern and table the rules use, so it changes when a rule or
-#: the order changes and cannot be left behind by an edit.
+#: the order changes and cannot be left behind by an edit. It does not cover what a
+#: config carries as values: a lexicon is named by :meth:`AsrNorm.describe`, not here.
 ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HARAKAT, _EXTENDED_MARKS,
                              _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
                              _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
@@ -577,7 +583,11 @@ class TtsNorm:
 
 
 #: Names the rule set of :func:`normalize_for_tts`, computed the way
-#: :data:`ASR_NORM_VERSION` is.
+#: :data:`ASR_NORM_VERSION` is. It covers the rules and their patterns. What a config
+#: carries as values is configuration and is outside it: :data:`KSA_PHONE_SHAPES`,
+#: :data:`KSA_PHONE_PREFIXES`, :data:`IDENTIFIER_WORDS` and a lexicon are named by
+#: :meth:`TtsNorm.describe`, each by a digest. A record that must distinguish two runs
+#: keeps the ``describe()`` string, not the version alone.
 TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE)
