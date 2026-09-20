@@ -122,6 +122,210 @@ class _PrevTokenNeeded(Exception):
     """Raised inside CharToken._ipa when the previous token's fragment is not resolved yet."""
 
 
+def _definite_article_ipa(tok: 'CharToken') -> Optional[str]:
+    """The reading of one of the two characters of the definite article, or
+    ``None`` for any character past them.
+
+    Only called on a word that carries the article.
+    """
+    # The 'a' of al-
+    if tok.is_first_char:
+        # Check 1: Is current word a proclitic? (always wasl)
+        if tok.word.prev_word and tok.word.prev_word.is_proclitic:
+            return ""
+        # Check 2: Does prev word end in a vowel? (Generalized Wasl)
+        elif tok.word.prev_word and tok.word.prev_word.end_with_vowel:
+            return ""
+        # Alif vowel (always 'a')
+        return "a"
+
+    # is second char
+    if tok.char_idx == 1:
+        if tok.next_token and tok.next_token.is_moon:
+            return "l"
+        # Sun Letter: Assimilate 'l'
+        return ""
+
+    return None
+
+
+def _nun_assimilation_ipa(tok: 'CharToken') -> Optional[str]:
+    """Idgham and iqlab of a nun into the first letter of the next word, or
+    ``None`` where the shape is not the assimilating one.
+    """
+    if not (tok.word.next_word and tok.surface == N
+            and tok.prev_token and tok.prev_token.surface == KASRA
+            and tok.prev_token.prev_token and tok.prev_token.prev_token.surface == M):
+        return None
+
+    onset = tok.word.next_word.tokens[0]
+    # Idgham (n assimilation)
+    if onset == R:
+        # Assimilation n+r -> rr
+        return "r"
+    if onset == YA:
+        # Assimilation n+j -> jj
+        return "j"
+    if onset == LAM:
+        # Assimilation n+l -> ll
+        return "l"
+    # Iqlab: n becomes 'm' before 'b'
+    if onset == B:
+        return "m"
+    return None
+
+
+def _alif_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
+    """The reading of a bare, madda-bearing or hamza-below alif: a helper vowel,
+    a length mark on the vowel before it, a long /aː/, or nothing.
+    """
+    s = tok.surface
+
+    # --- Bare Alif (Sentence Initial) ---
+    # If first word is bare Alif (not article), emit helper vowel 'i'
+    if tok.is_first_word and tok.is_first_char and s == ALIF:
+        return "i"
+
+    # Medial: Lengthens preceding vowel (mater lectionis after fatha)
+    if tok.prev_token and tok._prev_ipa(known) == "a":
+        return "ː"
+
+    # Medial ALIF after a non-'a' vowel (kasra 'i' or damma 'u') within a word:
+    # this is hamzat al-wasl elision — the alif is a mere writing support and is silent
+    # when preceded by a short vowel in the same orthographic word.
+    # Example: وَبِاسْمِ (wa+bi+ism) → the ا of اسم is silent after 'i' of bi.
+    if (not tok.is_first_char
+            and tok.prev_token
+            and tok._prev_ipa(known) in {"i", "u"}
+            and s == ALIF):
+        return ""
+
+    # End of word: often silent or long vowel
+    if tok.is_last_char:
+        # Dagger alif behavior (implicit) or lengthening
+        return ""
+
+    # Default to long a
+    if s == ALEF_MADDA:
+        return "ʔaː"
+
+    # Start of word: Wasla vs Hamza
+    if tok.is_first_char:
+        return ""
+
+    return 'aː'
+
+
+def _waw_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
+    """The reading of a waw, which is any of four things: the consonant /w/, the
+    glide of a diphthong, a mater lectionis lengthening the vowel before it, or
+    silent in a historical spelling.
+    """
+    # Word-initial WAW + ALIF (Diphthong vs Glide) => /aw/ or /w/ depending on prev word
+    if tok.is_first_char and tok.next_token and tok.next_token == ALIF:
+        # if prev word ended in 'a' then /w/ else /aw/
+        if tok.word.prev_word and tok.word.prev_word.tokens[-1].ipa.startswith('a'):
+            return "w"
+        else:
+            return "aw"
+
+    # A shadda proves this letter is a consonant -- see :func:`_ya_ipa`.
+    if tok.has_shada:
+        return "w"
+    # If previous IPA ends with 'u' (short u) then WAW likely lengthens it.
+    if tok.prev_token and tok._prev_ipa(known).endswith('u'):
+        return "ː"
+
+    # Default: consonant /w/
+    return "w"
+
+
+def _ya_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
+    """The reading of a ya: the consonant /j/, the glide of a diphthong, or a
+    length mark on the vowel before it.
+    """
+    # A shadda proves this letter is a CONSONANT: gemination sits on a
+    # consonant, never on vowel length. Without this the mater rule below
+    # fires first and ⟨ـِيّ⟩ reads as `i` + `ː` (the ya) + `ː` (the shadda
+    # duplicating it) -- the doubled length mark `iːː`, which is not a
+    # phone and which a character-level reader cannot even see, since a
+    # doubled `ː` is simply two symbols to it. The lattice path already
+    # reads the same word correctly as `tijj`.
+    if tok.has_shada:
+        return "j"
+    # 1) Lengthening prev vowel (i -> i:)
+    if tok.prev_token and tok._prev_ipa(known).endswith('i'):
+        return "ː"
+    # 2) Diphthong: FATHA + YA -> /aj/ glide
+    if tok.prev_token and tok.prev_token.surface == FATHA and (not tok.next_token or tok.next_token.surface not in VOWEL_MAP):
+        return "j"
+    # 3) Consonantal /j/
+    return "j"
+
+
+def _consonant_letter_ipa(tok: 'CharToken') -> str:
+    """The reading of a consonant letter: the variety's own reflex, doubled where
+    the definite article assimilated into it, or silent where it is itself an
+    article lam assimilating into a sun letter.
+    """
+    s = tok.surface
+    # Resolve the reference realization, then let the variety's own
+    # spec override it. Used by every return below, so the variety's
+    # reflex flows through gemination and assimilation alike.
+    cons = consonant_ipa(s, tok.lang, ARABIC_TO_IPA_CONSONANTS[s])
+
+    # 3rd position when the word has the definite article -> token to geminate
+    if tok.char_idx == 2 and tok.word.has_definite_article:
+        # Sun Letter: Assimilated 'l' (char_idx==1) -> double the sun letter.
+        if tok.is_sun:
+            return cons + cons
+
+    # Embedded definite-article LAM assimilation:
+    # In written Arabic, li+al- contracts to لِل- (the ALIF of the article is elided).
+    # Pattern: KASRA + LAM(prep) + LAM(article) + SUN-LETTER(+SHADDA).
+    # When a LAM is preceded by KASRA, which is preceded by another LAM,
+    # and the next significant consonant is a sun letter bearing SHADDA,
+    # this LAM is the article lam and assimilates into the following sun letter.
+    if (s == LAM
+            and tok.prev_token and tok.prev_token.surface == KASRA
+            and tok.prev_token.prev_token and tok.prev_token.prev_token.surface == LAM):
+        # Next consonant token (skip any intermediate diacritics)
+        nxt = tok.next_token
+        while nxt and nxt.surface in {FATHA, DAMMA, KASRA, SUKUN, TANWIN_FATH, TANWIN_DAMM, TANWIN_KASR}:
+            nxt = nxt.next_token
+        if nxt and nxt.is_sun and nxt.has_shada:
+            # Article LAM assimilates: silent (sun letter doubles via SHADDA)
+            return ""
+        elif nxt and nxt.is_moon:
+            # Article LAM before moon letter: retain 'l'
+            return "l"
+
+    return cons
+
+
+def _shadda_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
+    """The reading of a shadda, which duplicates the consonant before it."""
+    # 4th position when the word has the definite article -> the sun letter was
+    # already doubled where it was read (see :func:`_consonant_letter_ipa`).
+    if tok.char_idx == 3 and tok.word.has_definite_article:
+        return ""
+    # Return the IPA of the previous token.
+    if tok.prev_token:
+        prev = tok._prev_ipa(known)
+        # A length mark cannot be geminated. If the previous letter still
+        # rendered as one, it was read as a mater lectionis despite carrying
+        # gemination, and duplicating it would emit `ːː`. The ya/waw branches
+        # prevent that at source; this refuses to manufacture the
+        # malformation if any other path reaches here.
+        if prev == "ː":
+            return ""
+        return prev
+    # A shadda with nothing before it has nothing to geminate. This used to
+    # return an ASCII ":" -- not the IPA length mark and not a phone at all,
+    # so it entered the inventory as its own symbol.
+    return ""
+
+
 @dataclasses.dataclass
 class CharToken:
     """
@@ -236,6 +440,12 @@ class CharToken:
             raise _PrevTokenNeeded from None
 
     def _ipa(self, known: Dict[int, str]) -> str:
+        """This character's fragment, given the fragments already resolved.
+
+        A letter family at a time, in the order the rules have to fire: a
+        decision that reads the previous fragment comes after the one that
+        writes it.
+        """
         s = self.surface
 
         if self.is_punct:
@@ -243,23 +453,9 @@ class CharToken:
 
         # handle definite article assimilation (ال)
         if self.word.has_definite_article:
-            # The 'a' of al-
-            if self.is_first_char:
-                # Check 1: Is current word a proclitic? (always wasl)
-                if self.word.prev_word and self.word.prev_word.is_proclitic:
-                    return ""
-                # Check 2: Does prev word end in a vowel? (Generalized Wasl)
-                elif self.word.prev_word and self.word.prev_word.end_with_vowel:
-                    return ""
-                # Alif vowel (always 'a')
-                return "a"
-
-            # is second char
-            if self.char_idx == 1:
-                if self.next_token and self.next_token.is_moon:
-                    return "l"
-                # Sun Letter: Assimilate 'l'
-                return ""
+            article = _definite_article_ipa(self)
+            if article is not None:
+                return article
 
         # Hamzat al-wasl (ٱ) is context-sensitive.
         if s == HAMZAT_AL_WASL:
@@ -275,65 +471,13 @@ class CharToken:
         # (arbtok.sandhi._pausal) — under the declared waqf policy.
 
         # Assimilation of n + r/j/l/m
-        if self.word.next_word and s == N and \
-                self.prev_token and self.prev_token.surface == KASRA and \
-                self.prev_token.prev_token and self.prev_token.prev_token.surface == M:
-
-            # Idgham (n assimilation)
-            if self.word.next_word.tokens[0] == R:
-                # Assimilation n+r -> rr
-                return "r"
-            if self.word.next_word.tokens[0] == YA:
-                # Assimilation n+j -> jj
-                return "j"
-            if self.word.next_word.tokens[0] == LAM:
-                # Assimilation n+l -> ll
-                return "l"
-
-            # Iqlab: n becomes 'm' before 'b'
-            if self.word.next_word.tokens[0] == B:
-                return "m"
-
+        assimilated = _nun_assimilation_ipa(self)
+        if assimilated is not None:
+            return assimilated
 
         # --- Alif Rules ---
         if s == ALIF or s == ALEF_MADDA or s == ALEF_HAMZA_BELOW:
-
-            # --- Bare Alif (Sentence Initial) ---
-            # If first word is bare Alif (not article), emit helper vowel 'i'
-            if self.is_first_word and self.is_first_char and s == ALIF:
-                return "i"
-
-            # Medial: Lengthens preceding vowel (mater lectionis after fatha)
-            if self.prev_token and self._prev_ipa(known) == "a":
-                return "ː"
-
-            # Medial ALIF after a non-'a' vowel (kasra 'i' or damma 'u') within a word:
-            # this is hamzat al-wasl elision — the alif is a mere writing support and is silent
-            # when preceded by a short vowel in the same orthographic word.
-            # Example: وَبِاسْمِ (wa+bi+ism) → the ا of اسم is silent after 'i' of bi.
-            if (not self.is_first_char
-                    and self.prev_token
-                    and self._prev_ipa(known) in {"i", "u"}
-                    and s == ALIF):
-                return ""
-
-            # End of word: often silent or long vowel
-            if self.is_last_char:
-                # Silent Alif in plural verbs (e.g., Katabu كتبوا)
-                #if self.prev_token and self.prev_token.surface == WAW:
-                #    return ""
-                # Dagger alif behavior (implicit) or lengthening
-                return ""
-
-            # Default to long a
-            if s == ALEF_MADDA:
-                return "ʔaː"
-
-            # Start of word: Wasla vs Hamza
-            if self.is_first_char:
-                return ""
-
-            return 'aː'
+            return _alif_ipa(self, known)
 
         # --- Ta Marbuta (ة) ---
         if s == TA_MARBUTA:
@@ -347,49 +491,11 @@ class CharToken:
 
         # --- Waw (و) ---
         if s == WAW:
-            # Heuristics for multiple behaviors of Waw:
-            # 1) Consonantal /w/
-            # 2) Glide in diphthongs (aw)
-            # 3) Mater lectionis (long vowel) when it lengthens a preceding vowel
-            # 4) Silent in certain historical/orthographic contexts
-
-            # Word-initial WAW + ALIF (Diphthong vs Glide) => /aw/ or /w/ depending on prev word
-            if self.is_first_char and self.next_token and self.next_token == ALIF:
-                # if prev word ended in 'a' then /w/ else /aw/
-                if self.word.prev_word and self.word.prev_word.tokens[-1].ipa.startswith('a'):
-                    return "w"
-                else:
-                    return "aw"
-
-            # A shadda proves this letter is a consonant -- see the ya branch below.
-            if self.has_shada:
-                return "w"
-            # If previous IPA ends with 'u' (short u) then WAW likely lengthens it.
-            if self.prev_token and self._prev_ipa(known).endswith('u'):
-                return "ː"
-
-            # Default: consonant /w/
-            return "w"
+            return _waw_ipa(self, known)
 
         # --- Ya (ي) ---
         if s == YA:
-            # A shadda proves this letter is a CONSONANT: gemination sits on a
-            # consonant, never on vowel length. Without this the mater rule below
-            # fires first and ⟨ـِيّ⟩ reads as `i` + `ː` (the ya) + `ː` (the shadda
-            # duplicating it) -- the doubled length mark `iːː`, which is not a
-            # phone and which a character-level reader cannot even see, since a
-            # doubled `ː` is simply two symbols to it. The lattice path already
-            # reads the same word correctly as `tijj`.
-            if self.has_shada:
-                return "j"
-            # 1) Lengthening prev vowel (i -> i:)
-            if self.prev_token and self._prev_ipa(known).endswith('i'):
-                return "ː"
-            # 2) Diphthong: FATHA + YA -> /aj/ glide
-            if self.prev_token and self.prev_token.surface == FATHA and (not self.next_token or self.next_token.surface not in VOWEL_MAP):
-                return "j"
-            # 3) Consonantal /j/
-            return "j"
+            return _ya_ipa(self, known)
 
         # --- Alif Maqsura (ى) ---
         if s == ALIF_MAKSURA:
@@ -410,59 +516,10 @@ class CharToken:
 
         # --- Consonants ---
         if s in ARABIC_TO_IPA_CONSONANTS:
-            # Resolve the reference realization, then let the variety's own
-            # spec override it. Used by every return below, so the variety's
-            # reflex flows through gemination and assimilation alike.
-            cons = consonant_ipa(s, self.lang, ARABIC_TO_IPA_CONSONANTS[s])
-
-            # 3rd position when self.word.has_definite_article -> token to geminate
-            if self.char_idx == 2 and self.word.has_definite_article:
-                # Sun Letter: Assimilated 'l' (char_idx==1) -> double the sun letter.
-                if self.is_sun:
-                    return cons + cons
-
-            # Embedded definite-article LAM assimilation:
-            # In written Arabic, li+al- contracts to لِل- (the ALIF of the article is elided).
-            # Pattern: KASRA + LAM(prep) + LAM(article) + SUN-LETTER(+SHADDA).
-            # When a LAM is preceded by KASRA, which is preceded by another LAM,
-            # and the next significant consonant is a sun letter bearing SHADDA,
-            # this LAM is the article lam and assimilates into the following sun letter.
-            if (s == LAM
-                    and self.prev_token and self.prev_token.surface == KASRA
-                    and self.prev_token.prev_token and self.prev_token.prev_token.surface == LAM):
-                # Next consonant token (skip any intermediate diacritics)
-                nxt = self.next_token
-                while nxt and nxt.surface in {FATHA, DAMMA, KASRA, SUKUN, TANWIN_FATH, TANWIN_DAMM, TANWIN_KASR}:
-                    nxt = nxt.next_token
-                if nxt and nxt.is_sun and nxt.has_shada:
-                    # Article LAM assimilates: silent (sun letter doubles via SHADDA)
-                    return ""
-                elif nxt and nxt.is_moon:
-                    # Article LAM before moon letter: retain 'l'
-                    return "l"
-
-            return cons
+            return _consonant_letter_ipa(self)
 
         if s == SHADDA:
-            # Shadda duplicates the previous consonant.
-            # 4th position when self.word.has_definite_article -> already geminated in previous check
-            if self.char_idx == 3 and self.word.has_definite_article:
-                return ""
-            # Return the IPA of the previous token.
-            if self.prev_token:
-                prev = self._prev_ipa(known)
-                # A length mark cannot be geminated. If the previous letter still
-                # rendered as one, it was read as a mater lectionis despite carrying
-                # gemination, and duplicating it would emit `ːː`. The ya/waw branches
-                # above prevent that at source; this refuses to manufacture the
-                # malformation if any other path reaches here.
-                if prev == "ː":
-                    return ""
-                return prev
-            # A shadda with nothing before it has nothing to geminate. This used to
-            # return an ASCII ":" -- not the IPA length mark and not a phone at all,
-            # so it entered the inventory as its own symbol.
-            return ""
+            return _shadda_ipa(self, known)
 
         # --- Non-Arabic fallback ---
         # For maintainability and to avoid losing non-Arabic characters, return ASCII letters/digits/punct as-is.
