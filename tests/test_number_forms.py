@@ -20,10 +20,10 @@ def _rows(code):
 
 
 def test_a_table_ships_for_the_lects_named_and_for_no_others():
-    assert nf.bundled_lects() == ["ar-SA-x-hejaz", "ar-x-gulf"]
+    assert nf.bundled_lects() == ["ar-EG", "ar-SA-x-hejaz", "ar-x-gulf"]
 
 
-@pytest.mark.parametrize("code", ["ar-SA-x-hejaz", "ar-x-gulf"])
+@pytest.mark.parametrize("code", ["ar-EG", "ar-SA-x-hejaz", "ar-x-gulf"])
 def test_every_row_is_a_value_a_speakable_word_and_a_source(code):
     rows = _rows(code)
     assert len(rows) > 15
@@ -61,7 +61,7 @@ def test_a_lect_reads_its_own_table_or_its_groups(tag, table):
     assert forms[13] == ("تلاطعش" if table == "hejaz" else "ثلاطعش")
 
 
-@pytest.mark.parametrize("tag", ["ar", "ar-SA", "ar-SA-x-najd", "ar-EG", "ar-MA", "ar-IQ", "ar-x-levantine"])
+@pytest.mark.parametrize("tag", ["ar", "ar-SA", "ar-SA-x-najd", "ar-MA", "ar-IQ", "ar-x-levantine"])
 def test_a_lect_with_no_cited_table_has_no_forms(tag):
     """Najdi is the product's target lect and has no table: no source has been read for it,
     and a form no source gives is not written."""
@@ -81,6 +81,7 @@ def test_the_classical_code_is_accepted_by_a_rule_that_speaks_arabic():
     ("ar", "عندك خمسة عشر رسالة"),
     ("ar-SA-x-hejaz", "عندك خمسطعش رسالة"),
     ("ar-AE", "عندك خمسطعش رسالة"),
+    ("ar-EG", "عندك خمستاشر رسالة"),
 ])
 def test_a_teen_is_spoken_the_way_the_lect_says_it(tag, spoken):
     assert normalize_for_tts("عندك 15 رسالة", tag, DIALECT) == spoken
@@ -90,11 +91,26 @@ def test_a_teen_is_spoken_the_way_the_lect_says_it(tag, spoken):
     ("ar", "السعر ثلاث مئة وخمسين ريال"),
     ("ar-SA-x-hejaz", "السعر تلت مية وخمسين ريال"),
     ("ar-AE", "السعر ثلاث مية وخمسين ريال"),
+    ("ar-EG", "السعر تلت مية وخمسين ريال"),
 ])
 def test_a_hundred_inside_a_composed_number_takes_the_lects_word(tag, spoken):
     """The parser composes; the table supplies the words. A colloquial hundred is spaced
     for the synthesizer the same way the standard one is."""
     assert normalize_for_tts("السعر 350 ريال", tag, DIALECT) == spoken
+
+
+def test_the_three_lects_do_not_say_a_teen_alike():
+    """A shipped table earns its place by differing from the others as well as from MSA."""
+    said = {tag: normalize_for_tts("عندك 12 رسالة", tag, DIALECT) for tag in
+            ("ar", "ar-SA-x-hejaz", "ar-x-gulf", "ar-EG")}
+    assert said["ar-EG"] != said["ar-SA-x-hejaz"] != said["ar"] and said["ar-EG"] != said["ar"]
+    assert nf.number_forms("ar-EG")[12] == "اتناشر"
+
+
+def test_the_egyptian_table_is_read_for_egypt_and_not_for_its_neighbours():
+    assert nf.number_forms("ar-EG")[100] == "مية"
+    for tag in ("ar-SA-x-najd", "ar-LY", "ar-x-levantine"):
+        assert 100 not in nf.number_forms(tag)
 
 
 def test_a_teen_inside_a_year_is_replaced_and_the_rest_is_not():
