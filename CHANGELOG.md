@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a15](https://github.com/TigreGotico/arbtok/tree/0.0.1a15) (2026-09-20)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a14...0.0.1a15)
+
+**Merged pull requests:**
+
+- feat: Arabic unit, currency, territory and language names from Unicode CLDR [\#126](https://github.com/TigreGotico/arbtok/pull/126) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a14](https://github.com/TigreGotico/arbtok/tree/0.0.1a14) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a13...0.0.1a14)
