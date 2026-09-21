@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a15](https://github.com/TigreGotico/arbtok/tree/0.0.2a15) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a14...0.0.2a15)
+
+**Merged pull requests:**
+
+- test: the phone-plans description test reads the shared voice-agent config [\#191](https://github.com/TigreGotico/arbtok/pull/191) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a14](https://github.com/TigreGotico/arbtok/tree/0.0.2a14) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a13...0.0.2a14)
