@@ -184,10 +184,11 @@ class AsrNorm:
     #: Drop tatweel, U+0640.
     strip_tatweel: bool = False
     #: Recognizer output repaired to the Arabic it transcribes, each repair named with its
-    #: evidence where it is made. The one repair: the conjunction و that Saudi and Gulf
-    #: speech says u-, written by a recognizer as the word او inside a spoken number, is
-    #: written و again, so ``ست مية او عشرة الف`` reads as 610,000. Arabic only; it runs
-    #: after the lexicon and before ``spoken_numbers_to_digits``.
+    #: evidence where it is made. Inside a spoken number, the recognizer's ماية is the
+    #: hundred مية (``اربعماية الف`` is 400,000), and the conjunction و that Saudi and
+    #: Gulf speech says u-, written by a recognizer as the word او, is written و again
+    #: (``ست مية او عشرة الف`` is 610,000). Arabic only; it runs after the lexicon and
+    #: before ``spoken_numbers_to_digits``.
     fix_asr_errors: bool = False
     #: Write number words as digits: ``خمسة وأربعون ألف`` becomes ``45000``. Runs after
     #: the lexicon, so a term spelled with a number word is a term first. Arabic-Indic
@@ -255,6 +256,16 @@ class AsrNorm:
 # او spelling is the recognizer's, not the language's, so it is repaired here, on the
 # transcript, and not in the number parser, which reads written Arabic.
 _OR = "او"
+_ALEF_TABLE = str.maketrans(_ALEF)
+# A recognizer writes the Saudi "hundred" as ماية: "اربعماية الف" is 400,000. Written
+# Arabic spells the hundred مئة, مائة or مية; ماية is attested as "water". Wiktionary,
+# https://en.wiktionary.org/wiki/مية, Egyptian Arabic مَيَّة "water", a diminutive of
+# مَاء, alternative forms مايَّه, مايَّة, مَيَّه; the numeral "hundred" there has no ماية
+# form. The same entry gives مَيَّه, and ميه, as "water" too, with no source for it as
+# "hundred", though recognisers write the hundred that way as well. So ماية, مايه and
+# ميه are repaired to مية only where they stand inside a number.
+_MAYA_SPELLINGS = ("ماية", "مايه", "ميه")
+_HUNDRED = "مية"
 
 
 _NOTHING = AsrNorm()
@@ -267,7 +278,7 @@ ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HAR
                              _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
                              _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
                              _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER,
-                             _OR)
+                             _OR, _MAYA_SPELLINGS, _HUNDRED)
 
 
 @functools.lru_cache(maxsize=None)
@@ -352,18 +363,62 @@ def _numbers_to_digits(text: str, lang: str) -> str:
     return text[:len(text) - len(text.lstrip())] + read + text[len(text.rstrip()):]
 
 
-@functools.lru_cache(maxsize=None)
-def _number_words():
-    """The number parser's own Arabic word tables, keyed by its normalized spelling."""
-    from ovos_number_parser import numbers_ar as ar
-    thousands = {w for w, v in ar._SCALES_LOOKUP.items() if v == 1000}
-    larger = ({w for w, v in ar._SCALES_LOOKUP.items() if v > 1000}
-              | {w for w, v in ar._SCALE_DUALS_LOOKUP.items() if v > 2000})
-    counts = (set(ar._UNITS_LOOKUP) | set(ar._TENS_LOOKUP) | set(ar._FUSED_TEENS_LOOKUP)
-              | set(ar._TEEN_FIRST_LOOKUP) | ar._TEEN_SECOND_LOOKUP)
-    hundred_units = {w for w, v in ar._UNITS_LOOKUP.items() if 1 <= v <= 9}
-    return (ar._normalize_ar, ar._NUMBER_WORDS, set(ar._HUNDREDS_LOOKUP), ar._HUNDRED_MULT_LOOKUP,
-            hundred_units, counts, thousands, larger)
+@functools.lru_cache(maxsize=1 << 16)
+def _number_value(words: str):
+    """What the number parser reads ``words`` as, or None when it reads no number."""
+    from ovos_number_parser import extract_number
+    value = extract_number(words, lang="ar")
+    return None if value is False else value
+
+
+#: The construct forms of three to nine that a hundred is built on (thalath-miya …
+#: tisi-miya): Qafisheh, Basic Gulf Arabic (1970), p. 59, and Omar, Saudi Arabic Basic
+#: Course (1975), p. 69, give 300 to 900 on these and no hundred on واحد, اثنين or the
+#: full forms ثلاثة to تسعة; 100 is مية and 200 ميتين. A recogniser's ماية after any
+#: other word is water: "اشتريت خمسة ماية".
+_HUNDRED_UNITS = frozenset({"ثلاث", "تلات", "اربع", "أربع", "خمس", "ست", "سبع", "ثمان", "ثماني", "تمن", "تسع"})
+
+
+#: The Arabic number words whose own first letter is و, so a leading و on them is not
+#: the conjunction: "one", masculine and feminine.
+_WAW_INITIAL_NUMBERS = frozenset({"واحد", "واحدة", "واحده"})
+
+
+def _maya_as_hundred(text: str) -> str:
+    """Write the recognizer's ماية as مية where it is the hundred of a number: fused to
+    a unit (اربعماية), after a unit (ست ماية), before the thousands word (ماية الف), or
+    after و that follows a number (الف وماية). Anywhere else, "كباية ماية" and
+    "شربت ماية", it is water and stays."""
+    parts = _WORDS_AND_GAPS.split(text)  # words at even positions, the gaps between them at odd
+    words = parts[::2]
+
+    def value(k):
+        return _number_value(words[k]) if 0 <= k < len(words) and words[k] else None
+
+    def thousands(k):
+        """A hundred joined by و follows the thousands ("الف وميتين"), never a unit:
+        "اثنين وميه" is "two, and water"."""
+        v = value(k)
+        return v is not None and v >= 1000
+
+    for i, word in enumerate(words):
+        lead, core, trail = _EDGE_PUNCTUATION.match(word).groups()
+        spelling = next((s for s in _MAYA_SPELLINGS if core.endswith(s)), None)
+        if spelling is None:
+            continue
+        head = core[:-len(spelling)]
+        after_number = thousands(i - 1) or (i > 0 and words[i - 1] == "و" and thousands(i - 2))
+        if head == "":
+            inside = (i > 0 and words[i - 1] in _HUNDRED_UNITS) or value(i + 1) == 1000 or \
+                (i > 0 and words[i - 1] == "و" and thousands(i - 2))
+        elif head == "و":
+            inside = after_number
+        else:
+            # one proclitic ب, ل or ف may lead the fused word: "بخمسميه الف"
+            inside = head in _HUNDRED_UNITS or (head[:1] in "بلف" and head[1:] in _HUNDRED_UNITS)
+        if inside:
+            parts[2 * i] = f"{lead}{head}{_HUNDRED}{trail}"
+    return "".join(parts)
 
 
 def _or_as_and(text: str) -> str:
@@ -374,49 +429,58 @@ def _or_as_and(text: str) -> str:
     "ست مية او عشرة الف" and "مليون وست مية او عشرة الف" are one number each. Every
     other او is "or": "الف او خمسمية", "الفين او ثلاثة", "مية او اثنين",
     "تسعمية او عشرة ملايين" and "ثلاثة او اربعة" are two numbers each.
+
+    A word is classed by the value the number parser reads in it: 100 to 900 in
+    hundreds is a hundreds word, 1 to 99 a unit, ten or teen, 1000 the thousands word,
+    and a million or more a larger part of the same number.
     """
-    normalize, number_words, hundreds, hundred_mult, hundred_units, counts, thousands, larger = \
-        _number_words()
     parts = _WORDS_AND_GAPS.split(text)  # words at even positions, the gaps between them at odd
     words = parts[::2]
 
-    def form(k):
-        """The word at k as the parser reads it, a و written onto a number word taken off,
-        and whether that و was there."""
-        if k < 0 or k >= len(words):
-            return None, False
-        word = normalize(words[k])
-        if word not in number_words and word[:1] == "و" and word[1:] in number_words:
-            return word[1:], True
-        return word, False
+    def word(k):
+        return words[k] if 0 <= k < len(words) else ""
+
+    def value(k):
+        return _number_value(word(k)) if word(k) else None
+
+    def waw(k):
+        """Whether the word at k is a number word with the conjunction written onto it.
+        واحد and واحدة are the number words that begin with و themselves."""
+        w = word(k)
+        return w[:1] == "و" and w not in _WAW_INITIAL_NUMBERS and _number_value(w[1:]) is not None
+
+    def hundreds(v):
+        return v is not None and 100 <= v <= 900 and v % 100 == 0
+
+    def counts(v):
+        return v is not None and 1 <= v <= 99 and v == int(v)
 
     def joins(i):
-        before, _ = form(i - 1)
-        if before in hundred_mult and form(i - 2)[0] in hundred_units:
+        unit = value(i - 2)
+        if value(i - 1) == 100 and counts(unit) and unit <= 9 and \
+                _number_value(f"{word(i - 2)} {word(i - 1)}") == unit * 100:
             start = i - 2
-        elif before in hundreds:
+        elif hundreds(value(i - 1)):
             start = i - 1
         else:
             return False
-        _, waw = form(start)
         k = start - 1
-        if not waw and form(k)[0] == "و":
+        if not waw(start) and word(k) == "و":
             k -= 1
-        earlier = form(k)[0]
-        if earlier in number_words and earlier not in larger:
+        earlier = value(k)
+        if earlier is not None and earlier < 1_000_000:
             return False
-        if form(i + 1)[0] not in counts or form(i + 1)[1]:
+        if not counts(value(i + 1)) or waw(i + 1):
             return False
         for k in range(i + 2, len(words)):
-            word, _ = form(k)
-            if word in thousands:
+            if value(k) == 1000:
                 return True
-            if word != "و" and word not in counts:
+            if word(k) != "و" and not counts(value(k)):
                 return False
         return False
 
     for i in range(1, len(words) - 1):
-        if normalize(words[i]) == _OR and joins(i):
+        if words[i].translate(_ALEF_TABLE) == _OR and joins(i):
             parts[2 * i] = parts[2 * i + 1] = ""
             parts[2 * i + 2] = "و" + parts[2 * i + 2]
     return "".join(parts)
@@ -464,7 +528,7 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
     if config.lexicon:
         text = _apply_lexicon(text, config)
     if config.fix_asr_errors and is_arabic_lang(lang):
-        text = _or_as_and(text)
+        text = _or_as_and(_maya_as_hundred(text))
     if config.spoken_numbers_to_digits:
         text = _numbers_to_digits(text, lang)
     if config.join_dictated_digits:
