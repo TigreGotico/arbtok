@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a7](https://github.com/TigreGotico/arbtok/tree/0.0.2a7) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a6...0.0.2a7)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): spoken forms read literary numbers whatever lect the tag names [\#175](https://github.com/TigreGotico/arbtok/pull/175) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a6](https://github.com/TigreGotico/arbtok/tree/0.0.2a6) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a5...0.0.2a6)
