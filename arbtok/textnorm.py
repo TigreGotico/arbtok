@@ -23,6 +23,7 @@ parser is imported when ``spoken_numbers_to_digits`` first runs.
 import dataclasses
 import functools
 import hashlib
+import json
 import re
 import unicodedata
 from pathlib import Path
@@ -133,6 +134,15 @@ def _describe_parser() -> str:
         return f"; ovos-number-parser {version('ovos-number-parser')}"
     except PackageNotFoundError:
         return "; ovos-number-parser unknown"
+
+
+@functools.lru_cache(maxsize=None)
+def _describe_phone_plans() -> str:
+    # The plans decide which runs are phone numbers, so a description names the table by
+    # the libphonenumber release it was built from and by its own bytes.
+    raw = _PHONE_PLANS.read_bytes()
+    return (f"; phone plans libphonenumber {json.loads(raw)['source']['tag']}"
+            f" sha256:{hashlib.sha256(raw).hexdigest()[:12]}")
 
 
 def _rule_set(*definitions) -> str:
@@ -723,7 +733,8 @@ class TtsNorm:
         # the parser is named for it too: it is what identifies the words a run used.
         speaks = self.cardinal_numbers or self.spoken_forms or self.dialect_numbers
         return (f"arbtok-tts-norm {TTS_NORM_VERSION}: {','.join(on) or 'none'}"
-                + _describe_lexicon(self.lexicon) + (_describe_parser() if speaks else ""))
+                + _describe_lexicon(self.lexicon) + (_describe_phone_plans() if self.phone_regions else "")
+                + (_describe_parser() if speaks else ""))
 
 
 #: Names the rule set of :func:`normalize_for_tts`, computed the way
