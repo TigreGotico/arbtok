@@ -603,6 +603,28 @@ _CLOCK = re.compile(r"(?<![0-9٠-٩A-Za-z:.,٫])"
                     r"(?:\s?(?P<marker>[aApP][mM])(?![A-Za-z]))?"
                     r"(?![0-9٠-٩A-Za-z]|[:.,٫][0-9٠-٩])")
 _PROCLITIC = r"[بولك]?ا?ل?"
+
+
+def _rank_nouns() -> Dict[str, str]:
+    """The rank nouns of ``data/rank_ordinals.tsv``, keyed by the noun without its
+    article, with the gender the ordinal after it takes. The file cites the source of
+    each row."""
+    rows = {}
+    for line in (Path(__file__).parent / "data" / "rank_ordinals.tsv").read_text(encoding="utf-8").splitlines():
+        if line and not line.startswith("#"):
+            noun, gender = line.split("\t")[:2]
+            rows[noun[len("ال"):]] = gender
+    return rows
+
+
+_RANK_NOUNS = _rank_nouns()
+# A rank noun, definite, and the whole number written directly after it. The article is
+# required: the proclitic before the noun ends in it (الطابق, والطابق, بالطابق) or is
+# ل joined to it (للطابق). The number is an integer of one or two digits in one script,
+# not part of a decimal or a longer run: from 100 the parser has no feminine or oblique
+# ordinal, and the number stays a cardinal.
+_RANK_NUMBER = re.compile(r"(?<![^\s\W])(ف?" + _PROCLITIC + ")(" + "|".join(map(re.escape, _RANK_NOUNS))
+                          + r")(\s+)([0-9]{1,2}|[٠-٩]{1,2})(?![0-9٠-٩A-Za-z]|[.,٫٬،][0-9٠-٩])")
 # A run of digits in groups, with a leading ``+`` if any, split by spaces or hyphens as a
 # phone number is written. Its digits are all ASCII or all Arabic-Indic: a number written
 # after a phone number in the other script is another number. It may not touch a digit
@@ -710,7 +732,10 @@ class TtsNorm:
     identifier_words: Tuple[str, ...] = ()
     #: Speak Arabic-Indic and ASCII numbers as cardinals here, ahead of
     #: ``spoken_forms``, so that the three flags below apply to them. A clock time is
-    #: spoken as a time, not as two cardinals, whether or not ``spoken_forms`` is on.
+    #: spoken as a time, not as two cardinals, whether or not ``spoken_forms`` is on. A
+    #: whole number from 1 to 99 written directly after a rank noun is the ordinal that
+    #: agrees with the noun: ``الطابق 3`` is ``الطابق الثالث`` and ``الفئة 5`` is
+    #: ``الفئة الخامسة``. The nouns and their sources are in ``data/rank_ordinals.tsv``.
     cardinal_numbers: bool = False
     #: A number ``cardinal_numbers`` cannot speak is left as written and the rest of
     #: the text is still read, where otherwise the error is raised. For a caller that
@@ -774,7 +799,8 @@ class TtsNorm:
 #: keeps the ``describe()`` string, not the version alone.
 TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
-                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK)
+                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
+                             _RANK_NOUNS, _RANK_NUMBER)
 _PLUGIN_DEFAULT = TtsNorm()
 
 
@@ -978,6 +1004,21 @@ def _spoken_clock(m: re.Match) -> Optional[str]:
                      use_24hour=False, use_ampm=bool(marker) or hour == 0 or hour > 12)
 
 
+def _rank_ordinal(m: re.Match, config: TtsNorm) -> str:
+    """The rank noun ``m`` matched with the number after it said as an ordinal agreeing
+    with the noun, or the match unchanged when the noun has no article or the number is
+    0. Ordinals show case only in the tens, which take the
+    register ``oblique_numbers`` gives the cardinals."""
+    proclitic, noun, gap, number = m.groups()
+    value = int(number.translate(_EASTERN_DIGITS))
+    if not proclitic.endswith(("ال", "لل")) or value == 0:
+        return m.group(0)
+    from ovos_number_parser import pronounce_ordinal
+    from ovos_number_parser.util import GrammaticalGender
+    return proclitic + noun + gap + pronounce_ordinal(value, lang="ar", gender=GrammaticalGender(_RANK_NOUNS[noun]),
+                                                      case=_number_case(config))
+
+
 def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     def speak(written: str, number: str) -> str:
         try:
@@ -990,6 +1031,7 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     def eastern(m):
         number = m.group(0).translate(_EASTERN_DIGITS).replace("٬", "").replace("،", "").replace("٫", ".")
         return speak(m.group(0), number)
+    text = _RANK_NUMBER.sub(lambda m: _rank_ordinal(m, config), text)
     text = _EASTERN_NUMBER.sub(eastern, text)
     return _WESTERN_NUMBER.sub(lambda m: speak(m.group(0), m.group(0).replace(",", "")), text)
 

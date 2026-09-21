@@ -11,7 +11,11 @@ langcodes
 # `normalize_asr(spoken_numbers_to_digits)` left most of the teens in a real transcript as
 # words. Measured on the human transcripts of the SADA corpus: 1,167 one-word teens in 190
 # spellings, of which the older parser read 66.
-ovos-number-parser>=0.21.0a1
+# The cardinal pass says a number after a rank noun as an ordinal agreeing with the noun,
+# الفئة 5 as الفئة الخامسة and القرن 21 as القرن الحادي والعشرين, through pronounce_ordinal.
+# Below 0.22.0a1 the parser's Arabic ordinals are masculine and nominative only; 0.22.1a1
+# is the release after it, which also reads the hundreds spelling ماية.
+ovos-number-parser>=0.22.1a1
 # Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
 # with the fractions of the hour and the period words: `normalize_for_tts` takes the
 # words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour
