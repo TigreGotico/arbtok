@@ -167,8 +167,8 @@ the same way.
 
 **Record the `describe()` string, not the version alone.** The version names the
 rules. What a config carries as values is configuration and is outside it: which
-flags are on, a lexicon, and for `normalize_for_tts` the phone shapes, phone
-prefixes and identifier words (`KSA_PHONE_SHAPES`, `KSA_PHONE_PREFIXES`,
+flags are on, a lexicon, and for `normalize_for_tts` the phone regions, phone
+shapes, phone prefixes and identifier words (`ARAB_PHONE_REGIONS`,
 `IDENTIFIER_WORDS` or your own). `describe()` names each of those, the tuples and
 the lexicon by a digest of their content, so two runs that differ in any of them
 describe themselves differently while sharing one version. If the number parser's
@@ -334,7 +334,8 @@ CLDR display name; it is not inflected for the number before it.
 
 A reply holds prices, phone numbers and booking references, and a plain
 "numbers to words" pass reads all of them as quantities. These rules tell them
-apart. `KSA_VOICE_AGENT` turns them on with Saudi phone shapes:
+apart. `KSA_VOICE_AGENT` turns them on with the numbering plans of every Arab
+League member:
 
 ```python
 from arbtok.textnorm import KSA_VOICE_AGENT
@@ -343,6 +344,8 @@ normalize_for_tts("السعر النهائي 355,000 ريال", "ar", KSA_VOICE_
 # 'السعر النهائي ثلاث مئة وخمسة وخمسين ألف ريال'
 normalize_for_tts("خلني أسجل رقمك 0551234567", "ar", KSA_VOICE_AGENT)
 # 'خلني أسجل رقمك صفر خمسة خمسة واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
+normalize_for_tts("اتصل على 010 01234567", "ar", KSA_VOICE_AGENT)
+# 'اتصل على صفر واحد صفر صفر واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
 normalize_for_tts("كود العرض 4471 صالح", "ar", KSA_VOICE_AGENT)
 # 'كود العرض أربعة أربعة سبعة واحد صالح'
 normalize_for_tts("نسبة التمويل 4.5%", "ar", KSA_VOICE_AGENT)
@@ -359,6 +362,7 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `speak_percent` | `4.5%` becomes `4.5 في المئة`, then the number is spoken |
 | `keep_code_digits` | up to four digits beside a Latin word, `MG 5` or `7 Series`, belong to the name and are kept from every number rule |
 | `phone_shapes` | patterns of a phone number in running text; a match is read digit by digit |
+| `phone_regions` | ISO 3166-1 regions whose numbering plans are recognised; a valid number of one of them, written with `+` or `00` and the country code, with the region's trunk prefix, or after an identifier word, is read digit by digit |
 | `long_digit_runs` | eleven or more digits are a reference, read digit by digit |
 | `phone_prefixes` | patterns a bare digit run matches whole when it is a phone number; a run written with `+` is one too |
 | `identifier_words` | words after which a number is a reference: `الكود 4729`, `برقم الحجز 3401`. A proclitic may be attached and one other word may stand between |
@@ -410,9 +414,34 @@ your words, so a run records which words it used.
 A price and a phone number cannot be told apart by length, so nothing here
 guesses from length alone below eleven digits: a phone number is known by its
 prefix or by the word before it. `موديل 4729` stays a quantity because `موديل`
-is not an identifier word. `KSA_PHONE_SHAPES`, `KSA_PHONE_PREFIXES` and
-`IDENTIFIER_WORDS` are plain tuples; pass your own for another country or
-another vocabulary.
+is not an identifier word. `ARAB_PHONE_REGIONS` and `IDENTIFIER_WORDS` are plain
+tuples; pass your own for another vocabulary. `phone_shapes` and `phone_prefixes`
+take your own patterns for numbers the bundled plans do not cover; no preset sets
+them.
+
+`phone_regions` names the regions whose numbering plans are read, and
+`ARAB_PHONE_REGIONS` lists the 22 members of the Arab League. The plans are bundled
+in `arbtok/data/phone_plans.json`: for each region its country code, its trunk
+prefix and, for each number type, the pattern and lengths of a national number. The
+table is built by `scripts/build_phone_plans.py` from `resources/PhoneNumberMetadata.xml`
+of Google's libphonenumber (https://github.com/google/libphonenumber), and its
+`source` field names the release tag and the sha256 of the file it read.
+
+A run of 7 to 15 digits, in groups split by spaces or hyphens, is read digit by digit
+when it is a valid number and it also says it is a phone number. A run that starts
+with `+` or `00` names its country, and is read when the rest is a number of that
+country in the bundled plans, whichever regions are configured. Otherwise the plans
+of `phone_regions` are tried, and the run is read when it starts with a three-digit
+country code and a mobile number (`966 50 123 4567`), or with the region's trunk
+prefix (`0` in most of them), or when it is a toll-free, shared-cost or unified
+number of eight digits or more (`8001000341`, `920012345`), whose first digits say
+what it is, or when it follows an identifier word. So `اتصل على 010 01234567` is an
+Egyptian mobile, while a bare Kuwaiti
+`50012345` stays a quantity until it follows a word such as `رقمي`: in the Gulf and
+the Maghreb there is no trunk prefix, and eight digits are a price as often as a
+phone number. A run whose first groups are a date, `05-06-2024`, is never read this
+way unless it starts with `+` or `00`, and a run that touches another digit across a
+comma, a point, a slash or a colon is part of a longer number, a date or a time.
 
 The rules from `speak_percent` to `identifier_words`, and `dialect_numbers` and
 `number_forms` with them, write Arabic words, so they raise `ValueError` for a
