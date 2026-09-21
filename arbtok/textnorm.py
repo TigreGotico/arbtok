@@ -586,7 +586,7 @@ _FUSED_HUNDREDS.update({stem + "مية": stem + " مية"
                                      "ثمان", "تمن", "تمان", "تسع")})
 _FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, sorted(_FUSED_HUNDREDS, key=len, reverse=True))))
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*[%٪]")
-_LONG_RUN = re.compile(r"(?<![0-9٠-٩])\+?\d{11,}(?![0-9])")
+_LONG_RUN = re.compile(r"(?<![0-9٠-٩])\+?\d{10,}(?![0-9])")
 _CODE_DIGITS = re.compile(r"(?<![\dA-Za-z])(?<!\d[,.٬،٫])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))"
                           r"(?![\dA-Za-z])(?![,.٬،٫]\d)")
 _DIGIT_RUN = re.compile(r"(?<![0-9A-Za-z٠-٩])(\+?\d+)(?![0-9A-Za-z])")
@@ -721,8 +721,11 @@ class TtsNorm:
     #: a quantity, because in the Gulf and the Maghreb a phone number and a price of
     #: that length cannot be told apart.
     phone_regions: Tuple[str, ...] = ()
-    #: A run of eleven or more digits is a reference and is read digit by digit, with
-    #: a leading ``+`` dropped as :func:`_digit_by_digit` says.
+    #: A run of ten or more digits is a reference and is read digit by digit, with a
+    #: leading ``+`` dropped as :func:`_digit_by_digit` says. Ten unseparated digits are
+    #: an order, account or policy number far more often than a quantity of billions. A
+    #: run that ends in three zeros is a round quantity and is left to the cardinals,
+    #: unless a ``+`` leads it; a number written with separators never forms a run.
     long_digit_runs: bool = False
     #: Patterns a bare digit run matches whole when it is a phone number. When any is
     #: given, a run written with a leading ``+`` is one too.
@@ -957,6 +960,11 @@ def _digit_forms(lang: str, config: TtsNorm) -> Dict[int, str]:
     return forms
 
 
+def _round_quantity(run: str) -> bool:
+    """A run with no leading ``+`` that ends in three zeros, in either digit script."""
+    return not run.startswith("+") and run.translate(_EASTERN_DIGITS).endswith("000")
+
+
 def _digit_by_digit(run: str, forms: Mapping[int, str] = {}) -> str:
     """``run`` read one digit at a time, in the lect's words where ``forms`` has them.
 
@@ -1124,7 +1132,8 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.phone_regions:
         text = _read_phone_numbers(text, config.phone_regions, context, digit_forms)
     if config.long_digit_runs:
-        text = _LONG_RUN.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
+        text = _LONG_RUN.sub(lambda m: m.group(0) if _round_quantity(m.group(0))
+                             else _digit_by_digit(m.group(0), digit_forms), text)
     if prefixes or context:
         whole = text
         def reference(m):
