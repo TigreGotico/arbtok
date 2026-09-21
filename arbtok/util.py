@@ -607,6 +607,20 @@ def _unit_word(units: dict, symbol: str) -> str:
     return {k.lower(): v for k, v in units.items()}[symbol.lower()]
 
 
+#: CLDR gives "am" and "pm" as the symbols of the attometre and the picometre; after
+#: a clock time they are the 12-hour markers, and a time is not a measurement.
+_CLOCK_MARKERS = ("am", "pm")
+
+
+def _is_clock_time(match: re.Match) -> bool:
+    """Whether the number before an "am"/"pm" is an hour of the 12-hour clock, or the
+    minutes of an ``h:mm`` time."""
+    number = match.group(1)
+    if match.start() > 0 and match.string[match.start() - 1] == ":":
+        return number.isdigit() and int(number) < 60
+    return number.isdigit() and 1 <= int(number) <= 12
+
+
 def _normalize_units(text: str, full_lang: str) -> str:
     """
     Helper function to normalize units attached to numbers.
@@ -664,6 +678,8 @@ def _normalize_units(text: str, full_lang: str) -> str:
                 elif decimal_separator != "." and decimal_separator in number:
                     number = number.replace(decimal_separator, ".")
                 unit_symbol = match.group(2)
+                if unit_symbol.lower() in _CLOCK_MARKERS and _is_clock_time(match):
+                    return match.group(0)
                 unit_word = _unit_word(alphanumeric_units, unit_symbol)
                 return f"{pronounce_number(float(number) if '.' in number else int(number), full_lang)} {unit_word}"
 
