@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a5](https://github.com/TigreGotico/arbtok/tree/0.0.2a5) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a4...0.0.2a5)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): read a widely spaced mobile and a run after an Eastern digit [\#170](https://github.com/TigreGotico/arbtok/pull/170) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a4](https://github.com/TigreGotico/arbtok/tree/0.0.2a4) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a3...0.0.2a4)
