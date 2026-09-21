@@ -426,6 +426,8 @@ INTELLIGIBILITY_GATE = AsrNorm(strip_harakat=True, strip_extended_marks=True,
 
 _LATIN_RUN_EDGE = r"(?<![A-Za-z0-9])", r"(?![A-Za-z0-9])"
 _CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(?=[A-Z0-9]*[A-Z])[A-Z0-9]+" + _LATIN_RUN_EDGE[1])
+#: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
+_VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
 
 
 @functools.lru_cache(maxsize=None)
@@ -651,7 +653,19 @@ class TtsNorm:
     """
     #: Drop zero-width and bidirectional control characters.
     strip_controls: bool = False
-    #: Read ``X5``-shaped codes character by character from :func:`spelled_codes`.
+    #: Read ``X5``-shaped codes character by character from :func:`spelled_codes`: a run of
+    #: capitals and digits with at least one capital, not touching another letter or digit.
+    #: A run of up to seven characters is a model code and every character takes the
+    #: table's English name, so ``X5`` is ``إِكْسْ فَيْفْ``. A run of 8 to 17 characters with
+    #: at least one digit is a vehicle identification number or a fragment of one: its
+    #: letters take the table's names and its digits the Arabic words of a digit-by-digit
+    #: reading, as a phone number or a booking reference is read, lect words included
+    #: under ``dialect_numbers``. ISO 3779 fixes the VIN at 17 characters: "The VIN
+    #: consists of 17 characters, and only uses capital letters (excluding I, O and Q)
+    #: and digits (0-9)" (https://en.wikipedia.org/wiki/Vehicle_identification_number),
+    #: so only capitals are read this way. The floor of eight is a choice, not the
+    #: standard's: it takes the fragments an agent reads back, "the last eight are
+    #: L457L680", and leaves every model code of seven characters or fewer as it was.
     spell_out_codes: bool = False
     #: ``4.5%`` becomes ``4.5 في المئة``, and the number is then spoken like any other.
     speak_percent: bool = False
@@ -744,7 +758,7 @@ class TtsNorm:
 #: :data:`IDENTIFIER_WORDS` and a lexicon are named by
 #: :meth:`TtsNorm.describe`, each by a digest. A record that must distinguish two runs
 #: keeps the ``describe()`` string, not the version alone.
-TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _DIGIT_WORDS,
+TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE)
 _PLUGIN_DEFAULT = TtsNorm()
@@ -971,7 +985,9 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
 
     ``spell_out_codes`` reads what the lexicon did not claim and is written in
     capitals and digits with at least one capital, ``X5`` or ``GV70``, character by
-    character from :func:`spelled_codes`. A number on its own is not a code.
+    character from :func:`spelled_codes`. A number on its own is not a code. A run of
+    8 to 17 such characters with a digit in it is a vehicle identification number, or
+    a fragment of one, and its digits are read as Arabic words, one at a time.
 
     ``spoken_forms`` writes dates, times, numbers and units as words in ``lang``.
     ``canonical_unicode`` drops tatweel, applies NFC, orders shadda before its
@@ -1000,7 +1016,12 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         text = pattern.sub(lambda m: said[m.group(1).lower()], text)
     if config.spell_out_codes:
         names = spelled_codes(lang)
-        text = _CODE.sub(lambda m: " ".join(names[c] for c in m.group(0)), text)
+        def code(m):
+            run = m.group(0)
+            if _VIN.fullmatch(run):
+                return " ".join(_digit_by_digit(c, digit_forms) if c.isdigit() else names[c] for c in run)
+            return " ".join(names[c] for c in run)
+        text = _CODE.sub(code, text)
     if config.speak_percent:
         text = _PERCENT.sub(lambda m: f"{m.group(1)} في المئة", text)
     held: Dict[str, str] = {}

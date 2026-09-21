@@ -248,6 +248,20 @@ capitals and digits with at least one capital, such as `X5` or `GV70`, one
 character at a time. A number on its own is not a code and goes to the number
 rules; a lowercase word is left for the loanword path.
 
+A run of 8 to 17 of those characters with at least one digit is a vehicle
+identification number, or a fragment of one, and is read as an identifier: the
+letters take the same English names, and the digits take the Arabic words a phone
+number or a booking reference is read with, one at a time, in the lect's words
+under `dialect_numbers`. ISO 3779 fixes the VIN at 17 capitals and digits, without
+I, O and Q. The floor of eight is a design choice that takes the fragments an agent
+reads back ("the last eight are L457L680") and leaves every model code of seven
+characters or fewer, such as `X5` or `GLE450`, with the English digit names.
+
+```python
+normalize_for_tts("رقم الهيكل WBA7F2C51JG", "ar", TtsNorm(spell_out_codes=True))
+# 'رقم الهيكل دَبَلْيُو بِي إِي سبعة إِفْ اثنين سِي خمسة واحد جِيْ جِي'
+```
+
 ```python
 SAID = {"BMW": "بِي إِمْ دَبَلْيُو", "7 Series": "سِفَنْ سِيرِيزْ"}
 
@@ -358,7 +372,7 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | Flag | Rule |
 | --- | --- |
 | `strip_controls` | drop zero-width and bidirectional control characters |
-| `spell_out_codes` | read `X5`-shaped codes character by character from `spelled_codes()`, after the lexicon |
+| `spell_out_codes` | read `X5`-shaped codes character by character from `spelled_codes()`, after the lexicon; a run of 8 to 17 with a digit is a VIN, its digits read as Arabic words |
 | `speak_percent` | `4.5%` becomes `4.5 في المئة`, then the number is spoken |
 | `keep_code_digits` | up to four digits beside a Latin word, `MG 5` or `7 Series`, belong to the name and are kept from every number rule |
 | `phone_shapes` | patterns of a phone number in running text; a match is read digit by digit |
