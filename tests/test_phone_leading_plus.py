@@ -12,7 +12,7 @@ ALONE = dict(spoken_forms=False, canonical_unicode=False)
 @pytest.mark.parametrize("config", [
     KSA_VOICE_AGENT,
     TtsNorm(long_digit_runs=True, **ALONE),
-    TtsNorm(phone_prefixes=textnorm.KSA_PHONE_PREFIXES, **ALONE),
+    TtsNorm(phone_regions=("SA",), **ALONE),
 ], ids=["voice-agent", "long_digit_runs", "phone_prefixes"])
 @pytest.mark.parametrize("written, said", [
     ("اتصل على +213661234567", f"اتصل على {ALGERIA}"),
@@ -23,7 +23,7 @@ def test_a_leading_plus_is_dropped_with_the_digits_read(config, written, said):
 
 
 def test_a_plus_is_dropped_by_the_shape_and_the_identifier_word_too():
-    assert normalize_for_tts("+966 50 123 4567", "ar", TtsNorm(phone_shapes=textnorm.KSA_PHONE_SHAPES, **ALONE)) == SAUDI
+    assert normalize_for_tts("+966 50 123 4567", "ar", TtsNorm(phone_regions=("SA",), **ALONE)) == SAUDI
     assert normalize_for_tts("رقمي +2136612", "ar", TtsNorm(identifier_words=textnorm.IDENTIFIER_WORDS, **ALONE)) \
         == "رقمي اثنين واحد ثلاثة ستة ستة واحد اثنين"
 

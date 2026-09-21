@@ -51,6 +51,6 @@ include = ["arbtok*"]
 # The stitched rawi ensemble ONNX (+ its vocab) that fusion scores directly,
 # and the hand-authored per-lect closed-class lexicons (Apache-2.0-clean,
 # bundled rather than fetched — see arbtok.dialect_lexicon).
-arbtok = ["models/*.onnx", "models/*.json", "data/lexicons/*.tsv",
+arbtok = ["models/*.onnx", "models/*.json", "data/phone_plans.json", "data/lexicons/*.tsv",
           "data/donor_lexicons/*.tsv", "data/tts_lexicons/*.tsv",
           "data/term_lexicons/*.tsv", "data/term_lexicons/*.json"]

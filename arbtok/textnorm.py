@@ -30,7 +30,7 @@ from typing import Dict, Mapping, Optional, Tuple
 
 __all__ = ["AsrNorm", "TtsNorm", "normalize_asr", "normalize_for_tts",
            "TRUTH_CHECK", "CER_STRIP", "CER_NORM", "CER_MARKS_FIRST", "CER_NORM_MARKS_FIRST",
-           "INTELLIGIBILITY_GATE", "KSA_VOICE_AGENT", "KSA_PHONE_SHAPES", "KSA_PHONE_PREFIXES",
+           "INTELLIGIBILITY_GATE", "KSA_VOICE_AGENT", "ARAB_PHONE_REGIONS",
            "IDENTIFIER_WORDS", "ASR_NORM_VERSION", "TTS_NORM_VERSION", "spelled_codes",
            "bundled_asr_lexicon", "bundled_tts_lexicon", "cldr_units"]
 
@@ -546,18 +546,13 @@ def _term_pattern(lexicon: Tuple[Tuple[str, str], ...]):
                       + _LATIN_RUN_EDGE[1], re.IGNORECASE), said
 
 
-#: Saudi mobile numbers as they are written in running text, grouped or not: ``05`` or
-#: ``966 5`` and then exactly eight digits, with a space, a hyphen or a spaced hyphen
-#: between any two of them. No separator may follow the ``5`` itself, which splits the
-#: operator code (``50``, ``55``); a date on the fifth of a month, ``05-06-2024 12:30``,
-#: is the text that starts that way. The digits are ASCII by name: ``\d`` also matches
-#: Arabic-Indic digits, and a phone number would then take its last digits from an
-#: Arabic-Indic number written after it.
-KSA_PHONE_SHAPES = (r"(?:(?:\+|00)?966[\s\-]*5|05)(?![\s\-])[0-9](?:(?:\s*-\s*|\s+)?[0-9]){7}(?![0-9])",)
-#: What a bare digit run starts with when it is a Saudi number: country code, local
-#: mobile, toll-free and unified numbers, landline area codes. A price and a phone
-#: number cannot be told apart by length, so each of these names a real prefix.
-KSA_PHONE_PREFIXES = (r"(?:00)?966\d{4,}", r"05\d{5,}", r"(?:800|920)\d{5,}", r"01[1-7]\d{6,}")
+#: The member states of the Arab League, as ISO 3166-1 alpha-2 regions, Saudi Arabia
+#: first and then the Gulf, the Levant, the Nile and the Maghreb. The numbering plan of
+#: each is bundled in ``data/phone_plans.json``, built by ``scripts/build_phone_plans.py``
+#: from Google's libphonenumber metadata (https://github.com/google/libphonenumber,
+#: resources/PhoneNumberMetadata.xml) at the release the file's ``source`` names.
+ARAB_PHONE_REGIONS = ("SA", "AE", "KW", "QA", "BH", "OM", "YE", "IQ", "JO", "LB", "SY",
+                      "PS", "EG", "SD", "LY", "TN", "DZ", "MA", "MR", "SO", "DJ", "KM")
 #: Words after which a number is a reference to be read out, not a quantity.
 IDENTIFIER_WORDS = ("كود", "الكود", "رمز", "الرمز",
                     "رقم", "الرقم", "رقمك", "رقمه", "رقمي",
@@ -585,6 +580,19 @@ _WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+
 _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])([٠-٩]{1,3}(?:[،٬][٠-٩]{3})+(?:[.٫][٠-٩]+)?"
                              r"|[٠-٩]+(?:[.٫][٠-٩]+)?)(?![0-9٠-٩A-Za-z])")
 _PROCLITIC = r"[بولك]?ا?ل?"
+# A run of digits in groups, with a leading ``+`` if any, split by spaces or hyphens as a
+# phone number is written. Its digits are all ASCII or all Arabic-Indic: a number written
+# after a phone number in the other script is another number. It may not touch a digit
+# or a Latin letter, nor a digit across a decimal point, a thousands separator, a slash
+# or a colon: that is a longer number, a date or a time, and a piece of it is not a
+# phone number.
+_PHONE_DIGIT = "0-9\u0660-\u0669"
+_PHONE_JOINER = ",.:/\u060C\u066B\u066C"
+_PHONE_CANDIDATE = re.compile(rf"(?<![{_PHONE_DIGIT}A-Za-z+])(?<![{_PHONE_DIGIT}][{_PHONE_JOINER}])"
+                              + "(?:" + "|".join(rf"\+?[{d}](?:(?:\s*-\s*|\s+)?[{d}])*"
+                                                 for d in ("0-9", "\u0660-\u0669")) + ")"
+                              + rf"(?![{_PHONE_DIGIT}A-Za-z])(?![{_PHONE_JOINER}][{_PHONE_DIGIT}])")
+_PHONE_GROUP = re.compile(f"[{_PHONE_DIGIT}]+")
 _HELD_DIGITS = 0xE000  # private-use characters stand in for digits a rule must not read
 #: ISO 639-3 codes for the individual Arabic languages. They are listed because they
 #: cannot be recognized by shape: they sort beside ``arc`` (Aramaic) and ``arn``
@@ -617,7 +625,7 @@ def is_arabic_lang(lang: str) -> bool:
 
 
 #: Rules whose output is Arabic words whatever ``lang`` says.
-_ARABIC_ONLY = ("speak_percent", "phone_shapes", "long_digit_runs", "phone_prefixes", "identifier_words",
+_ARABIC_ONLY = ("speak_percent", "phone_shapes", "phone_regions", "long_digit_runs", "phone_prefixes", "identifier_words",
                 "dialect_numbers", "number_forms")
 
 
@@ -629,7 +637,7 @@ class TtsNorm:
     G2P plugin runs. The rest are off. Those from ``speak_percent`` to
     ``space_fused_hundreds`` are rules a voice agent needs when it reads out prices,
     phone numbers and booking references; :data:`KSA_VOICE_AGENT` turns them on with
-    Saudi phone shapes.
+    the numbering plans of every Arab League member.
     """
     #: Drop zero-width and bidirectional control characters.
     strip_controls: bool = False
@@ -642,6 +650,18 @@ class TtsNorm:
     keep_code_digits: bool = False
     #: Patterns of a phone number in running text; a match is read digit by digit.
     phone_shapes: Tuple[str, ...] = ()
+    #: ISO 3166-1 alpha-2 regions whose numbering plans are recognised, from the plans
+    #: bundled with arbtok (:data:`ARAB_PHONE_REGIONS` lists them). A run of 7 to 15
+    #: digits in groups is read digit by digit when it is a valid number and says it is
+    #: a phone number: it starts with ``+`` or ``00`` and a country code of the bundled
+    #: plans, or with a region's three-digit country code and a mobile number, or with
+    #: the region's trunk prefix (``0`` in most), or it is a toll-free, shared-cost or
+    #: unified number of eight digits or more, or it follows one of
+    #: ``identifier_words``. A run shaped like a date is never read this way unless it
+    #: starts with ``+`` or ``00``. Without that evidence a bare eight-digit number stays
+    #: a quantity, because in the Gulf and the Maghreb a phone number and a price of
+    #: that length cannot be told apart.
+    phone_regions: Tuple[str, ...] = ()
     #: A run of eleven or more digits is a reference and is read digit by digit, with
     #: a leading ``+`` dropped as :func:`_digit_by_digit` says.
     long_digit_runs: bool = False
@@ -683,7 +703,7 @@ class TtsNorm:
     def __post_init__(self):
         object.__setattr__(self, "lexicon", _as_lexicon(self.lexicon))
         object.__setattr__(self, "number_forms", _as_number_forms(self.number_forms))
-        for name in ("phone_shapes", "phone_prefixes", "identifier_words"):
+        for name in ("phone_shapes", "phone_regions", "phone_prefixes", "identifier_words"):
             object.__setattr__(self, name, tuple(getattr(self, name)))
 
     def with_lexicon(self, lexicon: Mapping[str, str]) -> "TtsNorm":
@@ -708,22 +728,23 @@ class TtsNorm:
 
 #: Names the rule set of :func:`normalize_for_tts`, computed the way
 #: :data:`ASR_NORM_VERSION` is. It covers the rules and their patterns. What a config
-#: carries as values is configuration and is outside it: :data:`KSA_PHONE_SHAPES`,
-#: :data:`KSA_PHONE_PREFIXES`, :data:`IDENTIFIER_WORDS` and a lexicon are named by
+#: carries as values is configuration and is outside it: :data:`ARAB_PHONE_REGIONS`,
+#: :data:`IDENTIFIER_WORDS` and a lexicon are named by
 #: :meth:`TtsNorm.describe`, each by a digest. A record that must distinguish two runs
 #: keeps the ``describe()`` string, not the version alone.
 TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
-                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE)
+                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE)
 _PLUGIN_DEFAULT = TtsNorm()
 
 #: What a Saudi voice agent's replies need before synthesis: percentages spoken, the
 #: digits of a model name kept, phone numbers, long references and numbers after a
 #: word such as رقم or كود read digit by digit, and every other number a cardinal in
-#: the oblique case with its hundreds spaced.
-KSA_VOICE_AGENT = TtsNorm(speak_percent=True, keep_code_digits=True, phone_shapes=KSA_PHONE_SHAPES,
-                          long_digit_runs=True, phone_prefixes=KSA_PHONE_PREFIXES,
-                          identifier_words=IDENTIFIER_WORDS, cardinal_numbers=True,
+#: the oblique case with its hundreds spaced. The phone numbers are those of every
+#: Arab League member, Saudi Arabia among them, by its numbering plan: callers give
+#: Egyptian, Jordanian and Gulf numbers too.
+KSA_VOICE_AGENT = TtsNorm(speak_percent=True, keep_code_digits=True, phone_regions=ARAB_PHONE_REGIONS,
+                          long_digit_runs=True, identifier_words=IDENTIFIER_WORDS, cardinal_numbers=True,
                           leave_unspeakable_numbers=True, oblique_numbers=True, space_fused_hundreds=True,
                           spoken_forms=False, canonical_unicode=False)
 
@@ -736,6 +757,96 @@ def _tts_patterns(config: TtsNorm):
                          + "|".join(re.escape(w) for w in config.identifier_words)
                          + r")(?:\s+[^\s\d]+)?\s*$", re.IGNORECASE) if config.identifier_words else None
     return phones, prefixes, context
+
+
+_PHONE_PLANS = Path(__file__).parent / "data" / "phone_plans.json"
+# Number types whose leading digits say what they are, so that one is read without a
+# trunk prefix or a word before it: 800 and 920 in Saudi Arabia.
+_MARKED_TYPES = ("toll_free", "shared_cost", "uan")
+
+
+@functools.lru_cache(maxsize=None)
+def _phone_plans():
+    """The bundled numbering plans: each region's country code, trunk prefix and, for
+    each number type, the compiled pattern and the lengths a national number has."""
+    import json
+    regions = json.loads(_PHONE_PLANS.read_text(encoding="utf-8"))["regions"]
+    return {region: (plan["country_code"], plan["national_prefix"],
+                     {kind: (re.compile(t["national_number_pattern"]), frozenset(t["possible_lengths"]))
+                      for kind, t in plan["types"].items()})
+            for region, plan in regions.items()}
+
+
+def _number_types(nsn: str, region: str):
+    """The types of ``region`` that ``nsn``, a national significant number, is valid as."""
+    return [kind for kind, (pattern, lengths) in _phone_plans()[region][2].items()
+            if len(nsn) in lengths and pattern.fullmatch(nsn)]
+
+
+def _is_date(groups) -> bool:
+    """Whether the first groups of a run are a date: day and month in either order and
+    then a year, or a four-digit year and then month and day. A two-digit year counts
+    only when nothing follows it, since grouped phone numbers are written in pairs."""
+    if len(groups) < 3:
+        return False
+    a, b, c = groups[:3]
+
+    def day_month(x, y):
+        return len(x) <= 2 and len(y) <= 2 and (1 <= int(x) <= 31 and 1 <= int(y) <= 12
+                                                or 1 <= int(x) <= 12 and 1 <= int(y) <= 31)
+    if day_month(a, b) and (len(c) == 4 or len(c) == 2 and len(groups) == 3):
+        return True
+    return len(a) == 4 and day_month(c, b)
+
+
+def _is_phone_number(run: str, before: str, regions: Tuple[str, ...], context) -> bool:
+    """Whether ``run``, a digit run written with its separators, is a valid number that
+    says it is a phone number; ``before`` is the text ahead of it.
+
+    A number written with ``+`` or ``00`` names its country, and is valid when the rest
+    is a number of that country in the bundled plans. Without them it is read in the
+    plans of ``regions``: after a three-digit country code, as a mobile number; after
+    the region's trunk prefix; or bare, as a toll-free, shared-cost or unified number of
+    eight digits or more, or as any number when an identifier word stands before it.
+    """
+    plans = _phone_plans()
+    groups = [g.translate(_EASTERN_DIGITS) for g in _PHONE_GROUP.findall(run)]
+    digits = "".join(groups)
+    if not 7 <= len(digits) <= 15:
+        return False
+    if run.startswith("+") or digits.startswith("00"):
+        digits = digits if run.startswith("+") else digits[2:]
+        return any(digits.startswith(str(code)) and _number_types(digits[len(str(code)):], region)
+                   for region, (code, _, _) in plans.items())
+    if _is_date(groups):
+        return False
+    after_word = bool(context and context.search(before))
+    for region in regions:
+        code, trunk, _ = plans[region]
+        code = str(code)
+        if len(code) == 3 and digits.startswith(code) and "mobile" in _number_types(digits[3:], region):
+            return True
+        if trunk and digits.startswith(trunk) and _number_types(digits[len(trunk):], region):
+            return True
+        kinds = _number_types(digits, region)
+        if kinds and (after_word or len(digits) >= 8 and set(kinds) & set(_MARKED_TYPES)):
+            return True
+    return False
+
+
+def _read_phone_numbers(text: str, regions: Tuple[str, ...], context, forms: Mapping[int, str]) -> str:
+    """Every phone number of ``regions`` in ``text`` read digit by digit. A run of groups
+    that is not one whole may be one up to a group before its end, ``0100 123 4567 3``."""
+    out, last = [], 0
+    for m in _PHONE_CANDIDATE.finditer(text):
+        ends = [g.end() for g in _PHONE_GROUP.finditer(m.group(0))]
+        for end in reversed(ends):
+            run = m.group(0)[:end]
+            if _is_phone_number(run, text[:m.start()], regions, context):
+                out += [text[last:m.start()], _digit_by_digit(run, forms)]
+                last = m.start() + end
+                break
+    return "".join(out) + text[last:]
 
 
 def _number_case(config: TtsNorm) -> str:
@@ -892,6 +1003,8 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         text = _CODE_DIGITS.sub(hold, text)
     if phones:
         text = phones.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
+    if config.phone_regions:
+        text = _read_phone_numbers(text, config.phone_regions, context, digit_forms)
     if config.long_digit_runs:
         text = _LONG_RUN.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
     if prefixes or context:

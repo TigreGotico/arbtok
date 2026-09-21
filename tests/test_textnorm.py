@@ -497,7 +497,7 @@ def test_a_phone_number_does_not_run_on_into_an_arabic_indic_number_after_it():
     assert said == phone + " " + normalize_for_tts("٩٦٧٦٠", "ar", KSA)
     # With Arabic-Indic digits allowed inside the pattern, a number one digit short takes
     # its last digit from the number written after it.
-    greedy = dataclasses.replace(KSA, phone_shapes=(textnorm.KSA_PHONE_SHAPES[0].replace("[0-9]", "\\d"),))
+    greedy = dataclasses.replace(KSA, phone_shapes=(r"(?:(?:\+|00)?966[\s\-]*5|05)(?![\s\-])\d(?:(?:\s*-\s*|\s+)?\d){7}(?!\d)",))
     short = "+966 55-398-862 ٩"
     assert normalize_for_tts(short, "ar", greedy) != normalize_for_tts(short, "ar", KSA)
 
@@ -529,13 +529,17 @@ def test_every_tts_rule_changes_some_output(flag):
     # A grouped phone number is what phone_shapes alone catches, 25 is a number whose
     # case shows, and spoken_forms has something to say only where the cardinals are off.
     texts = ["نص\u200bنص", "X5", "4.5%", "MG 5", "055 123 4567", "12345678901", "8001000341", "الكود 4729",
-             "300 ريال", "25 ريال", "٣٠٠", "المـرء", "15 رسالة", "350 ريال"]
+             "300 ريال", "25 ريال", "٣٠٠", "المـرء", "15 رسالة", "350 ريال",
+             "اتصل على 010 01234567"]  # libphonenumber example number, MOBILE, EG
+    # phone_regions reads these numbers too, so a caller's own pattern is shown on its own.
+    alone = {"phone_regions": ()} if flag in ("phone_shapes", "phone_prefixes") else {}
     off = dataclasses.replace(KSA, spoken_forms=False, canonical_unicode=False, strip_controls=False,
-                              spell_out_codes=False, cardinal_numbers=flag != "spoken_forms")
+                              spell_out_codes=False, cardinal_numbers=flag != "spoken_forms", **alone)
     # A rule that reads a lect's own words has nothing to say under a tag that names no lect.
     lang = "ar-SA-x-hejaz" if flag == "dialect_numbers" else "ar"
     # What a non-boolean rule holds when it is on: turning it on and off is what this compares.
-    when_on = {"phone_shapes": textnorm.KSA_PHONE_SHAPES, "phone_prefixes": textnorm.KSA_PHONE_PREFIXES,
+    when_on = {"phone_shapes": (r"05[0-9](?:\s?[0-9]){7}",), "phone_regions": textnorm.ARAB_PHONE_REGIONS,
+               "phone_prefixes": (r"800[0-9]{7}",),
                "identifier_words": textnorm.IDENTIFIER_WORDS, "number_forms": ((15, "خمستاشر"),)}
     current = getattr(off, flag)
     other = (not current) if isinstance(current, bool) else (() if current else when_on[flag])
@@ -545,7 +549,7 @@ def test_every_tts_rule_changes_some_output(flag):
 
 def test_the_tts_description_names_what_is_on_and_digests_the_patterns():
     assert textnorm.TtsNorm(spoken_forms=False).describe() == f"arbtok-tts-norm {textnorm.TTS_NORM_VERSION}: canonical_unicode"
-    assert "phone_shapes=" in KSA.describe() and KSA.describe() != dataclasses.replace(KSA, phone_shapes=("x",)).describe()
+    assert "phone_regions=" in KSA.describe() and KSA.describe() != dataclasses.replace(KSA, phone_regions=("SA",)).describe()
 
 
 def test_a_mark_at_the_end_of_a_word_is_part_of_the_word_not_punctuation_after_it():
@@ -557,8 +561,8 @@ def test_a_mark_at_the_end_of_a_word_is_part_of_the_word_not_punctuation_after_i
 def test_a_config_takes_a_mapping_or_a_list_and_holds_what_can_be_hashed():
     assert AsrNorm(lexicon={"اكس": "X"}) == AsrNorm().with_lexicon({"اكس": "X"})
     assert normalize_asr("اكس", AsrNorm(lexicon={"اكس": "X"})) == "X"
-    listed = TtsNorm(phone_shapes=list(textnorm.KSA_PHONE_SHAPES), lexicon=[("BMW", "بي إم")])
-    assert hash(listed) == hash(TtsNorm(phone_shapes=textnorm.KSA_PHONE_SHAPES).with_lexicon({"BMW": "بي إم"}))
+    listed = TtsNorm(phone_regions=["SA"], lexicon=[("BMW", "بي إم")])
+    assert hash(listed) == hash(TtsNorm(phone_regions=("SA",)).with_lexicon({"BMW": "بي إم"}))
 
 
 @pytest.mark.parametrize("lexicon", [{"": "X"}, {"  ": "X"}, {"اكس": None}, [("اكس",)]],
