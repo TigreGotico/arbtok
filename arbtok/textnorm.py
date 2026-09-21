@@ -587,7 +587,8 @@ _FUSED_HUNDREDS.update({stem + "مية": stem + " مية"
 _FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, sorted(_FUSED_HUNDREDS, key=len, reverse=True))))
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*[%٪]")
 _LONG_RUN = re.compile(r"(?<![0-9٠-٩])\+?\d{11,}(?![0-9])")
-_CODE_DIGITS = re.compile(r"(?<![0-9A-Za-z])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))(?![0-9A-Za-z])")
+_CODE_DIGITS = re.compile(r"(?<![\dA-Za-z])(?<!\d[,.٬،٫])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))"
+                          r"(?![\dA-Za-z])(?![,.٬،٫]\d)")
 _DIGIT_RUN = re.compile(r"(?<![0-9A-Za-z٠-٩])(\+?\d+)(?![0-9A-Za-z])")
 _WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![0-9A-Za-z])")
 _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])([٠-٩]{1,3}(?:[،٬][٠-٩]{3})+(?:[.٫][٠-٩]+)?"
