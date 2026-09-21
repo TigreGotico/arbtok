@@ -574,7 +574,7 @@ _FUSED_HUNDREDS.update({stem + "مية": stem + " مية"
                                      "ثمان", "تمن", "تمان", "تسع")})
 _FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, sorted(_FUSED_HUNDREDS, key=len, reverse=True))))
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*[%٪]")
-_LONG_RUN = re.compile(r"(?<![0-9])\d{11,}(?![0-9])")
+_LONG_RUN = re.compile(r"(?<![0-9])\+?\d{11,}(?![0-9])")
 _CODE_DIGITS = re.compile(r"(?<![0-9A-Za-z])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))(?![0-9A-Za-z])")
 _DIGIT_RUN = re.compile(r"(?<![0-9A-Za-z٠-٩])(\+?\d+)(?![0-9A-Za-z])")
 _WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![0-9A-Za-z])")
@@ -638,7 +638,8 @@ class TtsNorm:
     keep_code_digits: bool = False
     #: Patterns of a phone number in running text; a match is read digit by digit.
     phone_shapes: Tuple[str, ...] = ()
-    #: A run of eleven or more digits is a reference and is read digit by digit.
+    #: A run of eleven or more digits is a reference and is read digit by digit, with
+    #: a leading ``+`` dropped as :func:`_digit_by_digit` says.
     long_digit_runs: bool = False
     #: Patterns a bare digit run matches whole when it is a phone number. When any is
     #: given, a run written with a leading ``+`` is one too.
@@ -787,6 +788,14 @@ def _digit_forms(lang: str, config: TtsNorm) -> Dict[int, str]:
 
 
 def _digit_by_digit(run: str, forms: Mapping[int, str] = {}) -> str:
+    """``run`` read one digit at a time, in the lect's words where ``forms`` has them.
+
+    Everything that is not a digit is dropped: the spaces and hyphens of a grouped
+    number, and a leading ``+``. The ``+`` is not spoken because the country code after
+    it already says the number is international, and a word for it would differ by lect
+    (زائد, بلس) where the digits do not. Every rule that reads a number this way takes a
+    leading ``+`` into its match, so that no rule leaves the sign in the text.
+    """
     return " ".join(forms.get(int(d), _DIGIT_WORDS[d]) for d in run.translate(_EASTERN_DIGITS) if d in _DIGIT_WORDS)
 
 
