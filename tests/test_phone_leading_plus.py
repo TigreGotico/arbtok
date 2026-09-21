@@ -30,3 +30,12 @@ def test_a_plus_is_dropped_by_the_shape_and_the_identifier_word_too():
 
 def test_a_plus_that_is_not_before_a_phone_number_stays():
     assert "+" in normalize_for_tts("2+2", "ar", KSA_VOICE_AGENT)
+
+
+def test_a_digit_run_after_an_eastern_digit_is_read_as_after_a_western_one():
+    """The run's lookbehind sees Arabic-Indic digits too, so the plus between them
+    is not taken as the run's own and the two readings stay apart."""
+    eastern = normalize_for_tts("الرقم ٥+12345678901", "ar", KSA_VOICE_AGENT)
+    western = normalize_for_tts("الرقم 5+12345678901", "ar", KSA_VOICE_AGENT)
+    assert eastern == western
+    assert "خمسةواحد" not in eastern

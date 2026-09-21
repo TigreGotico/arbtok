@@ -14,6 +14,7 @@ INTERNATIONAL = "تسعة ستة ستة خمسة صفر واحد اثنين ثل
     "بتاريخ 05-21-2024",
     "بتاريخ 05-06-2024 12:30",
     "بتاريخ 05 06 2024 10 30",
+    "بتاريخ 05  06  2024",
 ])
 def test_a_date_on_the_fifth_is_not_read_digit_by_digit(written):
     # A digit-by-digit reading says the leading zero; the date's numbers never do.
@@ -25,6 +26,9 @@ def test_a_date_on_the_fifth_is_not_read_digit_by_digit(written):
     ("050 123 4567", MOBILE),
     ("050-123-4567", MOBILE),
     ("050 - 123 - 4567", MOBILE),
+    ("050  123  4567", MOBILE),
+    ("050   123   4567", MOBILE),
+    ("050  -  123  -  4567", MOBILE),
     ("اتصل على 0501234567.", f"اتصل على {MOBILE}."),
     ("+966501234567", INTERNATIONAL),
     ("+966 50 123 4567", INTERNATIONAL),

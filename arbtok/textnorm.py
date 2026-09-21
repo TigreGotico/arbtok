@@ -553,7 +553,7 @@ def _term_pattern(lexicon: Tuple[Tuple[str, str], ...]):
 #: is the text that starts that way. The digits are ASCII by name: ``\d`` also matches
 #: Arabic-Indic digits, and a phone number would then take its last digits from an
 #: Arabic-Indic number written after it.
-KSA_PHONE_SHAPES = (r"(?:(?:\+|00)?966[\s\-]*5|05)(?![\s\-])[0-9](?:(?:\s?-\s?|\s)?[0-9]){7}(?![0-9])",)
+KSA_PHONE_SHAPES = (r"(?:(?:\+|00)?966[\s\-]*5|05)(?![\s\-])[0-9](?:(?:\s*-\s*|\s+)?[0-9]){7}(?![0-9])",)
 #: What a bare digit run starts with when it is a Saudi number: country code, local
 #: mobile, toll-free and unified numbers, landline area codes. A price and a phone
 #: number cannot be told apart by length, so each of these names a real prefix.
@@ -578,7 +578,7 @@ _FUSED_HUNDREDS.update({stem + "مية": stem + " مية"
                                      "ثمان", "تمن", "تمان", "تسع")})
 _FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, sorted(_FUSED_HUNDREDS, key=len, reverse=True))))
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*[%٪]")
-_LONG_RUN = re.compile(r"(?<![0-9])\+?\d{11,}(?![0-9])")
+_LONG_RUN = re.compile(r"(?<![0-9٠-٩])\+?\d{11,}(?![0-9])")
 _CODE_DIGITS = re.compile(r"(?<![0-9A-Za-z])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))(?![0-9A-Za-z])")
 _DIGIT_RUN = re.compile(r"(?<![0-9A-Za-z٠-٩])(\+?\d+)(?![0-9A-Za-z])")
 _WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![0-9A-Za-z])")
