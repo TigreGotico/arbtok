@@ -1,12 +1,19 @@
 # Changelog
 
+## [0.0.2a19](https://github.com/TigreGotico/arbtok/tree/0.0.2a19) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a18...0.0.2a19)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): ten unseparated digits read one by one, unless round [\#198](https://github.com/TigreGotico/arbtok/pull/198) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a18](https://github.com/TigreGotico/arbtok/tree/0.0.2a18) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a17...0.0.2a18)
 
 **Merged pull requests:**
 
-- feat\(textnorm\): ten unseparated digits read one by one, unless round [\#198](https://github.com/TigreGotico/arbtok/pull/198) ([JarbasAl](https://github.com/JarbasAl))
 - feat\(textnorm\): a number after a rank word is spoken as an agreeing ordinal [\#194](https://github.com/TigreGotico/arbtok/pull/194) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a17](https://github.com/TigreGotico/arbtok/tree/0.0.2a17) (2026-09-21)
