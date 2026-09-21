@@ -495,9 +495,11 @@ def test_a_phone_number_does_not_run_on_into_an_arabic_indic_number_after_it():
     said = normalize_for_tts("+966 55-398-8621 ٩٦٧٦٠", "ar", KSA)
     phone = "تسعة ستة ستة خمسة خمسة ثلاثة تسعة ثمانية ثمانية ستة اثنين واحد"
     assert said == phone + " " + normalize_for_tts("٩٦٧٦٠", "ar", KSA)
-    # With Arabic-Indic digits allowed inside the pattern, the phone number takes the first two.
-    greedy = dataclasses.replace(KSA, phone_shapes=(textnorm.KSA_PHONE_SHAPES[0].replace("[0-9", "[\\d").replace("[0-9]", "\\d"),))
-    assert normalize_for_tts("+966 55-398-8621 ٩٦٧٦٠", "ar", greedy) != said
+    # With Arabic-Indic digits allowed inside the pattern, a number one digit short takes
+    # its last digit from the number written after it.
+    greedy = dataclasses.replace(KSA, phone_shapes=(textnorm.KSA_PHONE_SHAPES[0].replace("[0-9]", "\\d"),))
+    short = "+966 55-398-862 ٩"
+    assert normalize_for_tts(short, "ar", greedy) != normalize_for_tts(short, "ar", KSA)
 
 
 def test_a_number_that_cannot_be_spoken_is_left_or_raised_as_the_config_says(monkeypatch):
