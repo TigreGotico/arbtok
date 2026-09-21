@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a11](https://github.com/TigreGotico/arbtok/tree/0.0.2a11) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a10...0.0.2a11)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a description names the phone plans it read [\#182](https://github.com/TigreGotico/arbtok/pull/182) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a10](https://github.com/TigreGotico/arbtok/tree/0.0.2a10) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a9...0.0.2a10)
