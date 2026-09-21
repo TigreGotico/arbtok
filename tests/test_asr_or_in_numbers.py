@@ -1,5 +1,6 @@
-"""A recognizer's او inside a spoken number is the conjunction و, said u- in Saudi and
-Gulf speech; everywhere else او is "or" and stays."""
+"""What fix_asr_errors repairs inside a spoken number: a recognizer's او is the
+conjunction و, said u- in Saudi and Gulf speech, and its ماية is the hundred مية.
+Everywhere else او is "or" and ماية is water, and both stay."""
 from importlib.metadata import version
 
 import pytest
@@ -62,8 +63,64 @@ def test_the_repair_is_arabic_only_and_off_by_default():
     assert ": fix_asr_errors;" in described and "; ovos-number-parser " in described
 
 
-@pytest.mark.parametrize("fused, digits", [("ثلاثمية", "300"), ("خمسميه", "500"), ("تسعماية", "900")])
+@pytest.mark.parametrize("fused, digits", [("ثلاثمية", "300"), ("تسعمائة", "900")])
 def test_a_hundred_written_fused_with_its_unit_is_arabic_and_stays_as_written(fused, digits):
     for fix in (False, True):
         assert normalize_asr(fused, fix_asr_errors=fix) == fused
         assert normalize_asr(fused, fix_asr_errors=fix, spoken_numbers_to_digits=True) == digits
+
+
+WATER_IN_NUMBERS = [
+    ("تسعماية", "تسعمية", "900"),
+    ("خمسميه الف", "خمسمية الف", "500000"),
+    ("ست ميه ريال", "ست مية ريال", "600 ريال"),
+    ("اربعماية الف", "اربعمية الف", "400000"),
+    ("أربعماية الف", "أربعمية الف", "400000"),
+    ("ست ماية وعشرة الف", "ست مية وعشرة الف", "610000"),
+    ("ست ماية او عشرة الف", "ست مية وعشرة الف", "610000"),
+    ("ماية الف", "مية الف", "100000"),
+    ("الف وماية", "الف ومية", "1100"),
+]
+
+
+@pytest.mark.parametrize("heard, repaired, digits", WATER_IN_NUMBERS, ids=[h for h, _, _ in WATER_IN_NUMBERS])
+def test_the_recognizers_maya_inside_a_number_is_the_hundred(heard, repaired, digits):
+    assert normalize_asr(heard, fix_asr_errors=True) == repaired
+    assert normalize_asr(heard, fix_asr_errors=True, spoken_numbers_to_digits=True) == digits
+
+
+@pytest.mark.parametrize("heard", ["كباية ماية", "شربت ماية", "الحماية", "ماية باردة", "كباية ميه", "شربت ميه", "الميه سخنة"])
+def test_maya_outside_a_number_is_water_and_stays(heard):
+    assert normalize_asr(heard, fix_asr_errors=True) == heard
+
+
+@pytest.mark.parametrize("heard", [h for h, _, _ in WATER_IN_NUMBERS] + ["كباية ماية"])
+def test_with_the_repair_off_maya_is_left_as_written(heard):
+    assert normalize_asr(heard) == heard
+    assert normalize_asr(heard, TRUTH_CHECK).count("ماي") == heard.count("ماي")
+
+
+def test_a_word_that_begins_with_waw_is_not_the_conjunction():
+    """واحد is "one", not و + "احد", so it does not stop the join: "مية او واحد وعشرين
+    الف" is spoken 121 thousand."""
+    from arbtok.textnorm import normalize_asr
+    out = normalize_asr("مية او واحد وعشرين الف", fix_asr_errors=True)
+    assert out.split()[:2] == ["مية", "وواحد"], out
+
+
+@pytest.mark.parametrize("heard", [
+    "اشتريت خمسة ماية",      # "five waters"
+    "عطني واحد ماية",        # "give me one water"
+    "اثنين ماية لو سمحت",    # "two waters, please"
+    "واحد ماية وواحد عصير",  # "one water and one juice"
+])
+def test_a_full_unit_before_maya_counts_water(heard):
+    """A hundred is built only on the construct forms ثلاث to تسع; after any other
+    number word, ماية is water and stays as written."""
+    assert normalize_asr(heard, fix_asr_errors=True) == heard
+
+
+def test_a_construct_unit_before_maya_is_a_hundred():
+    # ambiguous by form, like "ثلاثمية او اربع الاف": "three hundred cold" or "three
+    # cold waters"; the construct form is how a hundred is built, so it reads 300
+    assert normalize_asr("ثلاث ماية باردة", fix_asr_errors=True) == "ثلاث مية باردة"

@@ -73,9 +73,17 @@ that was said. In Saudi and Gulf speech the conjunction و "and" is said u- befo
 a vowel, and a recognizer writes that u- as the word او, which is "or". Inside a
 spoken number the repair writes it و again, in one shape only: a hundreds word
 alone, perhaps after a larger part of the same number, then tens or units that
-the thousands word multiplies with it. Every other او stays "or":
+the thousands word multiplies with it. Every other او stays "or".
+
+A recognizer also writes the Saudi hundred as ماية, a spelling written Arabic
+uses for "water". Inside a number the repair writes it مية: fused to a unit
+(`اربعماية`), after a unit (`ست ماية`), before the thousands word (`ماية الف`), or
+after و that follows a number (`الف وماية`). Anywhere else, as in `كباية ماية`, it
+stays as written:
 
 ```python
+normalize_asr("اربعماية الف", fix_asr_errors=True, spoken_numbers_to_digits=True)
+# '400000'
 normalize_asr("ست مية او عشرة الف", fix_asr_errors=True)
 # 'ست مية وعشرة الف'
 normalize_asr("ست مية او عشرة الف", fix_asr_errors=True, spoken_numbers_to_digits=True)
@@ -206,7 +214,7 @@ Rules run in this order. A lexicon is applied after the mark rules and before
 | `strip_extended_marks` | U+0653–U+065F and the dagger alif U+0670 |
 | `strip_quranic_marks` | U+0610–U+061A, U+06D6–U+06ED |
 | `strip_tatweel` | U+0640 |
-| `fix_asr_errors` | recognizer spellings that are not the Arabic said are repaired: `او` inside a spoken number becomes the conjunction `و` (Arabic only) |
+| `fix_asr_errors` | recognizer spellings that are not the Arabic said are repaired: inside a spoken number, `ماية` becomes the hundred `مية` and `او` becomes the conjunction `و` (Arabic only) |
 | `spoken_numbers_to_digits` | number words become digits |
 | `join_dictated_digits` | seven or more single digits in a row become one run |
 | `unify_alef` | آ أ إ ٱ become ا |
