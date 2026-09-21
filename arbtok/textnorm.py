@@ -908,7 +908,10 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         text = _speak_numbers(text, lang, config)
     if config.spoken_forms:
         from arbtok.util import normalize as spoken
-        text = spoken(text, lang)
+        # The literary words, whatever lect the tag names: a lect's own numbers are
+        # dialect_numbers' to give, through the cardinals. Handed the tag itself, the
+        # number parser speaks Egyptian for "arz" and the literary words for "ar-EG".
+        text = spoken(text, "ar" if is_arabic_lang(lang) else lang)
     for placeholder, digits in held.items():
         text = text.replace(placeholder, digits)
     if config.canonical_unicode:
