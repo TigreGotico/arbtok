@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a13](https://github.com/TigreGotico/arbtok/tree/0.0.2a13) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a12...0.0.2a13)
+
+**Merged pull requests:**
+
+- refactor\(textnorm\): the voice-agent preset leaves arbtok [\#184](https://github.com/TigreGotico/arbtok/pull/184) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a12](https://github.com/TigreGotico/arbtok/tree/0.0.2a12) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a11...0.0.2a12)
