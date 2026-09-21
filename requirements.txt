@@ -12,7 +12,11 @@ langcodes
 # words. Measured on the human transcripts of the SADA corpus: 1,167 one-word teens in 190
 # spellings, of which the older parser read 66.
 ovos-number-parser>=0.21.0a1
-ovos-date-parser>=0.6.4a1
+# Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
+# with the fractions of the hour and the period words: `normalize_for_tts` takes the
+# words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour
+# and noon are not read the way the cited sources give them.
+ovos-date-parser>=0.31.5a1
 # Transitive, floored here because the combination is otherwise installable and breaks
 # on import rather than on resolve. ovos-config below 3.5.1a1 imports
 # `ovos_utils.xdg_utils`, which ovos-utils 0.0.14a5 does not ship, so `arbtok.plugin`

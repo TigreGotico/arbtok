@@ -21,6 +21,7 @@ This module imports nothing beyond the standard library at import time; the numb
 parser is imported when ``spoken_numbers_to_digits`` first runs.
 """
 import dataclasses
+import datetime
 import functools
 import hashlib
 import json
@@ -589,6 +590,15 @@ _DIGIT_RUN = re.compile(r"(?<![0-9A-Za-z٠-٩])(\+?\d+)(?![0-9A-Za-z])")
 _WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![0-9A-Za-z])")
 _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])([٠-٩]{1,3}(?:[،٬][٠-٩]{3})+(?:[.٫][٠-٩]+)?"
                              r"|[٠-٩]+(?:[.٫][٠-٩]+)?)(?![0-9٠-٩A-Za-z])")
+# A clock time written in digits: ``h:mm`` with two-digit minutes, an hour followed by
+# "am" or "pm", or either after a written الساعة. A score written with a one-digit second
+# part, ``2:1``, is none; neither is a time inside a longer run of digits, nor ``15h01``,
+# which :mod:`arbtok.util` reads.
+_CLOCK = re.compile(r"(?<![0-9٠-٩A-Za-z:.,٫])"
+                    r"(?:(?P<saa>الساع[ةه])\s+)?"
+                    r"(?P<hour>[0-9٠-٩]{1,2})(?::(?P<minute>[0-9٠-٩]{2}))?"
+                    r"(?:\s?(?P<marker>[aApP][mM])(?![A-Za-z]))?"
+                    r"(?![0-9٠-٩A-Za-z]|[:.,٫][0-9٠-٩])")
 _PROCLITIC = r"[بولك]?ا?ل?"
 # A run of digits in groups, with a leading ``+`` if any, split by spaces or hyphens as a
 # phone number is written. Its digits are all ASCII or all Arabic-Indic: a number written
@@ -746,7 +756,7 @@ class TtsNorm:
 #: keeps the ``describe()`` string, not the version alone.
 TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
-                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE)
+                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK)
 _PLUGIN_DEFAULT = TtsNorm()
 
 #: What a Saudi voice agent's replies need before synthesis: percentages spoken, the
@@ -940,6 +950,27 @@ def _cardinal(number: str, lang: str, config: TtsNorm) -> str:
     return words
 
 
+def _spoken_clock(m: re.Match) -> Optional[str]:
+    """The words of the clock time ``m`` matched, from the date parser's ``nice_time``,
+    or None when the match is no clock time. ``nice_time`` gives the period word when
+    it is asked for one, and it is asked when the text writes "am" or "pm" and for an
+    hour the 12-hour clock does not have."""
+    hour = int(m["hour"].translate(_EASTERN_DIGITS))
+    minute = int(m["minute"].translate(_EASTERN_DIGITS)) if m["minute"] else 0
+    marker = m["marker"].lower() if m["marker"] else None
+    if marker is None and m["minute"] is None and m["saa"] is None:
+        return None
+    if minute > 59 or hour > 23 or (marker and not 1 <= hour <= 12):
+        return None
+    if marker == "pm" and hour < 12:
+        hour += 12
+    elif marker == "am" and hour == 12:
+        hour = 0
+    from ovos_date_parser import nice_time
+    return nice_time(datetime.datetime(2000, 1, 1, hour, minute), "ar",
+                     use_24hour=False, use_ampm=bool(marker) or hour == 0 or hour > 12)
+
+
 def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     def speak(written: str, number: str) -> str:
         try:
@@ -974,6 +1005,11 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     character from :func:`spelled_codes`. A number on its own is not a code.
 
     ``spoken_forms`` writes dates, times, numbers and units as words in ``lang``.
+    In Arabic, a clock time written in digits is read first, before any rule reads its
+    digits: ``7:30 pm`` and ``19:30`` become ``الساعة السابعة والنصف مساءً``, in the words
+    of the date parser's ``nice_time``. A time is ``h:mm`` with two-digit minutes, an
+    hour of the 12-hour clock followed by "am" or "pm", or either after a written
+    ``الساعة``. A score written with two-digit minutes, ``3:10``, reads as a time too.
     ``canonical_unicode`` drops tatweel, applies NFC, orders shadda before its
     vowel and settles the spellings of مائة: the form the tokenizer reads.
     ``strip_controls`` drops zero-width and bidirectional control characters,
@@ -998,21 +1034,33 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.lexicon:
         pattern, said = _term_pattern(config.lexicon)
         text = pattern.sub(lambda m: said[m.group(1).lower()], text)
+    held: Dict[str, str] = {}
+    # A private-use character stands in for each span no later rule may read; one the
+    # text already holds is never used, so nothing of the text's own is rewritten on
+    # the way back.
+    free = (chr(c) for c in range(_HELD_DIGITS, 0xF900) if chr(c) not in text)
+    def hold(span: str) -> str:
+        placeholder = next(free)
+        held[placeholder] = span
+        return placeholder
+    if config.spoken_forms and is_arabic_lang(lang):
+        # Clock times are spoken before any rule reads their digits as a number, a
+        # phone number or a code, and before "pm" can be read as the picometre.
+        def clock(m):
+            spoken = _spoken_clock(m)
+            if spoken is None:
+                return m.group(0)
+            if m["saa"] and spoken.startswith("الساعة "):
+                spoken = m["saa"] + spoken[len("الساعة"):]
+            return hold(spoken)
+        text = _CLOCK.sub(clock, text)
     if config.spell_out_codes:
         names = spelled_codes(lang)
         text = _CODE.sub(lambda m: " ".join(names[c] for c in m.group(0)), text)
     if config.speak_percent:
         text = _PERCENT.sub(lambda m: f"{m.group(1)} في المئة", text)
-    held: Dict[str, str] = {}
     if config.keep_code_digits:
-        # A private-use character stands in for each kept number; one the text already
-        # holds is never used, so nothing of the text's own is rewritten on the way back.
-        free = (chr(c) for c in range(_HELD_DIGITS, 0xF900) if chr(c) not in text)
-        def hold(m):
-            placeholder = next(free)
-            held[placeholder] = m.group(0)
-            return placeholder
-        text = _CODE_DIGITS.sub(hold, text)
+        text = _CODE_DIGITS.sub(lambda m: hold(m.group(0)), text)
     if phones:
         text = phones.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
     if config.phone_regions:
