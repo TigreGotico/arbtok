@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a12](https://github.com/TigreGotico/arbtok/tree/0.0.2a12) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a11...0.0.2a12)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): spell\_out\_codes reads a VIN as an identifier [\#185](https://github.com/TigreGotico/arbtok/pull/185) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a11](https://github.com/TigreGotico/arbtok/tree/0.0.2a11) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a10...0.0.2a11)
