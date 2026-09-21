@@ -1,8 +1,20 @@
 # Changelog
 
+## [0.0.2a4](https://github.com/TigreGotico/arbtok/tree/0.0.2a4) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a3...0.0.2a4)
+
+**Merged pull requests:**
+
+- fix: French donor lexicon reads six before a pause and ships the elided forms [\#168](https://github.com/TigreGotico/arbtok/pull/168) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a3](https://github.com/TigreGotico/arbtok/tree/0.0.2a3) (2026-09-21)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a1...0.0.2a3)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a2...0.0.2a3)
+
+## [0.0.2a2](https://github.com/TigreGotico/arbtok/tree/0.0.2a2) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a1...0.0.2a2)
 
 **Merged pull requests:**
 
