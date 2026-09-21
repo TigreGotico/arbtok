@@ -531,7 +531,8 @@ def test_every_tts_rule_changes_some_output(flag):
     # case shows, and spoken_forms has something to say only where the cardinals are off.
     texts = ["نص\u200bنص", "X5", "4.5%", "MG 5", "055 123 4567", "12345678901", "8001000341", "الكود 4729",
              "300 ريال", "25 ريال", "٣٠٠", "المـرء", "15 رسالة", "350 ريال",
-             "اتصل على 010 01234567"]  # libphonenumber example number, MOBILE, EG
+             "اتصل على 010 01234567",  # libphonenumber example number, MOBILE, EG
+             "80012345"]  # a caller's own prefix, shorter than long_digit_runs reaches
     # phone_regions reads these numbers too, so a caller's own pattern is shown on its own.
     alone = {"phone_regions": ()} if flag in ("phone_shapes", "phone_prefixes") else {}
     off = dataclasses.replace(KSA, spoken_forms=False, canonical_unicode=False, strip_controls=False,
@@ -540,7 +541,7 @@ def test_every_tts_rule_changes_some_output(flag):
     lang = "ar-SA-x-hejaz" if flag == "dialect_numbers" else "ar"
     # What a non-boolean rule holds when it is on: turning it on and off is what this compares.
     when_on = {"phone_shapes": (r"05[0-9](?:\s?[0-9]){7}",), "phone_regions": textnorm.ARAB_PHONE_REGIONS,
-               "phone_prefixes": (r"800[0-9]{7}",),
+               "phone_prefixes": (r"800[0-9]{5}",),
                "identifier_words": textnorm.IDENTIFIER_WORDS, "number_forms": ((15, "خمستاشر"),)}
     current = getattr(off, flag)
     other = (not current) if isinstance(current, bool) else (() if current else when_on[flag])
