@@ -161,7 +161,7 @@ class AsrNorm:
     The rules run in the order the fields are listed, with one exception that is
     itself a flag: ``punctuation_before_marks`` moves ``blank_punctuation`` ahead
     of the mark rules. A lexicon, when one is passed, is applied after the mark
-    rules and before ``spoken_numbers_to_digits``.
+    rules and before ``fix_asr_errors``.
     """
     #: Unicode NFC, so a composed and a decomposed spelling compare equal.
     nfc: bool = False
@@ -183,6 +183,12 @@ class AsrNorm:
     strip_quranic_marks: bool = False
     #: Drop tatweel, U+0640.
     strip_tatweel: bool = False
+    #: Recognizer output repaired to the Arabic it transcribes, each repair named with its
+    #: evidence where it is made. The one repair: the conjunction و that Saudi and Gulf
+    #: speech says u-, written by a recognizer as the word او inside a spoken number, is
+    #: written و again, so ``ست مية او عشرة الف`` reads as 610,000. Arabic only; it runs
+    #: after the lexicon and before ``spoken_numbers_to_digits``.
+    fix_asr_errors: bool = False
     #: Write number words as digits: ``خمسة وأربعون ألف`` becomes ``45000``. Runs after
     #: the lexicon, so a term spelled with a number word is a term first. Arabic-Indic
     #: digits the parser meets come back as ASCII, and the words of a text it changed
@@ -230,12 +236,25 @@ class AsrNorm:
 
         A lexicon is named by its entry count and a digest of its sorted entries, so two
         runs that used different term lists do not describe themselves alike. When
-        numbers are read, the parser that reads them is named with its version.
+        numbers are read or recognizer errors repaired, the parser whose word tables they
+        use is named with its version.
         """
         on = [f.name for f in dataclasses.fields(self) if getattr(self, f.name) is True]
         return (f"arbtok-asr-norm {ASR_NORM_VERSION}: {','.join(on) or 'none'}"
                 + _describe_lexicon(self.lexicon)
-                + (_describe_parser() if self.spoken_numbers_to_digits else ""))
+                + (_describe_parser() if self.spoken_numbers_to_digits or self.fix_asr_errors else ""))
+
+
+# The conjunction و "and" is said wu, w or u in Saudi and Gulf speech. Margaret K. Omar,
+# "Saudi Arabic Basic Course: Urban Hijazi Dialect" (Foreign Service Institute, 1975),
+# p. 2: "The /wu/, 'and', may be reduced to /w/ or even /u/ when followed by a word which
+# begins with a vowel" (archive.org micro_IA41153006_0711). Hamdi A. Qafisheh, "Basic Gulf
+# Arabic" (1970), p. 8: "The particle wa 'and' is reduced to w in normal speech"
+# (archive.org micro_IA41153126_0326). A recognizer writes the u- as the separate word او,
+# which in Arabic writing is "or", so "ست مية او عشرة الف" is 610,000 as it was said. The
+# او spelling is the recognizer's, not the language's, so it is repaired here, on the
+# transcript, and not in the number parser, which reads written Arabic.
+_OR = "او"
 
 
 _NOTHING = AsrNorm()
@@ -247,7 +266,8 @@ _NOTHING = AsrNorm()
 ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HARAKAT, _EXTENDED_MARKS,
                              _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
                              _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
-                             _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER)
+                             _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER,
+                             _OR)
 
 
 @functools.lru_cache(maxsize=None)
@@ -332,6 +352,76 @@ def _numbers_to_digits(text: str, lang: str) -> str:
     return text[:len(text) - len(text.lstrip())] + read + text[len(text.rstrip()):]
 
 
+@functools.lru_cache(maxsize=None)
+def _number_words():
+    """The number parser's own Arabic word tables, keyed by its normalized spelling."""
+    from ovos_number_parser import numbers_ar as ar
+    thousands = {w for w, v in ar._SCALES_LOOKUP.items() if v == 1000}
+    larger = ({w for w, v in ar._SCALES_LOOKUP.items() if v > 1000}
+              | {w for w, v in ar._SCALE_DUALS_LOOKUP.items() if v > 2000})
+    counts = (set(ar._UNITS_LOOKUP) | set(ar._TENS_LOOKUP) | set(ar._FUSED_TEENS_LOOKUP)
+              | set(ar._TEEN_FIRST_LOOKUP) | ar._TEEN_SECOND_LOOKUP)
+    hundred_units = {w for w, v in ar._UNITS_LOOKUP.items() if 1 <= v <= 9}
+    return (ar._normalize_ar, ar._NUMBER_WORDS, set(ar._HUNDREDS_LOOKUP), ar._HUNDRED_MULT_LOOKUP,
+            hundred_units, counts, thousands, larger)
+
+
+def _or_as_and(text: str) -> str:
+    """Write the recognizer's او as و where it joins the parts of one spoken number.
+
+    That is one shape only: a hundreds word alone, perhaps after a larger part of the
+    same number, then او, then tens or units that the thousands word multiplies with it.
+    "ست مية او عشرة الف" and "مليون وست مية او عشرة الف" are one number each. Every
+    other او is "or": "الف او خمسمية", "الفين او ثلاثة", "مية او اثنين",
+    "تسعمية او عشرة ملايين" and "ثلاثة او اربعة" are two numbers each.
+    """
+    normalize, number_words, hundreds, hundred_mult, hundred_units, counts, thousands, larger = \
+        _number_words()
+    parts = _WORDS_AND_GAPS.split(text)  # words at even positions, the gaps between them at odd
+    words = parts[::2]
+
+    def form(k):
+        """The word at k as the parser reads it, a و written onto a number word taken off,
+        and whether that و was there."""
+        if k < 0 or k >= len(words):
+            return None, False
+        word = normalize(words[k])
+        if word not in number_words and word[:1] == "و" and word[1:] in number_words:
+            return word[1:], True
+        return word, False
+
+    def joins(i):
+        before, _ = form(i - 1)
+        if before in hundred_mult and form(i - 2)[0] in hundred_units:
+            start = i - 2
+        elif before in hundreds:
+            start = i - 1
+        else:
+            return False
+        _, waw = form(start)
+        k = start - 1
+        if not waw and form(k)[0] == "و":
+            k -= 1
+        earlier = form(k)[0]
+        if earlier in number_words and earlier not in larger:
+            return False
+        if form(i + 1)[0] not in counts or form(i + 1)[1]:
+            return False
+        for k in range(i + 2, len(words)):
+            word, _ = form(k)
+            if word in thousands:
+                return True
+            if word != "و" and word not in counts:
+                return False
+        return False
+
+    for i in range(1, len(words) - 1):
+        if normalize(words[i]) == _OR and joins(i):
+            parts[2 * i] = parts[2 * i + 1] = ""
+            parts[2 * i + 2] = "و" + parts[2 * i + 2]
+    return "".join(parts)
+
+
 def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "ar",
                   **flags: bool) -> str:
     """Normalize a transcript for comparison.
@@ -352,7 +442,7 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
     spelling written with ``إ`` finds the word written with ``ا``, and without it
     does not. A prefixed form such as ``والبي ام دبليو`` is a different spelling and
     needs its own entry. ``lang`` is the language whose number words
-    ``spoken_numbers_to_digits`` reads.
+    ``spoken_numbers_to_digits`` reads; ``fix_asr_errors`` repairs Arabic only.
     """
     config = config or _NOTHING
     if "lexicon" in flags:
@@ -373,6 +463,8 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
         text = marks.sub("", text)
     if config.lexicon:
         text = _apply_lexicon(text, config)
+    if config.fix_asr_errors and is_arabic_lang(lang):
+        text = _or_as_and(text)
     if config.spoken_numbers_to_digits:
         text = _numbers_to_digits(text, lang)
     if config.join_dictated_digits:
