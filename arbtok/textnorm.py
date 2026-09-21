@@ -546,10 +546,14 @@ def _term_pattern(lexicon: Tuple[Tuple[str, str], ...]):
                       + _LATIN_RUN_EDGE[1], re.IGNORECASE), said
 
 
-#: Saudi phone numbers as they are written in running text, grouped or not. The digits
-#: are ASCII by name: ``\d`` also matches Arabic-Indic digits, and a phone number would
-#: then run on into an Arabic-Indic number written after it.
-KSA_PHONE_SHAPES = (r"(?:(?:\+|00)?966[\s\-]*5|05)[0-9\s\-]{7,12}[0-9]",)
+#: Saudi mobile numbers as they are written in running text, grouped or not: ``05`` or
+#: ``966 5`` and then exactly eight digits, with a space, a hyphen or a spaced hyphen
+#: between any two of them. No separator may follow the ``5`` itself, which splits the
+#: operator code (``50``, ``55``); a date on the fifth of a month, ``05-06-2024 12:30``,
+#: is the text that starts that way. The digits are ASCII by name: ``\d`` also matches
+#: Arabic-Indic digits, and a phone number would then take its last digits from an
+#: Arabic-Indic number written after it.
+KSA_PHONE_SHAPES = (r"(?:(?:\+|00)?966[\s\-]*5|05)(?![\s\-])[0-9](?:(?:\s?-\s?|\s)?[0-9]){7}(?![0-9])",)
 #: What a bare digit run starts with when it is a Saudi number: country code, local
 #: mobile, toll-free and unified numbers, landline area codes. A price and a phone
 #: number cannot be told apart by length, so each of these names a real prefix.
