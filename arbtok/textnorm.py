@@ -688,10 +688,11 @@ class TtsNorm:
     #: names, asked of the number parser under that lect's ISO 639-3 code: Jidda and
     #: Cairo do not say 15 alike. With no lect in the tag, or none the parser has
     #: cited words for, the words are the literary ones. Runs before
-    #: ``space_fused_hundreds``.
+    #: ``space_fused_hundreds``. Speaks numbers as cardinals, as ``cardinal_numbers`` does.
     dialect_numbers: bool = False
     #: Your own words for values, ``{100: "مية"}``, laid over the lect's, or used
     #: alone when ``dialect_numbers`` is off. Set with :meth:`with_number_forms`.
+    #: Speaks numbers as cardinals, as ``cardinal_numbers`` does.
     number_forms: Tuple[Tuple[int, str], ...] = ()
     #: Dates, times, numbers and units as words in ``lang``.
     spoken_forms: bool = True
@@ -1017,7 +1018,9 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
                 return _digit_by_digit(run, digit_forms)
             return run
         text = _DIGIT_RUN.sub(reference, text)
-    if config.cardinal_numbers:
+    # Asking for a lect's words, or for your own, is asking for numbers to be spoken:
+    # both reach a number only through the cardinals.
+    if config.cardinal_numbers or config.dialect_numbers or config.number_forms:
         text = _speak_numbers(text, lang, config)
     if config.spoken_forms:
         from arbtok.util import normalize as spoken
