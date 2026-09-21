@@ -348,21 +348,26 @@ CLDR display name; it is not inflected for the number before it.
 
 A reply holds prices, phone numbers and booking references, and a plain
 "numbers to words" pass reads all of them as quantities. These rules tell them
-apart. `KSA_VOICE_AGENT` turns them on with the numbering plans of every Arab
-League member:
+apart. A voice agent turns them on with the numbering plans of every Arab League
+member:
 
 ```python
-from arbtok.textnorm import KSA_VOICE_AGENT
+from arbtok.textnorm import ARAB_PHONE_REGIONS, IDENTIFIER_WORDS, TtsNorm, normalize_for_tts
 
-normalize_for_tts("السعر النهائي 355,000 ريال", "ar", KSA_VOICE_AGENT)
+VOICE_AGENT = TtsNorm(speak_percent=True, keep_code_digits=True, phone_regions=ARAB_PHONE_REGIONS,
+                      long_digit_runs=True, identifier_words=IDENTIFIER_WORDS, cardinal_numbers=True,
+                      leave_unspeakable_numbers=True, oblique_numbers=True, space_fused_hundreds=True,
+                      spoken_forms=False, canonical_unicode=False)
+
+normalize_for_tts("السعر النهائي 355,000 ريال", "ar", VOICE_AGENT)
 # 'السعر النهائي ثلاث مئة وخمسة وخمسين ألف ريال'
-normalize_for_tts("خلني أسجل رقمك 0551234567", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("خلني أسجل رقمك 0551234567", "ar", VOICE_AGENT)
 # 'خلني أسجل رقمك صفر خمسة خمسة واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
-normalize_for_tts("اتصل على 010 01234567", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("اتصل على 010 01234567", "ar", VOICE_AGENT)
 # 'اتصل على صفر واحد صفر صفر واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
-normalize_for_tts("كود العرض 4471 صالح", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("كود العرض 4471 صالح", "ar", VOICE_AGENT)
 # 'كود العرض أربعة أربعة سبعة واحد صالح'
-normalize_for_tts("نسبة التمويل 4.5%", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("نسبة التمويل 4.5%", "ar", VOICE_AGENT)
 # 'نسبة التمويل أربعة فاصلة خمسة في المئة'
 ```
 
@@ -397,9 +402,9 @@ is `ثلاثمئة` Jidda says `تلتمية` and Abu Dhabi `ثلاثمية`. `d
 the number parser for the lect's own words, under that lect's ISO 639-3 code.
 
 ```python
-normalize_for_tts("السعر 350 ريال", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("السعر 350 ريال", "ar", VOICE_AGENT)
 # 'السعر ثلاث مئة وخمسين ريال'
-normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", KSA_VOICE_AGENT, dialect_numbers=True)
+normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", VOICE_AGENT, dialect_numbers=True)
 # 'السعر تلت مية وخمسين ريال'
 ```
 
@@ -461,8 +466,8 @@ The rules from `speak_percent` to `identifier_words`, and `dialect_numbers` and
 `number_forms` with them, write Arabic words, so they raise `ValueError` for a
 `lang` that is not Arabic.
 
-`KSA_VOICE_AGENT` leaves `spoken_forms` and `canonical_unicode` off, because it
-speaks the numbers itself. `TtsNorm.describe()` gives the string to record, as
+`VOICE_AGENT` leaves `spoken_forms` and `canonical_unicode` off, because its
+cardinals speak the numbers. `TtsNorm.describe()` gives the string to record, as
 `AsrNorm.describe()` does.
 
 ### Before synthesis

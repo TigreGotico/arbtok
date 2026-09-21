@@ -12,6 +12,7 @@ import unicodedata
 import pytest
 
 from arbtok import textnorm
+from tests.voice_agent import VOICE_AGENT
 from arbtok.textnorm import (AsrNorm, TtsNorm, CER_MARKS_FIRST, CER_NORM, CER_NORM_MARKS_FIRST,
                              CER_STRIP, INTELLIGIBILITY_GATE, TRUTH_CHECK,
                              normalize_asr, normalize_for_tts)
@@ -287,13 +288,13 @@ def test_a_description_is_still_written_when_the_parsers_version_cannot_be_read(
         raise importlib.metadata.PackageNotFoundError(name)
     monkeypatch.setattr(importlib.metadata, "version", absent)
     assert AsrNorm(spoken_numbers_to_digits=True).describe().endswith("; ovos-number-parser unknown")
-    assert textnorm.KSA_VOICE_AGENT.describe().endswith("; ovos-number-parser unknown")
+    assert VOICE_AGENT.describe().endswith("; ovos-number-parser unknown")
 
 
 def test_the_version_names_the_rules_and_the_description_names_the_configuration():
-    other_words = dataclasses.replace(textnorm.KSA_VOICE_AGENT, identifier_words=("رقم",))
-    other_shapes = dataclasses.replace(textnorm.KSA_VOICE_AGENT, phone_shapes=(r"07[0-9]{8}",))
-    descriptions = {c.describe() for c in (textnorm.KSA_VOICE_AGENT, other_words, other_shapes)}
+    other_words = dataclasses.replace(VOICE_AGENT, identifier_words=("رقم",))
+    other_shapes = dataclasses.replace(VOICE_AGENT, phone_shapes=(r"07[0-9]{8}",))
+    descriptions = {c.describe() for c in (VOICE_AGENT, other_words, other_shapes)}
     assert len(descriptions) == 3
     assert all(f"arbtok-tts-norm {textnorm.TTS_NORM_VERSION}: " in d for d in descriptions)
 
@@ -301,7 +302,7 @@ def test_the_version_names_the_rules_and_the_description_names_the_configuration
 def test_a_description_names_the_number_parser_when_numbers_are_read():
     assert "ovos-number-parser " in AsrNorm(spoken_numbers_to_digits=True).describe()
     assert "ovos-number-parser" not in CER_NORM.describe()
-    assert "ovos-number-parser " in textnorm.KSA_VOICE_AGENT.describe()
+    assert "ovos-number-parser " in VOICE_AGENT.describe()
 
 
 SAID = {"BMW": "بِي إِمْ دَبَلْيُو", "X5": "إِكْسْ فَيْفْ", "X5 M": "إِكْسْ فَيْفْ إِمْ"}
@@ -456,7 +457,7 @@ def test_a_lexicon_that_is_not_bundled_is_refused_with_the_names_that_are():
         textnorm.bundled_asr_lexicon("boats")
 
 
-KSA = textnorm.KSA_VOICE_AGENT
+KSA = VOICE_AGENT
 
 
 @pytest.mark.parametrize("written, said", [
