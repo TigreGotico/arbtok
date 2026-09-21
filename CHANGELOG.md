@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a10](https://github.com/TigreGotico/arbtok/tree/0.0.2a10) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a9...0.0.2a10)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): asking for a lect's number words speaks the numbers [\#180](https://github.com/TigreGotico/arbtok/pull/180) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a9](https://github.com/TigreGotico/arbtok/tree/0.0.2a9) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a8...0.0.2a9)
