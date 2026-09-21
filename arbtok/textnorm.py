@@ -708,7 +708,8 @@ class TtsNorm:
     #: ``الكود 4729``, ``برقم الحجز 3401``. One other word may stand between.
     identifier_words: Tuple[str, ...] = ()
     #: Speak Arabic-Indic and ASCII numbers as cardinals here, ahead of
-    #: ``spoken_forms``, so that the three flags below apply to them.
+    #: ``spoken_forms``, so that the three flags below apply to them. A clock time is
+    #: spoken as a time, not as two cardinals, whether or not ``spoken_forms`` is on.
     cardinal_numbers: bool = False
     #: A number ``cardinal_numbers`` cannot speak is left as written and the rest of
     #: the text is still read, where otherwise the error is raised. For a caller that
@@ -1050,9 +1051,11 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         placeholder = next(free)
         held[placeholder] = span
         return placeholder
-    if config.spoken_forms and is_arabic_lang(lang):
+    if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang):
         # Clock times are spoken before any rule reads their digits as a number, a
-        # phone number or a code, and before "pm" can be read as the picometre.
+        # phone number or a code, and before "pm" can be read as the picometre. A
+        # config that speaks numbers as cardinals speaks times too: a time left to the
+        # cardinals comes out "سبعة:30 pm".
         def clock(m):
             spoken = _spoken_clock(m)
             if spoken is None:
