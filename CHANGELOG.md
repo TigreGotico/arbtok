@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a14](https://github.com/TigreGotico/arbtok/tree/0.0.2a14) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a13...0.0.2a14)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): speak clock times as Arabic speakers say them [\#187](https://github.com/TigreGotico/arbtok/pull/187) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a13](https://github.com/TigreGotico/arbtok/tree/0.0.2a13) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a12...0.0.2a13)
