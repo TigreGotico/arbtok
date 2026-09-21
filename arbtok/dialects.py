@@ -260,6 +260,13 @@ def spec_for_lang(lang: Optional[str]) -> str:
         if match:
             return match
 
+    # 2b. An ISO 639-3 code this module gives a lect resolves back to that lect, so
+    #     a tag built from :func:`lect_code` names the variety it came from. A
+    #     sub-lect named in a subtag has already won above.
+    spec = _LANGUAGE_CODE_SPECS.get(normalized.lower().split("-")[0])
+    if spec:
+        return spec
+
     # 3. Variants, extensions and private-use subtags that name no spec are
     #    invisible to tag distance, so left in they make the tag tie at zero
     #    with ``ar`` (``ar`` maximizes to ``ar-Arab-EG``) or, over eight
@@ -308,6 +315,7 @@ _SPEC_LANGUAGE_CODES = {
     "ar-SA-x-najd": "ars",   # Najdi Arabic
     "ar-x-gulf": "afb",      # Gulf Arabic
 }
+_LANGUAGE_CODE_SPECS = {code: spec for spec, code in _SPEC_LANGUAGE_CODES.items()}
 
 
 @functools.lru_cache(maxsize=None)
