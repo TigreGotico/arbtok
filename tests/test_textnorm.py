@@ -497,9 +497,10 @@ def test_a_phone_number_does_not_run_on_into_an_arabic_indic_number_after_it():
     phone = "تسعة ستة ستة خمسة خمسة ثلاثة تسعة ثمانية ثمانية ستة اثنين واحد"
     assert said == phone + " " + normalize_for_tts("٩٦٧٦٠", "ar", KSA)
     # With Arabic-Indic digits allowed inside the pattern, a number one digit short takes
-    # its last digit from the number written after it.
+    # its last digit from the number written after it. The number is written with the
+    # trunk prefix: one led by + is read digit by digit whatever its length.
     greedy = dataclasses.replace(KSA, phone_shapes=(r"(?:(?:\+|00)?966[\s\-]*5|05)(?![\s\-])\d(?:(?:\s*-\s*|\s+)?\d){7}(?!\d)",))
-    short = "+966 55-398-862 ٩"
+    short = "055-398-862 ٩"
     assert normalize_for_tts(short, "ar", greedy) != normalize_for_tts(short, "ar", KSA)
 
 

@@ -441,8 +441,9 @@ them.
 `phone_regions` names the regions whose numbering plans are read, and
 `ARAB_PHONE_REGIONS` lists the 22 members of the Arab League. The plans are bundled
 in `arbtok/data/phone_plans.json`: for each region its country code, its trunk
-prefix and, for each number type, the pattern and lengths of a national number. The
-table is built by `scripts/build_phone_plans.py` from `resources/PhoneNumberMetadata.xml`
+prefix and, for each number type, the pattern and lengths of a national number, and
+the digits a number of that type starts with, each with the lengths such a number has.
+The table is built by `scripts/build_phone_plans.py` from `resources/PhoneNumberMetadata.xml`
 of Google's libphonenumber (https://github.com/google/libphonenumber), and its
 `source` field names the release tag and the sha256 of the file it read.
 
@@ -461,6 +462,24 @@ the Maghreb there is no trunk prefix, and eight digits are a price as often as a
 phone number. A run whose first groups are a date, `05-06-2024`, is never read this
 way unless it starts with `+` or `00`, and a run that touches another digit across a
 comma, a point, a slash or a colon is part of a longer number, a date or a time.
+
+A run that says it is a phone number is read digit by digit even when the plans do
+not hold it as a valid number, so a short or a long number is still read out:
+
+- a run led by `+` with five digits or more, the `+` dropped (`+9665012345`);
+- a run led by `00` and a country code of the plans, with five digits or more after
+  the `00`;
+- a run of seven digits or more after an identifier word (`الموحد 9200012345`);
+- a run of nine digits or more that starts with a three-digit country code of
+  `phone_regions` and a digit that region's mobile numbers start with (`966501234`);
+- a run of 8 to 11 digits that starts with the first three digits of a toll-free,
+  shared-cost or unified number of `phone_regions`, at a length the plan gives numbers
+  that start with them.
+
+So `السعر 92000123 ريال` stays a price: it starts with 920, but a Saudi unified
+number has nine digits, and no word before it says it is a phone number. When a run
+of groups holds a valid number, the longest valid number is read and the rest of the
+run keeps its own reading.
 
 The rules from `speak_percent` to `identifier_words`, and `dialect_numbers` and
 `number_forms` with them, write Arabic words, so they raise `ValueError` for a
