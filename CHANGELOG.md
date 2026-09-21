@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a8](https://github.com/TigreGotico/arbtok/tree/0.0.2a8) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a7...0.0.2a8)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): read phone numbers of every Arabic-speaking country [\#174](https://github.com/TigreGotico/arbtok/pull/174) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a7](https://github.com/TigreGotico/arbtok/tree/0.0.2a7) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a6...0.0.2a7)
