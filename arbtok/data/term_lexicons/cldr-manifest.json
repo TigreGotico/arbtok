@@ -1,0 +1,55 @@
+{
+  "cldr_version": "48.2.1",
+  "licence": "Unicode-3.0",
+  "licence_url": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/LICENSE",
+  "files": {
+    "units": {
+      "output": "units-cldr.tsv",
+      "source_url_ar": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/cldr-json/cldr-units-full/main/ar/units.json",
+      "source_url_en": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/cldr-json/cldr-units-full/main/en/units.json",
+      "fetch_sha256_ar": "3a24bb442e133ea9ed43bfa71732e6969ea189eefa90e381054aaa877ce39237",
+      "fetch_sha256_en": "67a02c6f633c2e5452a64c024d45077ebe41832ed2df890f7dfbee20e48266c2",
+      "date_read": "2026-09-20",
+      "row_count": 633,
+      "skipped_no_english": 0,
+      "skipped_untranslated": 60,
+      "sha256": "572c46c3ce29a594f8c658b946594422393c53560094fd4185323feefcd23c97"
+    },
+    "currencies": {
+      "output": "currencies-cldr.tsv",
+      "source_url_ar": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/cldr-json/cldr-numbers-full/main/ar/currencies.json",
+      "source_url_en": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/cldr-json/cldr-numbers-full/main/en/currencies.json",
+      "fetch_sha256_ar": "b39cc3d2cc55822e94ef2c4842d759ca60e3f85ae4bf7106268d0d0116168b23",
+      "fetch_sha256_en": "a6c41b28f4035f65ae698b53a66866982b4ff49bc0de7e840f91d2c6e6bdc23b",
+      "date_read": "2026-09-20",
+      "row_count": 262,
+      "skipped_no_english": 0,
+      "skipped_untranslated": 0,
+      "sha256": "3ddb1657ab1f6d5cd55d76dccda8b0501a779682cdd2b06d8f5a7b732a9fb0f1"
+    },
+    "territories": {
+      "output": "territories-cldr.tsv",
+      "source_url_ar": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/cldr-json/cldr-localenames-full/main/ar/territories.json",
+      "source_url_en": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/cldr-json/cldr-localenames-full/main/en/territories.json",
+      "fetch_sha256_ar": "b78c4a11a9ad8358048998bcda2eb49e205d5ab281f85991ed097af7b972c3d7",
+      "fetch_sha256_en": "158c1d575308f7e46912edbeda435c8fe2ef5dad280798231f3a432e406b1807",
+      "date_read": "2026-09-20",
+      "row_count": 306,
+      "skipped_no_english": 0,
+      "skipped_untranslated": 0,
+      "sha256": "a66f5483bd72a3a8fc9a57ddfa64834c87fa4352f7bed5a118b32d49cb5b061a"
+    },
+    "languages": {
+      "output": "languages-cldr.tsv",
+      "source_url_ar": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/cldr-json/cldr-localenames-full/main/ar/languages.json",
+      "source_url_en": "https://raw.githubusercontent.com/unicode-org/cldr-json/48.2.1/cldr-json/cldr-localenames-full/main/en/languages.json",
+      "fetch_sha256_ar": "469d4b540f4a50c127a88c5b1e2bceac289d3a54b01dc2fbb9375c60470adf62",
+      "fetch_sha256_en": "a5960d2371bc7d982da7fcfd9a0e237429d3467a5cc76f680bc3af5bcef9fb4e",
+      "date_read": "2026-09-20",
+      "row_count": 576,
+      "skipped_no_english": 0,
+      "skipped_untranslated": 0,
+      "sha256": "1bc75ad7f72dac43d633afb615826b486b8e3d9a1ce86a9c4970b785f1f12f77"
+    }
+  }
+}

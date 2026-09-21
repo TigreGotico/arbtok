@@ -71,15 +71,46 @@ class ArbtokDiacritizer(NormalizePlugin):
     variety's grapheme table does not license (:mod:`arbtok.diacritize`).
     """
 
+    #: Which generator answers a word nobody has written down. ``lattice`` tokenizes
+    #: one constrained-argmax guess and refuses it if the orthography does not license
+    #: it; ``fusion`` enumerates the licensed readings and lets rawi score them.
+    #:
+    #: The default is ``lattice`` and the reason is a measurement rather than a
+    #: preference. On the shipped code-switched gold, 881 rows across 44 lects, scored
+    #: per character position against the editor-authored vocalization: rawi alone
+    #: 0.1757, lattice 0.0989, fusion 0.1012. Fusion is 52 positions in 22,800 behind
+    #: the simpler path — about one standard error before within-sentence correlation
+    #: widens it — so that gold cannot separate them, and the cheaper path wins a tie.
+    #:
+    #: Set ``ARBTOK_DIACRITIZER=fusion`` to select the other one. It exists so the
+    #: comparison can be re-run on a gold that might separate them; it is not dead
+    #: code and it is not the default.
+    PATHS = ("lattice", "fusion")
+
     def __init__(self) -> None:
         self._by_lang: dict = {}
 
-    def normalize(self, text: str, lang: str) -> str:
-        from arbtok.diacritize import LatticeDiacritizer
+    @staticmethod
+    def _path() -> str:
+        import os
+        want = os.environ.get("ARBTOK_DIACRITIZER", "lattice").strip().lower()
+        if want not in ArbtokDiacritizer.PATHS:
+            raise ValueError(
+                f"ARBTOK_DIACRITIZER={want!r} is not one of {ArbtokDiacritizer.PATHS}. "
+                "Refusing rather than falling back: a typo that silently kept the "
+                "default would read exactly like the setting working."
+            )
+        return want
 
-        if lang not in self._by_lang:
-            self._by_lang[lang] = LatticeDiacritizer(lang=lang)
-        return self._by_lang[lang].diacritize(text)
+    def normalize(self, text: str, lang: str) -> str:
+        key = (lang, self._path())
+        if key not in self._by_lang:
+            if key[1] == "fusion":
+                from arbtok.fusion import FusionDiacritizer as _D
+            else:
+                from arbtok.diacritize import LatticeDiacritizer as _D
+            self._by_lang[key] = _D(lang=lang)
+        return self._by_lang[key].diacritize(text)
 
     @property
     def language_codes(self) -> List[str]:

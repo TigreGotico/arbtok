@@ -19,6 +19,25 @@ if you speak MSA pull requests welcome!
 its orthography2ipa quality tier.
 """
 
-from arbtok.dialects import Lect, spec_for_lang, supported_lects
+from arbtok.dialects import Lect, lect_code, spec_for_lang, supported_lects
+from arbtok.textnorm import AsrNorm, TtsNorm, is_arabic_lang, normalize_asr, normalize_for_tts
+from arbtok.version import VERSION_STR as __version__
 
-__all__ = ["Lect", "spec_for_lang", "supported_lects"]
+
+def vocalize(text, lect="ar", **kwargs):
+    """Diacritize *text* as *lect* speaks it, with a record per word.
+
+    Named ``vocalize`` at package level because ``arbtok.diacritize`` is the
+    module: binding a function of that name here works until something imports the
+    submodule, which rebinds the attribute and turns the call into
+    ``TypeError: 'module' object is not callable``. The function itself is
+    :func:`arbtok.diacritize.diacritize`, where the name does not collide.
+
+    Imported lazily so that ``import arbtok`` does not pull in onnxruntime.
+    """
+    from arbtok.diacritize import diacritize as _d
+    return _d(text, lect, **kwargs)
+
+
+__all__ = ["AsrNorm", "Lect", "TtsNorm", "__version__", "is_arabic_lang", "normalize_asr", "normalize_for_tts",
+           "spec_for_lang", "supported_lects", "vocalize"]

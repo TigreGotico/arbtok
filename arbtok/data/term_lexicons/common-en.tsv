@@ -1,0 +1,59 @@
+# English terms in everyday use, written the way Arabic text conventionally writes them, for lang "ar".
+# arabic_form is that conventional spelling. pointed adds short vowels and sukun so that the diacritizer
+# leaves the word alone; reading is what arbtok.tokenizer reads from pointed, and a test pins it.
+# basis: every row here is authored. The pointing is this package's own and no source is cited for it;
+# a row that gains a source says so in this column.
+# latin	arabic_form	pointed	reading	basis
+WiFi	واي فاي	وَايْ فَايْ	waːj faːj	authored
+Bluetooth	بلوتوث	بْلُوتُوثْ	bluːtuːθ	authored
+Apple	أبل	أَبِلْ	ʔabil	authored
+CarPlay	كاربلاي	كَارْبْلَايْ	kaːrblaːj	authored
+Android	أندرويد	أَنْدْرُويِدْ	ʔandruːjid	authored
+Auto	أوتو	أُوتُو	ʔuːtuː	authored
+Internet	إنترنت	إِنْتَرْنِتْ	ʔintarnit	authored
+Online	أونلاين	أُونْلَايْنْ	ʔuːnlaːjn	authored
+Email	إيميل	إِيمِيلْ	ʔiːmiːl	authored
+Google	جوجل	جُوجِلْ	dʒuːdʒil	authored
+iPhone	آيفون	آيْفُونْ	ʔaːjfuːn	authored
+Mobile	موبايل	مُوبَايْلْ	muːbaːjl	authored
+Camera	كاميرا	كَامِيرَا	kaːmiːraː	authored
+Turbo	تيربو	تِيرْبُو	tiːrbuː	authored
+Hybrid	هايبرد	هَايْبْرِدْ	haːjbrid	authored
+Sport	سبورت	سْبُورْتْ	sbuːrt	authored
+Cruise Control	كروز كنترول	كْرُوزْ كُنْتْرُولْ	kruːz kuntruːl	authored
+Bank	بنك	بَنْكْ	bank	authored
+Visa	فيزا	فِيزَا	fiːzaː	authored
+Cash	كاش	كَاشْ	kaːʃ	authored
+Test Drive	تست درايف	تِسْتْ دْرَايْفْ	tist draːjf	authored
+Model	موديل	مُودِيلْ	muːdiːl	authored
+Automatic	أوتوماتيك	أُوتُومَاتِيكْ	ʔuːtuːmaːtiːk	authored
+Diesel	ديزل	دِيزِلْ	diːzil	authored
+Video	فيديو	فِيدْيُو	fiːdjuː	authored
+Radio	راديو	رَادْيُو	raːdjuː	authored
+Chat	شات	شَاتْ	ʃaːt	authored
+Password	باسورد	بَاسْوُرْدْ	baːswurd	authored
+Update	أبديت	أَبْدِيتْ	ʔabdiːt	authored
+Download	داونلود	دَاوْنْلُودْ	daːwnluːd	authored
+OK	أوكي	أُوكِي	ʔuːkiː	authored
+WhatsApp	واتساب	وَاتْسَابْ	waːtsaːb	authored
+YouTube	يوتيوب	يُوتْيُوبْ	juːtjuːb	authored
+Instagram	إنستغرام	إِنْسْتَغْرَامْ	ʔinstaɣraːm	authored
+Facebook	فيسبوك	فِيسْبُوكْ	fiːsbuːk	authored
+Twitter	تويتر	تْوِيتَرْ	twiːtar	authored
+Snapchat	سناب شات	سْنَابْ شَاتْ	snaːb ʃaːt	authored
+TikTok	تيك توك	تِيكْ تُوكْ	tiːk tuːk	authored
+Netflix	نتفليكس	نِتْفْلِيكْسْ	nitfliːks	authored
+Uber	أوبر	أُوبَرْ	ʔuːbar	authored
+Amazon	أمازون	أَمَازُونْ	ʔamaːzuːn	authored
+Microsoft	مايكروسوفت	مَايْكْرُوسُوفْتْ	maːjkruːsuːft	authored
+Samsung	سامسونج	سَامْسُونْجْ	saːmsuːndʒ	authored
+Huawei	هواوي	هُوَاوِي	huwaːwiː	authored
+PlayStation	بلايستيشن	بْلَايْسْتِيشِنْ	blaːjstiːʃin	authored
+Laptop	لابتوب	لَابْتُوبْ	laːbtuːb	authored
+Tablet	تابلت	تَابْلِتْ	taːblit	authored
+Smart	سمارت	سْمَارْتْ	smaːrt	authored
+Pro	برو	بْرُو	bruː	authored
+Max	ماكس	مَاكْسْ	maːks	authored
+Plus	بلس	بْلَسْ	blas	authored
+Premium	بريميوم	بْرِيمْيُومْ	briːmjuːm	authored
+Full Option	فل أوبشن	فُلْ أُوبْشِنْ	ful ʔuːbʃin	authored

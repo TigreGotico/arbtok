@@ -1,4 +1,4 @@
-"""The bundled English donor lexicon.
+"""The bundled donor lexicons: English, and the French closed classes.
 
 A code-switched Arabic sentence carries English words, and those words are
 phonemized by the DONOR language's G2P before :mod:`arbtok.translit` maps the
@@ -34,6 +34,11 @@ phoneme shorthands are expanded to IPA at build time; see
 ``scripts/build_donor_lexicon.py``. Part-of-speech variants (``ˈrecord`` against
 ``reˈcord``) are dropped rather than guessed: the overlay is a word-to-IPA map
 with no part-of-speech channel.
+
+A French file ships beside it for Maghrebi code-switching, registered the same
+way when ``fr-FR`` is the donor. It holds the closed-class words only, each read
+from the French MFA dictionary (CC BY 4.0); see ``data/donor_lexicons/README.md``
+and ``scripts/build_french_donor_lexicon.py``.
 """
 from __future__ import annotations
 

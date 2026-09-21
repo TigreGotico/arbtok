@@ -3,6 +3,11 @@
 Every public symbol, with real signatures and return shapes. Import paths are
 module-qualified (`from arbtok.plugin import ArbtokG2PPlugin`).
 
+`arbtok.__version__` is the installed version, as the PEP 440 string the
+distribution carries. The package root also re-exports `Lect`, `spec_for_lang`, `lect_code`, `supported_lects`,
+`vocalize`, `AsrNorm`, `TtsNorm`, `normalize_asr`, `normalize_for_tts` and
+`is_arabic_lang`.
+
 ## `arbtok.plugin`
 
 The primary entry point, the full engine, including automatic diacritization,
@@ -71,7 +76,7 @@ s = Sentence("قَالَ ٱلْمَلِكُ")
 | `ipa` | `str` | The IPA transcription of the whole sentence. **This is what you want.** |
 
 ```python
-print(s.ipa)              # "qaːla lmaliku"
+print(s.ipa)              # "ˈqaːla lˈmaliku"
 print(len(s.tokens))      # word + punctuation tokens
 ```
 
@@ -141,6 +146,79 @@ The module also re-exports named grapheme constants (`ALIF`, `LAM`, `SHADDA`,
 `SUKUN`, `FATHA`, `KASRA`, `WAW`, `TANWIN_FATH`, `SUN_LETTERS`, …) for readable
 rule code, see `arbtok/constants.py`.
 
+## `arbtok.textnorm`
+
+Text normalization in both directions; usage and recipes are in
+[normalization.md](normalization.md). `normalize_asr`, `normalize_for_tts`,
+`AsrNorm`, `TtsNorm` and `is_arabic_lang` are also exported from `arbtok`.
+
+### `normalize_asr(text, config=None, *, lang="ar", **flags) -> str`
+
+Normalize a transcript. `config` is an `AsrNorm` (a named bundle or your own),
+`**flags` override it, and `lang` is the language whose number words
+`spoken_numbers_to_digits` reads. With nothing on, `text` comes back unchanged.
+An unknown flag raises `TypeError`, and so does a `text` that is not a `str`.
+
+### `AsrNorm(**flags)`
+
+A frozen dataclass with one boolean per rule, all `False` by default; the rules
+and their order are listed in [normalization.md](normalization.md#every-rule).
+`with_lexicon(mapping)` returns the config with a lexicon of Arabic-script
+spellings and the terms they stand for, and `AsrNorm(lexicon=mapping)` builds one
+directly; the functions take a lexicon no other way. An entry with an empty
+spelling raises `ValueError`.
+`describe() -> str` returns the string to record beside an error rate, lexicon
+included. Named bundles: `TRUTH_CHECK`, `CER_STRIP`, `CER_NORM`, `CER_MARKS_FIRST`,
+`CER_NORM_MARKS_FIRST`, `INTELLIGIBILITY_GATE`. `ASR_NORM_VERSION` names the
+rule set and is computed from it.
+
+### `normalize_for_tts(text, lang="ar", config=None, **flags) -> str`
+
+Prepare text to be spoken. `config` is a `TtsNorm`; with none it runs
+`spoken_forms` and `canonical_unicode`, which is what `ArbtokG2PPlugin.normalize`
+calls before diacritizing. `**flags` override the config. An unknown flag raises `TypeError`.
+
+### `TtsNorm(**flags)`
+
+A frozen dataclass of the rules, listed with their order in
+[normalization.md](normalization.md#numbers-a-voice-agent-reads-out).
+`with_lexicon(mapping)` sets the Latin-script terms and their spoken Arabic
+forms; `describe() -> str` returns the string to record. `KSA_VOICE_AGENT`
+is the bundle for a Saudi voice agent's replies; `KSA_PHONE_SHAPES`,
+`KSA_PHONE_PREFIXES` and `IDENTIFIER_WORDS` are the tuples it is built from.
+`TTS_NORM_VERSION` names the rule set. `with_number_forms(mapping)` sets your own
+word for a value, `{100: "مية"}`, which `number_forms` then uses; `dialect_numbers`
+takes the lect's own words from the number parser instead, under the ISO 639-3 code
+`lect_code` gives for `lang`. Both write Arabic words, so they raise `ValueError`
+for a `lang` that is not Arabic.
+
+### `is_arabic_lang(lang) -> bool`
+
+Whether `lang` names an Arabic variety: `ar`, every `ar-…` tag, and the ISO 639-3
+code of an individual Arabic language (`arb`, `arz`, `ary`, `ars`, …), which
+`ARABIC_LANGUAGE_CODES` holds. Case and an underscore written for a hyphen
+(`ar_SA`) do not matter. It asks what the caller wrote, which `spec_for_lang`
+cannot: that resolves an unknown tag to MSA, so it would call every language
+Arabic.
+
+### `spelled_codes(lang="ar") -> Dict[str, str]`
+
+Each Latin capital and ASCII digit mapped to its spoken English name in pointed
+Arabic. Raises `ValueError` for a language with no bundled table.
+
+### `cldr_units(lang="ar") -> Dict[str, str]`
+
+English unit symbols (`km`, `kg`, `hp`) mapped to the unit's Arabic name from Unicode
+CLDR. `arbtok.util.normalize` reads a symbol that follows a number from it.
+
+### `bundled_asr_lexicon(name="cars-sa")`, `bundled_tts_lexicon(name="cars-sa", pointed=True) -> Dict[str, str]`
+
+A bundled term lexicon read in each direction: every Arabic spelling to its name,
+and each name to one spelling. `cars-sa` holds car makes and models as public
+Saudi sites spell them; `common-en` holds everyday English terms, with an
+authored pointed spelling that `pointed` selects. Raises `ValueError`, naming
+the bundled lexicons, for a name that is not one.
+
 ## `arbtok.util`
 
 ### `normalize(text: str, lang: str) -> str`
@@ -171,28 +249,16 @@ Public helper: `is_fraction(word: str) -> bool` (e.g. `"3/4"` → `True`).
 `pronounce_date(date_obj, full_lang)` and `pronounce_time(time_string,
 full_lang)` wrap the OVOS date parser.
 
-## `arbtok.num2words`
-
-### `num2words(text, handle_percent=True, apply_tashkeel=True) -> str`
-
-Convert digit sequences in `text` to Arabic words. With `apply_tashkeel=True`
-the inserted words are diacritized. `handle_percent` replaces `%` with the
-spoken percent word.
-
-```python
-from arbtok.num2words import num2words
-
-num2words("عندي 25 كتاب")              # diacritized Arabic number words
-num2words("50%", apply_tashkeel=False) # undiacritized + spoken percent
-```
-
 ## `arbtok.dialects`
 
-Phoneme maps and the dialect enum.
+Variety resolution and the base phoneme maps.
 
 | Symbol | Type | Description |
 | --- | --- | --- |
-| `ArabicDialect` | `Enum` | `MSA`, `CLA`. Only MSA maps are populated. |
+| `spec_for_lang(lang)` | `str` | The orthography2ipa spec code a tag resolves to, narrowing a subtag at a time and falling back to `ar`. |
+| `lect_code(lang)` | `Optional[str]` | The ISO 639-3 code of the lect a tag names, for a consumer that keys its data by 639-3, or `None` when it names none. Read off the spec's parent chain, so a leaf takes its group's code. |
+| `supported_lects()` | `List[Lect]` | Every Arabic variety `lang=` resolves to, sorted by code, enumerated from the installed registry. |
+| `Lect` | `NamedTuple` | `code` and `tier`, the spec's orthography2ipa quality tier. |
 | `ARABIC_TO_IPA_CONSONANTS` | `dict[str, str]` | Grapheme → IPA consonant. |
 | `VOWEL_MAP` | `dict[str, str]` | Vowel grapheme → IPA. |
 | `DIACRITIC_TO_IPA` | `dict[str, str]` | Diacritic → IPA. |
@@ -200,9 +266,10 @@ Phoneme maps and the dialect enum.
 | `WORD_EXCEPTIONS` | `dict[str, str]` | Whole-word IPA overrides consulted before rule-based phonemization. |
 
 ```python
-from arbtok.dialects import ArabicDialect, ARABIC_TO_IPA_CONSONANTS
+from arbtok.dialects import ARABIC_TO_IPA_CONSONANTS, lect_code, spec_for_lang
 
-print(ArabicDialect.MSA.value)         # "MSA"
+print(spec_for_lang("ar-SA"))          # "ar-SA-x-najd"
+print(lect_code("ar-KW"))              # "afb" — Gulf, off the parent chain
 print(ARABIC_TO_IPA_CONSONANTS["ب"])   # "b"
 ```
 
@@ -246,6 +313,7 @@ G2P("ar", plugins={"normalize": "arbtok"}).transcribe("كتب")  # 'ˈkatab' —
 - [tashkeel.md](tashkeel.md), the diacritizer subsystem
 - [rawi-fusion.md](rawi-fusion.md), the fusion scorer
 - [dialects.md](dialects.md), varieties and per-lect phonology
+- [normalization.md](normalization.md), cleaning recognizer output and preparing text to be spoken
 - [advanced.md](advanced.md), internals, espeak baseline, recipes, gotchas
 
 ---

@@ -406,6 +406,12 @@ UNITS = {
     }
 }
 
+# Arabic unit names come from Unicode CLDR rather than from a list kept here; see
+# arbtok.textnorm.cldr_units and data/term_lexicons/units-cldr.tsv.
+from arbtok.textnorm import cldr_units  # noqa: E402
+
+UNITS["ar"] = cldr_units("ar")
+
 
 def _get_number_separators(full_lang: str) -> tuple[str, str]:
     """
@@ -593,6 +599,14 @@ def _normalize_word_hyphen_digit(text: str) -> str:
     return text
 
 
+def _unit_word(units: dict, symbol: str) -> str:
+    # The patterns below match a symbol in any case, so `5 KM` and `20 °c` arrive here
+    # as written. The exact symbol wins, since `Cal` and `cal` are different units.
+    if symbol in units:
+        return units[symbol]
+    return {k.lower(): v for k, v in units.items()}[symbol.lower()]
+
+
 def _normalize_units(text: str, full_lang: str) -> str:
     """
     Helper function to normalize units attached to numbers.
@@ -625,7 +639,7 @@ def _normalize_units(text: str, full_lang: str) -> str:
                 elif decimal_separator != "." and decimal_separator in number:
                     number = number.replace(decimal_separator, ".")
                 unit_symbol = match.group(2)
-                unit_word = symbolic_units[unit_symbol]
+                unit_word = _unit_word(symbolic_units, unit_symbol)
                 try:
                     return f"{pronounce_number(float(number) if '.' in number else int(number), full_lang)} {unit_word}"
                 except Exception as e:
@@ -650,7 +664,7 @@ def _normalize_units(text: str, full_lang: str) -> str:
                 elif decimal_separator != "." and decimal_separator in number:
                     number = number.replace(decimal_separator, ".")
                 unit_symbol = match.group(2)
-                unit_word = alphanumeric_units[unit_symbol]
+                unit_word = _unit_word(alphanumeric_units, unit_symbol)
                 return f"{pronounce_number(float(number) if '.' in number else int(number), full_lang)} {unit_word}"
 
             text = alphanumeric_pattern.sub(replace_alphanumeric, text)

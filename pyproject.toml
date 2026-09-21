@@ -8,14 +8,13 @@ dynamic = ["version", "dependencies"]
 description = "Rule-based Arabic (MSA) text-to-IPA with tashkeel diacritization — an orthography2ipa G2P plugin"
 readme = "README.md"
 license = {text = "Apache-2.0"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Topic :: Text Processing :: Linguistic",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -53,4 +52,5 @@ include = ["arbtok*"]
 # and the hand-authored per-lect closed-class lexicons (Apache-2.0-clean,
 # bundled rather than fetched — see arbtok.dialect_lexicon).
 arbtok = ["models/*.onnx", "models/*.json", "data/lexicons/*.tsv",
-          "data/donor_lexicons/*.tsv"]
+          "data/donor_lexicons/*.tsv", "data/tts_lexicons/*.tsv",
+          "data/term_lexicons/*.tsv", "data/term_lexicons/*.json"]

@@ -14,6 +14,7 @@ The sentence cascade below reads the spec's grapheme layer only; it has no
 allophone pass yet.
 """
 
+import functools
 from enum import Enum
 from typing import Dict, List, NamedTuple, Optional
 
@@ -256,6 +257,47 @@ def spec_for_lang(lang: Optional[str]) -> str:
     return DEFAULT_LANG
 
 
+#: The ISO 639-3 code of the individual Arabic language a spec names, for the
+#: consumers that key their data by 639-3 rather than by a BCP-47 tag — the number
+#: parser's cardinals among them. Only the specs that name a language of their own
+#: are listed; every other spec is answered through its parent, so the Gulf states
+#: take the Gulf code from ``ar-x-gulf`` without being named here. Source: ISO 639-3
+#: code table, https://iso639-3.sil.org/code_tables/639/data, read for the
+#: macrolanguage ``ara``.
+_SPEC_LANGUAGE_CODES = {
+    "ar-EG": "arz",          # Egyptian Arabic
+    "ar-SA-x-hejaz": "acw",  # Hijazi Arabic
+    "ar-SA-x-najd": "ars",   # Najdi Arabic
+    "ar-x-gulf": "afb",      # Gulf Arabic
+}
+
+
+@functools.lru_cache(maxsize=None)
+def lect_code(lang: str) -> Optional[str]:
+    """The ISO 639-3 code of the lect *lang* names, or ``None`` when it names none.
+
+    The spec *lang* resolves to is tried first, then that spec's parents, so which
+    leaves carry which code comes from orthography2ipa's genealogy rather than a list
+    here: Kuwaiti has no code of its own and takes the Gulf one because its spec
+    declares ``ar-x-gulf`` as its parent. ``ar`` is the macrolanguage and names no
+    lect; a tag that resolves to it, or to any spec whose chain names none, is
+    ``None``.
+
+    The code is the tag translated and nothing more. Whether anything is said
+    differently under it is the answer of whoever holds the data — the number parser
+    speaks a lect's cardinals only for the lects it has read a source for.
+    """
+    from orthography2ipa import get
+
+    code, seen = spec_for_lang(lang), set()
+    while code and code not in seen:
+        if code in _SPEC_LANGUAGE_CODES:
+            return _SPEC_LANGUAGE_CODES[code]
+        seen.add(code)
+        code = get(code).parent
+    return None
+
+
 class Lect(NamedTuple):
     """A resolvable Arabic variety and the maturity of its spec.
 
@@ -311,34 +353,35 @@ def supported_lects() -> List[Lect]:
 
 
 # --- Word Exceptions ---
-# TODO - LLM generated, needs validation from native speaker
-# Dictionary for words with irregular orthography vs pronunciation.
-# These words have "deficient" or "historical" spelling where vowels
-# are pronounced but not written, or written letters are silent.
+# Words whose spelling does not determine their reading: a letter is written and
+# not pronounced, or a vowel is pronounced and not written.
+#
+# Every entry has to beat the grapheme rules at something. An entry the rules
+# already agree with cannot be told from a live one by reading the table, and it
+# hides the ones that matter; a test holds each entry to producing a reading the
+# rules do not.
+#
+# One spelling of a word can be here and another not, and they then read
+# differently: ⟨اللّٰه⟩ is an entry and reads *allaːh*, while ⟨الله⟩ and ⟨اللَّه⟩
+# are not and read *ɑɫɫɑːh*, the rules' velarized lām.
+#
+# The readings are this package's own and cite no grammar. They were checked
+# against espeak-ng, an independent Arabic phonemizer sharing no data with this
+# one, which agreed on 16 of the 21 readings the table then held. Every one of
+# the five it disputed is a word where it reads the deficient spelling
+# literally: it gives *lakin* for لَكِن, and hears a long vowel in the silent waw
+# of أُولِي and أُولَٰئِكَ. Those are the readings this table exists to prevent,
+# so the disagreement corroborates the entries rather than questioning them.
 WORD_EXCEPTIONS = {
     # === Unicode / orthographic variants ===
 
     # Demonstratives with "Dagger Alif" (pronounced long /a:/ but written short or omitted)
-    "هَٰذَا": "haːðaː",  # ha-dha (this, m.)
-    "هٰذَا": "haːðaː",  # variant
-    "هَذَا": "haːðaː",  # common deficient spelling
-    "هَٰذِهِ": "haːðihi",  # ha-dhi-hi (this, f.)
-    "هٰذِهِ": "haːðihi",  # variant
-    "ذَٰلِكَ": "ðaːlika",  # dha-li-ka (that)
-    "ذٰلِكَ": "ðaːlika",  # variant
     "أُولَٰئِكَ": "ʔulaːʔika",  # u-la-i-ka (those) - note medial hamza logic is complex, hardcoded here
 
     # Particles
-    "لَٰكِن": "laːkin",  # la-kin (but) - unwritten medial alif
-    "لَكِن": "laːkin",  # deficient spelling
-    "لَٰكِنَّ": "laːkinna",  # la-kin-na (but...)
 
     # Divine Names
-    "ﷲ": "allaːh",
     "اللّٰه": "allaːh",  # Allah - heavy L, unwritten alif
-    "اللَّه": "allaːh",  # variant
-    "إِلَٰه": "ʔilaːh",  # ilah (god)
-    "الرَّحْمَٰن": "arraħmaːn",  # Ar-Rahman
 
     # Irregular pronunciations
     # NOTE: ⟨مِائَة⟩ "hundred" used to need an entry here for its silent alif,
@@ -352,7 +395,5 @@ WORD_EXCEPTIONS = {
 
     # Particles carrying hamzat al-qaṭʿ on ALEF_HAMZA_BELOW. Keys are stored in
     # _reorder_diacritics-normalized form (shadda precedes vowel):
-    "إِلَّا": "ʔillaː",   # إِلَّا "except/but" — hamzat al-qat'
-    "إِلَى": "ʔilaː",          # إِلَى "to/towards" — hamzat al-qat'
 }
 
