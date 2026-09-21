@@ -205,3 +205,15 @@ def test_reading_a_phone_number_loads_no_phone_number_library():
                                   check=True).stdout.strip().split("\n")
     assert said == f"اتصل على {one_by_one('201001234567')}"
     assert loaded == "[]"
+
+
+def test_a_description_names_the_phone_plans_it_read():
+    """A regenerated table changes which runs are phone numbers, so the description of a
+    config that reads them names the table by release and by its bytes."""
+    import hashlib
+
+    raw = (Path(textnorm.__file__).parent / "data" / "phone_plans.json").read_bytes()
+    described = KSA_VOICE_AGENT.describe()
+    assert json.loads(raw)["source"]["tag"] in described
+    assert hashlib.sha256(raw).hexdigest()[:12] in described
+    assert "phone plans" not in TtsNorm().describe()
