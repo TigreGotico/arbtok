@@ -215,7 +215,7 @@ def test_a_description_names_the_phone_plans_it_read():
     import hashlib
 
     raw = (Path(textnorm.__file__).parent / "data" / "phone_plans.json").read_bytes()
-    described = KSA_VOICE_AGENT.describe()
+    described = VOICE_AGENT.describe()
     assert json.loads(raw)["source"]["tag"] in described
     assert hashlib.sha256(raw).hexdigest()[:12] in described
     assert "phone plans" not in TtsNorm().describe()
