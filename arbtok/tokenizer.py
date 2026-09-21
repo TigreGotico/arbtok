@@ -305,9 +305,12 @@ def _consonant_letter_ipa(tok: 'CharToken') -> str:
 
 def _shadda_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
     """The reading of a shadda, which duplicates the consonant before it."""
-    # 4th position when the word has the definite article -> the sun letter was
-    # already doubled where it was read (see :func:`_consonant_letter_ipa`).
-    if tok.char_idx == 3 and tok.word.has_definite_article:
+    # 4th position when the word has the definite article -> the letter before
+    # it is the one the article assimilated into, and a SUN letter was already
+    # doubled where it was read (see :func:`_consonant_letter_ipa`, which
+    # doubles on ``is_sun``). A moon letter there was not, so its shadda still
+    # has a consonant to geminate.
+    if tok.char_idx == 3 and tok.word.has_definite_article and tok.prev_token.is_sun:
         return ""
     # Return the IPA of the previous token.
     if tok.prev_token:
