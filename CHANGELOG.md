@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a23](https://github.com/TigreGotico/arbtok/tree/0.0.2a23) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a22...0.0.2a23)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a hundred joined by و follows the thousands; the parser floor reads water as water [\#206](https://github.com/TigreGotico/arbtok/pull/206) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a22](https://github.com/TigreGotico/arbtok/tree/0.0.2a22) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a21...0.0.2a22)
