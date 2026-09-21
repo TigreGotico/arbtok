@@ -33,6 +33,14 @@ def _as_tuple(version: str):
     return tuple(parts) + (int(alpha) if alpha else float("inf"),)
 
 
+def test_the_number_parser_floor_speaks_a_lects_cardinals():
+    """``dialect_numbers`` asks the parser for a lect's own number words under the lect's
+    ISO 639-3 code, and 0.21.0a1 is the release that has them. An older parser answers
+    ``lang="acw"`` with the literary words and raises nothing, so the flag reads as on
+    and changes no word."""
+    assert _as_tuple(_floors()["ovos-number-parser"]) >= _as_tuple("0.21.0a1")
+
+
 def test_the_number_parser_floor_reads_colloquial_teens():
     """Below 0.20.4a1 the parser read ten spellings of a contracted teen, all of the
     -اشر shape. A Saudi transcript writes them a dozen other ways, and

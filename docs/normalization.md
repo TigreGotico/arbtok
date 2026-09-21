@@ -366,18 +366,17 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `leave_unspeakable_numbers` | a number that cannot be spoken is left as written and the rest is still read; otherwise the error is raised |
 | `oblique_numbers` | cardinals in the oblique case, the one connected speech uses |
 | `space_fused_hundreds` | in those cardinals `ثلاثمئة` becomes `ثلاث مئة`; a synthesizer keeps the spaced form and garbles the fused one |
-| `dialect_numbers` | the cardinals and the digit-by-digit readings take the words the lect `lang` names uses, from its bundled table |
-| `number_forms` | your own words for values, `{100: "مية"}`, over the lect's table or instead of one; set with `with_number_forms` |
+| `dialect_numbers` | the cardinals and the digit-by-digit readings take the words the lect `lang` names uses, asked of the number parser under that lect's ISO 639-3 code |
+| `number_forms` | your own words for values, `{100: "مية"}`, over the lect's or instead of them; set with `with_number_forms` |
 | `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
 
 ### Numbers in the words a lect actually uses
 
-The number parser speaks Standard Arabic. A lect does not: where the parser says
-`خمسة عشر` for 15, Jidda and Abu Dhabi both say `خمسطعش`, and where it says
-`ثلاثمئة` Jidda says `تلتمية` and Abu Dhabi `ثلاثمية`. `dialect_numbers` lays the
-lect's own words over the cardinal the parser composed, so the parser still does
-the composing and a table names only the words that differ.
+A number spoken in Standard Arabic is not what a lect says: where the literary
+reading is `خمسة عشر` for 15, Jidda and Abu Dhabi both say `خمسطعش`, and where it
+is `ثلاثمئة` Jidda says `تلتمية` and Abu Dhabi `ثلاثمية`. `dialect_numbers` asks
+the number parser for the lect's own words, under that lect's ISO 639-3 code.
 
 ```python
 normalize_for_tts("السعر 350 ريال", "ar", KSA_VOICE_AGENT)
@@ -386,26 +385,27 @@ normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", KSA_VOICE_AGENT, d
 # 'السعر تلت مية وخمسين ريال'
 ```
 
-A table ships for Hijazi, for the Gulf and for Cairene Egyptian;
-`arbtok.number_forms.bundled_lects()` names them. Every row in one is quoted from
-a published grammar with its page, and the spelling chosen for each pronunciation
-is the most frequent written form of it in a corpus of Saudi speech; the tables
-are `arbtok/data/number_forms/*.tsv` and each says its source on the row. A lect
-inherits its group's table, so Kuwaiti and Qatari read the Gulf one. **A lect
-with no cited table keeps the parser's Standard Arabic**, Najdi included: no
-source has been read for it, and a form no source gives is not written.
+The words are the parser's, quoted there from a published grammar with its page,
+and it composes the number the same way whichever lect it speaks: a lect differs
+in its words and not in its arithmetic. It has words for Hijazi `acw`, Gulf `afb`
+and Cairene Egyptian `arz`. What arbtok adds is the translation from the tag you
+passed to that code, `arbtok.lect_code`, which walks the orthography2ipa parent
+chain, so Kuwaiti and Qatari take the Gulf code from the node they descend from.
+**A lect the parser has no cited words for keeps the literary ones**, Najdi
+included: no source has been read for it, and a form no source gives is not
+written.
 
 **The numeral is all this changes.** Arabic makes the counted noun agree with the
-number, and the dialects the tables cover agree in the same direction: two to ten
-take a plural noun, eleven upwards take a singular, and three to ten drop their final
+number, and the dialects covered agree in the same direction: two to ten take a
+plural noun, eleven upwards take a singular, and three to ten drop their final
 vowel before a noun that follows. None of that happens here, because the text around
 the number is the author's and this rewrites a numeral in place. Write the noun the
 way the number you passed in requires.
 
-The flag is off everywhere by default, so a number spoken before it existed is
-spoken the same way now. `with_number_forms` gives your own words for values,
-with or without a table under them, and `describe()` names both the tables and
-your words so a run says which words it used.
+The flag is off everywhere by default, so a number keeps its literary words
+unless you ask for a lect. `with_number_forms` gives your own words for values,
+with or without a lect under them, and `describe()` names the parser and digests
+your words, so a run records which words it used.
 
 A price and a phone number cannot be told apart by length, so nothing here
 guesses from length alone below eleven digits: a phone number is known by its

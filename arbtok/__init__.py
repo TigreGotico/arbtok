@@ -19,7 +19,7 @@ if you speak MSA pull requests welcome!
 its orthography2ipa quality tier.
 """
 
-from arbtok.dialects import Lect, spec_for_lang, supported_lects
+from arbtok.dialects import Lect, lect_code, spec_for_lang, supported_lects
 from arbtok.textnorm import AsrNorm, TtsNorm, is_arabic_lang, normalize_asr, normalize_for_tts
 from arbtok.version import VERSION_STR as __version__
 
