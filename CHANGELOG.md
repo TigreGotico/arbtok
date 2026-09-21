@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a9](https://github.com/TigreGotico/arbtok/tree/0.0.2a9) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a8...0.0.2a9)
+
+**Merged pull requests:**
+
+- fix\(util\): a 12-hour clock marker is not the unit that shares its symbol [\#177](https://github.com/TigreGotico/arbtok/pull/177) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a8](https://github.com/TigreGotico/arbtok/tree/0.0.2a8) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a7...0.0.2a8)
