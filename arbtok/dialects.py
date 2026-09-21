@@ -14,6 +14,7 @@ The sentence cascade below reads the spec's grapheme layer only; it has no
 allophone pass yet.
 """
 
+import functools
 from enum import Enum
 from typing import Dict, List, NamedTuple, Optional
 
@@ -254,6 +255,47 @@ def spec_for_lang(lang: Optional[str]) -> str:
         return best
 
     return DEFAULT_LANG
+
+
+#: The ISO 639-3 code of the individual Arabic language a spec names, for the
+#: consumers that key their data by 639-3 rather than by a BCP-47 tag — the number
+#: parser's cardinals among them. Only the specs that name a language of their own
+#: are listed; every other spec is answered through its parent, so the Gulf states
+#: take the Gulf code from ``ar-x-gulf`` without being named here. Source: ISO 639-3
+#: code table, https://iso639-3.sil.org/code_tables/639/data, read for the
+#: macrolanguage ``ara``.
+_SPEC_LANGUAGE_CODES = {
+    "ar-EG": "arz",          # Egyptian Arabic
+    "ar-SA-x-hejaz": "acw",  # Hijazi Arabic
+    "ar-SA-x-najd": "ars",   # Najdi Arabic
+    "ar-x-gulf": "afb",      # Gulf Arabic
+}
+
+
+@functools.lru_cache(maxsize=None)
+def lect_code(lang: str) -> Optional[str]:
+    """The ISO 639-3 code of the lect *lang* names, or ``None`` when it names none.
+
+    The spec *lang* resolves to is tried first, then that spec's parents, so which
+    leaves carry which code comes from orthography2ipa's genealogy rather than a list
+    here: Kuwaiti has no code of its own and takes the Gulf one because its spec
+    declares ``ar-x-gulf`` as its parent. ``ar`` is the macrolanguage and names no
+    lect; a tag that resolves to it, or to any spec whose chain names none, is
+    ``None``.
+
+    The code is the tag translated and nothing more. Whether anything is said
+    differently under it is the answer of whoever holds the data — the number parser
+    speaks a lect's cardinals only for the lects it has read a source for.
+    """
+    from orthography2ipa import get
+
+    code, seen = spec_for_lang(lang), set()
+    while code and code not in seen:
+        if code in _SPEC_LANGUAGE_CODES:
+            return _SPEC_LANGUAGE_CODES[code]
+        seen.add(code)
+        code = get(code).parent
+    return None
 
 
 class Lect(NamedTuple):

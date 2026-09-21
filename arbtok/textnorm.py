@@ -660,11 +660,12 @@ class TtsNorm:
     #: author wrote are left as written.
     space_fused_hundreds: bool = False
     #: The cardinals and the digit-by-digit readings take the words of the lect ``lang``
-    #: names, from :func:`arbtok.number_forms.number_forms`: ``ar-SA`` and ``ar-EG`` do
-    #: not say 15 alike. With no table for the lect, or with plain ``ar``, the words are
-    #: the parser's. Runs before ``space_fused_hundreds``.
+    #: names, asked of the number parser under that lect's ISO 639-3 code: Jidda and
+    #: Cairo do not say 15 alike. With no lect in the tag, or none the parser has
+    #: cited words for, the words are the literary ones. Runs before
+    #: ``space_fused_hundreds``.
     dialect_numbers: bool = False
-    #: Your own words for values, ``{100: "مية"}``, laid over the lect's table, or used
+    #: Your own words for values, ``{100: "مية"}``, laid over the lect's, or used
     #: alone when ``dialect_numbers`` is off. Set with :meth:`with_number_forms`.
     number_forms: Tuple[Tuple[int, str], ...] = ()
     #: Dates, times, numbers and units as words in ``lang``.
@@ -693,13 +694,11 @@ class TtsNorm:
         on = [f.name if getattr(self, f.name) is True
               else f"{f.name}={hashlib.sha256(repr(getattr(self, f.name)).encode()).hexdigest()[:8]}"
               for f in dataclasses.fields(self) if getattr(self, f.name) and f.name != "lexicon"]
-        speaks = self.cardinal_numbers or self.spoken_forms
-        tables = ""
-        if self.dialect_numbers:
-            from arbtok.number_forms import tables_digest
-            tables = f"; number tables {tables_digest()}"
+        # ``dialect_numbers`` takes its words from the parser as the cardinals do, so
+        # the parser is named for it too: it is what identifies the words a run used.
+        speaks = self.cardinal_numbers or self.spoken_forms or self.dialect_numbers
         return (f"arbtok-tts-norm {TTS_NORM_VERSION}: {','.join(on) or 'none'}"
-                + _describe_lexicon(self.lexicon) + tables + (_describe_parser() if speaks else ""))
+                + _describe_lexicon(self.lexicon) + (_describe_parser() if speaks else ""))
 
 
 #: Names the rule set of :func:`normalize_for_tts`, computed the way
@@ -734,24 +733,57 @@ def _tts_patterns(config: TtsNorm):
     return phones, prefixes, context
 
 
+def _number_case(config: TtsNorm) -> str:
+    """The register the parser speaks a number in. It is always stated: a lect's own
+    default register is the oblique, and the register here is ``oblique_numbers``'s
+    to decide whatever ``lang`` says."""
+    return "oblique" if config.oblique_numbers else "nominative"
+
+
+@functools.lru_cache(maxsize=64)
+def _number_lang(lang: str, config: TtsNorm) -> str:
+    """The code the parser is asked to speak a number under: the ISO 639-3 code of the
+    lect ``lang`` names, when a lect's own words are wanted, and ``lang`` otherwise. A
+    lect the parser has no cited words for keeps the literary ones, Najdi among them."""
+    if not config.dialect_numbers:
+        return lang
+    from arbtok.dialects import lect_code
+    return lect_code(lang) or lang
+
+
 @functools.lru_cache(maxsize=64)
 def _lect_forms(lang: str, config: TtsNorm):
-    """The words this call says for values, and the pattern that finds the parser's word
-    for each inside a cardinal it composed. The parser's word is asked of the parser, in
-    the case the config speaks, so a table is keyed by value and never by a spelling."""
-    forms: Dict[int, str] = {}
-    if config.dialect_numbers:
-        from arbtok.number_forms import number_forms
-        forms.update(number_forms(lang))
-    forms.update(config.number_forms)
+    """The caller's own words for values, and the pattern that finds the word the parser
+    said for each inside a cardinal it composed. That word is asked of the parser, in the
+    code and the case this call speaks, so a form is keyed by value and never by a
+    spelling."""
+    forms = dict(config.number_forms)
     if not forms:
         return forms, None, {}
     from ovos_number_parser import pronounce_number
-    case = {"case": "oblique"} if config.oblique_numbers else {}
-    said = {pronounce_number(value, lang=lang, **case): word for value, word in forms.items()}
+    said = {pronounce_number(value, lang=_number_lang(lang, config), case=_number_case(config)): word
+            for value, word in forms.items()}
     pattern = re.compile(r"(?<!\S)(و?)(" + "|".join(re.escape(w) for w in sorted(said, key=len, reverse=True))
                          + r")(?!\S)")
     return forms, pattern, said
+
+
+@functools.lru_cache(maxsize=64)
+def _digit_forms(lang: str, config: TtsNorm) -> Dict[int, str]:
+    """The word a digit read on its own takes where it is not :data:`_DIGIT_WORDS`: the
+    lect's own, where the lect says that digit differently from the literary reading,
+    and the caller's over it. ``ar`` is the macrolanguage and reads the literary words,
+    which is the comparison."""
+    forms: Dict[int, str] = {}
+    if config.dialect_numbers:
+        from ovos_number_parser import pronounce_number
+        spoken, case = _number_lang(lang, config), _number_case(config)
+        for digit in range(10):
+            word = pronounce_number(digit, lang=spoken, case=case)
+            if word != pronounce_number(digit, lang="ar", case=case):
+                forms[digit] = word
+    forms.update(config.number_forms)
+    return forms
 
 
 def _digit_by_digit(run: str, forms: Mapping[int, str] = {}) -> str:
@@ -761,8 +793,7 @@ def _digit_by_digit(run: str, forms: Mapping[int, str] = {}) -> str:
 def _cardinal(number: str, lang: str, config: TtsNorm) -> str:
     from ovos_number_parser import pronounce_number
     value = float(number) if "." in number else int(number)
-    words = pronounce_number(value, lang=lang, case="oblique") if config.oblique_numbers \
-        else pronounce_number(value, lang=lang)
+    words = pronounce_number(value, lang=_number_lang(lang, config), case=_number_case(config))
     forms, pattern, said = _lect_forms(lang, config)
     if isinstance(value, int) and value in forms:
         words = forms[value]
@@ -824,7 +855,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     speaks_arabic = [name for name in _ARABIC_ONLY if getattr(config, name)]
     if speaks_arabic and not is_arabic_lang(lang):
         raise ValueError(f"{', '.join(speaks_arabic)} speak Arabic and lang is {lang!r}")
-    digit_forms = _lect_forms(lang, dataclasses.replace(config, lexicon=()))[0]
+    digit_forms = _digit_forms(lang, dataclasses.replace(config, lexicon=()))
     phones, prefixes, context = _tts_patterns(dataclasses.replace(config, lexicon=()) if config.lexicon else config)
     if config.strip_controls:
         text = _CONTROLS.sub("", text)

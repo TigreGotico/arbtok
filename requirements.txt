@@ -2,12 +2,16 @@ numpy
 onnxruntime
 quebra-frases
 langcodes
-# Floored at the release that reads the colloquial spellings of numbers. Arabic writes a
-# contracted teen a dozen ways -- خمسطعش, خمستعشر, خمسطاعش -- and below this version the
-# parser read ten of them, all of the -اشر shape, so `normalize_asr(spoken_numbers_to_digits)`
-# left most of the teens in a real transcript as words. Measured on the human transcripts of
-# the SADA corpus: 1,167 one-word teens in 190 spellings, of which the older parser read 66.
-ovos-number-parser>=0.20.4a1
+# Floored at the release that speaks a lect's cardinals: `dialect_numbers` asks it for the
+# Hijazi, Gulf and Egyptian number words by the lect's ISO 639-3 code, and an older parser
+# answers `lang="acw"` with the literary words and no error, so the flag would do nothing
+# and say so nowhere. It also reads the colloquial spellings of numbers, from 0.20.4a1:
+# Arabic writes a contracted teen a dozen ways -- خمسطعش, خمستعشر, خمسطاعش -- and below that
+# version the parser read ten of them, all of the -اشر shape, so
+# `normalize_asr(spoken_numbers_to_digits)` left most of the teens in a real transcript as
+# words. Measured on the human transcripts of the SADA corpus: 1,167 one-word teens in 190
+# spellings, of which the older parser read 66.
+ovos-number-parser>=0.21.0a1
 ovos-date-parser>=0.6.4a1
 # Transitive, floored here because the combination is otherwise installable and breaks
 # on import rather than on resolve. ovos-config below 3.5.1a1 imports

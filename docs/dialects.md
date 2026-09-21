@@ -49,6 +49,29 @@ where the grapheme layer resolves but the allophone rule set has not been taken
 as far. The tier is a property of the installed orthography2ipa spec, not of
 arbtok's cascade.
 
+## The ISO 639-3 code a tag names
+
+A spec code is a BCP-47 tag, and some things a variety needs are keyed by the ISO
+639-3 code of the individual Arabic language instead — the number parser's
+cardinals are, because a region is not a lect and mapping one to the other is a
+linguistic claim a number parser has no source for. `arbtok.lect_code` makes that
+claim and nothing else: it reads the code off the spec's parent chain, so a leaf
+takes its group's code and the answer follows orthography2ipa's genealogy rather
+than a list of countries.
+
+```python
+from arbtok import lect_code
+
+lect_code("ar-SA-x-hejaz")   # 'acw' — Hijazi
+lect_code("ar-KW")           # 'afb' — Gulf, from the ar-x-gulf node it descends from
+lect_code("ar-SA")           # 'ars' — Najdi, which ar-SA resolves to
+lect_code("ar")              # None  — the macrolanguage names no lect
+```
+
+Whether anything is said differently under the code is the answer of whoever
+holds the data: the parser speaks a lect's cardinals only for the lects it has
+read a source for, and `ars` is not among them.
+
 ## Pipeline order: MSA restoration before dialect allophony
 
 The stem lexicon and the tashkeel diacritizer are **MSA artifacts**, and
