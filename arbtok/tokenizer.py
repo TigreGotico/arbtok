@@ -289,12 +289,14 @@ def _shadda_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
     # Return the IPA of the previous token.
     if tok.prev_token:
         prev = tok._prev_ipa(known)
-        # A length mark cannot be geminated. If the previous letter still
-        # rendered as one, it was read as a mater lectionis despite carrying
-        # gemination, and duplicating it would emit `ːː`. The ya/waw branches
-        # prevent that at source; this refuses to manufacture the
-        # malformation if any other path reaches here.
-        if prev == "ː":
+        # A length mark cannot be geminated, and a geminated consonant's IPA
+        # never ends in one: a reading that ends in `ː` is a vowel or a bare
+        # length mark. If the previous letter still rendered as one, it was
+        # read as a mater lectionis despite carrying gemination, and
+        # duplicating it would emit `ːː`. The ya/waw branches prevent that at
+        # source; this refuses to manufacture the malformation if any other
+        # path reaches here.
+        if prev.endswith("ː"):
             return ""
         return prev
     # A shadda with nothing before it has nothing to geminate. This used to
