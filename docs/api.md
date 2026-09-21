@@ -183,9 +183,9 @@ calls before diacritizing. `**flags` override the config. An unknown flag raises
 A frozen dataclass of the rules, listed with their order in
 [normalization.md](normalization.md#numbers-a-voice-agent-reads-out).
 `with_lexicon(mapping)` sets the Latin-script terms and their spoken Arabic
-forms; `describe() -> str` returns the string to record. `KSA_VOICE_AGENT`
-is the bundle for a Saudi voice agent's replies; `ARAB_PHONE_REGIONS` and
-`IDENTIFIER_WORDS` are the tuples it is built from. The numbering plans it reads are
+forms; `describe() -> str` returns the string to record. `ARAB_PHONE_REGIONS`
+and `IDENTIFIER_WORDS` are the values a voice agent gives `phone_regions` and
+`identifier_words`. The numbering plans `phone_regions` reads are
 bundled in `arbtok/data/phone_plans.json`, built from Google's libphonenumber
 metadata by `scripts/build_phone_plans.py`.
 `TTS_NORM_VERSION` names the rule set. `with_number_forms(mapping)` sets your own

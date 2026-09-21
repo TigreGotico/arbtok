@@ -262,6 +262,35 @@ from arbtok.tashkeel import TashkeelDiacritizer   # the bundled rawi ensemble
 TashkeelDiacritizer().diacritize("كتاب جميل")
 ```
 
+### Numbers a voice agent reads out
+
+A spoken reply holds prices, phone numbers and booking references, and each is read
+differently: a price as a cardinal, a phone number or a reference digit by digit.
+`TtsNorm` holds one flag per rule; a voice agent turns these on:
+
+```python
+from arbtok.textnorm import ARAB_PHONE_REGIONS, IDENTIFIER_WORDS, TtsNorm, normalize_for_tts
+
+VOICE_AGENT = TtsNorm(
+    speak_percent=True,                   # 4.5% is spoken as a percentage
+    keep_code_digits=True,                # the 5 of "MG 5" stays with the name
+    phone_regions=ARAB_PHONE_REGIONS,     # numbering plans of every Arab League member
+    long_digit_runs=True,                 # eleven digits or more are a reference
+    identifier_words=IDENTIFIER_WORDS,    # a number after رقم or كود is read digit by digit
+    cardinal_numbers=True,                # every other number is a cardinal
+    leave_unspeakable_numbers=True,       # a number it cannot speak does not cost the sentence
+    oblique_numbers=True,                 # the case connected speech uses
+    space_fused_hundreds=True,            # ثلاثمئة becomes ثلاث مئة
+    spoken_forms=False,                   # the cardinals already speak the numbers
+    canonical_unicode=False,
+)
+normalize_for_tts("خلني أسجل رقمك 0551234567", "ar", VOICE_AGENT)
+# 'خلني أسجل رقمك صفر خمسة خمسة واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
+```
+
+Every flag and the order the rules run in are in
+[docs/normalization.md](docs/normalization.md#numbers-a-voice-agent-reads-out).
+
 ### As orthography2ipa plugins
 
 Installing arbtok registers three **named** orthography2ipa step plugins

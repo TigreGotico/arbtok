@@ -30,7 +30,7 @@ from typing import Dict, Mapping, Optional, Tuple
 
 __all__ = ["AsrNorm", "TtsNorm", "normalize_asr", "normalize_for_tts",
            "TRUTH_CHECK", "CER_STRIP", "CER_NORM", "CER_MARKS_FIRST", "CER_NORM_MARKS_FIRST",
-           "INTELLIGIBILITY_GATE", "KSA_VOICE_AGENT", "ARAB_PHONE_REGIONS",
+           "INTELLIGIBILITY_GATE", "ARAB_PHONE_REGIONS",
            "IDENTIFIER_WORDS", "ASR_NORM_VERSION", "TTS_NORM_VERSION", "spelled_codes",
            "bundled_asr_lexicon", "bundled_tts_lexicon", "cldr_units"]
 
@@ -636,8 +636,10 @@ class TtsNorm:
     ``spoken_forms`` and ``canonical_unicode`` are on by default, which is what the
     G2P plugin runs. The rest are off. Those from ``speak_percent`` to
     ``space_fused_hundreds`` are rules a voice agent needs when it reads out prices,
-    phone numbers and booking references; :data:`KSA_VOICE_AGENT` turns them on with
-    the numbering plans of every Arab League member.
+    phone numbers and booking references. Such an agent turns all of them on, with
+    ``phone_regions=ARAB_PHONE_REGIONS`` and ``identifier_words=IDENTIFIER_WORDS``, and
+    turns ``spoken_forms`` and ``canonical_unicode`` off, because the cardinals already
+    speak its numbers.
     """
     #: Drop zero-width and bidirectional control characters.
     strip_controls: bool = False
@@ -737,17 +739,6 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE)
 _PLUGIN_DEFAULT = TtsNorm()
-
-#: What a Saudi voice agent's replies need before synthesis: percentages spoken, the
-#: digits of a model name kept, phone numbers, long references and numbers after a
-#: word such as رقم or كود read digit by digit, and every other number a cardinal in
-#: the oblique case with its hundreds spaced. The phone numbers are those of every
-#: Arab League member, Saudi Arabia among them, by its numbering plan: callers give
-#: Egyptian, Jordanian and Gulf numbers too.
-KSA_VOICE_AGENT = TtsNorm(speak_percent=True, keep_code_digits=True, phone_regions=ARAB_PHONE_REGIONS,
-                          long_digit_runs=True, identifier_words=IDENTIFIER_WORDS, cardinal_numbers=True,
-                          leave_unspeakable_numbers=True, oblique_numbers=True, space_fused_hundreds=True,
-                          spoken_forms=False, canonical_unicode=False)
 
 
 @functools.lru_cache(maxsize=None)
@@ -950,7 +941,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
 
     ``config`` is a :class:`TtsNorm`; with none given it is what the G2P plugin runs,
     ``spoken_forms`` and ``canonical_unicode``. Flags override it:
-    ``normalize_for_tts(text, KSA_VOICE_AGENT, spell_out_codes=True)``.
+    ``normalize_for_tts(text, "ar", config, spell_out_codes=True)``.
 
     ``lexicon`` maps a Latin-script term to the way it is said, ``{"BMW": "بِي إِمْ
     دَبَلْيُو"}``. It is applied first, the longest term first and without regard to
