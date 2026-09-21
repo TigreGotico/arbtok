@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a29](https://github.com/TigreGotico/arbtok/tree/0.0.1a29) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a28...0.0.1a29)
+
+**Merged pull requests:**
+
+- fix: a shadda never geminates a reading that ends in a length mark [\#156](https://github.com/TigreGotico/arbtok/pull/156) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a28](https://github.com/TigreGotico/arbtok/tree/0.0.1a28) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a27...0.0.1a28)
