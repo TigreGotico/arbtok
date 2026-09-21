@@ -147,10 +147,13 @@ def test_arabic_indic_digits_are_read_as_ascii_ones_are():
 
 
 def test_a_number_in_the_other_digit_script_is_not_taken_into_a_phone_number():
-    # libphonenumber example number, MOBILE, EG, its last digit written in Arabic-Indic: the
-    # ASCII digits are one short of a number and the digit after them is another number.
-    written = "اتصل على +20 10 0123456 ٧ اليوم"
-    assert normalize_for_tts(written, "ar", VOICE_AGENT) == normalize_for_tts(written, "ar", NO_REGIONS)
+    # libphonenumber example number, MOBILE, EG, its last digit written in Arabic-Indic with
+    # another after it: the ASCII digits are one short of a number and the Arabic-Indic
+    # digits after them are another number.
+    # The run led by + is read digit by digit all the same; the other number is a cardinal.
+    written = "اتصل على +20 10 0123456 ٧٨ اليوم"
+    other = normalize_for_tts("٧٨", "ar", VOICE_AGENT)
+    assert normalize_for_tts(written, "ar", VOICE_AGENT) == f"اتصل على {one_by_one('20100123456')} {other} اليوم"
 
 
 def test_a_number_after_the_phone_number_is_not_taken_into_it():

@@ -5,30 +5,100 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "2": [
+       8
+      ],
+      "3": [
+       8
+      ],
+      "4": [
+       8
+      ],
+      "6": [
+       8
+      ],
+      "7": [
+       8
+      ],
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "[2-4679][2-8]\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "5": [
+       9
+      ]
+     },
      "national_number_pattern": "5[02-68]\\d{7}",
      "possible_lengths": [
       9
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "9": [
+       9
+      ]
+     },
      "national_number_pattern": "900[02]\\d{5}",
      "possible_lengths": [
       9
      ]
     },
     "shared_cost": {
+     "leading_digits": {
+      "7": [
+       9
+      ]
+     },
+     "leading_three_digits": {
+      "700": [
+       9
+      ]
+     },
      "national_number_pattern": "700[05]\\d{5}",
      "possible_lengths": [
       9
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "4": [
+       9
+      ],
+      "8": [
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12
+      ]
+     },
+     "leading_three_digits": {
+      "400": [
+       9
+      ],
+      "800": [
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12
+      ]
+     },
      "national_number_pattern": "400\\d{6}|800\\d{2,9}",
      "possible_lengths": [
       5,
@@ -42,6 +112,16 @@
      ]
     },
     "uan": {
+     "leading_digits": {
+      "6": [
+       9
+      ]
+     },
+     "leading_three_digits": {
+      "600": [
+       9
+      ]
+     },
      "national_number_pattern": "600[25]\\d{5}",
      "possible_lengths": [
       9
@@ -54,30 +134,251 @@
    "national_prefix": "",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       8
+      ],
+      "6": [
+       8
+      ],
+      "7": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:1(?:3[1356]|6[0156]|7\\d)\\d|6(?:1[16]\\d|500|6(?:0\\d|3[12]|44|55|7[7-9]|88)|9[69][69])|7(?:[07]\\d\\d|1(?:11|78)))\\d{4}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "3": [
+       8
+      ],
+      "6": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:3(?:[0-79]\\d|8[0-57-9])\\d|6(?:3(?:00|33|6[16])|441|6(?:3[03-9]|[69]\\d|7[0-689])))\\d{4}",
      "possible_lengths": [
       8
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "8": [
+       8
+      ],
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:87|9[0-8])\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "shared_cost": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "840": [
+       8
+      ],
+      "841": [
+       8
+      ],
+      "842": [
+       8
+      ],
+      "843": [
+       8
+      ],
+      "844": [
+       8
+      ],
+      "845": [
+       8
+      ],
+      "846": [
+       8
+      ],
+      "847": [
+       8
+      ],
+      "848": [
+       8
+      ],
+      "849": [
+       8
+      ]
+     },
      "national_number_pattern": "84\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "800": [
+       8
+      ],
+      "801": [
+       8
+      ],
+      "802": [
+       8
+      ],
+      "803": [
+       8
+      ],
+      "804": [
+       8
+      ],
+      "805": [
+       8
+      ],
+      "806": [
+       8
+      ],
+      "807": [
+       8
+      ],
+      "808": [
+       8
+      ],
+      "809": [
+       8
+      ],
+      "820": [
+       8
+      ],
+      "821": [
+       8
+      ],
+      "822": [
+       8
+      ],
+      "823": [
+       8
+      ],
+      "824": [
+       8
+      ],
+      "825": [
+       8
+      ],
+      "826": [
+       8
+      ],
+      "827": [
+       8
+      ],
+      "828": [
+       8
+      ],
+      "829": [
+       8
+      ],
+      "830": [
+       8
+      ],
+      "831": [
+       8
+      ],
+      "832": [
+       8
+      ],
+      "833": [
+       8
+      ],
+      "834": [
+       8
+      ],
+      "835": [
+       8
+      ],
+      "836": [
+       8
+      ],
+      "837": [
+       8
+      ],
+      "838": [
+       8
+      ],
+      "839": [
+       8
+      ],
+      "860": [
+       8
+      ],
+      "861": [
+       8
+      ],
+      "862": [
+       8
+      ],
+      "863": [
+       8
+      ],
+      "864": [
+       8
+      ],
+      "865": [
+       8
+      ],
+      "866": [
+       8
+      ],
+      "867": [
+       8
+      ],
+      "868": [
+       8
+      ],
+      "869": [
+       8
+      ],
+      "890": [
+       8
+      ],
+      "891": [
+       8
+      ],
+      "892": [
+       8
+      ],
+      "893": [
+       8
+      ],
+      "894": [
+       8
+      ],
+      "895": [
+       8
+      ],
+      "896": [
+       8
+      ],
+      "897": [
+       8
+      ],
+      "898": [
+       8
+      ],
+      "899": [
+       8
+      ]
+     },
      "national_number_pattern": "8[02369]\\d{6}",
      "possible_lengths": [
       8
@@ -90,12 +391,22 @@
    "national_prefix": "",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "2": [
+       8
+      ]
+     },
      "national_number_pattern": "2(?:1[2-5]|7[45])\\d{5}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "7": [
+       8
+      ]
+     },
      "national_number_pattern": "77\\d{6}",
      "possible_lengths": [
       8
@@ -108,6 +419,23 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       8
+      ],
+      "2": [
+       8
+      ],
+      "3": [
+       8
+      ],
+      "4": [
+       8
+      ],
+      "9": [
+       9
+      ]
+     },
      "national_number_pattern": "9619\\d{5}|(?:[1-3]\\d|4[013-689])\\d{6}",
      "possible_lengths": [
       8,
@@ -115,30 +443,74 @@
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "5": [
+       9
+      ],
+      "6": [
+       9
+      ],
+      "7": [
+       9
+      ]
+     },
      "national_number_pattern": "5(?:4[0-29]|6[0-4])\\d{6}|(?:55|6\\d|7[7-9])\\d{7}",
      "possible_lengths": [
       9
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "8": [
+       9
+      ]
+     },
      "national_number_pattern": "80[3-689]1\\d{5}",
      "possible_lengths": [
       9
      ]
     },
     "shared_cost": {
+     "leading_digits": {
+      "8": [
+       9
+      ]
+     },
+     "leading_three_digits": {
+      "801": [
+       9
+      ],
+      "802": [
+       9
+      ]
+     },
      "national_number_pattern": "80[12]1\\d{5}",
      "possible_lengths": [
       9
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "8": [
+       9
+      ]
+     },
+     "leading_three_digits": {
+      "800": [
+       9
+      ]
+     },
      "national_number_pattern": "800\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "voip": {
+     "leading_digits": {
+      "9": [
+       9
+      ]
+     },
      "national_number_pattern": "98[23]\\d{6}",
      "possible_lengths": [
       9
@@ -151,6 +523,34 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       8,
+       9
+      ],
+      "2": [
+       9
+      ],
+      "3": [
+       8
+      ],
+      "4": [
+       9
+      ],
+      "5": [
+       8,
+       9
+      ],
+      "6": [
+       9
+      ],
+      "8": [
+       9
+      ],
+      "9": [
+       9
+      ]
+     },
      "national_number_pattern": "13[23]\\d{6}|(?:15|57)\\d{6,7}|(?:2\\d|3|4[05-8]|5[05]|6[24-689]|8[2468]|9[235-7])\\d{7}",
      "possible_lengths": [
       8,
@@ -158,18 +558,38 @@
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "1": [
+       10
+      ]
+     },
      "national_number_pattern": "1[0-25]\\d{8}",
      "possible_lengths": [
       10
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "9": [
+       10
+      ]
+     },
      "national_number_pattern": "900\\d{7}",
      "possible_lengths": [
       10
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "8": [
+       10
+      ]
+     },
+     "leading_three_digits": {
+      "800": [
+       10
+      ]
+     },
      "national_number_pattern": "800\\d{7}",
      "possible_lengths": [
       10
@@ -182,6 +602,31 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       8
+      ],
+      "2": [
+       8,
+       9
+      ],
+      "3": [
+       8,
+       9
+      ],
+      "4": [
+       8,
+       9
+      ],
+      "5": [
+       8,
+       9
+      ],
+      "6": [
+       8,
+       9
+      ]
+     },
      "national_number_pattern": "1\\d{7}|(?:2[13-5]|3[02367]|4[023]|5[03]|6[026])\\d{6,7}",
      "possible_lengths": [
       8,
@@ -189,6 +634,11 @@
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "7": [
+       10
+      ]
+     },
      "national_number_pattern": "7[3-9]\\d{8}",
      "possible_lengths": [
       10
@@ -201,36 +651,180 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "2": [
+       8
+      ],
+      "3": [
+       8
+      ],
+      "5": [
+       8
+      ],
+      "6": [
+       8
+      ],
+      "8": [
+       8
+      ]
+     },
      "national_number_pattern": "87(?:000|90[01])\\d{3}|(?:2(?:6(?:2[0-35-9]|3[0-578]|4[24-7]|5[0-24-8]|[6-8][023]|9[0-3])|7(?:0[1-79]|10|2[014-7]|3[0-689]|4[019]|5[0-3578]))|32(?:0[1-69]|1[1-35-7]|2[024-7]|3\\d|4[0-3]|[5-7][023])|53(?:0[0-3]|[13][023]|2[0-59]|49|5[0-35-9]|6[15]|7[45]|8[1-6]|9[0-36-9])|6(?:2(?:[05]0|22)|3(?:00|33)|4(?:0[0-25]|1[2-7]|2[0569]|[38][07-9]|4[025689]|6[0-589]|7\\d|9[0-2])|5(?:[01][056]|2[034]|3[0-57-9]|4[178]|5[0-69]|6[0-35-9]|7[1-379]|8[0-68]|9[0239]))|87(?:20|7[078]|99))\\d{4}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "4": [
+       9
+      ],
+      "7": [
+       9
+      ]
+     },
      "national_number_pattern": "(?:427|7(?:11|[29]\\d|[78][0-25-9]))\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "9\\d{7}",
      "possible_lengths": [
       8
      ]
     },
     "shared_cost": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "850": [
+       8
+      ],
+      "851": [
+       8
+      ],
+      "852": [
+       8
+      ],
+      "853": [
+       8
+      ],
+      "854": [
+       8
+      ],
+      "855": [
+       8
+      ],
+      "856": [
+       8
+      ],
+      "857": [
+       8
+      ],
+      "858": [
+       8
+      ],
+      "859": [
+       8
+      ]
+     },
      "national_number_pattern": "85\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "800": [
+       8
+      ],
+      "801": [
+       8
+      ],
+      "802": [
+       8
+      ],
+      "803": [
+       8
+      ],
+      "804": [
+       8
+      ],
+      "805": [
+       8
+      ],
+      "806": [
+       8
+      ],
+      "807": [
+       8
+      ],
+      "808": [
+       8
+      ],
+      "809": [
+       8
+      ]
+     },
      "national_number_pattern": "80\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "uan": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "810": [
+       8
+      ],
+      "880": [
+       8
+      ],
+      "881": [
+       8
+      ],
+      "882": [
+       8
+      ],
+      "883": [
+       8
+      ],
+      "884": [
+       8
+      ],
+      "885": [
+       8
+      ],
+      "886": [
+       8
+      ],
+      "887": [
+       8
+      ],
+      "888": [
+       8
+      ],
+      "889": [
+       8
+      ]
+     },
      "national_number_pattern": "8(?:10|8\\d)\\d{5}",
      "possible_lengths": [
       8
@@ -243,18 +837,36 @@
    "national_prefix": "",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "7": [
+       7
+      ]
+     },
      "national_number_pattern": "7[4-7]\\d{5}",
      "possible_lengths": [
       7
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "3": [
+       7
+      ],
+      "4": [
+       7
+      ]
+     },
      "national_number_pattern": "[34]\\d{6}",
      "possible_lengths": [
       7
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "8": [
+       7
+      ]
+     },
      "national_number_pattern": "8\\d{6}",
      "possible_lengths": [
       7
@@ -267,18 +879,74 @@
    "national_prefix": "",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "2": [
+       8
+      ]
+     },
      "national_number_pattern": "2(?:[23]\\d\\d|4(?:[1-35-9]\\d|44)|5(?:0[034]|[2-46]\\d|5[1-3]|7[1-7]))\\d{4}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "4": [
+       8
+      ],
+      "5": [
+       8
+      ],
+      "6": [
+       8
+      ],
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:41\\d\\d|5(?:(?:[05]\\d|1[0-7]|6[56])\\d|2(?:22|5[25])|7(?:55|77)|88[58])|6(?:(?:0[034679]|5[015-9]|6\\d)\\d|1(?:00|11|6[16])|2[26]2|3[36]3|4[46]4|7(?:0[013-9]|[67]\\d)|8[68]8|9(?:[069]\\d|3[039]))|9(?:(?:[04679]\\d|8[057-9])\\d|1(?:00|1[01]|99)|2(?:00|2\\d)|3(?:00|3[03])|5(?:00|5\\d)))\\d{4}",
      "possible_lengths": [
       8
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "1": [
+       7
+      ]
+     },
+     "leading_three_digits": {
+      "180": [
+       7
+      ],
+      "181": [
+       7
+      ],
+      "182": [
+       7
+      ],
+      "183": [
+       7
+      ],
+      "184": [
+       7
+      ],
+      "185": [
+       7
+      ],
+      "186": [
+       7
+      ],
+      "187": [
+       7
+      ],
+      "188": [
+       7
+      ],
+      "189": [
+       7
+      ]
+     },
      "national_number_pattern": "18\\d{5}",
      "possible_lengths": [
       7
@@ -291,6 +959,32 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       7
+      ],
+      "2": [
+       8
+      ],
+      "4": [
+       7
+      ],
+      "5": [
+       7
+      ],
+      "6": [
+       7
+      ],
+      "7": [
+       7
+      ],
+      "8": [
+       7
+      ],
+      "9": [
+       7
+      ]
+     },
      "national_number_pattern": "7(?:62|8[0-6]|9[04-9])\\d{4}|(?:[14-69]\\d|2(?:[14-69]\\d|[78][1-9])|7[2-57]|8[02-9])\\d{5}",
      "possible_lengths": [
       7,
@@ -298,6 +992,17 @@
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "3": [
+       7
+      ],
+      "7": [
+       8
+      ],
+      "8": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:(?:3|81)\\d|7(?:[01]\\d|6[013-9]|8[7-9]|9[0-4]))\\d{5}",
      "possible_lengths": [
       7,
@@ -305,12 +1010,54 @@
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "9[01]\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "shared_cost": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "800": [
+       8
+      ],
+      "801": [
+       8
+      ],
+      "802": [
+       8
+      ],
+      "803": [
+       8
+      ],
+      "804": [
+       8
+      ],
+      "805": [
+       8
+      ],
+      "806": [
+       8
+      ],
+      "807": [
+       8
+      ],
+      "808": [
+       8
+      ],
+      "809": [
+       8
+      ]
+     },
      "national_number_pattern": "80\\d{6}",
      "possible_lengths": [
       8
@@ -323,12 +1070,40 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "2": [
+       9
+      ],
+      "3": [
+       9
+      ],
+      "4": [
+       9
+      ],
+      "5": [
+       9
+      ],
+      "6": [
+       9
+      ],
+      "7": [
+       9
+      ],
+      "8": [
+       9
+      ]
+     },
      "national_number_pattern": "(?:2(?:0[56]|[1-6]\\d|7[124579]|8[124])|3(?:1\\d|2[2356])|4(?:[17]\\d|2[1-357]|5[2-4]|8[124])|5(?:[1347]\\d|2[1-469]|5[13-5]|8[1-4])|6(?:[1-479]\\d|5[2-57]|8[1-5])|7(?:[13]\\d|2[13-79])|8(?:[124]\\d|5[124]|84))\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "9": [
+       9
+      ]
+     },
      "national_number_pattern": "9[1-6]\\d{7}",
      "possible_lengths": [
       9
@@ -341,30 +1116,87 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "5": [
+       9
+      ]
+     },
      "national_number_pattern": "5(?:(?:18|4[0679]|5[03])\\d|2(?:[0-25-79]\\d|3[1-578]|4[02-46-8]|8[0235-9])|3(?:[0-47]\\d|5[02-9]|6[02-8]|8[014-9]|9[3-9]))\\d{5}",
      "possible_lengths": [
       9
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "6": [
+       9
+      ],
+      "7": [
+       9
+      ]
+     },
      "national_number_pattern": "(?:6(?:[0-79]\\d|8[0-247-9])|7(?:[016-8]\\d|2[0-8]|3[01]|5[0-5]))\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "8": [
+       9
+      ]
+     },
      "national_number_pattern": "89\\d{7}",
      "possible_lengths": [
       9
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "8": [
+       9
+      ]
+     },
+     "leading_three_digits": {
+      "800": [
+       9
+      ],
+      "801": [
+       9
+      ],
+      "802": [
+       9
+      ],
+      "803": [
+       9
+      ],
+      "804": [
+       9
+      ],
+      "805": [
+       9
+      ],
+      "806": [
+       9
+      ],
+      "807": [
+       9
+      ]
+     },
      "national_number_pattern": "80[0-7]\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "voip": {
+     "leading_digits": {
+      "5": [
+       9
+      ],
+      "8": [
+       9
+      ]
+     },
      "national_number_pattern": "(?:592(?:4[0-2]|93)|80[89]\\d\\d)\\d{4}",
      "possible_lengths": [
       9
@@ -377,18 +1209,50 @@
    "national_prefix": "",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "2": [
+       8
+      ],
+      "3": [
+       8
+      ],
+      "4": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:25[08]|35\\d|45[1-7])\\d{5}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "2": [
+       8
+      ],
+      "3": [
+       8
+      ],
+      "4": [
+       8
+      ]
+     },
      "national_number_pattern": "[2-4][0-46-9]\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "800": [
+       8
+      ]
+     },
      "national_number_pattern": "800\\d{5}",
      "possible_lengths": [
       8
@@ -401,24 +1265,63 @@
    "national_prefix": "",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "2": [
+       8
+      ]
+     },
      "national_number_pattern": "2[1-6]\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "1": [
+       8
+      ],
+      "7": [
+       8
+      ],
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:1505|90[1-9]\\d)\\d{4}|(?:7[124-9]|9[1-9])\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "900\\d{5}",
      "possible_lengths": [
       8
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "5": [
+       7
+      ],
+      "8": [
+       8,
+       9
+      ]
+     },
+     "leading_three_digits": {
+      "500": [
+       7
+      ],
+      "800": [
+       8,
+       9
+      ]
+     },
      "national_number_pattern": "8007\\d{4,5}|(?:500|800[05])\\d{4}",
      "possible_lengths": [
       7,
@@ -433,24 +1336,63 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "2": [
+       8
+      ],
+      "4": [
+       8
+      ],
+      "8": [
+       8
+      ],
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:22[2-47-9]|42[45]|82[014-68]|92[3569])\\d{5}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "5": [
+       9
+      ]
+     },
      "national_number_pattern": "5[69]\\d{7}",
      "possible_lengths": [
       9
      ]
     },
     "shared_cost": {
+     "leading_digits": {
+      "1": [
+       10
+      ]
+     },
+     "leading_three_digits": {
+      "170": [
+       10
+      ]
+     },
      "national_number_pattern": "1700\\d{6}",
      "possible_lengths": [
       10
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "1": [
+       10
+      ]
+     },
+     "leading_three_digits": {
+      "180": [
+       10
+      ]
+     },
      "national_number_pattern": "1800\\d{6}",
      "possible_lengths": [
       10
@@ -463,18 +1405,55 @@
    "national_prefix": "",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "4": [
+       8
+      ]
+     },
      "national_number_pattern": "4(?:(?:[014]\\d\\d|999)\\d|2022)\\d{3}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "3": [
+       8
+      ],
+      "5": [
+       8
+      ],
+      "6": [
+       8
+      ],
+      "7": [
+       8
+      ]
+     },
      "national_number_pattern": "[35-7]\\d{7}",
      "possible_lengths": [
       8
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "0": [
+       11
+      ],
+      "8": [
+       7,
+       9
+      ]
+     },
+     "leading_three_digits": {
+      "008": [
+       11
+      ],
+      "800": [
+       7,
+       9
+      ]
+     },
      "national_number_pattern": "800\\d{4}|(?:0080[01]|800)\\d{6}",
      "possible_lengths": [
       7,
@@ -489,30 +1468,65 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       9
+      ]
+     },
      "national_number_pattern": "1(?:1\\d|2[24-8]|3[35-8]|4[3-68]|6[2-5]|7[235-7])\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "5": [
+       9
+      ]
+     },
      "national_number_pattern": "579[0-8]\\d{5}|5(?:[013-689]\\d|7[0-8])\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "9": [
+       9
+      ]
+     },
      "national_number_pattern": "925\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "shared_cost": {
+     "leading_digits": {
+      "9": [
+       9
+      ]
+     },
+     "leading_three_digits": {
+      "920": [
+       9
+      ]
+     },
      "national_number_pattern": "920\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "8": [
+       10
+      ]
+     },
+     "leading_three_digits": {
+      "800": [
+       10
+      ]
+     },
      "national_number_pattern": "800\\d{7}",
      "possible_lengths": [
       10
@@ -525,12 +1539,25 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       9
+      ]
+     },
      "national_number_pattern": "1(?:5\\d|8[35-7])\\d{6}",
      "possible_lengths": [
       9
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "1": [
+       9
+      ],
+      "9": [
+       9
+      ]
+     },
      "national_number_pattern": "(?:1[0-2]|9[0-3569])\\d{7}",
      "possible_lengths": [
       9
@@ -543,6 +1570,29 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       6,
+       7
+      ],
+      "2": [
+       7
+      ],
+      "3": [
+       6,
+       7
+      ],
+      "4": [
+       6,
+       7
+      ],
+      "5": [
+       7
+      ],
+      "8": [
+       6
+      ]
+     },
      "national_number_pattern": "(?:1\\d|2[0-79]|3[0-46-8]|4[0-7]|5[57-9])\\d{5}|(?:[134]\\d|8[125])\\d{4}",
      "possible_lengths": [
       6,
@@ -550,6 +1600,36 @@
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "1": [
+       8
+      ],
+      "2": [
+       7,
+       8
+      ],
+      "3": [
+       9
+      ],
+      "4": [
+       9
+      ],
+      "6": [
+       8,
+       9
+      ],
+      "7": [
+       8,
+       9
+      ],
+      "8": [
+       9
+      ],
+      "9": [
+       8,
+       9
+      ]
+     },
      "national_number_pattern": "(?:(?:15|(?:3[59]|4[89]|6\\d|7[0-35-9]|8[08])\\d|9(?:0\\d|[2-9]))\\d|2(?:4\\d|8))\\d{5}|(?:[67]\\d\\d|904)\\d{5}",
      "possible_lengths": [
       7,
@@ -564,6 +1644,26 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       8,
+       9
+      ],
+      "2": [
+       8,
+       9
+      ],
+      "3": [
+       8,
+       9
+      ],
+      "4": [
+       8
+      ],
+      "5": [
+       8
+      ]
+     },
      "national_number_pattern": "(?:1(?:[1478]\\d|[2356])|21\\d|3(?:[13]\\d|4)|4[134]|5[1-3])\\d{6}|2[1-5]\\d{6}",
      "possible_lengths": [
       8,
@@ -571,6 +1671,14 @@
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "5": [
+       9
+      ],
+      "9": [
+       9
+      ]
+     },
      "national_number_pattern": "(?:50|9[03-689])\\d{7}",
      "possible_lengths": [
       9
@@ -583,30 +1691,86 @@
    "national_prefix": "",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "3": [
+       8
+      ],
+      "7": [
+       8
+      ],
+      "8": [
+       8
+      ]
+     },
      "national_number_pattern": "81200\\d{3}|(?:3[0-2]|7\\d)\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "2": [
+       8
+      ],
+      "3": [
+       8
+      ],
+      "4": [
+       8
+      ],
+      "5": [
+       8
+      ],
+      "9": [
+       8
+      ]
+     },
      "national_number_pattern": "3(?:001|[12]40)\\d{4}|(?:(?:[259]\\d|4[0-8])\\d|3(?:1[1-35]|6[0-4]|91))\\d{5}",
      "possible_lengths": [
       8
      ]
     },
     "premium_rate": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
      "national_number_pattern": "88\\d{6}",
      "possible_lengths": [
       8
      ]
     },
     "shared_cost": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "811": [
+       8
+      ],
+      "821": [
+       8
+      ]
+     },
      "national_number_pattern": "8[12]10\\d{4}",
      "possible_lengths": [
       8
      ]
     },
     "toll_free": {
+     "leading_digits": {
+      "8": [
+       8
+      ]
+     },
+     "leading_three_digits": {
+      "801": [
+       8
+      ]
+     },
      "national_number_pattern": "8010\\d{4}",
      "possible_lengths": [
       8
@@ -619,6 +1783,30 @@
    "national_prefix": "0",
    "types": {
     "fixed_line": {
+     "leading_digits": {
+      "1": [
+       7,
+       8
+      ],
+      "2": [
+       7
+      ],
+      "3": [
+       7
+      ],
+      "4": [
+       7
+      ],
+      "5": [
+       7
+      ],
+      "6": [
+       7
+      ],
+      "7": [
+       7
+      ]
+     },
      "national_number_pattern": "78[0-7]\\d{4}|17\\d{6}|(?:[12][2-68]|3[2358]|4[2-58]|5[2-6]|6[3-58]|7[24-6])\\d{5}",
      "possible_lengths": [
       7,
@@ -626,6 +1814,11 @@
      ]
     },
     "mobile": {
+     "leading_digits": {
+      "7": [
+       9
+      ]
+     },
      "national_number_pattern": "7[01378]\\d{7}",
      "possible_lengths": [
       9

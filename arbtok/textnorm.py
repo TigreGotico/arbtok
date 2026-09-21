@@ -571,10 +571,19 @@ IDENTIFIER_WORDS = ("كود", "الكود", "رمز", "الرمز",
                     "رقم", "الرقم", "رقمك", "رقمه", "رقمي",
                     "جوال", "جوالك", "جوالي", "هاتف", "موبايل", "تلفون",
                     "فرع", "الفرع", "شاسيه", "الطلب", "الحجز",
+                    # Saudi Arabia's unified numbers, the 920 numbers a business gives.
+                    "الموحد", "الرقم الموحد",
                     "code", "number", "no", "phone", "mobile", "branch", "ref", "pin", "otp")
 
 _DIGIT_WORDS = dict(zip("0123456789", ("صفر", "واحد", "اثنين", "ثلاثة", "أربعة", "خمسة",
                                        "ستة", "سبعة", "ثمانية", "تسعة")))
+# The most digits a phone number has, the international limit of ITU-T E.164.
+_LONGEST_NUMBER = 15
+# The lengths the evidence of a phone number is read at, in digits: the shortest run led by
+# ``+`` or by ``00`` and a country code, the shortest bare run led by a country code and a
+# mobile number's first digit, and the lengths a toll-free, shared-cost or unified number
+# is read at by its first three digits.
+_PHONE_EVIDENCE = dict(international=5, country_code_and_mobile=9, marked_lengths=(8, 11))
 _EASTERN_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 _FUSED_HUNDREDS = {fused + spelling: spaced + " مئة"
                    for fused, spaced in (("ثلاث", "ثلاث"), ("أربع", "أربع"), ("خمس", "خمس"), ("ست", "ست"),
@@ -716,7 +725,14 @@ class TtsNorm:
     #: plans, or with a region's three-digit country code and a mobile number, or with
     #: the region's trunk prefix (``0`` in most), or it is a toll-free, shared-cost or
     #: unified number of eight digits or more, or it follows one of
-    #: ``identifier_words``. A run shaped like a date is never read this way unless it
+    #: ``identifier_words``. A run that carries its own evidence is read digit by digit
+    #: whatever its length and whether or not the plans know it: one led by ``+`` (five
+    #: digits or more, the ``+`` dropped), one led by ``00`` and a country code of the
+    #: plans, one after an identifier word, one of nine digits or more that starts with a
+    #: region's three-digit country code and a digit the region's mobile numbers start
+    #: with, and one of 8 to 11 digits that starts with the three digits a region's
+    #: toll-free, shared-cost or unified numbers start with and has a length the plan
+    #: gives that type. A run shaped like a date is never read this way unless it
     #: starts with ``+`` or ``00``. Without that evidence a bare eight-digit number stays
     #: a quantity, because in the Gulf and the Maghreb a phone number and a price of
     #: that length cannot be told apart.
@@ -803,7 +819,7 @@ class TtsNorm:
 TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
-                             _RANK_NOUNS, _RANK_NUMBER)
+                             _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE)
 _PLUGIN_DEFAULT = TtsNorm()
 
 
@@ -833,6 +849,45 @@ def _phone_plans():
                      {kind: (re.compile(t["national_number_pattern"]), frozenset(t["possible_lengths"]))
                       for kind, t in plan["types"].items()})
             for region, plan in regions.items()}
+
+
+@functools.lru_cache(maxsize=None)
+def _plan_starts():
+    """For each region and number type of the bundled plans, the digits a number of that
+    type starts with and the lengths it has after each: its first digit, and for the
+    toll-free, shared-cost and unified types also its first three digits. The build
+    script reads them from the type's pattern."""
+    import json
+    regions = json.loads(_PHONE_PLANS.read_text(encoding="utf-8"))["regions"]
+    return {region: {kind: ({lead: frozenset(counts) for lead, counts in t["leading_digits"].items()},
+                            {lead: frozenset(counts) for lead, counts in t.get("leading_three_digits", {}).items()})
+                     for kind, t in plan["types"].items()}
+            for region, plan in regions.items()}
+
+
+@functools.lru_cache(maxsize=None)
+def _mobile_leads(region: str) -> frozenset:
+    """The digits a mobile number of ``region`` can start with."""
+    types = _plan_starts()[region]
+    return frozenset(types["mobile"][0]) if "mobile" in types else frozenset()
+
+
+@functools.lru_cache(maxsize=None)
+def _marked_leads(region: str) -> Dict[str, frozenset]:
+    """The first three digits of the toll-free, shared-cost and unified numbers of
+    ``region``, each with the lengths a number of that type that starts with them has:
+    800 at ten digits and 920 at nine in Saudi Arabia. A type whose pattern fixes fewer
+    than its first three digits is left out, since those are the first digits of too
+    many quantities."""
+    out: Dict[str, frozenset] = {}
+    for kind in _MARKED_TYPES:
+        if kind not in _plan_starts()[region]:
+            continue
+        one, three = _plan_starts()[region][kind]
+        if len(three) == len(one):
+            for head, counts in three.items():
+                out[head] = out.get(head, frozenset()) | counts
+    return out
 
 
 def _number_types(nsn: str, region: str):
@@ -870,7 +925,7 @@ def _is_phone_number(run: str, before: str, regions: Tuple[str, ...], context) -
     plans = _phone_plans()
     groups = [g.translate(_EASTERN_DIGITS) for g in _PHONE_GROUP.findall(run)]
     digits = "".join(groups)
-    if not 7 <= len(digits) <= 15:
+    if not 7 <= len(digits) <= _LONGEST_NUMBER:
         return False
     if run.startswith("+") or digits.startswith("00"):
         digits = digits if run.startswith("+") else digits[2:]
@@ -892,18 +947,59 @@ def _is_phone_number(run: str, before: str, regions: Tuple[str, ...], context) -
     return False
 
 
+def _says_it_is_a_phone_number(run: str, before: str, regions: Tuple[str, ...], context) -> bool:
+    """Whether ``run`` says it is a phone number whether or not the plans know it as a
+    valid one; ``before`` is the text ahead of it.
+
+    A run led by ``+`` does: nobody writes ``+`` before a quantity. So does one led by
+    ``00`` and a country code of the plans, and one of seven digits or more after an
+    identifier word; a shorter one there is read by ``identifier_words`` itself. A bare
+    run does when it starts with a three-digit country code of ``regions`` and a digit
+    that region's mobile numbers start with and has nine digits or more, or when it
+    starts with the leading digits of a toll-free, shared-cost or unified number of
+    ``regions`` and has a length the plan gives that type. A run shaped like a date is
+    none of the bare ones.
+    """
+    plans = _phone_plans()
+    groups = [g.translate(_EASTERN_DIGITS) for g in _PHONE_GROUP.findall(run)]
+    digits = "".join(groups)
+    shortest = _PHONE_EVIDENCE["international"]
+    if len(digits) > _LONGEST_NUMBER:
+        return False
+    if run.startswith("+"):
+        return len(digits) >= shortest
+    if digits.startswith("00"):
+        return len(digits) - 2 >= shortest and any(digits[2:].startswith(str(code)) for code, _, _ in plans.values())
+    if len(digits) < 7 or _is_date(groups):
+        return False
+    if context and context.search(before):
+        return True
+    low, high = _PHONE_EVIDENCE["marked_lengths"]
+    for region in regions:
+        code = str(plans[region][0])
+        if (len(code) == 3 and len(digits) >= _PHONE_EVIDENCE["country_code_and_mobile"]
+                and digits.startswith(code) and digits[3:4] in _mobile_leads(region)):
+            return True
+        marked = _marked_leads(region).get(digits[:3], ())
+        if low <= len(digits) <= high and len(digits) in marked:
+            return True
+    return False
+
+
 def _read_phone_numbers(text: str, regions: Tuple[str, ...], context, forms: Mapping[int, str]) -> str:
     """Every phone number of ``regions`` in ``text`` read digit by digit. A run of groups
-    that is not one whole may be one up to a group before its end, ``0100 123 4567 3``."""
+    that is not one whole may be one up to a group before its end, ``0100 123 4567 3``.
+    The longest valid number is taken first, and only without one the longest run that
+    says it is a phone number, so a count written after a number is not read with it."""
     out, last = [], 0
     for m in _PHONE_CANDIDATE.finditer(text):
         ends = [g.end() for g in _PHONE_GROUP.finditer(m.group(0))]
-        for end in reversed(ends):
-            run = m.group(0)[:end]
-            if _is_phone_number(run, text[:m.start()], regions, context):
-                out += [text[last:m.start()], _digit_by_digit(run, forms)]
-                last = m.start() + end
-                break
+        before = text[:m.start()]
+        end = next((end for test in (_is_phone_number, _says_it_is_a_phone_number) for end in reversed(ends)
+                    if test(m.group(0)[:end], before, regions, context)), None)
+        if end is not None:
+            out += [text[last:m.start()], _digit_by_digit(m.group(0)[:end], forms)]
+            last = m.start() + end
     return "".join(out) + text[last:]
 
 
