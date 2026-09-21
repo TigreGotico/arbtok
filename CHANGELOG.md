@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.1a30](https://github.com/TigreGotico/arbtok/tree/0.0.1a30) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a29...0.0.1a30)
+
+**Merged pull requests:**
+
+- fix: every word exception produces a reading the rules do not [\#155](https://github.com/TigreGotico/arbtok/pull/155) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.1a29](https://github.com/TigreGotico/arbtok/tree/0.0.1a29) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a28...0.0.1a29)
