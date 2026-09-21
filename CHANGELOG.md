@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a20](https://github.com/TigreGotico/arbtok/tree/0.0.2a20) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a19...0.0.2a20)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a phone run that says it is one is read digit by digit [\#195](https://github.com/TigreGotico/arbtok/pull/195) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a19](https://github.com/TigreGotico/arbtok/tree/0.0.2a19) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a18...0.0.2a19)
