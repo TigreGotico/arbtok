@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a21](https://github.com/TigreGotico/arbtok/tree/0.0.2a21) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a20...0.0.2a21)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): fix\_asr\_errors, and a recogniser's او inside a spoken number is the conjunction [\#202](https://github.com/TigreGotico/arbtok/pull/202) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a20](https://github.com/TigreGotico/arbtok/tree/0.0.2a20) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a19...0.0.2a20)
