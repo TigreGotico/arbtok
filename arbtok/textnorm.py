@@ -395,20 +395,27 @@ def _maya_as_hundred(text: str) -> str:
     def value(k):
         return _number_value(words[k]) if 0 <= k < len(words) and words[k] else None
 
+    def thousands(k):
+        """A hundred joined by و follows the thousands ("الف وميتين"), never a unit:
+        "اثنين وميه" is "two, and water"."""
+        v = value(k)
+        return v is not None and v >= 1000
+
     for i, word in enumerate(words):
         lead, core, trail = _EDGE_PUNCTUATION.match(word).groups()
         spelling = next((s for s in _MAYA_SPELLINGS if core.endswith(s)), None)
         if spelling is None:
             continue
         head = core[:-len(spelling)]
-        after_number = value(i - 1) is not None or (i > 0 and words[i - 1] == "و" and value(i - 2) is not None)
+        after_number = thousands(i - 1) or (i > 0 and words[i - 1] == "و" and thousands(i - 2))
         if head == "":
             inside = (i > 0 and words[i - 1] in _HUNDRED_UNITS) or value(i + 1) == 1000 or \
-                (i > 0 and words[i - 1] == "و" and value(i - 2) is not None)
+                (i > 0 and words[i - 1] == "و" and thousands(i - 2))
         elif head == "و":
             inside = after_number
         else:
-            inside = head in _HUNDRED_UNITS
+            # one proclitic ب, ل or ف may lead the fused word: "بخمسميه الف"
+            inside = head in _HUNDRED_UNITS or (head[:1] in "بلف" and head[1:] in _HUNDRED_UNITS)
         if inside:
             parts[2 * i] = f"{lead}{head}{_HUNDRED}{trail}"
     return "".join(parts)

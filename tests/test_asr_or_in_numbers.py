@@ -124,3 +124,32 @@ def test_a_construct_unit_before_maya_is_a_hundred():
     # ambiguous by form, like "ثلاثمية او اربع الاف": "three hundred cold" or "three
     # cold waters"; the construct form is how a hundred is built, so it reads 300
     assert normalize_asr("ثلاث ماية باردة", fix_asr_errors=True) == "ثلاث مية باردة"
+
+
+@pytest.mark.parametrize("heard", [
+    "عطني شاي اثنين وميه",          # "give me tea, two, and water"
+    "عطني عصيرين اثنين و ميه",
+    "خمسة وميه باردة",
+    "عندي ثلاثة وماية",
+])
+def test_a_hundred_joined_by_waw_follows_the_thousands_not_a_unit(heard):
+    """A hundred joined by و follows the thousands ("الف وميتين"); after a unit it is
+    water and stays as written."""
+    assert normalize_asr(heard, fix_asr_errors=True) == heard
+
+
+def test_a_hundred_joined_by_waw_after_the_thousands_is_repaired():
+    assert normalize_asr("الف وميه", fix_asr_errors=True) == "الف ومية"
+    assert normalize_asr("الف و ماية", fix_asr_errors=True) == "الف و مية"
+
+
+@pytest.mark.parametrize("heard", ["كباية ميه", "كباية ماية", "اشتريت خمسة ميه"])
+def test_water_stays_water_through_the_digits(heard):
+    """With the parser floor, ماية and ميه outside a number reach no digits."""
+    said = normalize_asr(heard, fix_asr_errors=True, spoken_numbers_to_digits=True)
+    assert "100" not in said and "500" not in said, said
+
+
+def test_a_proclitic_on_a_fused_hundred_is_repaired_with_it():
+    assert normalize_asr("بخمسميه الف", fix_asr_errors=True) == "بخمسمية الف"
+    assert normalize_asr("بخمسميه الف", fix_asr_errors=True, spoken_numbers_to_digits=True) == "ب500000"

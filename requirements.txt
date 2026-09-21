@@ -13,9 +13,11 @@ langcodes
 # spellings, of which the older parser read 66.
 # The cardinal pass says a number after a rank noun as an ordinal agreeing with the noun,
 # الفئة 5 as الفئة الخامسة and القرن 21 as القرن الحادي والعشرين, through pronounce_ordinal.
-# Below 0.22.0a1 the parser's Arabic ordinals are masculine and nominative only; 0.22.1a1
-# is the release after it, which also reads the hundreds spelling ماية.
-ovos-number-parser>=0.22.1a1
+# Below 0.22.0a1 the parser's Arabic ordinals are masculine and nominative only. From
+# 0.22.7a1 the parser reads only attested Arabic: ميه and ماية, Egyptian spellings of
+# "water", are not "hundred" there, so fix_asr_errors' repair of a recogniser's ماية and
+# ميه inside a number is the only place they become one, and "كباية ميه" stays water.
+ovos-number-parser>=0.22.7a1
 # Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
 # with the fractions of the hour and the period words: `normalize_for_tts` takes the
 # words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour
