@@ -311,34 +311,35 @@ def supported_lects() -> List[Lect]:
 
 
 # --- Word Exceptions ---
-# TODO - LLM generated, needs validation from native speaker
-# Dictionary for words with irregular orthography vs pronunciation.
-# These words have "deficient" or "historical" spelling where vowels
-# are pronounced but not written, or written letters are silent.
+# Words whose spelling does not determine their reading: a letter is written and
+# not pronounced, or a vowel is pronounced and not written.
+#
+# Every entry has to beat the grapheme rules at something. An entry the rules
+# already agree with cannot be told from a live one by reading the table, and it
+# hides the ones that matter; a test holds each entry to producing a reading the
+# rules do not.
+#
+# One spelling of a word can be here and another not, and they then read
+# differently: ⟨اللّٰه⟩ is an entry and reads *allaːh*, while ⟨الله⟩ and ⟨اللَّه⟩
+# are not and read *ɑɫɫɑːh*, the rules' velarized lām.
+#
+# The readings are this package's own and cite no grammar. They were checked
+# against espeak-ng, an independent Arabic phonemizer sharing no data with this
+# one, which agreed on 16 of the 21 readings the table then held. Every one of
+# the five it disputed is a word where it reads the deficient spelling
+# literally: it gives *lakin* for لَكِن, and hears a long vowel in the silent waw
+# of أُولِي and أُولَٰئِكَ. Those are the readings this table exists to prevent,
+# so the disagreement corroborates the entries rather than questioning them.
 WORD_EXCEPTIONS = {
     # === Unicode / orthographic variants ===
 
     # Demonstratives with "Dagger Alif" (pronounced long /a:/ but written short or omitted)
-    "هَٰذَا": "haːðaː",  # ha-dha (this, m.)
-    "هٰذَا": "haːðaː",  # variant
-    "هَذَا": "haːðaː",  # common deficient spelling
-    "هَٰذِهِ": "haːðihi",  # ha-dhi-hi (this, f.)
-    "هٰذِهِ": "haːðihi",  # variant
-    "ذَٰلِكَ": "ðaːlika",  # dha-li-ka (that)
-    "ذٰلِكَ": "ðaːlika",  # variant
     "أُولَٰئِكَ": "ʔulaːʔika",  # u-la-i-ka (those) - note medial hamza logic is complex, hardcoded here
 
     # Particles
-    "لَٰكِن": "laːkin",  # la-kin (but) - unwritten medial alif
-    "لَكِن": "laːkin",  # deficient spelling
-    "لَٰكِنَّ": "laːkinna",  # la-kin-na (but...)
 
     # Divine Names
-    "ﷲ": "allaːh",
     "اللّٰه": "allaːh",  # Allah - heavy L, unwritten alif
-    "اللَّه": "allaːh",  # variant
-    "إِلَٰه": "ʔilaːh",  # ilah (god)
-    "الرَّحْمَٰن": "arraħmaːn",  # Ar-Rahman
 
     # Irregular pronunciations
     # NOTE: ⟨مِائَة⟩ "hundred" used to need an entry here for its silent alif,
@@ -352,7 +353,5 @@ WORD_EXCEPTIONS = {
 
     # Particles carrying hamzat al-qaṭʿ on ALEF_HAMZA_BELOW. Keys are stored in
     # _reorder_diacritics-normalized form (shadda precedes vowel):
-    "إِلَّا": "ʔillaː",   # إِلَّا "except/but" — hamzat al-qat'
-    "إِلَى": "ʔilaː",          # إِلَى "to/towards" — hamzat al-qat'
 }
 
