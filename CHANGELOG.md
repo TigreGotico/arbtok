@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a28](https://github.com/TigreGotico/arbtok/tree/0.0.2a28) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a27...0.0.2a28)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): drop a tatweel false start before the word it restarts [\#213](https://github.com/TigreGotico/arbtok/pull/213) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a27](https://github.com/TigreGotico/arbtok/tree/0.0.2a27) (2026-09-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a26...0.0.2a27)
