@@ -17,7 +17,11 @@ langcodes
 # 0.22.7a1 the parser reads only attested Arabic: ميه and ماية, Egyptian spellings of
 # "water", are not "hundred" there, so fix_asr_errors' repair of a recogniser's ماية and
 # ميه inside a number is the only place they become one, and "كباية ميه" stays water.
-ovos-number-parser>=0.22.7a1
+# From 0.22.10a1 a word that is also an ordinary word -- مية "water", الست "the lady",
+# التلات "Tuesday" -- is a number only when its context makes it one, so
+# `normalize_asr(spoken_numbers_to_digits)` leaves "شربت مية باردة" as written, where
+# 0.22.9a1 gives "شربت 100 باردة" and turns "الست جات" into "6 جات".
+ovos-number-parser>=0.22.10a1
 # Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
 # with the fractions of the hour and the period words: `normalize_for_tts` takes the
 # words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour

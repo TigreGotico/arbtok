@@ -18,7 +18,9 @@ JOINED = [
 APART = [
     ("الف او خمسمية", "1000 او 500"),
     ("الفين او ثلاثة", "2000 او 3"),
-    ("مية او اثنين", "100 او 2"),
+    # مية alone is also "water", and او beside another number does not settle which it
+    # is, so the parser leaves it as written; the other side is still a number.
+    ("مية او اثنين", "مية او 2"),
     ("تسعمية او عشرة ملايين", "900 او 10000000"),
     ("ثلاثة او اربعة", "3 او 4"),
 ]
