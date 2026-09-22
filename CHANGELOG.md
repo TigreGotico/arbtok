@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a25](https://github.com/TigreGotico/arbtok/tree/0.0.2a25) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a24...0.0.2a25)
+
+**Merged pull requests:**
+
+- test\(textnorm\): a full-form unit before ميه is hundreds, as SADA writes it [\#212](https://github.com/TigreGotico/arbtok/pull/212) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a24](https://github.com/TigreGotico/arbtok/tree/0.0.2a24) (2026-09-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a23...0.0.2a24)
