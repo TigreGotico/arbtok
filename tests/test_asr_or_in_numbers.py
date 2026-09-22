@@ -145,11 +145,18 @@ def test_a_hundred_joined_by_waw_after_the_thousands_is_repaired():
     assert normalize_asr("الف و ماية", fix_asr_errors=True) == "الف و مية"
 
 
-@pytest.mark.parametrize("heard", ["كباية ميه", "كباية ماية", "اشتريت خمسة ميه"])
+@pytest.mark.parametrize("heard", ["كباية ميه", "كباية ماية"])
 def test_water_stays_water_through_the_digits(heard):
     """With the parser floor, ماية and ميه outside a number reach no digits."""
     said = normalize_asr(heard, fix_asr_errors=True, spoken_numbers_to_digits=True)
     assert "100" not in said and "500" not in said, said
+
+
+def test_a_full_form_unit_before_ميه_is_hundreds():
+    """SADA writes a full-form unit before the hundred 10 times, every one a number:
+    ثلاثه ميه الف ريال, أربعة مية متر, خمسة مائة دينار, سته ميه."""
+    said = normalize_asr("اشتريت خمسة ميه", fix_asr_errors=True, spoken_numbers_to_digits=True)
+    assert said == "اشتريت 500", said
 
 
 def test_a_proclitic_on_a_fused_hundred_is_repaired_with_it():
