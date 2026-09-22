@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.2a26](https://github.com/TigreGotico/arbtok/tree/0.0.2a26) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a25...0.0.2a26)
+
+**Merged pull requests:**
+
+- feat\(gold\): a span-level pronunciation gold with cited readings [\#211](https://github.com/TigreGotico/arbtok/pull/211) ([JarbasAl](https://github.com/JarbasAl))
+- feat\(lexicon\): in a sentence, an ambiguous spelling is read by the sentence [\#210](https://github.com/TigreGotico/arbtok/pull/210) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a25](https://github.com/TigreGotico/arbtok/tree/0.0.2a25) (2026-09-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a24...0.0.2a25)
