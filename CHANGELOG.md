@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a24](https://github.com/TigreGotico/arbtok/tree/0.0.2a24) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a23...0.0.2a24)
+
+**Merged pull requests:**
+
+- fix\(deps\): the parser floor leaves a homograph as written [\#208](https://github.com/TigreGotico/arbtok/pull/208) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a23](https://github.com/TigreGotico/arbtok/tree/0.0.2a23) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a22...0.0.2a23)
