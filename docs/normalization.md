@@ -418,6 +418,7 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `number_forms` | your own words for values, `{100: "مية"}`, over the lect's or instead of them; set with `with_number_forms` |
 | `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
+| `drop_false_starts` | a two- or three-letter word ending in tatweel is dropped with the whitespace after it where the next word begins the same way: `الـ السيارة` becomes `السيارة`; a one-letter fragment is kept, since it is also how a detached clitic is written; Arabic only, on by default |
 
 ### Numbers in the words a lect actually uses
 
