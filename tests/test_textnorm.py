@@ -177,6 +177,30 @@ def test_tts_normalization_speaks_numbers_and_canonicalizes():
     assert "\u200B" in normalize_for_tts("نص\u200Bنص", spoken_forms=False)
 
 
+@pytest.mark.parametrize("text, dropped", [
+    ("الـ السيارة", "السيارة"),
+    ("شفـ شفت الحين", "شفت الحين"),
+])
+def test_a_tatweel_false_start_is_dropped_before_the_word_it_restarts(text, dropped):
+    assert normalize_for_tts(text, spoken_forms=False, canonical_unicode=False) == dropped
+
+
+@pytest.mark.parametrize("text", [
+    "والـ الولد",  # the word after it does not begin with والـ
+    "الـ بيت",  # the word after it does not restart the fragment
+    "جـميل",  # the tatweel elongates a word, it does not stand alone
+    "الـcharger",  # no space: the glued Latin word is the plugin's to split
+    "قلت شفـ",  # a fragment at the end of the text has no word after it to restart
+    "بـ بيت كبير",  # one letter: also how a detached clitic is written, so it is kept
+])
+def test_a_tatweel_that_is_not_a_false_start_stays(text):
+    assert normalize_for_tts(text, spoken_forms=False, canonical_unicode=False) == text
+
+
+def test_drop_false_starts_off_leaves_the_fragment_for_canonical_unicode():
+    assert normalize_for_tts("الـ السيارة", spoken_forms=False, drop_false_starts=False) == "ال السيارة"
+
+
 def test_the_plugin_normalizes_through_the_same_function():
     from arbtok.plugin import ArbtokG2PPlugin
     text = "المـرء عنده 12 كتابًا"
@@ -534,7 +558,8 @@ def test_every_tts_rule_changes_some_output(flag):
     texts = ["نص\u200bنص", "X5", "4.5%", "MG 5", "055 123 4567", "12345678901", "8001000341", "الكود 4729",
              "300 ريال", "25 ريال", "٣٠٠", "المـرء", "15 رسالة", "350 ريال",
              "اتصل على 010 01234567",  # libphonenumber example number, MOBILE, EG
-             "80012345"]  # a caller's own prefix, shorter than long_digit_runs reaches
+             "80012345",  # a caller's own prefix, shorter than long_digit_runs reaches
+             "الـ السيارة"]  # a tatweel false start, what drop_false_starts alone catches
     # phone_regions reads these numbers too, so a caller's own pattern is shown on its own.
     alone = {"phone_regions": ()} if flag in ("phone_shapes", "phone_prefixes") else {}
     off = dataclasses.replace(KSA, spoken_forms=False, canonical_unicode=False, strip_controls=False,
@@ -552,7 +577,8 @@ def test_every_tts_rule_changes_some_output(flag):
 
 
 def test_the_tts_description_names_what_is_on_and_digests_the_patterns():
-    assert textnorm.TtsNorm(spoken_forms=False).describe() == f"arbtok-tts-norm {textnorm.TTS_NORM_VERSION}: canonical_unicode"
+    assert textnorm.TtsNorm(spoken_forms=False).describe() == \
+        f"arbtok-tts-norm {textnorm.TTS_NORM_VERSION}: canonical_unicode,drop_false_starts"
     assert "phone_regions=" in KSA.describe() and KSA.describe() != dataclasses.replace(KSA, phone_regions=("SA",)).describe()
 
 

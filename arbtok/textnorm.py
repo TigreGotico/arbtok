@@ -838,6 +838,14 @@ def is_arabic_lang(lang: str) -> bool:
 _ARABIC_ONLY = ("speak_percent", "phone_shapes", "phone_regions", "long_digit_runs", "phone_prefixes", "identifier_words",
                 "dialect_numbers", "number_forms")
 
+# A whitespace-separated word of two or three Arabic letters and a tatweel, held together
+# with the whitespace after it, matched only where the word after it begins with the same
+# letters: that is the restart, not a word on its own. ``drop_false_starts`` is on by
+# default, so it is not in ``_ARABIC_ONLY``: raising on a non-Arabic ``lang`` for a rule
+# every caller carries would break every such call, where the pattern itself already
+# matches nothing outside the Arabic block.
+_FALSE_START = re.compile(r"(?<!\S)([\u0621-\u064A]{2,3})\u0640(\s+)(?=\1)")
+
 
 @dataclasses.dataclass(frozen=True)
 class TtsNorm:
@@ -936,6 +944,21 @@ class TtsNorm:
     spoken_forms: bool = True
     #: Tatweel dropped, NFC, shadda ordered before its vowel, the spellings of مائة settled.
     canonical_unicode: bool = True
+    #: A whitespace-separated word of two or three Arabic letters (U+0621-U+064A) and
+    #: nothing else but a tatweel is a false start, and is dropped with the whitespace
+    #: after it, where the word that follows begins with the same letters: ``الـ
+    #: السيارة`` becomes ``السيارة``. On held-out SADA rows scored by the aligner's
+    #: phone head, the audio fits better without such a fragment on 8 of the 9 held-out
+    #: rows that carry one (mean +8.4 log-likelihood, 95% interval +3.8 to +13.2, sign test
+    #: p = 0.039), while dropping a real two- or three-letter word the same way cost 5.4
+    #: over 600 rows. A fragment with no restart ahead of it was not shown to fit better and
+    #: is kept. A one-letter fragment is kept too: its restart rows gain 1.75 with a sign
+    #: test at 0.109, the head cannot tell a dropped one-letter word from a spoken one, and
+    #: a one-letter fragment before a word starting with the same letter is also how a
+    #: detached clitic is written (الزواج بـ بنت is the preposition).
+    #: Arabic only; runs right after the lexicon, before any number or code rule can
+    #: read the fragment, and before ``canonical_unicode`` drops the tatweel itself.
+    drop_false_starts: bool = True
     #: Terms and the way each is said, set with :meth:`with_lexicon`; applied first.
     lexicon: Tuple[Tuple[str, str], ...] = ()
 
@@ -975,7 +998,7 @@ class TtsNorm:
 TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
-                             _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE)
+                             _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START)
 _PLUGIN_DEFAULT = TtsNorm()
 
 
@@ -1325,6 +1348,9 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     vowel and settles the spellings of مائة: the form the tokenizer reads.
     ``strip_controls`` drops zero-width and bidirectional control characters,
     which otherwise reach the tokenizer as characters it has no reading for.
+    ``drop_false_starts`` drops a two- or three-letter fragment ending in tatweel where
+    the word after it begins the same way, Arabic only: ``الـ السيارة`` becomes
+    ``السيارة``.
 
     Diacritization is not part of this: it is a model, and it lives in
     :func:`arbtok.vocalize`.
@@ -1345,6 +1371,8 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.lexicon:
         pattern, said = _term_pattern(config.lexicon)
         text = pattern.sub(lambda m: said[m.group(1).lower()], text)
+    if config.drop_false_starts and is_arabic_lang(lang):
+        text = _FALSE_START.sub("", text)
     held: Dict[str, str] = {}
     # A private-use character stands in for each span no later rule may read; one the
     # text already holds is never used, so nothing of the text's own is rewritten on
