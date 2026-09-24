@@ -337,13 +337,74 @@ Sentence("إِكْسْ فَيْفْ", stress=False).ipa   # 'ʔiks fajf'
 ```
 
 The names `spell_out_codes` uses are in `spelled_codes()`: the 26 English letter
-names and the ten digit words, pointed. Each is the English pronunciation from
-the bundled donor lexicon, carried into Arabic by `arbtok.translit.nativize`,
-with the glottal onset Arabic gives a word that starts with a vowel; a test
-holds every row to that. Two consequences of the standard inventory are worth
-knowing before reading a registration plate or a VIN aloud: it has no /eː/, so
-A and E come out alike and so do G and J, and it has no /tʃ/, so H ends in /ʃ/.
-Put your own spellings for those letters in the lexicon when they must differ.
+names and the ten digit words, pointed.
+
+**No part of that table has been checked by a human speaker of Arabic.**
+
+A letter's consonant skeleton is the spelling Arabic writing attests for that
+letter. Each was read from an ar.wikipedia page that prints the spelling beside
+the Latin initialism it spells, and the page is named in the table below. The
+vowels are the English letter name's, taken from the pronunciation the page on
+the English alphabet (أبجدية إنجليزية) gives, and written as the nearest Arabic
+rendering the tokenizer reads. The two sources answer different questions: the
+first says which letters an Arabic writer uses for a letter name, the second says
+how that name is said.
+
+That matters where one skeleton serves two letters. `جي` is written for both G
+and J, so G takes the vowels of "gee" and J those of "jay"; `كي` is written for K,
+which takes "kay" and so is not heard as C. **A letter must be heard apart from
+every other, and a test says so.** B and P are the one exception: Arabic has no
+/p/, the sources give `بي` for both, and the table keeps the collision rather
+than invent a spelling for it.
+
+| Letter | Spelling | Read from | Pointed | Says |
+|---|---|---|---|---|
+| A | `إيه` | واي إم سي إيه (أغنية) | `إِيهْ` | ay /eɪ/ |
+| B | `بي` | USB | `بِي` | bee /biː/ |
+| C | `سي` | CNN | `سِي` | cee /siː/ |
+| D | `دي` | DVD | `دِي` | dee /diː/ |
+| E | `إي` | ESPN | `إِي` | ee /iː/ |
+| F | `إف` | KFC | `إِفْ` | ef /ɛf/ |
+| G | `جي` | LG | `جِي` | gee /dʒiː/ |
+| H | `إتش` | HBO | `إِتْشْ` | aitch /eɪtʃ/ |
+| I | `آي` | IBM | `آيْ` | i /aɪ/ |
+| J | `جي` | J. K. Rowling | `جَيْ` | jay /dʒeɪ/ |
+| K | `كي` | KFC | `كَيْ` | kay /keɪ/ |
+| L | `إل` | LG | `إِلْ` | el /ɛl/ |
+| M | `إم` | MTV | `إِمْ` | em /ɛm/ |
+| N | `إن` | CNN | `إِنْ` | en /ɛn/ |
+| O | `أو` | HBO | `أُو` | o /oʊ/ |
+| P | `بي` | ESPN | `بِي` | pee /piː/ |
+| Q | `كيو` | QGIS | `كْيُو` | cue /kjuː/ |
+| R | `آر` | R&B | `آرْ` | ar /ɑːr/ |
+| S | `إس` | USB | `إِسْ` | ess /ɛs/ |
+| T | `تي` | MTV | `تِي` | tee /tiː/ |
+| U | `يو` | USB | `يُو` | u /juː/ |
+| V | `في` | DVD | `فِي` | vee /viː/ |
+| W | `دبليو` | BMW | `دَبَلْيُو` | double-u /ˈdʌbəljuː/ |
+| X | `إكس` | Xbox | `إِكْسْ` | ex /ɛks/ |
+| Y | `واي` | واي إم سي إيه (أغنية) | `وَايْ` | wy /waɪ/ |
+| Z | `زد` | DF-ZF | `زِدْ` | zed /zɛd/ |
+
+Three rows are weaker than the rest and say so here. `X` is `إكس` from the page
+on the Xbox, which is a word rather than the letter; the vowels are the English
+name's as everywhere else. `Z` is `زد` from DF-ZF; `زي` is attested too, on the
+page for Jay-Z, and is not what this table uses. `A` is told apart from `E` by one
+consonant and nothing else: `إِيهْ` reads /ʔiːh/ where `E` reads /ʔiː/. The
+English name is /eɪ/, which the inventory has no vowel for, so the final ه of the
+attested spelling carries the whole distinction. A listener who misses it hears E.
+
+The pairing for both `A` and `Y` is printed on the page for the song,
+واي إم سي إيه (أغنية), not on the organisation's own page, which does not spell
+the letters out.
+
+The digit words have a different basis, unchanged: each is the English word's
+pronunciation from the bundled donor lexicon, carried into Arabic by
+`arbtok.translit.nativize`, with the glottal onset Arabic gives a word that
+starts with a vowel. A test holds every digit row to that.
+
+A caller who wants a letter said another way puts its own spelling in the
+lexicon, which is applied first.
 
 The bundled car lexicon also reads in this direction, one published spelling per
 name, the maker's own site before its distributor's before a marketplace. The

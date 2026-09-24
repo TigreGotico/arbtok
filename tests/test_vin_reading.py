@@ -11,7 +11,7 @@ AS_WRITTEN = dict(spoken_forms=False, canonical_unicode=False)
 
 # The VIN of the salesteq-cs-webrtc parity fixture row parity-token_canonicalization-079.
 PARITY_ROW = "رقم الهيكل WBA7F2C51JG على X5 موديل 2026."
-PARITY_VIN = "دَبَلْيُو بِي إِي سبعة إِفْ اثنين سِي خمسة واحد جِيْ جِي"
+PARITY_VIN = "دَبَلْيُو بِي إِيهْ سبعة إِفْ اثنين سِي خمسة واحد جَيْ جِي"
 
 
 def test_the_parity_fixture_vin_reads_its_digits_as_arabic_words():
@@ -27,7 +27,7 @@ def test_the_parity_fixture_vin_as_written():
 
 def test_a_seventeen_character_vin():
     said = normalize_for_tts("الشاسيه 1M8GDM9AXKP042788 جاهز", spell_out_codes=True, **AS_WRITTEN)
-    assert said == ("الشاسيه واحد إِمْ ثمانية جِي دِي إِمْ تسعة إِي إِكْسْ كِيْ بِي"
+    assert said == ("الشاسيه واحد إِمْ ثمانية جِي دِي إِمْ تسعة إِيهْ إِكْسْ كَيْ بِي"
                     " صفر أربعة اثنين سبعة ثمانية ثمانية جاهز")
 
 
@@ -45,9 +45,9 @@ def test_a_vin_takes_the_callers_digit_words():
 @pytest.mark.parametrize("written, read", [
     ("X5", "إِكْسْ فَيْفْ"),
     ("GLE450", "جِي إِلْ إِي فُورْ فَيْفْ زِيرُو"),
-    ("ABC1234", "إِي بِي سِي وَنْ تُو ثْرِي فُورْ"),
+    ("ABC1234", "إِيهْ بِي سِي وَنْ تُو ثْرِي فُورْ"),
     ("BMW", "بِي إِمْ دَبَلْيُو"),
-    ("WBA7F2C51JG1234567", "دَبَلْيُو بِي إِي سِفَنْ إِفْ تُو سِي فَيْفْ وَنْ جِيْ جِي"
+    ("WBA7F2C51JG1234567", "دَبَلْيُو بِي إِيهْ سِفَنْ إِفْ تُو سِي فَيْفْ وَنْ جَيْ جِي"
                            " وَنْ تُو ثْرِي فُورْ فَيْفْ سِكْسْ سِفَنْ"),
 ], ids=["X5", "GLE450", "seven", "BMW", "eighteen"])
 def test_what_is_not_a_vin_keeps_the_code_reading(written, read):
@@ -93,6 +93,23 @@ def test_a_lexicon_entry_claims_a_model_name_before_the_code_reading():
 # An initialism that carries a vowel spells a word as far as this rule can tell, so it
 # is left whole. The lexicon is how a consumer has it spelled.
 VOWEL_INITIALISMS = ["SUV", "VIN", "ABS"]
+
+
+def test_a_model_code_is_read_with_its_own_letter():
+    """A200 is a Mercedes A-class. Read with E's name it is a different car."""
+    names = spelled_codes("ar")
+    assert names["A"] != names["E"]
+    assert normalize_for_tts("A200", spell_out_codes=True, **AS_WRITTEN).startswith(names["A"] + " ")
+
+
+def test_a_chassis_number_reads_each_of_its_letters_apart():
+    """A customer checks a chassis number against their papers character by character."""
+    from arbtok.tokenizer import Sentence
+    names = spelled_codes("ar")
+    heard = {c: Sentence(names[c], lang="ar", stress=False, pausal=False).ipa for c in "WBAFCJG"}
+    assert len(set(heard.values())) == len(heard), heard
+    said = normalize_for_tts("رقم الهيكل WBA7F2C51JG", spell_out_codes=True, **AS_WRITTEN)
+    assert said.startswith("رقم الهيكل " + " ".join(names[c] for c in "WBA") + " ")
 
 
 @pytest.mark.parametrize("written", VOWEL_INITIALISMS)

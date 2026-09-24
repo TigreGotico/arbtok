@@ -432,10 +432,69 @@ def test_the_bundled_table_names_every_capital_and_every_digit_once():
     assert textnorm.spelled_codes("ar") == {c: pointed for c, _, pointed in _code_rows()}
 
 
-@pytest.mark.parametrize("character, word, pointed", _code_rows(), ids=[row[0] for row in _code_rows()])
-def test_a_bundled_spelling_reads_as_the_nativized_english_name(character, word, pointed):
-    """The basis of every row: the donor lexicon's pronunciation of the English word,
-    nativized by arbtok.translit, with the glottal onset Arabic gives a vowel-initial word."""
+#: Each letter, the Arabic spelling attested for it, and the pointed form the table
+#: carries. docs/normalization.md cites the page each spelling was read from.
+CITED_LETTERS = [
+    ("A", "إيه", "إِيهْ"),
+    ("B", "بي", "بِي"),
+    ("C", "سي", "سِي"),
+    ("D", "دي", "دِي"),
+    ("E", "إي", "إِي"),
+    ("F", "إف", "إِفْ"),
+    ("G", "جي", "جِي"),
+    ("H", "إتش", "إِتْشْ"),
+    ("I", "آي", "آيْ"),
+    ("J", "جي", "جَيْ"),
+    ("K", "كي", "كَيْ"),
+    ("L", "إل", "إِلْ"),
+    ("M", "إم", "إِمْ"),
+    ("N", "إن", "إِنْ"),
+    ("O", "أو", "أُو"),
+    ("P", "بي", "بِي"),
+    ("Q", "كيو", "كْيُو"),
+    ("R", "آر", "آرْ"),
+    ("S", "إس", "إِسْ"),
+    ("T", "تي", "تِي"),
+    ("U", "يو", "يُو"),
+    ("V", "في", "فِي"),
+    ("W", "دبليو", "دَبَلْيُو"),
+    ("X", "إكس", "إِكْسْ"),
+    ("Y", "واي", "وَايْ"),
+    ("Z", "زد", "زِدْ"),
+]
+
+
+@pytest.mark.parametrize("character, spelling, pointed", CITED_LETTERS,
+                         ids=[row[0] for row in CITED_LETTERS])
+def test_a_letter_is_pointed_from_the_spelling_that_is_attested_for_it(character, spelling, pointed):
+    """The pointing supplies the English name's vowels and may not change the letters
+    underneath them: with the harakat taken off, the row is the attested spelling."""
+    import re
+    assert textnorm.spelled_codes("ar")[character] == pointed
+    assert re.sub("[\u064B-\u0652\u0670]", "", pointed) == spelling
+
+
+def test_every_letter_name_sounds_different_from_every_other():
+    """A code is read letter by letter so that a listener can write it back down, which
+    it cannot do when two letters reach it as one word. B and P are the one accepted
+    collision: Arabic has no /p/ and the sources give the same name for both."""
+    import collections, string
+    from arbtok.tokenizer import Sentence
+    names = textnorm.spelled_codes("ar")
+    heard = collections.defaultdict(list)
+    for character in string.ascii_uppercase:
+        heard[Sentence(names[character], lang="ar", stress=False, pausal=False).ipa].append(character)
+    assert sorted(sorted(cs) for cs in heard.values() if len(cs) > 1) == [["B", "P"]]
+
+
+_DIGIT_ROWS = [row for row in _code_rows() if row[0].isdigit()]
+
+
+@pytest.mark.parametrize("character, word, pointed", _DIGIT_ROWS, ids=[row[0] for row in _DIGIT_ROWS])
+def test_a_bundled_digit_reads_as_the_nativized_english_word(character, word, pointed):
+    """The basis of every digit row: the donor lexicon's pronunciation of the English
+    word, nativized by arbtok.translit, with the glottal onset Arabic gives a
+    vowel-initial word. A letter row is held to its cited spelling instead."""
     from arbtok.donor_lexicon import bundled_path
     from arbtok.tokenizer import Sentence
     from arbtok.translit import nativize
