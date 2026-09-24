@@ -1,19 +1,30 @@
-# English letter names and digit words as an Arabic speaker says them, fully pointed, for lang "ar".
-# Columns: the character; the English word that names it; the pointed Arabic spelling.
-# Each spelling reads, through arbtok.tokenizer, as arbtok.translit.nativize() of the word's
-# pronunciation in data/donor_lexicons/en-GB.tsv, with the glottal onset Arabic spelling gives a
-# vowel-initial word. tests/test_textnorm.py holds every row to that.
-A	a	إِي
+# English letter names and digit words as an Arabic speaker says them, fully pointed,
+# for lang "ar". Columns: the character; the English word that names it; the pointed
+# Arabic spelling.
+#
+# A letter's consonant skeleton is the spelling Arabic writing attests for that letter,
+# each one cited to the page that prints it beside a Latin initialism in the table in
+# docs/normalization.md. Its vowels are the English letter name's, so that two letters
+# said differently in English are said differently here: G is "gee" and J is "jay" on
+# one skeleton. tests/test_textnorm.py holds every letter to its cited spelling and to
+# being heard apart from every other, B and P excepted.
+#
+# The digit words are nativized from data/donor_lexicons/en-GB.tsv, which is where every
+# row came from before the letters were cited; tests/test_textnorm.py still holds them
+# to that.
+#
+# No part of this table has been checked by a human speaker of Arabic.
+A	a	إِيهْ
 B	b	بِي
 C	c	سِي
 D	d	دِي
 E	e	إِي
 F	f	إِفْ
 G	g	جِي
-H	h	إِيشْ
-I	i	أَيْ
-J	j	جِيْ
-K	k	كِيْ
+H	h	إِتْشْ
+I	i	آيْ
+J	j	جَيْ
+K	k	كَيْ
 L	l	إِلْ
 M	m	إِمْ
 N	n	إِنْ
@@ -27,7 +38,7 @@ U	u	يُو
 V	v	فِي
 W	w	دَبَلْيُو
 X	x	إِكْسْ
-Y	y	وَيْ
+Y	y	وَايْ
 Z	z	زِدْ
 0	zero	زِيرُو
 1	one	وَنْ
