@@ -21,8 +21,10 @@ This module imports nothing beyond the standard library at import time; the numb
 parser is imported when ``spoken_numbers_to_digits`` first runs.
 """
 import dataclasses
+import datetime
 import functools
 import hashlib
+import json
 import re
 import unicodedata
 from pathlib import Path
@@ -30,7 +32,7 @@ from typing import Dict, Mapping, Optional, Tuple
 
 __all__ = ["AsrNorm", "TtsNorm", "normalize_asr", "normalize_for_tts",
            "TRUTH_CHECK", "CER_STRIP", "CER_NORM", "CER_MARKS_FIRST", "CER_NORM_MARKS_FIRST",
-           "INTELLIGIBILITY_GATE", "KSA_VOICE_AGENT", "KSA_PHONE_SHAPES", "KSA_PHONE_PREFIXES",
+           "INTELLIGIBILITY_GATE", "ARAB_PHONE_REGIONS",
            "IDENTIFIER_WORDS", "ASR_NORM_VERSION", "TTS_NORM_VERSION", "spelled_codes",
            "bundled_asr_lexicon", "bundled_tts_lexicon", "cldr_units"]
 
@@ -135,6 +137,15 @@ def _describe_parser() -> str:
         return "; ovos-number-parser unknown"
 
 
+@functools.lru_cache(maxsize=None)
+def _describe_phone_plans() -> str:
+    # The plans decide which runs are phone numbers, so a description names the table by
+    # the libphonenumber release it was built from and by its own bytes.
+    raw = _PHONE_PLANS.read_bytes()
+    return (f"; phone plans libphonenumber {json.loads(raw)['source']['tag']}"
+            f" sha256:{hashlib.sha256(raw).hexdigest()[:12]}")
+
+
 def _rule_set(*definitions) -> str:
     """A name for a set of rules, computed from the rules: their flags in order, their
     patterns and their tables. It moves when any of them moves and at no other time."""
@@ -150,7 +161,7 @@ class AsrNorm:
     The rules run in the order the fields are listed, with one exception that is
     itself a flag: ``punctuation_before_marks`` moves ``blank_punctuation`` ahead
     of the mark rules. A lexicon, when one is passed, is applied after the mark
-    rules and before ``spoken_numbers_to_digits``.
+    rules and before ``fix_asr_errors``.
     """
     #: Unicode NFC, so a composed and a decomposed spelling compare equal.
     nfc: bool = False
@@ -172,6 +183,13 @@ class AsrNorm:
     strip_quranic_marks: bool = False
     #: Drop tatweel, U+0640.
     strip_tatweel: bool = False
+    #: Recognizer output repaired to the Arabic it transcribes, each repair named with its
+    #: evidence where it is made. Inside a spoken number, the recognizer's ماية is the
+    #: hundred مية (``اربعماية الف`` is 400,000), and the conjunction و that Saudi and
+    #: Gulf speech says u-, written by a recognizer as the word او, is written و again
+    #: (``ست مية او عشرة الف`` is 610,000). Arabic only; it runs after the lexicon and
+    #: before ``spoken_numbers_to_digits``.
+    fix_asr_errors: bool = False
     #: Write number words as digits: ``خمسة وأربعون ألف`` becomes ``45000``. Runs after
     #: the lexicon, so a term spelled with a number word is a term first. Arabic-Indic
     #: digits the parser meets come back as ASCII, and the words of a text it changed
@@ -219,12 +237,35 @@ class AsrNorm:
 
         A lexicon is named by its entry count and a digest of its sorted entries, so two
         runs that used different term lists do not describe themselves alike. When
-        numbers are read, the parser that reads them is named with its version.
+        numbers are read or recognizer errors repaired, the parser whose word tables they
+        use is named with its version.
         """
         on = [f.name for f in dataclasses.fields(self) if getattr(self, f.name) is True]
         return (f"arbtok-asr-norm {ASR_NORM_VERSION}: {','.join(on) or 'none'}"
                 + _describe_lexicon(self.lexicon)
-                + (_describe_parser() if self.spoken_numbers_to_digits else ""))
+                + (_describe_parser() if self.spoken_numbers_to_digits or self.fix_asr_errors else ""))
+
+
+# The conjunction و "and" is said wu, w or u in Saudi and Gulf speech. Margaret K. Omar,
+# "Saudi Arabic Basic Course: Urban Hijazi Dialect" (Foreign Service Institute, 1975),
+# p. 2: "The /wu/, 'and', may be reduced to /w/ or even /u/ when followed by a word which
+# begins with a vowel" (archive.org micro_IA41153006_0711). Hamdi A. Qafisheh, "Basic Gulf
+# Arabic" (1970), p. 8: "The particle wa 'and' is reduced to w in normal speech"
+# (archive.org micro_IA41153126_0326). A recognizer writes the u- as the separate word او,
+# which in Arabic writing is "or", so "ست مية او عشرة الف" is 610,000 as it was said. The
+# او spelling is the recognizer's, not the language's, so it is repaired here, on the
+# transcript, and not in the number parser, which reads written Arabic.
+_OR = "او"
+_ALEF_TABLE = str.maketrans(_ALEF)
+# A recognizer writes the Saudi "hundred" as ماية: "اربعماية الف" is 400,000. Written
+# Arabic spells the hundred مئة, مائة or مية; ماية is attested as "water". Wiktionary,
+# https://en.wiktionary.org/wiki/مية, Egyptian Arabic مَيَّة "water", a diminutive of
+# مَاء, alternative forms مايَّه, مايَّة, مَيَّه; the numeral "hundred" there has no ماية
+# form. The same entry gives مَيَّه, and ميه, as "water" too, with no source for it as
+# "hundred", though recognisers write the hundred that way as well. So ماية, مايه and
+# ميه are repaired to مية only where they stand inside a number.
+_MAYA_SPELLINGS = ("ماية", "مايه", "ميه")
+_HUNDRED = "مية"
 
 
 _NOTHING = AsrNorm()
@@ -236,7 +277,8 @@ _NOTHING = AsrNorm()
 ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HARAKAT, _EXTENDED_MARKS,
                              _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
                              _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
-                             _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER)
+                             _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER,
+                             _OR, _MAYA_SPELLINGS, _HUNDRED)
 
 
 @functools.lru_cache(maxsize=None)
@@ -321,6 +363,129 @@ def _numbers_to_digits(text: str, lang: str) -> str:
     return text[:len(text) - len(text.lstrip())] + read + text[len(text.rstrip()):]
 
 
+@functools.lru_cache(maxsize=1 << 16)
+def _number_value(words: str):
+    """What the number parser reads ``words`` as, or None when it reads no number."""
+    from ovos_number_parser import extract_number
+    value = extract_number(words, lang="ar")
+    return None if value is False else value
+
+
+#: The construct forms of three to nine that a hundred is built on (thalath-miya …
+#: tisi-miya): Qafisheh, Basic Gulf Arabic (1970), p. 59, and Omar, Saudi Arabic Basic
+#: Course (1975), p. 69, give 300 to 900 on these and no hundred on واحد, اثنين or the
+#: full forms ثلاثة to تسعة; 100 is مية and 200 ميتين. A recogniser's ماية after any
+#: other word is water: "اشتريت خمسة ماية".
+_HUNDRED_UNITS = frozenset({"ثلاث", "تلات", "اربع", "أربع", "خمس", "ست", "سبع", "ثمان", "ثماني", "تمن", "تسع"})
+
+
+#: The Arabic number words whose own first letter is و, so a leading و on them is not
+#: the conjunction: "one", masculine and feminine.
+_WAW_INITIAL_NUMBERS = frozenset({"واحد", "واحدة", "واحده"})
+
+
+def _maya_as_hundred(text: str) -> str:
+    """Write the recognizer's ماية as مية where it is the hundred of a number: fused to
+    a unit (اربعماية), after a unit (ست ماية), before the thousands word (ماية الف), or
+    after و that follows a number (الف وماية). Anywhere else, "كباية ماية" and
+    "شربت ماية", it is water and stays."""
+    parts = _WORDS_AND_GAPS.split(text)  # words at even positions, the gaps between them at odd
+    words = parts[::2]
+
+    def value(k):
+        return _number_value(words[k]) if 0 <= k < len(words) and words[k] else None
+
+    def thousands(k):
+        """A hundred joined by و follows the thousands ("الف وميتين"), never a unit:
+        "اثنين وميه" is "two, and water"."""
+        v = value(k)
+        return v is not None and v >= 1000
+
+    for i, word in enumerate(words):
+        lead, core, trail = _EDGE_PUNCTUATION.match(word).groups()
+        spelling = next((s for s in _MAYA_SPELLINGS if core.endswith(s)), None)
+        if spelling is None:
+            continue
+        head = core[:-len(spelling)]
+        after_number = thousands(i - 1) or (i > 0 and words[i - 1] == "و" and thousands(i - 2))
+        if head == "":
+            inside = (i > 0 and words[i - 1] in _HUNDRED_UNITS) or value(i + 1) == 1000 or \
+                (i > 0 and words[i - 1] == "و" and thousands(i - 2))
+        elif head == "و":
+            inside = after_number
+        else:
+            # one proclitic ب, ل or ف may lead the fused word: "بخمسميه الف"
+            inside = head in _HUNDRED_UNITS or (head[:1] in "بلف" and head[1:] in _HUNDRED_UNITS)
+        if inside:
+            parts[2 * i] = f"{lead}{head}{_HUNDRED}{trail}"
+    return "".join(parts)
+
+
+def _or_as_and(text: str) -> str:
+    """Write the recognizer's او as و where it joins the parts of one spoken number.
+
+    That is one shape only: a hundreds word alone, perhaps after a larger part of the
+    same number, then او, then tens or units that the thousands word multiplies with it.
+    "ست مية او عشرة الف" and "مليون وست مية او عشرة الف" are one number each. Every
+    other او is "or": "الف او خمسمية", "الفين او ثلاثة", "مية او اثنين",
+    "تسعمية او عشرة ملايين" and "ثلاثة او اربعة" are two numbers each.
+
+    A word is classed by the value the number parser reads in it: 100 to 900 in
+    hundreds is a hundreds word, 1 to 99 a unit, ten or teen, 1000 the thousands word,
+    and a million or more a larger part of the same number.
+    """
+    parts = _WORDS_AND_GAPS.split(text)  # words at even positions, the gaps between them at odd
+    words = parts[::2]
+
+    def word(k):
+        return words[k] if 0 <= k < len(words) else ""
+
+    def value(k):
+        return _number_value(word(k)) if word(k) else None
+
+    def waw(k):
+        """Whether the word at k is a number word with the conjunction written onto it.
+        واحد and واحدة are the number words that begin with و themselves."""
+        w = word(k)
+        return w[:1] == "و" and w not in _WAW_INITIAL_NUMBERS and _number_value(w[1:]) is not None
+
+    def hundreds(v):
+        return v is not None and 100 <= v <= 900 and v % 100 == 0
+
+    def counts(v):
+        return v is not None and 1 <= v <= 99 and v == int(v)
+
+    def joins(i):
+        unit = value(i - 2)
+        if value(i - 1) == 100 and counts(unit) and unit <= 9 and \
+                _number_value(f"{word(i - 2)} {word(i - 1)}") == unit * 100:
+            start = i - 2
+        elif hundreds(value(i - 1)):
+            start = i - 1
+        else:
+            return False
+        k = start - 1
+        if not waw(start) and word(k) == "و":
+            k -= 1
+        earlier = value(k)
+        if earlier is not None and earlier < 1_000_000:
+            return False
+        if not counts(value(i + 1)) or waw(i + 1):
+            return False
+        for k in range(i + 2, len(words)):
+            if value(k) == 1000:
+                return True
+            if word(k) != "و" and not counts(value(k)):
+                return False
+        return False
+
+    for i in range(1, len(words) - 1):
+        if words[i].translate(_ALEF_TABLE) == _OR and joins(i):
+            parts[2 * i] = parts[2 * i + 1] = ""
+            parts[2 * i + 2] = "و" + parts[2 * i + 2]
+    return "".join(parts)
+
+
 def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "ar",
                   **flags: bool) -> str:
     """Normalize a transcript for comparison.
@@ -341,7 +506,7 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
     spelling written with ``إ`` finds the word written with ``ا``, and without it
     does not. A prefixed form such as ``والبي ام دبليو`` is a different spelling and
     needs its own entry. ``lang`` is the language whose number words
-    ``spoken_numbers_to_digits`` reads.
+    ``spoken_numbers_to_digits`` reads; ``fix_asr_errors`` repairs Arabic only.
     """
     config = config or _NOTHING
     if "lexicon" in flags:
@@ -362,6 +527,8 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
         text = marks.sub("", text)
     if config.lexicon:
         text = _apply_lexicon(text, config)
+    if config.fix_asr_errors and is_arabic_lang(lang):
+        text = _or_as_and(_maya_as_hundred(text))
     if config.spoken_numbers_to_digits:
         text = _numbers_to_digits(text, lang)
     if config.join_dictated_digits:
@@ -415,7 +582,34 @@ INTELLIGIBILITY_GATE = AsrNorm(strip_harakat=True, strip_extended_marks=True,
 
 
 _LATIN_RUN_EDGE = r"(?<![A-Za-z0-9])", r"(?![A-Za-z0-9])"
-_CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(?=[A-Z0-9]*[A-Z])[A-Z0-9]+" + _LATIN_RUN_EDGE[1])
+#: The Latin capitals that are not vowels. A run of two or more of them spells no
+#: word, so it is an initialism: BMW, GMC, MG.
+_CONSONANT_CAPS = "BCDFGHJKLMNPQRSTVWXZ"
+#: A code: a run of capitals and digits carrying at least one of each, or an
+#: initialism. A run of capitals that spells a word is neither, and TOYOTA and
+#: LAND ROVER DEFENDER are read rather than spelled.
+_CODE = re.compile(_LATIN_RUN_EDGE[0]
+                   + r"(?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
+                   + f"|[{_CONSONANT_CAPS}]{{2,}})"
+                   + _LATIN_RUN_EDGE[1])
+#: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
+_VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
+#: A number right before a :data:`_CODE`, which makes a unit symbol a unit.
+_NUMBER_BEFORE = re.compile(r"[0-9٠-٩۰-۹]\s*$")
+#: The unit symbols written in capitals often enough that capitals are no evidence of
+#: a code: ``50 KM`` is kilometres. Every other symbol is read in the case it is
+#: written in, because the capitals are the evidence — ``3 mg`` is milligrams where
+#: ``3 MG`` is the make, and ``2 EV`` is a car rather than two electronvolts. Sorted,
+#: because :data:`TTS_NORM_VERSION` names it and a set's repr is not stable.
+_CAPITALISED_UNITS = ("hp", "kg", "km", "kw")
+#: A run of letters and digits with a capital in it, in any of the three digit
+#: scripts: an identifier like :data:`_CODE`, whose lowercase cases it holds, and an
+#: identifier is spoken whole or character by character, never with a digit run read
+#: as a number out of the middle of it. A run without a capital is not one:
+#: ``15h01`` is a time, ``7abibi`` Arabizi.
+_CODE_CHARS = "A-Za-z0-9٠-٩۰-۹"
+_MIXED_CODE = re.compile(f"(?<![{_CODE_CHARS}])(?=[{_CODE_CHARS}]*[A-Z])"
+                         f"(?=[{_CODE_CHARS}]*[0-9٠-٩۰-۹])[{_CODE_CHARS}]+(?![{_CODE_CHARS}])")
 
 
 @functools.lru_cache(maxsize=None)
@@ -546,23 +740,31 @@ def _term_pattern(lexicon: Tuple[Tuple[str, str], ...]):
                       + _LATIN_RUN_EDGE[1], re.IGNORECASE), said
 
 
-#: Saudi phone numbers as they are written in running text, grouped or not. The digits
-#: are ASCII by name: ``\d`` also matches Arabic-Indic digits, and a phone number would
-#: then run on into an Arabic-Indic number written after it.
-KSA_PHONE_SHAPES = (r"(?:(?:\+|00)?966[\s\-]*5|05)[0-9\s\-]{7,12}[0-9]",)
-#: What a bare digit run starts with when it is a Saudi number: country code, local
-#: mobile, toll-free and unified numbers, landline area codes. A price and a phone
-#: number cannot be told apart by length, so each of these names a real prefix.
-KSA_PHONE_PREFIXES = (r"(?:00)?966\d{4,}", r"05\d{5,}", r"(?:800|920)\d{5,}", r"01[1-7]\d{6,}")
+#: The member states of the Arab League, as ISO 3166-1 alpha-2 regions, Saudi Arabia
+#: first and then the Gulf, the Levant, the Nile and the Maghreb. The numbering plan of
+#: each is bundled in ``data/phone_plans.json``, built by ``scripts/build_phone_plans.py``
+#: from Google's libphonenumber metadata (https://github.com/google/libphonenumber,
+#: resources/PhoneNumberMetadata.xml) at the release the file's ``source`` names.
+ARAB_PHONE_REGIONS = ("SA", "AE", "KW", "QA", "BH", "OM", "YE", "IQ", "JO", "LB", "SY",
+                      "PS", "EG", "SD", "LY", "TN", "DZ", "MA", "MR", "SO", "DJ", "KM")
 #: Words after which a number is a reference to be read out, not a quantity.
 IDENTIFIER_WORDS = ("كود", "الكود", "رمز", "الرمز",
                     "رقم", "الرقم", "رقمك", "رقمه", "رقمي",
                     "جوال", "جوالك", "جوالي", "هاتف", "موبايل", "تلفون",
                     "فرع", "الفرع", "شاسيه", "الطلب", "الحجز",
+                    # Saudi Arabia's unified numbers, the 920 numbers a business gives.
+                    "الموحد", "الرقم الموحد",
                     "code", "number", "no", "phone", "mobile", "branch", "ref", "pin", "otp")
 
 _DIGIT_WORDS = dict(zip("0123456789", ("صفر", "واحد", "اثنين", "ثلاثة", "أربعة", "خمسة",
                                        "ستة", "سبعة", "ثمانية", "تسعة")))
+# The most digits a phone number has, the international limit of ITU-T E.164.
+_LONGEST_NUMBER = 15
+# The lengths the evidence of a phone number is read at, in digits: the shortest run led by
+# ``+`` or by ``00`` and a country code, the shortest bare run led by a country code and a
+# mobile number's first digit, and the lengths a toll-free, shared-cost or unified number
+# is read at by its first three digits.
+_PHONE_EVIDENCE = dict(international=5, country_code_and_mobile=9, marked_lengths=(8, 11))
 _EASTERN_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 _FUSED_HUNDREDS = {fused + spelling: spaced + " مئة"
                    for fused, spaced in (("ثلاث", "ثلاث"), ("أربع", "أربع"), ("خمس", "خمس"), ("ست", "ست"),
@@ -574,13 +776,58 @@ _FUSED_HUNDREDS.update({stem + "مية": stem + " مية"
                                      "ثمان", "تمن", "تمان", "تسع")})
 _FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, sorted(_FUSED_HUNDREDS, key=len, reverse=True))))
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*[%٪]")
-_LONG_RUN = re.compile(r"(?<![0-9])\d{11,}(?![0-9])")
-_CODE_DIGITS = re.compile(r"(?<![0-9A-Za-z])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))(?![0-9A-Za-z])")
+_LONG_RUN = re.compile(r"(?<![0-9٠-٩])\+?\d{10,}(?![0-9])")
+_CODE_DIGITS = re.compile(r"(?<![\dA-Za-z])(?<!\d[,.٬،٫])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))"
+                          r"(?![\dA-Za-z])(?![,.٬،٫]\d)")
 _DIGIT_RUN = re.compile(r"(?<![0-9A-Za-z٠-٩])(\+?\d+)(?![0-9A-Za-z])")
 _WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![0-9A-Za-z])")
 _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])([٠-٩]{1,3}(?:[،٬][٠-٩]{3})+(?:[.٫][٠-٩]+)?"
                              r"|[٠-٩]+(?:[.٫][٠-٩]+)?)(?![0-9٠-٩A-Za-z])")
+# A clock time written in digits: ``h:mm`` with two-digit minutes, an hour followed by
+# "am" or "pm", or either after a written الساعة. A score written with a one-digit second
+# part, ``2:1``, is none; neither is a time inside a longer run of digits, nor ``15h01``,
+# which :mod:`arbtok.util` reads.
+_CLOCK = re.compile(r"(?<![0-9٠-٩A-Za-z:.,٫])"
+                    r"(?:(?P<saa>الساع[ةه])\s+)?"
+                    r"(?P<hour>[0-9٠-٩]{1,2})(?::(?P<minute>[0-9٠-٩]{2}))?"
+                    r"(?:\s?(?P<marker>[aApP][mM])(?![A-Za-z]))?"
+                    r"(?![0-9٠-٩A-Za-z]|[:.,٫][0-9٠-٩])")
 _PROCLITIC = r"[بولك]?ا?ل?"
+
+
+def _rank_nouns() -> Dict[str, str]:
+    """The rank nouns of ``data/rank_ordinals.tsv``, keyed by the noun without its
+    article, with the gender the ordinal after it takes. The file cites the source of
+    each row."""
+    rows = {}
+    for line in (Path(__file__).parent / "data" / "rank_ordinals.tsv").read_text(encoding="utf-8").splitlines():
+        if line and not line.startswith("#"):
+            noun, gender = line.split("\t")[:2]
+            rows[noun[len("ال"):]] = gender
+    return rows
+
+
+_RANK_NOUNS = _rank_nouns()
+# A rank noun, definite, and the whole number written directly after it. The article is
+# required: the proclitic before the noun ends in it (الطابق, والطابق, بالطابق) or is
+# ل joined to it (للطابق). The number is an integer of one or two digits in one script,
+# not part of a decimal or a longer run: from 100 the parser has no feminine or oblique
+# ordinal, and the number stays a cardinal.
+_RANK_NUMBER = re.compile(r"(?<![^\s\W])(ف?" + _PROCLITIC + ")(" + "|".join(map(re.escape, _RANK_NOUNS))
+                          + r")(\s+)([0-9]{1,2}|[٠-٩]{1,2})(?![0-9٠-٩A-Za-z]|[.,٫٬،][0-9٠-٩])")
+# A run of digits in groups, with a leading ``+`` if any, split by spaces or hyphens as a
+# phone number is written. Its digits are all ASCII or all Arabic-Indic: a number written
+# after a phone number in the other script is another number. It may not touch a digit
+# or a Latin letter, nor a digit across a decimal point, a thousands separator, a slash
+# or a colon: that is a longer number, a date or a time, and a piece of it is not a
+# phone number.
+_PHONE_DIGIT = "0-9\u0660-\u0669"
+_PHONE_JOINER = ",.:/\u060C\u066B\u066C"
+_PHONE_CANDIDATE = re.compile(rf"(?<![{_PHONE_DIGIT}A-Za-z+])(?<![{_PHONE_DIGIT}][{_PHONE_JOINER}])"
+                              + "(?:" + "|".join(rf"\+?[{d}](?:(?:\s*-\s*|\s+)?[{d}])*"
+                                                 for d in ("0-9", "\u0660-\u0669")) + ")"
+                              + rf"(?![{_PHONE_DIGIT}A-Za-z])(?![{_PHONE_JOINER}][{_PHONE_DIGIT}])")
+_PHONE_GROUP = re.compile(f"[{_PHONE_DIGIT}]+")
 _HELD_DIGITS = 0xE000  # private-use characters stand in for digits a rule must not read
 #: ISO 639-3 codes for the individual Arabic languages. They are listed because they
 #: cannot be recognized by shape: they sort beside ``arc`` (Aramaic) and ``arn``
@@ -613,8 +860,16 @@ def is_arabic_lang(lang: str) -> bool:
 
 
 #: Rules whose output is Arabic words whatever ``lang`` says.
-_ARABIC_ONLY = ("speak_percent", "phone_shapes", "long_digit_runs", "phone_prefixes", "identifier_words",
+_ARABIC_ONLY = ("speak_percent", "phone_shapes", "phone_regions", "long_digit_runs", "phone_prefixes", "identifier_words",
                 "dialect_numbers", "number_forms")
+
+# A whitespace-separated word of two or three Arabic letters and a tatweel, held together
+# with the whitespace after it, matched only where the word after it begins with the same
+# letters: that is the restart, not a word on its own. ``drop_false_starts`` is on by
+# default, so it is not in ``_ARABIC_ONLY``: raising on a non-Arabic ``lang`` for a rule
+# every caller carries would break every such call, where the pattern itself already
+# matches nothing outside the Arabic block.
+_FALSE_START = re.compile(r"(?<!\S)([\u0621-\u064A]{2,3})\u0640(\s+)(?=\1)")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -624,12 +879,31 @@ class TtsNorm:
     ``spoken_forms`` and ``canonical_unicode`` are on by default, which is what the
     G2P plugin runs. The rest are off. Those from ``speak_percent`` to
     ``space_fused_hundreds`` are rules a voice agent needs when it reads out prices,
-    phone numbers and booking references; :data:`KSA_VOICE_AGENT` turns them on with
-    Saudi phone shapes.
+    phone numbers and booking references. Such an agent turns all of them on, with
+    ``phone_regions=ARAB_PHONE_REGIONS`` and ``identifier_words=IDENTIFIER_WORDS``, and
+    turns ``spoken_forms`` and ``canonical_unicode`` off, because the cardinals already
+    speak its numbers.
     """
     #: Drop zero-width and bidirectional control characters.
     strip_controls: bool = False
-    #: Read ``X5``-shaped codes character by character from :func:`spelled_codes`.
+    #: Read ``X5``-shaped codes character by character from :func:`spelled_codes`: a run of
+    #: capitals and digits with at least one of each, not touching another letter or digit,
+    #: or a run of two or more capitals with no vowel among them, which spells no word and
+    #: is an initialism: ``BMW``, ``GMC``, ``MG``. A run of capitals that does spell a word
+    #: is a word, and ``TOYOTA`` and ``LAND ROVER DEFENDER`` are left for the lexicon or
+    #: the loanword path. A unit symbol of :data:`_CAPITALISED_UNITS` written after a
+    #: number is the unit: ``50 KM`` is read as kilometres, as ``50 km`` is.
+    #: A run of up to seven characters is a model code and every character takes the
+    #: table's English name, so ``X5`` is ``إِكْسْ فَيْفْ``. A run of 8 to 17 characters with
+    #: at least one digit is a vehicle identification number or a fragment of one: its
+    #: letters take the table's names and its digits the Arabic words of a digit-by-digit
+    #: reading, as a phone number or a booking reference is read, lect words included
+    #: under ``dialect_numbers``. ISO 3779 fixes the VIN at 17 characters: "The VIN
+    #: consists of 17 characters, and only uses capital letters (excluding I, O and Q)
+    #: and digits (0-9)" (https://en.wikipedia.org/wiki/Vehicle_identification_number),
+    #: so only capitals are read this way. The floor of eight is a choice, not the
+    #: standard's: it takes the fragments an agent reads back, "the last eight are
+    #: L457L680", and leaves every model code of seven characters or fewer as it was.
     spell_out_codes: bool = False
     #: ``4.5%`` becomes ``4.5 في المئة``, and the number is then spoken like any other.
     speak_percent: bool = False
@@ -638,7 +912,30 @@ class TtsNorm:
     keep_code_digits: bool = False
     #: Patterns of a phone number in running text; a match is read digit by digit.
     phone_shapes: Tuple[str, ...] = ()
-    #: A run of eleven or more digits is a reference and is read digit by digit.
+    #: ISO 3166-1 alpha-2 regions whose numbering plans are recognised, from the plans
+    #: bundled with arbtok (:data:`ARAB_PHONE_REGIONS` lists them). A run of 7 to 15
+    #: digits in groups is read digit by digit when it is a valid number and says it is
+    #: a phone number: it starts with ``+`` or ``00`` and a country code of the bundled
+    #: plans, or with a region's three-digit country code and a mobile number, or with
+    #: the region's trunk prefix (``0`` in most), or it is a toll-free, shared-cost or
+    #: unified number of eight digits or more, or it follows one of
+    #: ``identifier_words``. A run that carries its own evidence is read digit by digit
+    #: whatever its length and whether or not the plans know it: one led by ``+`` (five
+    #: digits or more, the ``+`` dropped), one led by ``00`` and a country code of the
+    #: plans, one after an identifier word, one of nine digits or more that starts with a
+    #: region's three-digit country code and a digit the region's mobile numbers start
+    #: with, and one of 8 to 11 digits that starts with the three digits a region's
+    #: toll-free, shared-cost or unified numbers start with and has a length the plan
+    #: gives that type. A run shaped like a date is never read this way unless it
+    #: starts with ``+`` or ``00``. Without that evidence a bare eight-digit number stays
+    #: a quantity, because in the Gulf and the Maghreb a phone number and a price of
+    #: that length cannot be told apart.
+    phone_regions: Tuple[str, ...] = ()
+    #: A run of ten or more digits is a reference and is read digit by digit, with a
+    #: leading ``+`` dropped as :func:`_digit_by_digit` says. Ten unseparated digits are
+    #: an order, account or policy number far more often than a quantity of billions. A
+    #: run that ends in three zeros is a round quantity and is left to the cardinals,
+    #: unless a ``+`` leads it; a number written with separators never forms a run.
     long_digit_runs: bool = False
     #: Patterns a bare digit run matches whole when it is a phone number. When any is
     #: given, a run written with a leading ``+`` is one too.
@@ -647,7 +944,11 @@ class TtsNorm:
     #: ``الكود 4729``, ``برقم الحجز 3401``. One other word may stand between.
     identifier_words: Tuple[str, ...] = ()
     #: Speak Arabic-Indic and ASCII numbers as cardinals here, ahead of
-    #: ``spoken_forms``, so that the three flags below apply to them.
+    #: ``spoken_forms``, so that the three flags below apply to them. A clock time is
+    #: spoken as a time, not as two cardinals, whether or not ``spoken_forms`` is on. A
+    #: whole number from 1 to 99 written directly after a rank noun is the ordinal that
+    #: agrees with the noun: ``الطابق 3`` is ``الطابق الثالث`` and ``الفئة 5`` is
+    #: ``الفئة الخامسة``. The nouns and their sources are in ``data/rank_ordinals.tsv``.
     cardinal_numbers: bool = False
     #: A number ``cardinal_numbers`` cannot speak is left as written and the rest of
     #: the text is still read, where otherwise the error is raised. For a caller that
@@ -663,22 +964,38 @@ class TtsNorm:
     #: names, asked of the number parser under that lect's ISO 639-3 code: Jidda and
     #: Cairo do not say 15 alike. With no lect in the tag, or none the parser has
     #: cited words for, the words are the literary ones. Runs before
-    #: ``space_fused_hundreds``.
+    #: ``space_fused_hundreds``. Speaks numbers as cardinals, as ``cardinal_numbers`` does.
     dialect_numbers: bool = False
     #: Your own words for values, ``{100: "مية"}``, laid over the lect's, or used
     #: alone when ``dialect_numbers`` is off. Set with :meth:`with_number_forms`.
+    #: Speaks numbers as cardinals, as ``cardinal_numbers`` does.
     number_forms: Tuple[Tuple[int, str], ...] = ()
     #: Dates, times, numbers and units as words in ``lang``.
     spoken_forms: bool = True
     #: Tatweel dropped, NFC, shadda ordered before its vowel, the spellings of مائة settled.
     canonical_unicode: bool = True
+    #: A whitespace-separated word of two or three Arabic letters (U+0621-U+064A) and
+    #: nothing else but a tatweel is a false start, and is dropped with the whitespace
+    #: after it, where the word that follows begins with the same letters: ``الـ
+    #: السيارة`` becomes ``السيارة``. On held-out SADA rows scored by the aligner's
+    #: phone head, the audio fits better without such a fragment on 8 of the 9 held-out
+    #: rows that carry one (mean +8.4 log-likelihood, 95% interval +3.8 to +13.2, sign test
+    #: p = 0.039), while dropping a real two- or three-letter word the same way cost 5.4
+    #: over 600 rows. A fragment with no restart ahead of it was not shown to fit better and
+    #: is kept. A one-letter fragment is kept too: its restart rows gain 1.75 with a sign
+    #: test at 0.109, the head cannot tell a dropped one-letter word from a spoken one, and
+    #: a one-letter fragment before a word starting with the same letter is also how a
+    #: detached clitic is written (الزواج بـ بنت is the preposition).
+    #: Arabic only; runs right after the lexicon, before any number or code rule can
+    #: read the fragment, and before ``canonical_unicode`` drops the tatweel itself.
+    drop_false_starts: bool = True
     #: Terms and the way each is said, set with :meth:`with_lexicon`; applied first.
     lexicon: Tuple[Tuple[str, str], ...] = ()
 
     def __post_init__(self):
         object.__setattr__(self, "lexicon", _as_lexicon(self.lexicon))
         object.__setattr__(self, "number_forms", _as_number_forms(self.number_forms))
-        for name in ("phone_shapes", "phone_prefixes", "identifier_words"):
+        for name in ("phone_shapes", "phone_regions", "phone_prefixes", "identifier_words"):
             object.__setattr__(self, name, tuple(getattr(self, name)))
 
     def with_lexicon(self, lexicon: Mapping[str, str]) -> "TtsNorm":
@@ -698,29 +1015,22 @@ class TtsNorm:
         # the parser is named for it too: it is what identifies the words a run used.
         speaks = self.cardinal_numbers or self.spoken_forms or self.dialect_numbers
         return (f"arbtok-tts-norm {TTS_NORM_VERSION}: {','.join(on) or 'none'}"
-                + _describe_lexicon(self.lexicon) + (_describe_parser() if speaks else ""))
+                + _describe_lexicon(self.lexicon) + (_describe_phone_plans() if self.phone_regions else "")
+                + (_describe_parser() if speaks else ""))
 
 
 #: Names the rule set of :func:`normalize_for_tts`, computed the way
 #: :data:`ASR_NORM_VERSION` is. It covers the rules and their patterns. What a config
-#: carries as values is configuration and is outside it: :data:`KSA_PHONE_SHAPES`,
-#: :data:`KSA_PHONE_PREFIXES`, :data:`IDENTIFIER_WORDS` and a lexicon are named by
+#: carries as values is configuration and is outside it: :data:`ARAB_PHONE_REGIONS`,
+#: :data:`IDENTIFIER_WORDS` and a lexicon are named by
 #: :meth:`TtsNorm.describe`, each by a digest. A record that must distinguish two runs
 #: keeps the ``describe()`` string, not the version alone.
-TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _DIGIT_WORDS,
+TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN,
+                             _NUMBER_BEFORE, _CAPITALISED_UNITS, _MIXED_CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
-                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE)
+                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
+                             _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START)
 _PLUGIN_DEFAULT = TtsNorm()
-
-#: What a Saudi voice agent's replies need before synthesis: percentages spoken, the
-#: digits of a model name kept, phone numbers, long references and numbers after a
-#: word such as رقم or كود read digit by digit, and every other number a cardinal in
-#: the oblique case with its hundreds spaced.
-KSA_VOICE_AGENT = TtsNorm(speak_percent=True, keep_code_digits=True, phone_shapes=KSA_PHONE_SHAPES,
-                          long_digit_runs=True, phone_prefixes=KSA_PHONE_PREFIXES,
-                          identifier_words=IDENTIFIER_WORDS, cardinal_numbers=True,
-                          leave_unspeakable_numbers=True, oblique_numbers=True, space_fused_hundreds=True,
-                          spoken_forms=False, canonical_unicode=False)
 
 
 @functools.lru_cache(maxsize=None)
@@ -731,6 +1041,176 @@ def _tts_patterns(config: TtsNorm):
                          + "|".join(re.escape(w) for w in config.identifier_words)
                          + r")(?:\s+[^\s\d]+)?\s*$", re.IGNORECASE) if config.identifier_words else None
     return phones, prefixes, context
+
+
+_PHONE_PLANS = Path(__file__).parent / "data" / "phone_plans.json"
+# Number types whose leading digits say what they are, so that one is read without a
+# trunk prefix or a word before it: 800 and 920 in Saudi Arabia.
+_MARKED_TYPES = ("toll_free", "shared_cost", "uan")
+
+
+@functools.lru_cache(maxsize=None)
+def _phone_plans():
+    """The bundled numbering plans: each region's country code, trunk prefix and, for
+    each number type, the compiled pattern and the lengths a national number has."""
+    import json
+    regions = json.loads(_PHONE_PLANS.read_text(encoding="utf-8"))["regions"]
+    return {region: (plan["country_code"], plan["national_prefix"],
+                     {kind: (re.compile(t["national_number_pattern"]), frozenset(t["possible_lengths"]))
+                      for kind, t in plan["types"].items()})
+            for region, plan in regions.items()}
+
+
+@functools.lru_cache(maxsize=None)
+def _plan_starts():
+    """For each region and number type of the bundled plans, the digits a number of that
+    type starts with and the lengths it has after each: its first digit, and for the
+    toll-free, shared-cost and unified types also its first three digits. The build
+    script reads them from the type's pattern."""
+    import json
+    regions = json.loads(_PHONE_PLANS.read_text(encoding="utf-8"))["regions"]
+    return {region: {kind: ({lead: frozenset(counts) for lead, counts in t["leading_digits"].items()},
+                            {lead: frozenset(counts) for lead, counts in t.get("leading_three_digits", {}).items()})
+                     for kind, t in plan["types"].items()}
+            for region, plan in regions.items()}
+
+
+@functools.lru_cache(maxsize=None)
+def _mobile_leads(region: str) -> frozenset:
+    """The digits a mobile number of ``region`` can start with."""
+    types = _plan_starts()[region]
+    return frozenset(types["mobile"][0]) if "mobile" in types else frozenset()
+
+
+@functools.lru_cache(maxsize=None)
+def _marked_leads(region: str) -> Dict[str, frozenset]:
+    """The first three digits of the toll-free, shared-cost and unified numbers of
+    ``region``, each with the lengths a number of that type that starts with them has:
+    800 at ten digits and 920 at nine in Saudi Arabia. A type whose pattern fixes fewer
+    than its first three digits is left out, since those are the first digits of too
+    many quantities."""
+    out: Dict[str, frozenset] = {}
+    for kind in _MARKED_TYPES:
+        if kind not in _plan_starts()[region]:
+            continue
+        one, three = _plan_starts()[region][kind]
+        if len(three) == len(one):
+            for head, counts in three.items():
+                out[head] = out.get(head, frozenset()) | counts
+    return out
+
+
+def _number_types(nsn: str, region: str):
+    """The types of ``region`` that ``nsn``, a national significant number, is valid as."""
+    return [kind for kind, (pattern, lengths) in _phone_plans()[region][2].items()
+            if len(nsn) in lengths and pattern.fullmatch(nsn)]
+
+
+def _is_date(groups) -> bool:
+    """Whether the first groups of a run are a date: day and month in either order and
+    then a year, or a four-digit year and then month and day. A two-digit year counts
+    only when nothing follows it, since grouped phone numbers are written in pairs."""
+    if len(groups) < 3:
+        return False
+    a, b, c = groups[:3]
+
+    def day_month(x, y):
+        return len(x) <= 2 and len(y) <= 2 and (1 <= int(x) <= 31 and 1 <= int(y) <= 12
+                                                or 1 <= int(x) <= 12 and 1 <= int(y) <= 31)
+    if day_month(a, b) and (len(c) == 4 or len(c) == 2 and len(groups) == 3):
+        return True
+    return len(a) == 4 and day_month(c, b)
+
+
+def _is_phone_number(run: str, before: str, regions: Tuple[str, ...], context) -> bool:
+    """Whether ``run``, a digit run written with its separators, is a valid number that
+    says it is a phone number; ``before`` is the text ahead of it.
+
+    A number written with ``+`` or ``00`` names its country, and is valid when the rest
+    is a number of that country in the bundled plans. Without them it is read in the
+    plans of ``regions``: after a three-digit country code, as a mobile number; after
+    the region's trunk prefix; or bare, as a toll-free, shared-cost or unified number of
+    eight digits or more, or as any number when an identifier word stands before it.
+    """
+    plans = _phone_plans()
+    groups = [g.translate(_EASTERN_DIGITS) for g in _PHONE_GROUP.findall(run)]
+    digits = "".join(groups)
+    if not 7 <= len(digits) <= _LONGEST_NUMBER:
+        return False
+    if run.startswith("+") or digits.startswith("00"):
+        digits = digits if run.startswith("+") else digits[2:]
+        return any(digits.startswith(str(code)) and _number_types(digits[len(str(code)):], region)
+                   for region, (code, _, _) in plans.items())
+    if _is_date(groups):
+        return False
+    after_word = bool(context and context.search(before))
+    for region in regions:
+        code, trunk, _ = plans[region]
+        code = str(code)
+        if len(code) == 3 and digits.startswith(code) and "mobile" in _number_types(digits[3:], region):
+            return True
+        if trunk and digits.startswith(trunk) and _number_types(digits[len(trunk):], region):
+            return True
+        kinds = _number_types(digits, region)
+        if kinds and (after_word or len(digits) >= 8 and set(kinds) & set(_MARKED_TYPES)):
+            return True
+    return False
+
+
+def _says_it_is_a_phone_number(run: str, before: str, regions: Tuple[str, ...], context) -> bool:
+    """Whether ``run`` says it is a phone number whether or not the plans know it as a
+    valid one; ``before`` is the text ahead of it.
+
+    A run led by ``+`` does: nobody writes ``+`` before a quantity. So does one led by
+    ``00`` and a country code of the plans, and one of seven digits or more after an
+    identifier word; a shorter one there is read by ``identifier_words`` itself. A bare
+    run does when it starts with a three-digit country code of ``regions`` and a digit
+    that region's mobile numbers start with and has nine digits or more, or when it
+    starts with the leading digits of a toll-free, shared-cost or unified number of
+    ``regions`` and has a length the plan gives that type. A run shaped like a date is
+    none of the bare ones.
+    """
+    plans = _phone_plans()
+    groups = [g.translate(_EASTERN_DIGITS) for g in _PHONE_GROUP.findall(run)]
+    digits = "".join(groups)
+    shortest = _PHONE_EVIDENCE["international"]
+    if len(digits) > _LONGEST_NUMBER:
+        return False
+    if run.startswith("+"):
+        return len(digits) >= shortest
+    if digits.startswith("00"):
+        return len(digits) - 2 >= shortest and any(digits[2:].startswith(str(code)) for code, _, _ in plans.values())
+    if len(digits) < 7 or _is_date(groups):
+        return False
+    if context and context.search(before):
+        return True
+    low, high = _PHONE_EVIDENCE["marked_lengths"]
+    for region in regions:
+        code = str(plans[region][0])
+        if (len(code) == 3 and len(digits) >= _PHONE_EVIDENCE["country_code_and_mobile"]
+                and digits.startswith(code) and digits[3:4] in _mobile_leads(region)):
+            return True
+        marked = _marked_leads(region).get(digits[:3], ())
+        if low <= len(digits) <= high and len(digits) in marked:
+            return True
+    return False
+
+
+def _read_phone_numbers(text: str, regions: Tuple[str, ...], context, forms: Mapping[int, str]) -> str:
+    """Every phone number of ``regions`` in ``text`` read digit by digit. A run of groups
+    that is not one whole may be one up to a group before its end, ``0100 123 4567 3``.
+    The longest valid number is taken first, and only without one the longest run that
+    says it is a phone number, so a count written after a number is not read with it."""
+    out, last = [], 0
+    for m in _PHONE_CANDIDATE.finditer(text):
+        ends = [g.end() for g in _PHONE_GROUP.finditer(m.group(0))]
+        before = text[:m.start()]
+        end = next((end for test in (_is_phone_number, _says_it_is_a_phone_number) for end in reversed(ends)
+                    if test(m.group(0)[:end], before, regions, context)), None)
+        if end is not None:
+            out += [text[last:m.start()], _digit_by_digit(m.group(0)[:end], forms)]
+            last = m.start() + end
+    return "".join(out) + text[last:]
 
 
 def _number_case(config: TtsNorm) -> str:
@@ -786,7 +1266,20 @@ def _digit_forms(lang: str, config: TtsNorm) -> Dict[int, str]:
     return forms
 
 
+def _round_quantity(run: str) -> bool:
+    """A run with no leading ``+`` that ends in three zeros, in either digit script."""
+    return not run.startswith("+") and run.translate(_EASTERN_DIGITS).endswith("000")
+
+
 def _digit_by_digit(run: str, forms: Mapping[int, str] = {}) -> str:
+    """``run`` read one digit at a time, in the lect's words where ``forms`` has them.
+
+    Everything that is not a digit is dropped: the spaces and hyphens of a grouped
+    number, and a leading ``+``. The ``+`` is not spoken because the country code after
+    it already says the number is international, and a word for it would differ by lect
+    (زائد, بلس) where the digits do not. Every rule that reads a number this way takes a
+    leading ``+`` into its match, so that no rule leaves the sign in the text.
+    """
     return " ".join(forms.get(int(d), _DIGIT_WORDS[d]) for d in run.translate(_EASTERN_DIGITS) if d in _DIGIT_WORDS)
 
 
@@ -804,6 +1297,42 @@ def _cardinal(number: str, lang: str, config: TtsNorm) -> str:
     return words
 
 
+def _spoken_clock(m: re.Match) -> Optional[str]:
+    """The words of the clock time ``m`` matched, from the date parser's ``nice_time``,
+    or None when the match is no clock time. ``nice_time`` gives the period word when
+    it is asked for one, and it is asked when the text writes "am" or "pm" and for an
+    hour the 12-hour clock does not have."""
+    hour = int(m["hour"].translate(_EASTERN_DIGITS))
+    minute = int(m["minute"].translate(_EASTERN_DIGITS)) if m["minute"] else 0
+    marker = m["marker"].lower() if m["marker"] else None
+    if marker is None and m["minute"] is None and m["saa"] is None:
+        return None
+    if minute > 59 or hour > 23 or (marker and not 1 <= hour <= 12):
+        return None
+    if marker == "pm" and hour < 12:
+        hour += 12
+    elif marker == "am" and hour == 12:
+        hour = 0
+    from ovos_date_parser import nice_time
+    return nice_time(datetime.datetime(2000, 1, 1, hour, minute), "ar",
+                     use_24hour=False, use_ampm=bool(marker) or hour == 0 or hour > 12)
+
+
+def _rank_ordinal(m: re.Match, config: TtsNorm) -> str:
+    """The rank noun ``m`` matched with the number after it said as an ordinal agreeing
+    with the noun, or the match unchanged when the noun has no article or the number is
+    0. Ordinals show case only in the tens, which take the
+    register ``oblique_numbers`` gives the cardinals."""
+    proclitic, noun, gap, number = m.groups()
+    value = int(number.translate(_EASTERN_DIGITS))
+    if not proclitic.endswith(("ال", "لل")) or value == 0:
+        return m.group(0)
+    from ovos_number_parser import pronounce_ordinal
+    from ovos_number_parser.util import GrammaticalGender
+    return proclitic + noun + gap + pronounce_ordinal(value, lang="ar", gender=GrammaticalGender(_RANK_NOUNS[noun]),
+                                                      case=_number_case(config))
+
+
 def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     def speak(written: str, number: str) -> str:
         try:
@@ -816,6 +1345,7 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     def eastern(m):
         number = m.group(0).translate(_EASTERN_DIGITS).replace("٬", "").replace("،", "").replace("٫", ".")
         return speak(m.group(0), number)
+    text = _RANK_NUMBER.sub(lambda m: _rank_ordinal(m, config), text)
     text = _EASTERN_NUMBER.sub(eastern, text)
     return _WESTERN_NUMBER.sub(lambda m: speak(m.group(0), m.group(0).replace(",", "")), text)
 
@@ -825,7 +1355,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
 
     ``config`` is a :class:`TtsNorm`; with none given it is what the G2P plugin runs,
     ``spoken_forms`` and ``canonical_unicode``. Flags override it:
-    ``normalize_for_tts(text, KSA_VOICE_AGENT, spell_out_codes=True)``.
+    ``normalize_for_tts(text, "ar", config, spell_out_codes=True)``.
 
     ``lexicon`` maps a Latin-script term to the way it is said, ``{"BMW": "بِي إِمْ
     دَبَلْيُو"}``. It is applied first, the longest term first and without regard to
@@ -834,14 +1364,28 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     spoken form fully pointed; an unpointed one leaves its vowels to the diacritizer.
 
     ``spell_out_codes`` reads what the lexicon did not claim and is written in
-    capitals and digits with at least one capital, ``X5`` or ``GV70``, character by
-    character from :func:`spelled_codes`. A number on its own is not a code.
+    capitals and digits with at least one of each, ``X5`` or ``GV70``, or in capitals
+    with no vowel among them, ``BMW``, character by character from
+    :func:`spelled_codes`. Neither a number on its own nor a run of capitals that
+    spells a word is a code: ``TOYOTA`` is read as a word. A run of
+    8 to 17 such characters with a digit in it is a vehicle identification number, or
+    a fragment of one, and its digits are read as Arabic words, one at a time. A run of
+    letters and digits with a capital in it that is not read this way is left exactly as
+    written: ``L809UPZ3V361`` stays whole rather than its digit runs being spoken.
 
     ``spoken_forms`` writes dates, times, numbers and units as words in ``lang``.
+    In Arabic, a clock time written in digits is read first, before any rule reads its
+    digits: ``7:30 pm`` and ``19:30`` become ``الساعة السابعة والنصف مساءً``, in the words
+    of the date parser's ``nice_time``. A time is ``h:mm`` with two-digit minutes, an
+    hour of the 12-hour clock followed by "am" or "pm", or either after a written
+    ``الساعة``. A score written with two-digit minutes, ``3:10``, reads as a time too.
     ``canonical_unicode`` drops tatweel, applies NFC, orders shadda before its
     vowel and settles the spellings of مائة: the form the tokenizer reads.
     ``strip_controls`` drops zero-width and bidirectional control characters,
     which otherwise reach the tokenizer as characters it has no reading for.
+    ``drop_false_starts`` drops a two- or three-letter fragment ending in tatweel where
+    the word after it begins the same way, Arabic only: ``الـ السيارة`` becomes
+    ``السيارة``.
 
     Diacritization is not part of this: it is a model, and it lives in
     :func:`arbtok.vocalize`.
@@ -862,25 +1406,58 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.lexicon:
         pattern, said = _term_pattern(config.lexicon)
         text = pattern.sub(lambda m: said[m.group(1).lower()], text)
+    if config.drop_false_starts and is_arabic_lang(lang):
+        text = _FALSE_START.sub("", text)
+    held: Dict[str, str] = {}
+    # A private-use character stands in for each span no later rule may read; one the
+    # text already holds is never used, so nothing of the text's own is rewritten on
+    # the way back.
+    free = (chr(c) for c in range(_HELD_DIGITS, 0xF900) if chr(c) not in text)
+    def hold(span: str) -> str:
+        placeholder = next(free)
+        held[placeholder] = span
+        return placeholder
+    if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang):
+        # Clock times are spoken before any rule reads their digits as a number, a
+        # phone number or a code, and before "pm" can be read as the picometre. A
+        # config that speaks numbers as cardinals speaks times too: a time left to the
+        # cardinals comes out "سبعة:30 pm".
+        def clock(m):
+            spoken = _spoken_clock(m)
+            if spoken is None:
+                return m.group(0)
+            if m["saa"] and spoken.startswith("الساعة "):
+                spoken = m["saa"] + spoken[len("الساعة"):]
+            return hold(spoken)
+        text = _CLOCK.sub(clock, text)
     if config.spell_out_codes:
         names = spelled_codes(lang)
-        text = _CODE.sub(lambda m: " ".join(names[c] for c in m.group(0)), text)
+        units = {symbol for symbol in cldr_units(lang) if symbol.isupper()}
+        def code(m):
+            run = m.group(0)
+            # KM after a number is the unit, and so is GB, which the table capitalises
+            # too; MG after one is the make, and mg the unit.
+            if (run in units or run.lower() in _CAPITALISED_UNITS) \
+                    and _NUMBER_BEFORE.search(m.string[:m.start()]):
+                return run
+            if _VIN.fullmatch(run):
+                return " ".join(_digit_by_digit(c, digit_forms) if c.isdigit() else names[c] for c in run)
+            return " ".join(names[c] for c in run)
+        text = _CODE.sub(code, text)
+    # What the code reading did not take is an identifier all the same, and no rule
+    # below reads a digit out of the middle of one.
+    text = _MIXED_CODE.sub(lambda m: hold(m.group(0)), text)
     if config.speak_percent:
         text = _PERCENT.sub(lambda m: f"{m.group(1)} في المئة", text)
-    held: Dict[str, str] = {}
     if config.keep_code_digits:
-        # A private-use character stands in for each kept number; one the text already
-        # holds is never used, so nothing of the text's own is rewritten on the way back.
-        free = (chr(c) for c in range(_HELD_DIGITS, 0xF900) if chr(c) not in text)
-        def hold(m):
-            placeholder = next(free)
-            held[placeholder] = m.group(0)
-            return placeholder
-        text = _CODE_DIGITS.sub(hold, text)
+        text = _CODE_DIGITS.sub(lambda m: hold(m.group(0)), text)
     if phones:
         text = phones.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
+    if config.phone_regions:
+        text = _read_phone_numbers(text, config.phone_regions, context, digit_forms)
     if config.long_digit_runs:
-        text = _LONG_RUN.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
+        text = _LONG_RUN.sub(lambda m: m.group(0) if _round_quantity(m.group(0))
+                             else _digit_by_digit(m.group(0), digit_forms), text)
     if prefixes or context:
         whole = text
         def reference(m):
@@ -891,11 +1468,16 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
                 return _digit_by_digit(run, digit_forms)
             return run
         text = _DIGIT_RUN.sub(reference, text)
-    if config.cardinal_numbers:
+    # Asking for a lect's words, or for your own, is asking for numbers to be spoken:
+    # both reach a number only through the cardinals.
+    if config.cardinal_numbers or config.dialect_numbers or config.number_forms:
         text = _speak_numbers(text, lang, config)
     if config.spoken_forms:
         from arbtok.util import normalize as spoken
-        text = spoken(text, lang)
+        # The literary words, whatever lect the tag names: a lect's own numbers are
+        # dialect_numbers' to give, through the cardinals. Handed the tag itself, the
+        # number parser speaks Egyptian for "arz" and the literary words for "ar-EG".
+        text = spoken(text, "ar" if is_arabic_lang(lang) else lang)
     for placeholder, digits in held.items():
         text = text.replace(placeholder, digits)
     if config.canonical_unicode:

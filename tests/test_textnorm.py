@@ -12,6 +12,7 @@ import unicodedata
 import pytest
 
 from arbtok import textnorm
+from tests.voice_agent import VOICE_AGENT
 from arbtok.textnorm import (AsrNorm, TtsNorm, CER_MARKS_FIRST, CER_NORM, CER_NORM_MARKS_FIRST,
                              CER_STRIP, INTELLIGIBILITY_GATE, TRUTH_CHECK,
                              normalize_asr, normalize_for_tts)
@@ -67,6 +68,7 @@ HAND = [
     "سطر\nسطر\tسطر سطر سطر\x1cسطر", "é é ﻻ ﷲ", "صلى الله عليه وسلم ۖ ۗ ؐ", "ـ َ ُ ِ ّ ْ",
     "هل؟ نعم، لا؛ «نص» ٪ ـ _ snake_case", "İstanbul STRASSE ǅ",
     "السعر خمسة وأربعون ألف ريال", "عندي ثلاثة كتب", "الرقم 0 5 5 3 1 7 9 2 4 5",
+    "ست مية او عشرة الف",
 ]
 
 _ALPHABET = (list("ابتثجحخدذرزسشصضطظعغفقكلمنهويءآأإٱؤئةىپچڤگ") + list("ًٌٍَُِّْ")
@@ -175,6 +177,30 @@ def test_tts_normalization_speaks_numbers_and_canonicalizes():
     assert "\u200B" in normalize_for_tts("نص\u200Bنص", spoken_forms=False)
 
 
+@pytest.mark.parametrize("text, dropped", [
+    ("الـ السيارة", "السيارة"),
+    ("شفـ شفت الحين", "شفت الحين"),
+])
+def test_a_tatweel_false_start_is_dropped_before_the_word_it_restarts(text, dropped):
+    assert normalize_for_tts(text, spoken_forms=False, canonical_unicode=False) == dropped
+
+
+@pytest.mark.parametrize("text", [
+    "والـ الولد",  # the word after it does not begin with والـ
+    "الـ بيت",  # the word after it does not restart the fragment
+    "جـميل",  # the tatweel elongates a word, it does not stand alone
+    "الـcharger",  # no space: the glued Latin word is the plugin's to split
+    "قلت شفـ",  # a fragment at the end of the text has no word after it to restart
+    "بـ بيت كبير",  # one letter: also how a detached clitic is written, so it is kept
+])
+def test_a_tatweel_that_is_not_a_false_start_stays(text):
+    assert normalize_for_tts(text, spoken_forms=False, canonical_unicode=False) == text
+
+
+def test_drop_false_starts_off_leaves_the_fragment_for_canonical_unicode():
+    assert normalize_for_tts("الـ السيارة", spoken_forms=False, drop_false_starts=False) == "ال السيارة"
+
+
 def test_the_plugin_normalizes_through_the_same_function():
     from arbtok.plugin import ArbtokG2PPlugin
     text = "المـرء عنده 12 كتابًا"
@@ -281,19 +307,41 @@ def test_the_rule_set_name_is_computed_from_the_rules():
     assert textnorm.ASR_NORM_VERSION != textnorm.TTS_NORM_VERSION
 
 
+def test_the_tts_rule_set_name_covers_the_code_reading():
+    """The rules of the code reading are in the name: 78c346d22aa9 named the set that
+    spelled every run of capitals and read a digit out of the middle of a code, and no
+    record of a run under those rules can be read as a record of a run under these."""
+    assert textnorm.TTS_NORM_VERSION != "78c346d22aa9"
+    flags = [f.name for f in dataclasses.fields(TtsNorm)]
+    for rule in (textnorm._CODE, textnorm._MIXED_CODE, textnorm._NUMBER_BEFORE,
+                 textnorm._CAPITALISED_UNITS):
+        assert textnorm._rule_set(flags, rule) != textnorm._rule_set(flags)
+
+
+def test_the_rule_set_name_is_the_same_in_every_process():
+    """A rule kept in a set would name a different rule set in each process, because a
+    set's repr follows the hash seed. Two runs of the same code must agree on it."""
+    import os, subprocess, sys
+    read = "import arbtok.textnorm as t; print(t.TTS_NORM_VERSION, t.ASR_NORM_VERSION)"
+    names = {subprocess.run([sys.executable, "-c", read], capture_output=True, text=True,
+                            env={**os.environ, "PYTHONHASHSEED": seed}).stdout.strip()
+             for seed in ("0", "1", "2")}
+    assert names == {f"{textnorm.TTS_NORM_VERSION} {textnorm.ASR_NORM_VERSION}"}
+
+
 def test_a_description_is_still_written_when_the_parsers_version_cannot_be_read(monkeypatch):
     import importlib.metadata
     def absent(name):
         raise importlib.metadata.PackageNotFoundError(name)
     monkeypatch.setattr(importlib.metadata, "version", absent)
     assert AsrNorm(spoken_numbers_to_digits=True).describe().endswith("; ovos-number-parser unknown")
-    assert textnorm.KSA_VOICE_AGENT.describe().endswith("; ovos-number-parser unknown")
+    assert VOICE_AGENT.describe().endswith("; ovos-number-parser unknown")
 
 
 def test_the_version_names_the_rules_and_the_description_names_the_configuration():
-    other_words = dataclasses.replace(textnorm.KSA_VOICE_AGENT, identifier_words=("رقم",))
-    other_shapes = dataclasses.replace(textnorm.KSA_VOICE_AGENT, phone_shapes=(r"07[0-9]{8}",))
-    descriptions = {c.describe() for c in (textnorm.KSA_VOICE_AGENT, other_words, other_shapes)}
+    other_words = dataclasses.replace(VOICE_AGENT, identifier_words=("رقم",))
+    other_shapes = dataclasses.replace(VOICE_AGENT, phone_shapes=(r"07[0-9]{8}",))
+    descriptions = {c.describe() for c in (VOICE_AGENT, other_words, other_shapes)}
     assert len(descriptions) == 3
     assert all(f"arbtok-tts-norm {textnorm.TTS_NORM_VERSION}: " in d for d in descriptions)
 
@@ -301,7 +349,7 @@ def test_the_version_names_the_rules_and_the_description_names_the_configuration
 def test_a_description_names_the_number_parser_when_numbers_are_read():
     assert "ovos-number-parser " in AsrNorm(spoken_numbers_to_digits=True).describe()
     assert "ovos-number-parser" not in CER_NORM.describe()
-    assert "ovos-number-parser " in textnorm.KSA_VOICE_AGENT.describe()
+    assert "ovos-number-parser " in VOICE_AGENT.describe()
 
 
 SAID = {"BMW": "بِي إِمْ دَبَلْيُو", "X5": "إِكْسْ فَيْفْ", "X5 M": "إِكْسْ فَيْفْ إِمْ"}
@@ -340,6 +388,27 @@ def test_a_spelled_code_leaves_no_digit_for_the_number_rules_and_a_bare_number_i
     assert "إِكْسْ فَيْفْ" in said and not re.search(r"[A-Za-z0-9]", said)
 
 
+# A serial number and the last eight of a chassis number, as an agent reads them back.
+CODES = [("الرقم التسلسلي المطبوع على البطاقة هو L809UPZ3V361.", "L809UPZ3V361"),
+         ("آخر الأرقام والحروف من رقم الهيكل هي L457L680، دونها عندك.", "L457L680")]
+# The Arabic cardinals: one of them in either sentence is a code read part by part.
+CARDINALS = re.compile("صفر|واحد|اثن|ثلاث|أربع|خمس|ست|سبع|ثمان|تسع|عشر|مئة|مائة|ألف")
+
+
+@pytest.mark.parametrize("written, code", CODES, ids=["L809UPZ3V361", "L457L680"])
+def test_a_code_of_letters_and_digits_is_left_whole(written, code):
+    said = normalize_for_tts(written, "ar")
+    assert code in said, said
+    assert not CARDINALS.search(said), said
+
+
+@pytest.mark.parametrize("written, code", CODES, ids=["L809UPZ3V361", "L457L680"])
+def test_the_same_code_is_spelled_out_on_request(written, code):
+    said = normalize_for_tts(written, "ar", spell_out_codes=True)
+    assert "إِلْ" in said and code not in said, said
+    assert not re.search("[A-Za-z]", said), said
+
+
 def test_without_the_new_arguments_nothing_latin_changes():
     assert normalize_for_tts("سيارة BMW X5", **AS_WRITTEN) == "سيارة BMW X5"
 
@@ -363,10 +432,69 @@ def test_the_bundled_table_names_every_capital_and_every_digit_once():
     assert textnorm.spelled_codes("ar") == {c: pointed for c, _, pointed in _code_rows()}
 
 
-@pytest.mark.parametrize("character, word, pointed", _code_rows(), ids=[row[0] for row in _code_rows()])
-def test_a_bundled_spelling_reads_as_the_nativized_english_name(character, word, pointed):
-    """The basis of every row: the donor lexicon's pronunciation of the English word,
-    nativized by arbtok.translit, with the glottal onset Arabic gives a vowel-initial word."""
+#: Each letter, the Arabic spelling attested for it, and the pointed form the table
+#: carries. docs/normalization.md cites the page each spelling was read from.
+CITED_LETTERS = [
+    ("A", "إيه", "إِيهْ"),
+    ("B", "بي", "بِي"),
+    ("C", "سي", "سِي"),
+    ("D", "دي", "دِي"),
+    ("E", "إي", "إِي"),
+    ("F", "إف", "إِفْ"),
+    ("G", "جي", "جِي"),
+    ("H", "إتش", "إِتْشْ"),
+    ("I", "آي", "آيْ"),
+    ("J", "جي", "جَيْ"),
+    ("K", "كي", "كَيْ"),
+    ("L", "إل", "إِلْ"),
+    ("M", "إم", "إِمْ"),
+    ("N", "إن", "إِنْ"),
+    ("O", "أو", "أُو"),
+    ("P", "بي", "بِي"),
+    ("Q", "كيو", "كْيُو"),
+    ("R", "آر", "آرْ"),
+    ("S", "إس", "إِسْ"),
+    ("T", "تي", "تِي"),
+    ("U", "يو", "يُو"),
+    ("V", "في", "فِي"),
+    ("W", "دبليو", "دَبَلْيُو"),
+    ("X", "إكس", "إِكْسْ"),
+    ("Y", "واي", "وَايْ"),
+    ("Z", "زد", "زِدْ"),
+]
+
+
+@pytest.mark.parametrize("character, spelling, pointed", CITED_LETTERS,
+                         ids=[row[0] for row in CITED_LETTERS])
+def test_a_letter_is_pointed_from_the_spelling_that_is_attested_for_it(character, spelling, pointed):
+    """The pointing supplies the English name's vowels and may not change the letters
+    underneath them: with the harakat taken off, the row is the attested spelling."""
+    import re
+    assert textnorm.spelled_codes("ar")[character] == pointed
+    assert re.sub("[\u064B-\u0652\u0670]", "", pointed) == spelling
+
+
+def test_every_letter_name_sounds_different_from_every_other():
+    """A code is read letter by letter so that a listener can write it back down, which
+    it cannot do when two letters reach it as one word. B and P are the one accepted
+    collision: Arabic has no /p/ and the sources give the same name for both."""
+    import collections, string
+    from arbtok.tokenizer import Sentence
+    names = textnorm.spelled_codes("ar")
+    heard = collections.defaultdict(list)
+    for character in string.ascii_uppercase:
+        heard[Sentence(names[character], lang="ar", stress=False, pausal=False).ipa].append(character)
+    assert sorted(sorted(cs) for cs in heard.values() if len(cs) > 1) == [["B", "P"]]
+
+
+_DIGIT_ROWS = [row for row in _code_rows() if row[0].isdigit()]
+
+
+@pytest.mark.parametrize("character, word, pointed", _DIGIT_ROWS, ids=[row[0] for row in _DIGIT_ROWS])
+def test_a_bundled_digit_reads_as_the_nativized_english_word(character, word, pointed):
+    """The basis of every digit row: the donor lexicon's pronunciation of the English
+    word, nativized by arbtok.translit, with the glottal onset Arabic gives a
+    vowel-initial word. A letter row is held to its cited spelling instead."""
     from arbtok.donor_lexicon import bundled_path
     from arbtok.tokenizer import Sentence
     from arbtok.translit import nativize
@@ -456,7 +584,7 @@ def test_a_lexicon_that_is_not_bundled_is_refused_with_the_names_that_are():
         textnorm.bundled_asr_lexicon("boats")
 
 
-KSA = textnorm.KSA_VOICE_AGENT
+KSA = VOICE_AGENT
 
 
 @pytest.mark.parametrize("written, said", [
@@ -495,9 +623,12 @@ def test_a_phone_number_does_not_run_on_into_an_arabic_indic_number_after_it():
     said = normalize_for_tts("+966 55-398-8621 ٩٦٧٦٠", "ar", KSA)
     phone = "تسعة ستة ستة خمسة خمسة ثلاثة تسعة ثمانية ثمانية ستة اثنين واحد"
     assert said == phone + " " + normalize_for_tts("٩٦٧٦٠", "ar", KSA)
-    # With Arabic-Indic digits allowed inside the pattern, the phone number takes the first two.
-    greedy = dataclasses.replace(KSA, phone_shapes=(textnorm.KSA_PHONE_SHAPES[0].replace("[0-9", "[\\d").replace("[0-9]", "\\d"),))
-    assert normalize_for_tts("+966 55-398-8621 ٩٦٧٦٠", "ar", greedy) != said
+    # With Arabic-Indic digits allowed inside the pattern, a number one digit short takes
+    # its last digit from the number written after it. The number is written with the
+    # trunk prefix: one led by + is read digit by digit whatever its length.
+    greedy = dataclasses.replace(KSA, phone_shapes=(r"(?:(?:\+|00)?966[\s\-]*5|05)(?![\s\-])\d(?:(?:\s*-\s*|\s+)?\d){7}(?!\d)",))
+    short = "055-398-862 ٩"
+    assert normalize_for_tts(short, "ar", greedy) != normalize_for_tts(short, "ar", KSA)
 
 
 def test_a_number_that_cannot_be_spoken_is_left_or_raised_as_the_config_says(monkeypatch):
@@ -527,13 +658,19 @@ def test_every_tts_rule_changes_some_output(flag):
     # A grouped phone number is what phone_shapes alone catches, 25 is a number whose
     # case shows, and spoken_forms has something to say only where the cardinals are off.
     texts = ["نص\u200bنص", "X5", "4.5%", "MG 5", "055 123 4567", "12345678901", "8001000341", "الكود 4729",
-             "300 ريال", "25 ريال", "٣٠٠", "المـرء", "15 رسالة", "350 ريال"]
+             "300 ريال", "25 ريال", "٣٠٠", "المـرء", "15 رسالة", "350 ريال",
+             "اتصل على 010 01234567",  # libphonenumber example number, MOBILE, EG
+             "80012345",  # a caller's own prefix, shorter than long_digit_runs reaches
+             "الـ السيارة"]  # a tatweel false start, what drop_false_starts alone catches
+    # phone_regions reads these numbers too, so a caller's own pattern is shown on its own.
+    alone = {"phone_regions": ()} if flag in ("phone_shapes", "phone_prefixes") else {}
     off = dataclasses.replace(KSA, spoken_forms=False, canonical_unicode=False, strip_controls=False,
-                              spell_out_codes=False, cardinal_numbers=flag != "spoken_forms")
+                              spell_out_codes=False, cardinal_numbers=flag != "spoken_forms", **alone)
     # A rule that reads a lect's own words has nothing to say under a tag that names no lect.
     lang = "ar-SA-x-hejaz" if flag == "dialect_numbers" else "ar"
     # What a non-boolean rule holds when it is on: turning it on and off is what this compares.
-    when_on = {"phone_shapes": textnorm.KSA_PHONE_SHAPES, "phone_prefixes": textnorm.KSA_PHONE_PREFIXES,
+    when_on = {"phone_shapes": (r"05[0-9](?:\s?[0-9]){7}",), "phone_regions": textnorm.ARAB_PHONE_REGIONS,
+               "phone_prefixes": (r"800[0-9]{5}",),
                "identifier_words": textnorm.IDENTIFIER_WORDS, "number_forms": ((15, "خمستاشر"),)}
     current = getattr(off, flag)
     other = (not current) if isinstance(current, bool) else (() if current else when_on[flag])
@@ -542,8 +679,9 @@ def test_every_tts_rule_changes_some_output(flag):
 
 
 def test_the_tts_description_names_what_is_on_and_digests_the_patterns():
-    assert textnorm.TtsNorm(spoken_forms=False).describe() == f"arbtok-tts-norm {textnorm.TTS_NORM_VERSION}: canonical_unicode"
-    assert "phone_shapes=" in KSA.describe() and KSA.describe() != dataclasses.replace(KSA, phone_shapes=("x",)).describe()
+    assert textnorm.TtsNorm(spoken_forms=False).describe() == \
+        f"arbtok-tts-norm {textnorm.TTS_NORM_VERSION}: canonical_unicode,drop_false_starts"
+    assert "phone_regions=" in KSA.describe() and KSA.describe() != dataclasses.replace(KSA, phone_regions=("SA",)).describe()
 
 
 def test_a_mark_at_the_end_of_a_word_is_part_of_the_word_not_punctuation_after_it():
@@ -555,8 +693,8 @@ def test_a_mark_at_the_end_of_a_word_is_part_of_the_word_not_punctuation_after_i
 def test_a_config_takes_a_mapping_or_a_list_and_holds_what_can_be_hashed():
     assert AsrNorm(lexicon={"اكس": "X"}) == AsrNorm().with_lexicon({"اكس": "X"})
     assert normalize_asr("اكس", AsrNorm(lexicon={"اكس": "X"})) == "X"
-    listed = TtsNorm(phone_shapes=list(textnorm.KSA_PHONE_SHAPES), lexicon=[("BMW", "بي إم")])
-    assert hash(listed) == hash(TtsNorm(phone_shapes=textnorm.KSA_PHONE_SHAPES).with_lexicon({"BMW": "بي إم"}))
+    listed = TtsNorm(phone_regions=["SA"], lexicon=[("BMW", "بي إم")])
+    assert hash(listed) == hash(TtsNorm(phone_regions=("SA",)).with_lexicon({"BMW": "بي إم"}))
 
 
 @pytest.mark.parametrize("lexicon", [{"": "X"}, {"  ": "X"}, {"اكس": None}, [("اكس",)]],

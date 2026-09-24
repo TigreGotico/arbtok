@@ -1,5 +1,251 @@
 # Changelog
 
+## [0.0.2a31](https://github.com/TigreGotico/arbtok/tree/0.0.2a31) (2026-09-24)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a30...0.0.2a31)
+
+**Merged pull requests:**
+
+- fix\(util\): a grouped number before a unit is read rather than refused [\#221](https://github.com/TigreGotico/arbtok/pull/221) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a30](https://github.com/TigreGotico/arbtok/tree/0.0.2a30) (2026-09-24)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a29...0.0.2a30)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a letter name is the attested Arabic spelling, said apart from every other [\#222](https://github.com/TigreGotico/arbtok/pull/222) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a29](https://github.com/TigreGotico/arbtok/tree/0.0.2a29) (2026-09-24)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a28...0.0.2a29)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a code carries a digit or spells no word, and is never partly verbalised \(\#218\) [\#219](https://github.com/TigreGotico/arbtok/pull/219) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a28](https://github.com/TigreGotico/arbtok/tree/0.0.2a28) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a27...0.0.2a28)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): drop a tatweel false start before the word it restarts [\#213](https://github.com/TigreGotico/arbtok/pull/213) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a27](https://github.com/TigreGotico/arbtok/tree/0.0.2a27) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a26...0.0.2a27)
+
+**Merged pull requests:**
+
+- feat\(lexicon\): in a sentence, an ambiguous spelling is read by the sentence [\#210](https://github.com/TigreGotico/arbtok/pull/210) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a26](https://github.com/TigreGotico/arbtok/tree/0.0.2a26) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a25...0.0.2a26)
+
+**Merged pull requests:**
+
+- feat\(gold\): a span-level pronunciation gold with cited readings [\#211](https://github.com/TigreGotico/arbtok/pull/211) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a25](https://github.com/TigreGotico/arbtok/tree/0.0.2a25) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a24...0.0.2a25)
+
+**Merged pull requests:**
+
+- test\(textnorm\): a full-form unit before ميه is hundreds, as SADA writes it [\#212](https://github.com/TigreGotico/arbtok/pull/212) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a24](https://github.com/TigreGotico/arbtok/tree/0.0.2a24) (2026-09-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a23...0.0.2a24)
+
+**Merged pull requests:**
+
+- fix\(deps\): the parser floor leaves a homograph as written [\#208](https://github.com/TigreGotico/arbtok/pull/208) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a23](https://github.com/TigreGotico/arbtok/tree/0.0.2a23) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a22...0.0.2a23)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a hundred joined by و follows the thousands; the parser floor reads water as water [\#206](https://github.com/TigreGotico/arbtok/pull/206) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a22](https://github.com/TigreGotico/arbtok/tree/0.0.2a22) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a21...0.0.2a22)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): fix\_asr\_errors reads through the parser's public API and repairs a recogniser's ماية and ميه [\#204](https://github.com/TigreGotico/arbtok/pull/204) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a21](https://github.com/TigreGotico/arbtok/tree/0.0.2a21) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a20...0.0.2a21)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): fix\_asr\_errors, and a recogniser's او inside a spoken number is the conjunction [\#202](https://github.com/TigreGotico/arbtok/pull/202) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a20](https://github.com/TigreGotico/arbtok/tree/0.0.2a20) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a19...0.0.2a20)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a phone run that says it is one is read digit by digit [\#195](https://github.com/TigreGotico/arbtok/pull/195) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a19](https://github.com/TigreGotico/arbtok/tree/0.0.2a19) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a18...0.0.2a19)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): ten unseparated digits read one by one, unless round [\#198](https://github.com/TigreGotico/arbtok/pull/198) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a18](https://github.com/TigreGotico/arbtok/tree/0.0.2a18) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a17...0.0.2a18)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): a number after a rank word is spoken as an agreeing ordinal [\#194](https://github.com/TigreGotico/arbtok/pull/194) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a17](https://github.com/TigreGotico/arbtok/tree/0.0.2a17) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a16...0.0.2a17)
+
+## [0.0.2a16](https://github.com/TigreGotico/arbtok/tree/0.0.2a16) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a15...0.0.2a16)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a config that speaks cardinals speaks clock times too [\#192](https://github.com/TigreGotico/arbtok/pull/192) ([JarbasAl](https://github.com/JarbasAl))
+- fix\(textnorm\): kept code digits stop at a grouped number [\#189](https://github.com/TigreGotico/arbtok/pull/189) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a15](https://github.com/TigreGotico/arbtok/tree/0.0.2a15) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a14...0.0.2a15)
+
+**Merged pull requests:**
+
+- test: the phone-plans description test reads the shared voice-agent config [\#191](https://github.com/TigreGotico/arbtok/pull/191) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a14](https://github.com/TigreGotico/arbtok/tree/0.0.2a14) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a13...0.0.2a14)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): speak clock times as Arabic speakers say them [\#187](https://github.com/TigreGotico/arbtok/pull/187) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a13](https://github.com/TigreGotico/arbtok/tree/0.0.2a13) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a12...0.0.2a13)
+
+**Merged pull requests:**
+
+- refactor\(textnorm\): the voice-agent preset leaves arbtok [\#184](https://github.com/TigreGotico/arbtok/pull/184) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a12](https://github.com/TigreGotico/arbtok/tree/0.0.2a12) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a11...0.0.2a12)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): spell\_out\_codes reads a VIN as an identifier [\#185](https://github.com/TigreGotico/arbtok/pull/185) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a11](https://github.com/TigreGotico/arbtok/tree/0.0.2a11) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a10...0.0.2a11)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a description names the phone plans it read [\#182](https://github.com/TigreGotico/arbtok/pull/182) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a10](https://github.com/TigreGotico/arbtok/tree/0.0.2a10) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a9...0.0.2a10)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): asking for a lect's number words speaks the numbers [\#180](https://github.com/TigreGotico/arbtok/pull/180) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a9](https://github.com/TigreGotico/arbtok/tree/0.0.2a9) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a8...0.0.2a9)
+
+**Merged pull requests:**
+
+- fix\(util\): a 12-hour clock marker is not the unit that shares its symbol [\#177](https://github.com/TigreGotico/arbtok/pull/177) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a8](https://github.com/TigreGotico/arbtok/tree/0.0.2a8) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a7...0.0.2a8)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): read phone numbers of every Arabic-speaking country [\#174](https://github.com/TigreGotico/arbtok/pull/174) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a7](https://github.com/TigreGotico/arbtok/tree/0.0.2a7) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a6...0.0.2a7)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): spoken forms read literary numbers whatever lect the tag names [\#175](https://github.com/TigreGotico/arbtok/pull/175) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a6](https://github.com/TigreGotico/arbtok/tree/0.0.2a6) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a5...0.0.2a6)
+
+**Merged pull requests:**
+
+- fix\(dialects\): a lect's ISO 639-3 code resolves back to its spec [\#171](https://github.com/TigreGotico/arbtok/pull/171) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a5](https://github.com/TigreGotico/arbtok/tree/0.0.2a5) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a4...0.0.2a5)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): read a widely spaced mobile and a run after an Eastern digit [\#170](https://github.com/TigreGotico/arbtok/pull/170) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a4](https://github.com/TigreGotico/arbtok/tree/0.0.2a4) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a3...0.0.2a4)
+
+**Merged pull requests:**
+
+- fix: French donor lexicon reads six before a pause and ships the elided forms [\#168](https://github.com/TigreGotico/arbtok/pull/168) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a3](https://github.com/TigreGotico/arbtok/tree/0.0.2a3) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a2...0.0.2a3)
+
+## [0.0.2a2](https://github.com/TigreGotico/arbtok/tree/0.0.2a2) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a1...0.0.2a2)
+
+**Merged pull requests:**
+
+- fix\(dialects\): resolve a tag with an unrecognised subtag as its parent [\#163](https://github.com/TigreGotico/arbtok/pull/163) ([JarbasAl](https://github.com/JarbasAl))
+- fix\(textnorm\): read a date on the fifth as a date, not as a Saudi mobile number [\#161](https://github.com/TigreGotico/arbtok/pull/161) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.2a1](https://github.com/TigreGotico/arbtok/tree/0.0.2a1) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1...0.0.2a1)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): drop a leading + on every rule that reads a phone number [\#162](https://github.com/TigreGotico/arbtok/pull/162) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.1](https://github.com/TigreGotico/arbtok/tree/0.0.1) (2026-09-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a31...0.0.1)
+
 ## [0.0.1a31](https://github.com/TigreGotico/arbtok/tree/0.0.1a31) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a30...0.0.1a31)
@@ -164,17 +410,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a10...0.0.1a11)
 
-**Merged pull requests:**
-
-- feat: normalize\_asr with a boolean per rule, and normalize\_for\_tts [\#119](https://github.com/TigreGotico/arbtok/pull/119) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a10](https://github.com/TigreGotico/arbtok/tree/0.0.1a10) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a9...0.0.1a10)
-
-**Merged pull requests:**
-
-- fix: read a long run of context-dependent characters without recursion [\#117](https://github.com/TigreGotico/arbtok/pull/117) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a9](https://github.com/TigreGotico/arbtok/tree/0.0.1a9) (2026-09-19)
 
@@ -184,34 +422,17 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a7...0.0.1a8)
 
-**Merged pull requests:**
-
-- fix: the Maghrebi table must not answer for lects it was not cited for [\#114](https://github.com/TigreGotico/arbtok/pull/114) ([JarbasAl](https://github.com/JarbasAl))
-- docs: the loanword path projects by default, it does not refuse [\#110](https://github.com/TigreGotico/arbtok/pull/110) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a7](https://github.com/TigreGotico/arbtok/tree/0.0.1a7) (2026-09-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a6...0.0.1a7)
-
-**Merged pull requests:**
-
-- fix: a guest sound may only be projected onto a sound [\#109](https://github.com/TigreGotico/arbtok/pull/109) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a6](https://github.com/TigreGotico/arbtok/tree/0.0.1a6) (2026-09-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a5...0.0.1a6)
 
-**Merged pull requests:**
-
-- feat: a cited nativisation table for the Maghreb [\#111](https://github.com/TigreGotico/arbtok/pull/111) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a5](https://github.com/TigreGotico/arbtok/tree/0.0.1a5) (2026-09-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a4...0.0.1a5)
-
-**Merged pull requests:**
-
-- feat\(plugin\): make the diacritizer path selectable, and say which one wins and why [\#102](https://github.com/TigreGotico/arbtok/pull/102) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a4](https://github.com/TigreGotico/arbtok/tree/0.0.1a4) (2026-09-19)
 
@@ -221,26 +442,13 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a2...0.0.1a3)
 
-**Merged pull requests:**
-
-- feat\(gold\): a frame that makes the Shamali fixture able to fail for its own lect [\#104](https://github.com/TigreGotico/arbtok/pull/104) ([JarbasAl](https://github.com/JarbasAl))
-- feat\(ensemble\): let a caller name the rawi export, so a fine-tune can be measured [\#101](https://github.com/TigreGotico/arbtok/pull/101) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a2](https://github.com/TigreGotico/arbtok/tree/0.0.1a2) (2026-09-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a1...0.0.1a2)
 
-**Merged pull requests:**
-
-- feat\(diacritize\): arbtok.vocalize\(text, lect\) returning per-word provenance [\#100](https://github.com/TigreGotico/arbtok/pull/100) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a1](https://github.com/TigreGotico/arbtok/tree/0.0.1a1) (2026-09-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0...0.0.1a1)
-
-**Merged pull requests:**
-
-- fix\(gold\): gold for ar-BH-x-baharna and ar-SA-x-shamali, and stop freezing the roster size [\#99](https://github.com/TigreGotico/arbtok/pull/99) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0](https://github.com/TigreGotico/arbtok/tree/0.0.0) (2026-09-18)
 
@@ -254,50 +462,25 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a83...0.0.0a84)
 
-**Merged pull requests:**
-
-- fix\(aligner\): drop a dead path insert, and say the Levantine row was re-derived [\#95](https://github.com/TigreGotico/arbtok/pull/95) ([JarbasAl](https://github.com/JarbasAl))
-- fix\(deps\): floor ovos-utils and ovos-config, so the broken pair cannot be installed [\#93](https://github.com/TigreGotico/arbtok/pull/93) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a83](https://github.com/TigreGotico/arbtok/tree/0.0.0a83) (2026-09-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a82...0.0.0a83)
-
-**Merged pull requests:**
-
-- fix\(gold\): gold files for the nine lects orthography2ipa added, which broke dev [\#96](https://github.com/TigreGotico/arbtok/pull/96) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a82](https://github.com/TigreGotico/arbtok/tree/0.0.0a82) (2026-09-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a81...0.0.0a82)
 
-**Merged pull requests:**
-
-- feat\(deps\): pin orthography2ipa 7.95.1a1, and record what the bump changes [\#94](https://github.com/TigreGotico/arbtok/pull/94) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a81](https://github.com/TigreGotico/arbtok/tree/0.0.0a81) (2026-09-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a80...0.0.0a81)
-
-**Merged pull requests:**
-
-- fix\(arbtok\): restore what two stale merges dropped, and fix what they exposed [\#92](https://github.com/TigreGotico/arbtok/pull/92) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a80](https://github.com/TigreGotico/arbtok/tree/0.0.0a80) (2026-09-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a79...0.0.0a80)
 
-**Merged pull requests:**
-
-- fix\(translit\): no tie is decided by sort order, and the page locators go [\#91](https://github.com/TigreGotico/arbtok/pull/91) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a79](https://github.com/TigreGotico/arbtok/tree/0.0.0a79) (2026-09-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a78...0.0.0a79)
-
-**Merged pull requests:**
-
-- fix\(arabizi\): derive the digit gate from the tables that can write it [\#90](https://github.com/TigreGotico/arbtok/pull/90) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a78](https://github.com/TigreGotico/arbtok/tree/0.0.0a78) (2026-09-17)
 
@@ -311,228 +494,113 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a75...0.0.0a76)
 
-**Merged pull requests:**
-
-- fix\(translit\): a cited table beats the metric, not only when the metric is unsure [\#89](https://github.com/TigreGotico/arbtok/pull/89) ([JarbasAl](https://github.com/JarbasAl))
-- fix\(tokenizer\): tatweel is a stretch, not a letter, and a bare letter has a name [\#88](https://github.com/TigreGotico/arbtok/pull/88) ([JarbasAl](https://github.com/JarbasAl))
-- feat\(translit\): an established loan is looked up, not adapted from the donor [\#87](https://github.com/TigreGotico/arbtok/pull/87) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a75](https://github.com/TigreGotico/arbtok/tree/0.0.0a75) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a74...0.0.0a75)
-
-**Merged pull requests:**
-
-- fix\(fusion\): a hamza is restored onto alif, not onto a mater lectionis [\#86](https://github.com/TigreGotico/arbtok/pull/86) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a74](https://github.com/TigreGotico/arbtok/tree/0.0.0a74) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a73...0.0.0a74)
 
-**Merged pull requests:**
-
-- fix\(translit\): re-cite the tie-break, and let it consult the tables it belongs to [\#85](https://github.com/TigreGotico/arbtok/pull/85) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a73](https://github.com/TigreGotico/arbtok/tree/0.0.0a73) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a72...0.0.0a73)
-
-**Merged pull requests:**
-
-- fix\(translit\): the English donor lexicon is rhotic, because Arabic loans are [\#84](https://github.com/TigreGotico/arbtok/pull/84) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a72](https://github.com/TigreGotico/arbtok/tree/0.0.0a72) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a71...0.0.0a72)
 
-**Merged pull requests:**
-
-- fix\(translit\): a guest vowel with no counterpart lands on its own quality [\#83](https://github.com/TigreGotico/arbtok/pull/83) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a71](https://github.com/TigreGotico/arbtok/tree/0.0.0a71) (2026-09-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a70...0.0.0a71)
-
-**Merged pull requests:**
-
-- fix\(tokenizer\): a word boundary survives assimilation, and a shadda geminates a consonant [\#82](https://github.com/TigreGotico/arbtok/pull/82) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a70](https://github.com/TigreGotico/arbtok/tree/0.0.0a70) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a69...0.0.0a70)
 
-**Merged pull requests:**
-
-- fix\(lattice\): hamzat al-waṣl keeps the glottal reading behind the helper vowel [\#81](https://github.com/TigreGotico/arbtok/pull/81) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a69](https://github.com/TigreGotico/arbtok/tree/0.0.0a69) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a68...0.0.0a69)
-
-**Merged pull requests:**
-
-- feat\(translit\): bundle an English donor lexicon so loanwords take their real readings [\#80](https://github.com/TigreGotico/arbtok/pull/80) ([JarbasAl](https://github.com/JarbasAl))
-- Revert "test\(gold\): re-pin the code-switched gold to the current pipeline" [\#79](https://github.com/TigreGotico/arbtok/pull/79) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a68](https://github.com/TigreGotico/arbtok/tree/0.0.0a68) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a67...0.0.0a68)
 
-**Merged pull requests:**
-
-- HOLD test\(gold\): re-pin the code-switched gold to the current pipeline [\#78](https://github.com/TigreGotico/arbtok/pull/78) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a67](https://github.com/TigreGotico/arbtok/tree/0.0.0a67) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a66...0.0.0a67)
-
-**Merged pull requests:**
-
-- fix\(lattice\): the sun-letter rescorer only fires on a real article, and keeps the reading it turned down [\#77](https://github.com/TigreGotico/arbtok/pull/77) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a66](https://github.com/TigreGotico/arbtok/tree/0.0.0a66) (2026-09-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a65...0.0.0a66)
 
-**Merged pull requests:**
-
-- fix: a number grouped more than once reads as its value [\#76](https://github.com/TigreGotico/arbtok/pull/76) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a65](https://github.com/TigreGotico/arbtok/tree/0.0.0a65) (2026-08-11)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a64...0.0.0a65)
-
-**Merged pull requests:**
-
-- fix: read the silent alif of مائة as silent everywhere, not only in the bare word [\#74](https://github.com/TigreGotico/arbtok/pull/74) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a64](https://github.com/TigreGotico/arbtok/tree/0.0.0a64) (2026-08-11)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a63...0.0.0a64)
 
-**Merged pull requests:**
-
-- fix\(gold\): re-pin Arabic gold to the o2i emphasis-spread allophony [\#75](https://github.com/TigreGotico/arbtok/pull/75) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a63](https://github.com/TigreGotico/arbtok/tree/0.0.0a63) (2026-08-03)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a62...0.0.0a63)
-
-**Merged pull requests:**
-
-- docs: IqraEval gold provenance caveat \(partially Halabi-derived\) [\#73](https://github.com/TigreGotico/arbtok/pull/73) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a62](https://github.com/TigreGotico/arbtok/tree/0.0.0a62) (2026-08-02)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a61...0.0.0a62)
 
-**Merged pull requests:**
-
-- feat: IqraEval Qur'anic gold benchmark [\#72](https://github.com/TigreGotico/arbtok/pull/72) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a61](https://github.com/TigreGotico/arbtok/tree/0.0.0a61) (2026-07-30)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a60...0.0.0a61)
-
-**Merged pull requests:**
-
-- docs: rewrite README in Simplified Technical English [\#71](https://github.com/TigreGotico/arbtok/pull/71) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a60](https://github.com/TigreGotico/arbtok/tree/0.0.0a60) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a59...0.0.0a60)
 
-**Merged pull requests:**
-
-- fix: resolve region and dialect Arabic codes to the closest spec [\#70](https://github.com/TigreGotico/arbtok/pull/70) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a59](https://github.com/TigreGotico/arbtok/tree/0.0.0a59) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a58...0.0.0a59)
-
-**Merged pull requests:**
-
-- Drop vendored pyarabic; verbalize numbers via ovos-number-parser [\#69](https://github.com/TigreGotico/arbtok/pull/69) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a58](https://github.com/TigreGotico/arbtok/tree/0.0.0a58) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a57...0.0.0a58)
 
-**Merged pull requests:**
-
-- use ovos-number-parser for number verbalization \(not arbtok's num2words\) [\#68](https://github.com/TigreGotico/arbtok/pull/68) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a57](https://github.com/TigreGotico/arbtok/tree/0.0.0a57) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a56...0.0.0a57)
-
-**Merged pull requests:**
-
-- fix: no digit reaches the phoneme map in Arabic normalization [\#67](https://github.com/TigreGotico/arbtok/pull/67) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a56](https://github.com/TigreGotico/arbtok/tree/0.0.0a56) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a55...0.0.0a56)
 
-**Merged pull requests:**
-
-- feat: undiacritized gold20 mode + per-lect register guard \(arbtok's real QA gate\) [\#66](https://github.com/TigreGotico/arbtok/pull/66) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a55](https://github.com/TigreGotico/arbtok/tree/0.0.0a55) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a54...0.0.0a55)
-
-**Merged pull requests:**
-
-- fix: do not assimilate final /n/ into a following /m/ [\#65](https://github.com/TigreGotico/arbtok/pull/65) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a54](https://github.com/TigreGotico/arbtok/tree/0.0.0a54) (2026-07-17)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a53...0.0.0a54)
 
-**Merged pull requests:**
-
-- fix: leave cliticless function words unstressed \(+ gold20 benchmark\) [\#64](https://github.com/TigreGotico/arbtok/pull/64) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a53](https://github.com/TigreGotico/arbtok/tree/0.0.0a53) (2026-07-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a52...0.0.0a53)
-
-**Merged pull requests:**
-
-- fix\(gold\): re-pin cs gold to o2i spec drift + dynamic Arabic lect enumeration [\#63](https://github.com/TigreGotico/arbtok/pull/63) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a52](https://github.com/TigreGotico/arbtok/tree/0.0.0a52) (2026-07-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a51...0.0.0a52)
 
-**Merged pull requests:**
-
-- fix\(gold\): Rijāl Almaʿ qāf→\[ɡ\] spec tracking + cross-lect state guard [\#62](https://github.com/TigreGotico/arbtok/pull/62) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a51](https://github.com/TigreGotico/arbtok/tree/0.0.0a51) (2026-07-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a50...0.0.0a51)
-
-**Merged pull requests:**
-
-- fix: close the vocalized-input gap vs the orthography2ipa spec engine, add a register switch [\#61](https://github.com/TigreGotico/arbtok/pull/61) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a50](https://github.com/TigreGotico/arbtok/tree/0.0.0a50) (2026-07-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a49...0.0.0a50)
 
-**Merged pull requests:**
-
-- docs: timeless polish round \(README, docs/, examples/\) [\#60](https://github.com/TigreGotico/arbtok/pull/60) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.0a49](https://github.com/TigreGotico/arbtok/tree/0.0.0a49) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a48...0.0.0a49)
-
-**Merged pull requests:**
-
-- feat\(sandhi\): cross-word waṣl — article elision, onset restoration, proclitic stress [\#59](https://github.com/TigreGotico/arbtok/pull/59) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a48](https://github.com/TigreGotico/arbtok/tree/0.0.0a48) (2026-07-15)
 
@@ -541,10 +609,6 @@
 ## [0.0.0a47](https://github.com/TigreGotico/arbtok/tree/0.0.0a47) (2026-07-15)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.0a46...0.0.0a47)
-
-**Merged pull requests:**
-
-- feat: Arabizi input path — read Arabic-in-Latin as Arabic [\#58](https://github.com/TigreGotico/arbtok/pull/58) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.0a46](https://github.com/TigreGotico/arbtok/tree/0.0.0a46) (2026-07-15)
 

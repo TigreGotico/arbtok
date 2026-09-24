@@ -11,8 +11,22 @@ langcodes
 # `normalize_asr(spoken_numbers_to_digits)` left most of the teens in a real transcript as
 # words. Measured on the human transcripts of the SADA corpus: 1,167 one-word teens in 190
 # spellings, of which the older parser read 66.
-ovos-number-parser>=0.21.0a1
-ovos-date-parser>=0.6.4a1
+# The cardinal pass says a number after a rank noun as an ordinal agreeing with the noun,
+# الفئة 5 as الفئة الخامسة and القرن 21 as القرن الحادي والعشرين, through pronounce_ordinal.
+# Below 0.22.0a1 the parser's Arabic ordinals are masculine and nominative only. From
+# 0.22.7a1 the parser reads only attested Arabic: ميه and ماية, Egyptian spellings of
+# "water", are not "hundred" there, so fix_asr_errors' repair of a recogniser's ماية and
+# ميه inside a number is the only place they become one, and "كباية ميه" stays water.
+# From 0.22.10a1 a word that is also an ordinary word -- مية "water", الست "the lady",
+# التلات "Tuesday" -- is a number only when its context makes it one, so
+# `normalize_asr(spoken_numbers_to_digits)` leaves "شربت مية باردة" as written, where
+# 0.22.9a1 gives "شربت 100 باردة" and turns "الست جات" into "6 جات".
+ovos-number-parser>=0.22.10a1
+# Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
+# with the fractions of the hour and the period words: `normalize_for_tts` takes the
+# words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour
+# and noon are not read the way the cited sources give them.
+ovos-date-parser>=0.31.5a1
 # Transitive, floored here because the combination is otherwise installable and breaks
 # on import rather than on resolve. ovos-config below 3.5.1a1 imports
 # `ovos_utils.xdg_utils`, which ovos-utils 0.0.14a5 does not ship, so `arbtok.plugin`

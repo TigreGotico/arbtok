@@ -48,6 +48,28 @@ def test_the_number_parser_floor_reads_colloquial_teens():
     assert _as_tuple(_floors()["ovos-number-parser"]) >= _as_tuple("0.20.4a1")
 
 
+def test_the_number_parser_floor_gives_agreeing_ordinals():
+    """A number after a rank noun is spoken with ``pronounce_ordinal`` in the noun's
+    gender and the case of the cardinals. Below 0.22.0a1 the Arabic ordinals are
+    masculine and nominative only, so الفئة 5 would read الفئة الخامس."""
+    assert _as_tuple(_floors()["ovos-number-parser"]) >= _as_tuple("0.22.1a1")
+
+
+def test_the_number_parser_floor_reads_water_as_water():
+    """fix_asr_errors writes a recogniser's ماية and ميه as مية only inside a number.
+    Below 0.22.7a1 the parser reads ميه as "hundred" anywhere, so "كباية ميه" would
+    still reach the digits as 100."""
+    assert _as_tuple(_floors()["ovos-number-parser"]) >= _as_tuple("0.22.7a1")
+
+
+def test_the_number_parser_floor_leaves_a_homograph_as_written():
+    """``spoken_numbers_to_digits`` hands the parser whole sentences. Below 0.22.10a1 it
+    reads a word that is also an ordinary word as a number wherever it stands: "شربت مية
+    باردة" (I drank cold water) becomes "شربت 100 باردة" and "الست جات" (the lady came)
+    becomes "6 جات"."""
+    assert _as_tuple(_floors()["ovos-number-parser"]) >= _as_tuple("0.22.10a1")
+
+
 def test_every_floor_is_a_floor_and_not_a_pin_or_a_ceiling():
     """Floor pins only: a ceiling here becomes an unsatisfiable install downstream."""
     for line in REQUIREMENTS.read_text(encoding="utf-8").splitlines():
