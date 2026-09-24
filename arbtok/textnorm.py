@@ -582,9 +582,34 @@ INTELLIGIBILITY_GATE = AsrNorm(strip_harakat=True, strip_extended_marks=True,
 
 
 _LATIN_RUN_EDGE = r"(?<![A-Za-z0-9])", r"(?![A-Za-z0-9])"
-_CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(?=[A-Z0-9]*[A-Z])[A-Z0-9]+" + _LATIN_RUN_EDGE[1])
+#: The Latin capitals that are not vowels. A run of two or more of them spells no
+#: word, so it is an initialism: BMW, GMC, MG.
+_CONSONANT_CAPS = "BCDFGHJKLMNPQRSTVWXZ"
+#: A code: a run of capitals and digits carrying at least one of each, or an
+#: initialism. A run of capitals that spells a word is neither, and TOYOTA and
+#: LAND ROVER DEFENDER are read rather than spelled.
+_CODE = re.compile(_LATIN_RUN_EDGE[0]
+                   + r"(?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
+                   + f"|[{_CONSONANT_CAPS}]{{2,}})"
+                   + _LATIN_RUN_EDGE[1])
 #: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
 _VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
+#: A number right before a :data:`_CODE`, which makes a unit symbol a unit.
+_NUMBER_BEFORE = re.compile(r"[0-9٠-٩۰-۹]\s*$")
+#: The unit symbols written in capitals often enough that capitals are no evidence of
+#: a code: ``50 KM`` is kilometres. Every other symbol is read in the case it is
+#: written in, because the capitals are the evidence — ``3 mg`` is milligrams where
+#: ``3 MG`` is the make, and ``2 EV`` is a car rather than two electronvolts. Sorted,
+#: because :data:`TTS_NORM_VERSION` names it and a set's repr is not stable.
+_CAPITALISED_UNITS = ("hp", "kg", "km", "kw")
+#: A run of letters and digits with a capital in it, in any of the three digit
+#: scripts: an identifier like :data:`_CODE`, whose lowercase cases it holds, and an
+#: identifier is spoken whole or character by character, never with a digit run read
+#: as a number out of the middle of it. A run without a capital is not one:
+#: ``15h01`` is a time, ``7abibi`` Arabizi.
+_CODE_CHARS = "A-Za-z0-9٠-٩۰-۹"
+_MIXED_CODE = re.compile(f"(?<![{_CODE_CHARS}])(?=[{_CODE_CHARS}]*[A-Z])"
+                         f"(?=[{_CODE_CHARS}]*[0-9٠-٩۰-۹])[{_CODE_CHARS}]+(?![{_CODE_CHARS}])")
 
 
 @functools.lru_cache(maxsize=None)
@@ -862,7 +887,12 @@ class TtsNorm:
     #: Drop zero-width and bidirectional control characters.
     strip_controls: bool = False
     #: Read ``X5``-shaped codes character by character from :func:`spelled_codes`: a run of
-    #: capitals and digits with at least one capital, not touching another letter or digit.
+    #: capitals and digits with at least one of each, not touching another letter or digit,
+    #: or a run of two or more capitals with no vowel among them, which spells no word and
+    #: is an initialism: ``BMW``, ``GMC``, ``MG``. A run of capitals that does spell a word
+    #: is a word, and ``TOYOTA`` and ``LAND ROVER DEFENDER`` are left for the lexicon or
+    #: the loanword path. A unit symbol of :data:`_CAPITALISED_UNITS` written after a
+    #: number is the unit: ``50 KM`` is read as kilometres, as ``50 km`` is.
     #: A run of up to seven characters is a model code and every character takes the
     #: table's English name, so ``X5`` is ``إِكْسْ فَيْفْ``. A run of 8 to 17 characters with
     #: at least one digit is a vehicle identification number or a fragment of one: its
@@ -995,7 +1025,8 @@ class TtsNorm:
 #: :data:`IDENTIFIER_WORDS` and a lexicon are named by
 #: :meth:`TtsNorm.describe`, each by a digest. A record that must distinguish two runs
 #: keeps the ``describe()`` string, not the version alone.
-TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN, _DIGIT_WORDS,
+TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN,
+                             _NUMBER_BEFORE, _CAPITALISED_UNITS, _MIXED_CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START)
@@ -1333,10 +1364,14 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     spoken form fully pointed; an unpointed one leaves its vowels to the diacritizer.
 
     ``spell_out_codes`` reads what the lexicon did not claim and is written in
-    capitals and digits with at least one capital, ``X5`` or ``GV70``, character by
-    character from :func:`spelled_codes`. A number on its own is not a code. A run of
+    capitals and digits with at least one of each, ``X5`` or ``GV70``, or in capitals
+    with no vowel among them, ``BMW``, character by character from
+    :func:`spelled_codes`. Neither a number on its own nor a run of capitals that
+    spells a word is a code: ``TOYOTA`` is read as a word. A run of
     8 to 17 such characters with a digit in it is a vehicle identification number, or
-    a fragment of one, and its digits are read as Arabic words, one at a time.
+    a fragment of one, and its digits are read as Arabic words, one at a time. A run of
+    letters and digits with a capital in it that is not read this way is left exactly as
+    written: ``L809UPZ3V361`` stays whole rather than its digit runs being spoken.
 
     ``spoken_forms`` writes dates, times, numbers and units as words in ``lang``.
     In Arabic, a clock time written in digits is read first, before any rule reads its
@@ -1397,12 +1432,21 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         text = _CLOCK.sub(clock, text)
     if config.spell_out_codes:
         names = spelled_codes(lang)
+        units = {symbol for symbol in cldr_units(lang) if symbol.isupper()}
         def code(m):
             run = m.group(0)
+            # KM after a number is the unit, and so is GB, which the table capitalises
+            # too; MG after one is the make, and mg the unit.
+            if (run in units or run.lower() in _CAPITALISED_UNITS) \
+                    and _NUMBER_BEFORE.search(m.string[:m.start()]):
+                return run
             if _VIN.fullmatch(run):
                 return " ".join(_digit_by_digit(c, digit_forms) if c.isdigit() else names[c] for c in run)
             return " ".join(names[c] for c in run)
         text = _CODE.sub(code, text)
+    # What the code reading did not take is an identifier all the same, and no rule
+    # below reads a digit out of the middle of one.
+    text = _MIXED_CODE.sub(lambda m: hold(m.group(0)), text)
     if config.speak_percent:
         text = _PERCENT.sub(lambda m: f"{m.group(1)} في المئة", text)
     if config.keep_code_digits:

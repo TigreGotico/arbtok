@@ -268,10 +268,30 @@ said. It is applied before anything else, the longest term first and without reg
 Latin letter or digit ends, so an Arabic prefix written against it stays
 attached.
 
-`spell_out_codes=True` reads what the lexicon did not claim and is written in
-capitals and digits with at least one capital, such as `X5` or `GV70`, one
-character at a time. A number on its own is not a code and goes to the number
-rules; a lowercase word is left for the loanword path.
+`spell_out_codes=True` reads what the lexicon did not claim and is a code, one
+character at a time. A code is a run of capitals and digits with at least one of
+each, such as `X5` or `GV70`, or a run of two or more capitals with no vowel among
+them, such as `BMW`, `GMC` or `MG`: those spell no word, so they are initialisms.
+A number on its own is not a code and goes to the number rules; a lowercase word is
+left for the loanword path; and a run of capitals that spells a word is a word.
+`TOYOTA`, `FORD`, `KIA`, `AUDI` and `LAND ROVER DEFENDER` are read, not spelled.
+
+The vowel is what the rule has to go on, and it is not always right. `SUV`, `VIN`
+and `ABS` are initialisms that carry a vowel, so the rule reads them as words and
+leaves them whole. Spelling one is what the lexicon is for: `{"SUV": "إِسْ يُو فِي"}`
+is applied before the code reading and gives the letters their names.
+
+Four unit symbols are written in capitals often enough that the capitals say nothing
+about a code: `KM`, `KG`, `KW` and `HP`. After a number each of them is the unit, so
+`50 KM` is read as kilometres, and so is any symbol the unit table itself capitalises,
+`2 GB`. Every other symbol is read in the case it is written in, because there the
+capitals are the evidence of a code: `3 mg` is milligrams where `3 MG` is the make,
+and `2 ev` is electronvolts where `2 EV` is a car and is left as written. A symbol
+written before the number, `MG 5`, is the make either way.
+
+The lexicon comes first either way. A published reading of a name or of a whole
+model, `BMW 7 Series` among them, belongs in the lexicon, which is applied before
+the code reading and overrides it.
 
 A run of 8 to 17 of those characters with at least one digit is a vehicle
 identification number, or a fragment of one, and is read as an identifier: the
@@ -281,6 +301,17 @@ under `dialect_numbers`. ISO 3779 fixes the VIN at 17 capitals and digits, witho
 I, O and Q. The floor of eight is a design choice that takes the fragments an agent
 reads back ("the last eight are L457L680") and leaves every model code of seven
 characters or fewer, such as `X5` or `GLE450`, with the English digit names.
+
+A run of letters and digits with a capital in it is read whole or character by
+character, never part by part. With `spell_out_codes` off it reaches the synthesizer
+as it was written: `L809UPZ3V361` stays `L809UPZ3V361`, where a number rule reading
+the digit runs inside it gives a code no listener can write back down. A run without
+a capital is not a code: `15h01` is a time and `7abibi` is Arabizi.
+
+So a run of capitals is read in one of three ways. With a digit in it, it is an
+identifier: spelled out under `spell_out_codes`, and left exactly as written
+without it. With no digit and no vowel, it is an initialism and is spelled out.
+With no digit and a vowel, it is a word and is never spelled.
 
 ```python
 normalize_for_tts("رقم الهيكل WBA7F2C51JG", "ar", TtsNorm(spell_out_codes=True))

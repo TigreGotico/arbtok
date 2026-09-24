@@ -307,6 +307,28 @@ def test_the_rule_set_name_is_computed_from_the_rules():
     assert textnorm.ASR_NORM_VERSION != textnorm.TTS_NORM_VERSION
 
 
+def test_the_tts_rule_set_name_covers_the_code_reading():
+    """The rules of the code reading are in the name: 78c346d22aa9 named the set that
+    spelled every run of capitals and read a digit out of the middle of a code, and no
+    record of a run under those rules can be read as a record of a run under these."""
+    assert textnorm.TTS_NORM_VERSION != "78c346d22aa9"
+    flags = [f.name for f in dataclasses.fields(TtsNorm)]
+    for rule in (textnorm._CODE, textnorm._MIXED_CODE, textnorm._NUMBER_BEFORE,
+                 textnorm._CAPITALISED_UNITS):
+        assert textnorm._rule_set(flags, rule) != textnorm._rule_set(flags)
+
+
+def test_the_rule_set_name_is_the_same_in_every_process():
+    """A rule kept in a set would name a different rule set in each process, because a
+    set's repr follows the hash seed. Two runs of the same code must agree on it."""
+    import os, subprocess, sys
+    read = "import arbtok.textnorm as t; print(t.TTS_NORM_VERSION, t.ASR_NORM_VERSION)"
+    names = {subprocess.run([sys.executable, "-c", read], capture_output=True, text=True,
+                            env={**os.environ, "PYTHONHASHSEED": seed}).stdout.strip()
+             for seed in ("0", "1", "2")}
+    assert names == {f"{textnorm.TTS_NORM_VERSION} {textnorm.ASR_NORM_VERSION}"}
+
+
 def test_a_description_is_still_written_when_the_parsers_version_cannot_be_read(monkeypatch):
     import importlib.metadata
     def absent(name):
@@ -364,6 +386,27 @@ def test_the_lexicon_claims_a_term_before_it_is_spelled_out():
 def test_a_spelled_code_leaves_no_digit_for_the_number_rules_and_a_bare_number_is_still_spoken():
     said = normalize_for_tts("X5 سنة 2023", spell_out_codes=True)
     assert "إِكْسْ فَيْفْ" in said and not re.search(r"[A-Za-z0-9]", said)
+
+
+# A serial number and the last eight of a chassis number, as an agent reads them back.
+CODES = [("الرقم التسلسلي المطبوع على البطاقة هو L809UPZ3V361.", "L809UPZ3V361"),
+         ("آخر الأرقام والحروف من رقم الهيكل هي L457L680، دونها عندك.", "L457L680")]
+# The Arabic cardinals: one of them in either sentence is a code read part by part.
+CARDINALS = re.compile("صفر|واحد|اثن|ثلاث|أربع|خمس|ست|سبع|ثمان|تسع|عشر|مئة|مائة|ألف")
+
+
+@pytest.mark.parametrize("written, code", CODES, ids=["L809UPZ3V361", "L457L680"])
+def test_a_code_of_letters_and_digits_is_left_whole(written, code):
+    said = normalize_for_tts(written, "ar")
+    assert code in said, said
+    assert not CARDINALS.search(said), said
+
+
+@pytest.mark.parametrize("written, code", CODES, ids=["L809UPZ3V361", "L457L680"])
+def test_the_same_code_is_spelled_out_on_request(written, code):
+    said = normalize_for_tts(written, "ar", spell_out_codes=True)
+    assert "إِلْ" in said and code not in said, said
+    assert not re.search("[A-Za-z]", said), said
 
 
 def test_without_the_new_arguments_nothing_latin_changes():
