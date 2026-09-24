@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a30](https://github.com/TigreGotico/arbtok/tree/0.0.2a30) (2026-09-24)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a29...0.0.2a30)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a letter name is the attested Arabic spelling, said apart from every other [\#222](https://github.com/TigreGotico/arbtok/pull/222) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a29](https://github.com/TigreGotico/arbtok/tree/0.0.2a29) (2026-09-24)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a28...0.0.2a29)
