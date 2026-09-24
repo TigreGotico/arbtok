@@ -632,6 +632,16 @@ def _normalize_units(text: str, full_lang: str) -> str:
     if lang_code in UNITS:
         # Determine number separators for the language
         decimal_separator, thousands_separator = _get_number_separators(full_lang)
+        # A grouping is groups of three digits. Any other shape carrying a separator
+        # is not a number this pass reads, and is left exactly as it was written: a
+        # dot before fewer than three digits is a decimal point, not a grouping.
+        thousands, decimal = re.escape(thousands_separator), re.escape(decimal_separator)
+        grouped = re.compile(rf"\d{{1,3}}(?:{thousands}\d{{3}})+(?:{decimal}\d+)?")
+        # Anchored at both ends: a match may not begin right after a digit or a
+        # separator, nor stop in front of one, or a shape that forms no grouping is
+        # read from the digits after its separator with the rest left glued in front.
+        number_pattern_str = (rf"(?<![\d.,])({grouped.pattern}"
+                              rf"|\d+(?:[{decimal}.]\d+)?)(?![\d.,]*\d)")
 
         # Separate units into symbolic and alphanumeric
         symbolic_units = {k: v for k, v in UNITS[lang_code].items() if not k.isalnum()}
@@ -641,16 +651,13 @@ def _normalize_units(text: str, full_lang: str) -> str:
         sorted_symbolic = sorted(symbolic_units.keys(), key=len, reverse=True)
         symbolic_pattern_str = "|".join(re.escape(unit) for unit in sorted_symbolic)
         if symbolic_pattern_str:
-            # Pattern to match numbers with optional thousands and decimal separators
-            number_pattern_str = rf"(\d+[{re.escape(thousands_separator)}]?\d*[{re.escape(decimal_separator)}]?\d*)"
             symbolic_pattern = re.compile(number_pattern_str + r"\s*(" + symbolic_pattern_str + r")", re.IGNORECASE)
 
             def replace_symbolic(match):
                 number = match.group(1)
-                # Remove thousands separator and replace decimal separator for parsing
-                if thousands_separator in number and decimal_separator in number:
-                    number = number.replace(thousands_separator, "").replace(decimal_separator, ".")
-                elif decimal_separator != "." and decimal_separator in number:
+                if grouped.fullmatch(number):
+                    number = number.replace(thousands_separator, "")
+                if decimal_separator != ".":
                     number = number.replace(decimal_separator, ".")
                 unit_symbol = match.group(2)
                 unit_word = _unit_word(symbolic_units, unit_symbol)
@@ -666,16 +673,14 @@ def _normalize_units(text: str, full_lang: str) -> str:
         sorted_alphanumeric = sorted(alphanumeric_units.keys(), key=len, reverse=True)
         alphanumeric_pattern_str = "|".join(re.escape(unit) for unit in sorted_alphanumeric)
         if alphanumeric_pattern_str:
-            number_pattern_str = rf"(\d+[{re.escape(thousands_separator)}]?\d*[{re.escape(decimal_separator)}]?\d*)"
             alphanumeric_pattern = re.compile(number_pattern_str + r"\s*(" + alphanumeric_pattern_str + r")\b",
                                               re.IGNORECASE)
 
             def replace_alphanumeric(match):
                 number = match.group(1)
-                # Remove thousands separator and replace decimal separator for parsing
-                if thousands_separator in number and decimal_separator in number:
-                    number = number.replace(thousands_separator, "").replace(decimal_separator, ".")
-                elif decimal_separator != "." and decimal_separator in number:
+                if grouped.fullmatch(number):
+                    number = number.replace(thousands_separator, "")
+                if decimal_separator != ".":
                     number = number.replace(decimal_separator, ".")
                 unit_symbol = match.group(2)
                 if unit_symbol.lower() in _CLOCK_MARKERS and _is_clock_time(match):
