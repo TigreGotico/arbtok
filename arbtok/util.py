@@ -408,7 +408,7 @@ UNITS = {
 
 # Arabic unit names come from Unicode CLDR rather than from a list kept here; see
 # arbtok.textnorm.cldr_units and data/term_lexicons/units-cldr.tsv.
-from arbtok.textnorm import cldr_units  # noqa: E402
+from arbtok.textnorm import _CAPITALISED_UNITS, cldr_units  # noqa: E402
 
 UNITS["ar"] = cldr_units("ar")
 
@@ -679,6 +679,14 @@ def _normalize_units(text: str, full_lang: str) -> str:
                     number = number.replace(decimal_separator, ".")
                 unit_symbol = match.group(2)
                 if unit_symbol.lower() in _CLOCK_MARKERS and _is_clock_time(match):
+                    return match.group(0)
+                # Capitals a symbol is not written in are evidence of a code: "3 mg" is
+                # milligrams where "3 MG" is the make, and "2 EV" a car rather than two
+                # electronvolts. A symbol the table itself capitalises, GB, is untouched,
+                # and so are the four people capitalise whatever the table spells them.
+                written = next(k for k in alphanumeric_units if k.lower() == unit_symbol.lower())
+                if unit_symbol.isupper() and not written.isupper() \
+                        and unit_symbol.lower() not in _CAPITALISED_UNITS:
                     return match.group(0)
                 unit_word = _unit_word(alphanumeric_units, unit_symbol)
                 return f"{pronounce_number(float(number) if '.' in number else int(number), full_lang)} {unit_word}"
