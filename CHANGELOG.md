@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a29](https://github.com/TigreGotico/arbtok/tree/0.0.2a29) (2026-09-24)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a28...0.0.2a29)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a code carries a digit or spells no word, and is never partly verbalised \(\#218\) [\#219](https://github.com/TigreGotico/arbtok/pull/219) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a28](https://github.com/TigreGotico/arbtok/tree/0.0.2a28) (2026-09-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a27...0.0.2a28)
