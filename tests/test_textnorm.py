@@ -388,6 +388,36 @@ def test_a_spelled_code_leaves_no_digit_for_the_number_rules_and_a_bare_number_i
     assert "إِكْسْ فَيْفْ" in said and not re.search(r"[A-Za-z0-9]", said)
 
 
+# A code with an English possessive or contraction clitic glued to it, in the three
+# apostrophe/case shapes English writes it: "BMW's", "BMW’s", "BMW'S".
+POSSESSIVE_CODES = [("BMW's", "بِي إِمْ دَبَلْيُو"), ("BMW’s", "بِي إِمْ دَبَلْيُو"),
+                    ("BMW'S", "بِي إِمْ دَبَلْيُو"), ("X5's", "إِكْسْ فَيْفْ"), ("G70's", "جِي سِفَنْ زِيرُو")]
+
+
+@pytest.mark.parametrize("written, said_code", POSSESSIVE_CODES,
+                         ids=["straight-apostrophe", "curly-apostrophe", "upper-S", "X5", "G70"])
+def test_a_possessive_clitic_is_dropped_when_the_code_is_spelled_out(written, said_code):
+    said = normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN)
+    assert said == said_code, said
+    assert not re.search("[A-Za-z]", said), said
+
+
+@pytest.mark.parametrize("written", ["BMW,", "BMW."], ids=["comma", "period"])
+def test_bare_punctuation_after_a_spelled_code_is_kept_as_written(written):
+    said = normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN)
+    assert said == "بِي إِمْ دَبَلْيُو" + written[-1], said
+
+
+@pytest.mark.parametrize("written", ["Toyota's", "MINI's"], ids=["Toyota", "MINI"])
+def test_a_word_that_spells_no_code_keeps_its_possessive_untouched(written):
+    assert normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN) == written
+
+
+def test_a_possessive_code_mid_sentence_keeps_the_surrounding_words():
+    said = normalize_for_tts("سيارة BMW's الجديدة", spell_out_codes=True, **AS_WRITTEN)
+    assert said == "سيارة بِي إِمْ دَبَلْيُو الجديدة", said
+
+
 # A serial number and the last eight of a chassis number, as an agent reads them back.
 CODES = [("الرقم التسلسلي المطبوع على البطاقة هو L809UPZ3V361.", "L809UPZ3V361"),
          ("آخر الأرقام والحروف من رقم الهيكل هي L457L680، دونها عندك.", "L457L680")]
