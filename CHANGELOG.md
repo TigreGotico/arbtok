@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a36](https://github.com/TigreGotico/arbtok/tree/0.0.2a36) (2026-09-29)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a35...0.0.2a36)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): the cardinal-numbers path reads a short decimal comma as a decimal [\#236](https://github.com/TigreGotico/arbtok/pull/236) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a35](https://github.com/TigreGotico/arbtok/tree/0.0.2a35) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a34...0.0.2a35)
@@ -386,17 +394,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a17...0.0.1a18)
 
-**Merged pull requests:**
-
-- feat: cardinals in the words a lect uses, from cited tables [\#130](https://github.com/TigreGotico/arbtok/pull/130) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a17](https://github.com/TigreGotico/arbtok/tree/0.0.1a17) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a16...0.0.1a17)
-
-**Merged pull requests:**
-
-- feat: a French closed-class donor lexicon for Maghrebi code-switching [\#129](https://github.com/TigreGotico/arbtok/pull/129) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a16](https://github.com/TigreGotico/arbtok/tree/0.0.1a16) (2026-09-20)
 
