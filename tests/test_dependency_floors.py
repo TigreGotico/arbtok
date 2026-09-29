@@ -70,6 +70,15 @@ def test_the_number_parser_floor_leaves_a_homograph_as_written():
     assert _as_tuple(_floors()["ovos-number-parser"]) >= _as_tuple("0.22.10a1")
 
 
+def test_the_ovos_utils_floor_does_not_cap_rich():
+    """0.15.1a1 through 0.15.3a3 declare ``rich>=13.7,<14.dev0``, and arbtok imports rich
+    nowhere, so that cap reaches an installing environment through this dependency alone.
+    A floor those releases satisfy lets a resolve produce an environment that cannot hold
+    rich 14 or 15, and whether it does depends on what else constrains ovos-utils rather
+    than on anything arbtok declares."""
+    assert _as_tuple(_floors()["ovos-utils"]) >= _as_tuple("0.15.4a1")
+
+
 def test_every_floor_is_a_floor_and_not_a_pin_or_a_ceiling():
     """Floor pins only: a ceiling here becomes an unsatisfiable install downstream."""
     for line in REQUIREMENTS.read_text(encoding="utf-8").splitlines():
