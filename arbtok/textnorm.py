@@ -801,9 +801,10 @@ _LONG_RUN = re.compile(r"(?<![0-9٠-٩])\+?\d{10,}(?![0-9])")
 _CODE_DIGITS = re.compile(r"(?<![\dA-Za-z])(?<!\d[,.٬،٫])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))"
                           r"(?![\dA-Za-z])(?![,.٬،٫]\d)")
 _DIGIT_RUN = re.compile(r"(?<![0-9A-Za-z٠-٩])(\+?\d+)(?![0-9A-Za-z])")
-_WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![0-9A-Za-z])")
-_EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])([٠-٩]{1,3}(?:[،٬][٠-٩]{3})+(?:[.٫][٠-٩]+)?"
-                             r"|[٠-٩]+(?:[.٫][٠-٩]+)?)(?![0-9٠-٩A-Za-z])")
+_WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d+(?:,\d+)*(?:\.\d+)?)(?![0-9A-Za-z])")
+_EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])(?<![0-9٠-٩],)"
+                             r"([٠-٩]{1,3}(?:[،٬][٠-٩]{3})+(?:[.٫][٠-٩]+)?"
+                             r"|[٠-٩]+(?:[.٫][٠-٩]+)?)(?![0-9٠-٩A-Za-z])(?!,[0-9٠-٩])")
 # A clock time written in digits: ``h:mm`` with two-digit minutes, an hour followed by
 # "am" or "pm", or either after a written الساعة. A score written with a one-digit second
 # part, ``2:1``, is none; neither is a time inside a longer run of digits, nor ``15h01``,
@@ -1355,6 +1356,8 @@ def _rank_ordinal(m: re.Match, config: TtsNorm) -> str:
 
 
 def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
+    from arbtok.util import resolve_thousands_or_decimal
+
     def speak(written: str, number: str) -> str:
         try:
             return _cardinal(number, lang, config)
@@ -1366,9 +1369,30 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     def eastern(m):
         number = m.group(0).translate(_EASTERN_DIGITS).replace("٬", "").replace("،", "").replace("٫", ".")
         return speak(m.group(0), number)
+
+    def western(m):
+        raw = m.group(0)
+        if "," not in raw:
+            return speak(raw, raw)
+        # A comma reaches here only where it is not the (already ambiguity-resolved)
+        # thousands grouping _WESTERN_NUMBER itself matches whole: see
+        # resolve_thousands_or_decimal for the rule a lone or a malformed separator
+        # reads by. The dot, if any, belongs to the fractional part and is never
+        # itself a candidate separator.
+        dot = raw.find(".")
+        int_part, frac_part = (raw[:dot], raw[dot:]) if dot != -1 else (raw, "")
+        resolved = resolve_thousands_or_decimal(int_part)
+        if resolved is not None:
+            return speak(raw, resolved + frac_part)
+        # Two or more separators that do not form a grouping are not one fraction:
+        # each comma-delimited group is read on its own, keeping every digit and the
+        # separators exactly as written, the way a number this pass cannot merge was
+        # always read.
+        return ",".join(speak(g, g) for g in int_part.split(",")) + frac_part
+
     text = _RANK_NUMBER.sub(lambda m: _rank_ordinal(m, config), text)
     text = _EASTERN_NUMBER.sub(eastern, text)
-    return _WESTERN_NUMBER.sub(lambda m: speak(m.group(0), m.group(0).replace(",", "")), text)
+    return _WESTERN_NUMBER.sub(western, text)
 
 
 def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = None, **flags) -> str:
