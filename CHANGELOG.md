@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a32](https://github.com/TigreGotico/arbtok/tree/0.0.2a32) (2026-09-29)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a31...0.0.2a32)
+
+**Merged pull requests:**
+
+- fix: floor ovos-utils at the alpha that allows rich 15 [\#226](https://github.com/TigreGotico/arbtok/pull/226) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a31](https://github.com/TigreGotico/arbtok/tree/0.0.2a31) (2026-09-24)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a30...0.0.2a31)
@@ -394,17 +402,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a12...0.0.1a13)
 
-**Merged pull requests:**
-
-- fix: describe\(\) is written even when the number parser's version cannot be read [\#122](https://github.com/TigreGotico/arbtok/pull/122) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a12](https://github.com/TigreGotico/arbtok/tree/0.0.1a12) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a11...0.0.1a12)
-
-**Merged pull requests:**
-
-- fix: test sources write control characters and range endpoints as escapes [\#121](https://github.com/TigreGotico/arbtok/pull/121) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a11](https://github.com/TigreGotico/arbtok/tree/0.0.1a11) (2026-09-20)
 
