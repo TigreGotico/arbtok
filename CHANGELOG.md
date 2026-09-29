@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a35](https://github.com/TigreGotico/arbtok/tree/0.0.2a35) (2026-09-29)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a34...0.0.2a35)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a decimal glued to a code keeps its decimal reading [\#232](https://github.com/TigreGotico/arbtok/pull/232) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a34](https://github.com/TigreGotico/arbtok/tree/0.0.2a34) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a33...0.0.2a34)
