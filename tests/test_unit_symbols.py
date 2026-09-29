@@ -38,15 +38,16 @@ def test_a_number_of_several_groups_is_read_whole(lang, written, spoken):
 
 
 @pytest.mark.parametrize("lang, written, spoken", [
-    ("ar", "12,5 km", "مئة وخمسة وعشرون km"),
-    ("ar", "1,0000 km", "عشرة آلاف km"),
-    ("en", "1,0000 %", "ten thousand %"),
+    ("ar", "12,5 km", "اثنا عشر فاصلة خمسة km"),
+    ("ar", "1,0000 km", "واحد km"),
+    ("en", "1,0000 %", "one %"),
 ], ids=["12,5 km", "1,0000 km", "1,0000 %"])
 def test_a_separator_that_forms_no_grouping_leaves_the_number_to_the_number_pass(lang, written, spoken):
     """A shape that is no grouping is not this pass to read, and the match may not begin
-    inside it either: the whole number goes to the number pass, which reads it as it
-    always did, and the unit is left as written. The exact reading is pinned because
-    asserting that a wrong one is absent passes on every other wrong one."""
+    inside it either: the whole number goes to the number pass, which reads a comma
+    followed by fewer or by more than three digits as a decimal mark, and the unit is
+    left as written. The exact reading is pinned because asserting that a wrong one is
+    absent passes on every other wrong one."""
     assert normalize_for_tts(written, lang) == spoken
 
 

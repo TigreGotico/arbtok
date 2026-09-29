@@ -462,12 +462,27 @@ def _normalize_number_word(word: str, full_lang: str, rbnf_engine) -> str:
     elif decimal_separator in temp_cleaned_word and is_numeric(temp_cleaned_word.replace(decimal_separator, ".", 1)):
         # Handle cases like '1,2' -> '1.2'
         temp_cleaned_word = temp_cleaned_word.replace(decimal_separator, ".")
-    elif thousands_separator in temp_cleaned_word and is_numeric(temp_cleaned_word.replace(thousands_separator, "")):
-        # Handle cases like '1.234' -> '1234' and '14,000,000' -> '14000000'.
-        # The guard strips every separator, not the first: a number grouped more
-        # than once stays non-numeric after one strip and falls through with its
-        # separators intact, which reads the groups as separate numbers.
-        temp_cleaned_word = temp_cleaned_word.replace(thousands_separator, "")
+    elif thousands_separator in temp_cleaned_word:
+        # A separator is a thousands grouping only where every one of them is
+        # followed by exactly three digits, end to end ('1,500', '1,234,567'):
+        # that is the shape PR 221's unit pass already requires before it reads a
+        # grouping. A separator followed by fewer digits ('12,5'), by more
+        # ('1,0000'), or by three that do not continue into a further complete
+        # group, is not that shape, and to a decimal-comma writer it marks the
+        # fraction: '12,5' reads as '12.5' does. A number has one fractional
+        # part, so only the first separator is read that way; any separator
+        # after it is dropped as a stray grouping mark around the fraction.
+        # An ambiguous full grouping like '1,500' keeps today's reading.
+        thousands_esc = re.escape(thousands_separator)
+        if re.fullmatch(rf"\d{{1,3}}(?:{thousands_esc}\d{{3}})+", temp_cleaned_word):
+            temp_cleaned_word = temp_cleaned_word.replace(thousands_separator, "")
+        else:
+            head, _, tail = temp_cleaned_word.partition(thousands_separator)
+            candidate = head + "." + tail.replace(thousands_separator, "")
+            if is_numeric(candidate):
+                temp_cleaned_word = candidate
+            elif is_numeric(temp_cleaned_word.replace(thousands_separator, "")):
+                temp_cleaned_word = temp_cleaned_word.replace(thousands_separator, "")
 
     # Check if the word is a valid number after processing
     if is_numeric(temp_cleaned_word):
