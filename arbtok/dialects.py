@@ -201,6 +201,24 @@ def _dialect_index(codes: List[str]) -> Dict[str, str]:
     return index
 
 
+def _core_subtags(tag: str) -> List[str]:
+    """The language, extlang, script and region subtags that open *tag*.
+
+    These are the subtags BCP-47 tag distance measures; whatever follows them —
+    variants, extensions, private use — it ignores.
+    """
+    subtags = tag.split("-")
+    core, rest = subtags[:1], subtags[1:]
+    while rest and len(core) < 4 and len(rest[0]) == 3 and rest[0].isalpha():
+        core.append(rest.pop(0))
+    if rest and len(rest[0]) == 4 and rest[0].isalpha():
+        core.append(rest.pop(0))
+    if rest and ((len(rest[0]) == 2 and rest[0].isalpha())
+                 or (len(rest[0]) == 3 and rest[0].isdigit())):
+        core.append(rest.pop(0))
+    return core
+
+
 def spec_for_lang(lang: Optional[str]) -> str:
     """Resolve a language tag to an orthography2ipa Arabic spec code.
 
@@ -214,6 +232,9 @@ def spec_for_lang(lang: Optional[str]) -> str:
     * a region resolves to that region's spec, defaulting to the most widely
       spoken variety when the region carries several (``ar-SA`` → Najdi,
       ``ar-EG`` → Egyptian) via subtag-aware BCP-47 matching;
+    * a subtag that names no spec and no dialect is ignored, so a tag never
+      resolves to something less specific than its parent tag does
+      (``ar-EG-x-cairo`` → ``ar-EG``, ``ar-SA-x-riyadh`` → ``ar-SA-x-najd``);
     * anything with no Arabic match — an unknown region, a non-Arabic tag —
       falls back to the ``ar`` (MSA) leaf rather than raising.
     """
@@ -239,7 +260,31 @@ def spec_for_lang(lang: Optional[str]) -> str:
         if match:
             return match
 
-    # 3. Closest region-bearing spec via subtag-aware BCP-47 matching. Codes
+    # 2b. An ISO 639-3 code this module gives a lect resolves back to that lect, so
+    #     a tag built from :func:`lect_code` names the variety it came from. A
+    #     sub-lect named in a subtag has already won above.
+    spec = _LANGUAGE_CODE_SPECS.get(normalized.lower().split("-")[0])
+    if spec:
+        return spec
+
+    # 3. Variants, extensions and private-use subtags that name no spec are
+    #    invisible to tag distance, so left in they make the tag tie at zero
+    #    with ``ar`` (``ar`` maximizes to ``ar-Arab-EG``) or, over eight
+    #    characters, abort the match. They are dropped one at a time from the
+    #    end, stopping at a spec code, so the tag resolves as its parent does:
+    #    ``ar-EG-x-cairo`` as ``ar-EG``, ``ar-SA-x-riyadh`` as ``ar-SA``.
+    core = _core_subtags(normalized)
+    subtags = normalized.split("-")
+    while len(subtags) > len(core):
+        subtags.pop()
+        if len(subtags) > len(core) and len(subtags[-1]) == 1:
+            subtags.pop()
+        exact = lowered.get("-".join(subtags).lower())
+        if exact:
+            return exact
+    normalized = "-".join(core)
+
+    # 4. Closest region-bearing spec via subtag-aware BCP-47 matching. Codes
     #    with a subtag langcodes cannot parse (a private-use token over eight
     #    characters) are dropped from the pool — they are only ever reached by
     #    the exact-code path above, and one of them would abort the whole match.
@@ -270,6 +315,7 @@ _SPEC_LANGUAGE_CODES = {
     "ar-SA-x-najd": "ars",   # Najdi Arabic
     "ar-x-gulf": "afb",      # Gulf Arabic
 }
+_LANGUAGE_CODE_SPECS = {code: spec for spec, code in _SPEC_LANGUAGE_CODES.items()}
 
 
 @functools.lru_cache(maxsize=None)

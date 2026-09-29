@@ -1,0 +1,38 @@
+# Rank nouns after which a number is said as an ordinal, and the ordinal's gender.
+# A whole number from 1 to 99 written directly after one of these nouns is spoken as the
+# ordinal that agrees with the noun: الطابق 3 is الطابق الثالث and الفئة 5 is الفئة الخامسة.
+# A number of 100 or more stays a cardinal: ovos-number-parser, which gives the words,
+# implements the feminine and oblique Arabic ordinals above 99 for 100 and 1000 only.
+#
+# Agreement: Karin C. Ryding, "A Reference Grammar of Modern Standard Arabic" (Cambridge
+# University Press, 2005), chapter 15, section 2, read at archive.org item
+# 07AReferenceGrammarOfModernStandardArabic: "Ordinal numerals are essentially adjectives.
+# They usually follow the noun that they modify and agree with it in gender". Section 2.2:
+# "These adjectival forms of the numbers usually follow the noun that they modify, agreeing
+# with the noun in gender, definiteness, and case", with "l-martabat-a l-raabicat-a" (the
+# fourth rank). Section 2.3 gives the teens, eleventh to nineteenth, and section 2.4 the
+# tens: "Both parts of the tens ordinal agree in case and definiteness with the modified
+# noun", with "l-Haadii wa-l-cishriina" glossed "in the twenty-first century". The words
+# come from ovos-number-parser's pronounce_ordinal.
+#
+# Columns: the noun with its article; the gender of the noun, which the ordinal takes; the
+# source, an Arabic Wikipedia revision; the sentence from that revision. Each sentence shows
+# the noun followed by an ordinal agreeing with it in gender: the evidence for the
+# construction and for the gender column.
+# noun	gender	source	quote
+الطابق	masculine	https://ar.wikipedia.org/w/index.php?oldid=71442482	في آب / أغسطس عام 1996 أُقيم حفل تدشين الطابق الخامس والثمانين من البرج (إذ تم وضع هيكل الطابق الأخير من البرج في أوائل عا
+الدور	masculine	https://ar.wikipedia.org/w/index.php?oldid=74639116	نافذة في الدور الخامس والثلاثين
+الفئة	feminine	https://ar.wikipedia.org/w/index.php?oldid=75877126	سيهوندأو الغواصة الألمانية يو-5330 (الألمانية: "الختم") ، والمعروفة أيضًا باسم الغواصة من الفئة السابعة والعشرون، غواصة قزم صنعتها ألمانيا النازية خلال الحرب العالمية الثان
+المرتبة	feminine	https://ar.wikipedia.org/w/index.php?oldid=75435578	IA، إيكاو: ZSSH) يقع في مدينة هوايان في جمهورية الصين الشعبية. صنف مطار هوايان ليانشوي في المرتبة التاسعة والتسعون في الصين من حيث عدد الركاب عام 2011 وفقًا لإدارة الطيران ال
+المركز	masculine	https://ar.wikipedia.org/w/index.php?oldid=73375269	جائزة نوبل، وهذا ما يؤكده المرصد العالمي للترتيب والتميز الأكاديمي الذي يُصنّف الجائزة في المركز التاسع والتسعين ضمن قائمة الجوائز العالمية الأكثر شهرة، وهي الجائزة الروسية
+الجيل	masculine	https://ar.wikipedia.org/w/index.php?oldid=76361085	حمر من جامعة بكين للمعلمين، بقيادة تان هولان، وقاموا بتخريبها. أخرجت جثة الدوق يان شنغ من الجيل السادس والسبعين (من نسل كونفوشيوس) من قبرها وتعليقها عارية على شجرة أمام ال
+الصف	masculine	https://ar.wikipedia.org/w/index.php?oldid=74030867	تية برسم رموز الأبجدية الصوتية الدولية في الرموز المعيارية الأمريكية لتبادل المعلومات، من الصف الثالث والثلاثين إلى الصف السابع والعشرين بعد المئة. كل تلك الرموز الرسومية
+الجزء	masculine	https://ar.wikipedia.org/w/index.php?oldid=76148155	محاصر في البحر هو الجزء الخامس والسبعون من سلسلة الأخوان هاردي للغموض، كتبها فرانكلين دبليو ديكسون،
+الفصل	masculine	https://ar.wikipedia.org/w/index.php?oldid=73569717	أدى أول لقاء بين النبي محمد مع جبريل إلى ظهور الآيات الخمس الأولى من الفصل السادس والتسعين من القرآن الكريم، وهي سورة العلق.
+الحلقة	feminine	https://ar.wikipedia.org/w/index.php?oldid=74408148	89 الحلقة التاسعة والثمانون بعنوان محطات في طريق الهجرة
+المادة	feminine	https://ar.wikipedia.org/w/index.php?oldid=74222646	المادة السادسة والتسعون في دستور اليابان
+البند	masculine	https://ar.wikipedia.org/w/index.php?oldid=73549276	ا الخمسية الحادية عشر، اتخذت الحكومة الهندية خطوات عديدة مشابهة لتلك التي قامت بها نيبال. البند الحادي والأربعون الذي نص عليه الدستور الهندي هو أنه سيتم ضمان الدعم الاجتماع
+الفقرة	feminine	https://ar.wikipedia.org/w/index.php?oldid=75748579	في الفقرة الخامسة والثلاثين من قانون الدستور لعام 1982، تضمّ ‹‹الشعوب الأصلية في كندا››
+القرن	masculine	https://ar.wikipedia.org/w/index.php?oldid=75303770	51. القرن الحادي والخمسين ق.ح: 3050 ق.م - 3151 ق.م
+الدرجة	feminine	https://ar.wikipedia.org/w/index.php?oldid=76373966	الكونغرس على دستور نيفادا عندما قُبلت دولةً في عام 1864 م، والتي حددت حدودها الغربية عند الدرجة الثالثة والأربعين من خط الطول الغربي من واشنطن العاصمة وحدودها الجنوبية الغرب
+الشوط	masculine	https://ar.wikipedia.org/w/index.php?oldid=76653978	أسد البنغال للكريكت، حققت إنجاز الهاتريك عبر الرميات الثلاث الوحيدة التي نفذتها، وذلك في الشوط السابع والأربعين، وهو الإنجاز الذي أحدث ضجة واسعة:

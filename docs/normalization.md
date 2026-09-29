@@ -68,6 +68,30 @@ normalize_asr(heard, spoken_numbers_to_digits=True, join_dictated_digits=True)
 # 'جوالي 0553179245'
 ```
 
+**`fix_asr_errors`** repairs what a recognizer writes that is not the Arabic
+that was said. In Saudi and Gulf speech the conjunction و "and" is said u- before
+a vowel, and a recognizer writes that u- as the word او, which is "or". Inside a
+spoken number the repair writes it و again, in one shape only: a hundreds word
+alone, perhaps after a larger part of the same number, then tens or units that
+the thousands word multiplies with it. Every other او stays "or".
+
+A recognizer also writes the Saudi hundred as ماية, a spelling written Arabic
+uses for "water". Inside a number the repair writes it مية: fused to a unit
+(`اربعماية`), after a unit (`ست ماية`), before the thousands word (`ماية الف`), or
+after و that follows a number (`الف وماية`). Anywhere else, as in `كباية ماية`, it
+stays as written:
+
+```python
+normalize_asr("اربعماية الف", fix_asr_errors=True, spoken_numbers_to_digits=True)
+# '400000'
+normalize_asr("ست مية او عشرة الف", fix_asr_errors=True)
+# 'ست مية وعشرة الف'
+normalize_asr("ست مية او عشرة الف", fix_asr_errors=True, spoken_numbers_to_digits=True)
+# '610000'
+normalize_asr("الف او خمسمية", fix_asr_errors=True, spoken_numbers_to_digits=True)
+# '1000 او 500'
+```
+
 Text the number rule finds nothing in comes back exactly as it went in. Text it
 changes keeps the whitespace at its ends, and its words come back single-spaced
 with any Arabic-Indic digits written in ASCII.
@@ -167,8 +191,8 @@ the same way.
 
 **Record the `describe()` string, not the version alone.** The version names the
 rules. What a config carries as values is configuration and is outside it: which
-flags are on, a lexicon, and for `normalize_for_tts` the phone shapes, phone
-prefixes and identifier words (`KSA_PHONE_SHAPES`, `KSA_PHONE_PREFIXES`,
+flags are on, a lexicon, and for `normalize_for_tts` the phone regions, phone
+shapes, phone prefixes and identifier words (`ARAB_PHONE_REGIONS`,
 `IDENTIFIER_WORDS` or your own). `describe()` names each of those, the tuples and
 the lexicon by a digest of their content, so two runs that differ in any of them
 describe themselves differently while sharing one version. If the number parser's
@@ -178,7 +202,7 @@ returns.
 ### Every rule
 
 Rules run in this order. A lexicon is applied after the mark rules and before
-`spoken_numbers_to_digits`.
+`fix_asr_errors`.
 
 | Flag | Rule |
 | --- | --- |
@@ -190,6 +214,7 @@ Rules run in this order. A lexicon is applied after the mark rules and before
 | `strip_extended_marks` | U+0653–U+065F and the dagger alif U+0670 |
 | `strip_quranic_marks` | U+0610–U+061A, U+06D6–U+06ED |
 | `strip_tatweel` | U+0640 |
+| `fix_asr_errors` | recognizer spellings that are not the Arabic said are repaired: inside a spoken number, `ماية` becomes the hundred `مية` and `او` becomes the conjunction `و` (Arabic only) |
 | `spoken_numbers_to_digits` | number words become digits |
 | `join_dictated_digits` | seven or more single digits in a row become one run |
 | `unify_alef` | آ أ إ ٱ become ا |
@@ -243,10 +268,55 @@ said. It is applied before anything else, the longest term first and without reg
 Latin letter or digit ends, so an Arabic prefix written against it stays
 attached.
 
-`spell_out_codes=True` reads what the lexicon did not claim and is written in
-capitals and digits with at least one capital, such as `X5` or `GV70`, one
-character at a time. A number on its own is not a code and goes to the number
-rules; a lowercase word is left for the loanword path.
+`spell_out_codes=True` reads what the lexicon did not claim and is a code, one
+character at a time. A code is a run of capitals and digits with at least one of
+each, such as `X5` or `GV70`, or a run of two or more capitals with no vowel among
+them, such as `BMW`, `GMC` or `MG`: those spell no word, so they are initialisms.
+A number on its own is not a code and goes to the number rules; a lowercase word is
+left for the loanword path; and a run of capitals that spells a word is a word.
+`TOYOTA`, `FORD`, `KIA`, `AUDI` and `LAND ROVER DEFENDER` are read, not spelled.
+
+The vowel is what the rule has to go on, and it is not always right. `SUV`, `VIN`
+and `ABS` are initialisms that carry a vowel, so the rule reads them as words and
+leaves them whole. Spelling one is what the lexicon is for: `{"SUV": "إِسْ يُو فِي"}`
+is applied before the code reading and gives the letters their names.
+
+Four unit symbols are written in capitals often enough that the capitals say nothing
+about a code: `KM`, `KG`, `KW` and `HP`. After a number each of them is the unit, so
+`50 KM` is read as kilometres, and so is any symbol the unit table itself capitalises,
+`2 GB`. Every other symbol is read in the case it is written in, because there the
+capitals are the evidence of a code: `3 mg` is milligrams where `3 MG` is the make,
+and `2 ev` is electronvolts where `2 EV` is a car and is left as written. A symbol
+written before the number, `MG 5`, is the make either way.
+
+The lexicon comes first either way. A published reading of a name or of a whole
+model, `BMW 7 Series` among them, belongs in the lexicon, which is applied before
+the code reading and overrides it.
+
+A run of 8 to 17 of those characters with at least one digit is a vehicle
+identification number, or a fragment of one, and is read as an identifier: the
+letters take the same English names, and the digits take the Arabic words a phone
+number or a booking reference is read with, one at a time, in the lect's words
+under `dialect_numbers`. ISO 3779 fixes the VIN at 17 capitals and digits, without
+I, O and Q. The floor of eight is a design choice that takes the fragments an agent
+reads back ("the last eight are L457L680") and leaves every model code of seven
+characters or fewer, such as `X5` or `GLE450`, with the English digit names.
+
+A run of letters and digits with a capital in it is read whole or character by
+character, never part by part. With `spell_out_codes` off it reaches the synthesizer
+as it was written: `L809UPZ3V361` stays `L809UPZ3V361`, where a number rule reading
+the digit runs inside it gives a code no listener can write back down. A run without
+a capital is not a code: `15h01` is a time and `7abibi` is Arabizi.
+
+So a run of capitals is read in one of three ways. With a digit in it, it is an
+identifier: spelled out under `spell_out_codes`, and left exactly as written
+without it. With no digit and no vowel, it is an initialism and is spelled out.
+With no digit and a vowel, it is a word and is never spelled.
+
+```python
+normalize_for_tts("رقم الهيكل WBA7F2C51JG", "ar", TtsNorm(spell_out_codes=True))
+# 'رقم الهيكل دَبَلْيُو بِي إِي سبعة إِفْ اثنين سِي خمسة واحد جِيْ جِي'
+```
 
 ```python
 SAID = {"BMW": "بِي إِمْ دَبَلْيُو", "7 Series": "سِفَنْ سِيرِيزْ"}
@@ -267,13 +337,74 @@ Sentence("إِكْسْ فَيْفْ", stress=False).ipa   # 'ʔiks fajf'
 ```
 
 The names `spell_out_codes` uses are in `spelled_codes()`: the 26 English letter
-names and the ten digit words, pointed. Each is the English pronunciation from
-the bundled donor lexicon, carried into Arabic by `arbtok.translit.nativize`,
-with the glottal onset Arabic gives a word that starts with a vowel; a test
-holds every row to that. Two consequences of the standard inventory are worth
-knowing before reading a registration plate or a VIN aloud: it has no /eː/, so
-A and E come out alike and so do G and J, and it has no /tʃ/, so H ends in /ʃ/.
-Put your own spellings for those letters in the lexicon when they must differ.
+names and the ten digit words, pointed.
+
+**No part of that table has been checked by a human speaker of Arabic.**
+
+A letter's consonant skeleton is the spelling Arabic writing attests for that
+letter. Each was read from an ar.wikipedia page that prints the spelling beside
+the Latin initialism it spells, and the page is named in the table below. The
+vowels are the English letter name's, taken from the pronunciation the page on
+the English alphabet (أبجدية إنجليزية) gives, and written as the nearest Arabic
+rendering the tokenizer reads. The two sources answer different questions: the
+first says which letters an Arabic writer uses for a letter name, the second says
+how that name is said.
+
+That matters where one skeleton serves two letters. `جي` is written for both G
+and J, so G takes the vowels of "gee" and J those of "jay"; `كي` is written for K,
+which takes "kay" and so is not heard as C. **A letter must be heard apart from
+every other, and a test says so.** B and P are the one exception: Arabic has no
+/p/, the sources give `بي` for both, and the table keeps the collision rather
+than invent a spelling for it.
+
+| Letter | Spelling | Read from | Pointed | Says |
+|---|---|---|---|---|
+| A | `إيه` | واي إم سي إيه (أغنية) | `إِيهْ` | ay /eɪ/ |
+| B | `بي` | USB | `بِي` | bee /biː/ |
+| C | `سي` | CNN | `سِي` | cee /siː/ |
+| D | `دي` | DVD | `دِي` | dee /diː/ |
+| E | `إي` | ESPN | `إِي` | ee /iː/ |
+| F | `إف` | KFC | `إِفْ` | ef /ɛf/ |
+| G | `جي` | LG | `جِي` | gee /dʒiː/ |
+| H | `إتش` | HBO | `إِتْشْ` | aitch /eɪtʃ/ |
+| I | `آي` | IBM | `آيْ` | i /aɪ/ |
+| J | `جي` | J. K. Rowling | `جَيْ` | jay /dʒeɪ/ |
+| K | `كي` | KFC | `كَيْ` | kay /keɪ/ |
+| L | `إل` | LG | `إِلْ` | el /ɛl/ |
+| M | `إم` | MTV | `إِمْ` | em /ɛm/ |
+| N | `إن` | CNN | `إِنْ` | en /ɛn/ |
+| O | `أو` | HBO | `أُو` | o /oʊ/ |
+| P | `بي` | ESPN | `بِي` | pee /piː/ |
+| Q | `كيو` | QGIS | `كْيُو` | cue /kjuː/ |
+| R | `آر` | R&B | `آرْ` | ar /ɑːr/ |
+| S | `إس` | USB | `إِسْ` | ess /ɛs/ |
+| T | `تي` | MTV | `تِي` | tee /tiː/ |
+| U | `يو` | USB | `يُو` | u /juː/ |
+| V | `في` | DVD | `فِي` | vee /viː/ |
+| W | `دبليو` | BMW | `دَبَلْيُو` | double-u /ˈdʌbəljuː/ |
+| X | `إكس` | Xbox | `إِكْسْ` | ex /ɛks/ |
+| Y | `واي` | واي إم سي إيه (أغنية) | `وَايْ` | wy /waɪ/ |
+| Z | `زد` | DF-ZF | `زِدْ` | zed /zɛd/ |
+
+Three rows are weaker than the rest and say so here. `X` is `إكس` from the page
+on the Xbox, which is a word rather than the letter; the vowels are the English
+name's as everywhere else. `Z` is `زد` from DF-ZF; `زي` is attested too, on the
+page for Jay-Z, and is not what this table uses. `A` is told apart from `E` by one
+consonant and nothing else: `إِيهْ` reads /ʔiːh/ where `E` reads /ʔiː/. The
+English name is /eɪ/, which the inventory has no vowel for, so the final ه of the
+attested spelling carries the whole distinction. A listener who misses it hears E.
+
+The pairing for both `A` and `Y` is printed on the page for the song,
+واي إم سي إيه (أغنية), not on the organisation's own page, which does not spell
+the letters out.
+
+The digit words have a different basis, unchanged: each is the English word's
+pronunciation from the bundled donor lexicon, carried into Arabic by
+`arbtok.translit.nativize`, with the glottal onset Arabic gives a word that
+starts with a vowel. A test holds every digit row to that.
+
+A caller who wants a letter said another way puts its own spelling in the
+lexicon, which is applied first.
 
 The bundled car lexicon also reads in this direction, one published spelling per
 name, the maker's own site before its distributor's before a marketplace. The
@@ -334,18 +465,26 @@ CLDR display name; it is not inflected for the number before it.
 
 A reply holds prices, phone numbers and booking references, and a plain
 "numbers to words" pass reads all of them as quantities. These rules tell them
-apart. `KSA_VOICE_AGENT` turns them on with Saudi phone shapes:
+apart. A voice agent turns them on with the numbering plans of every Arab League
+member:
 
 ```python
-from arbtok.textnorm import KSA_VOICE_AGENT
+from arbtok.textnorm import ARAB_PHONE_REGIONS, IDENTIFIER_WORDS, TtsNorm, normalize_for_tts
 
-normalize_for_tts("السعر النهائي 355,000 ريال", "ar", KSA_VOICE_AGENT)
+VOICE_AGENT = TtsNorm(speak_percent=True, keep_code_digits=True, phone_regions=ARAB_PHONE_REGIONS,
+                      long_digit_runs=True, identifier_words=IDENTIFIER_WORDS, cardinal_numbers=True,
+                      leave_unspeakable_numbers=True, oblique_numbers=True, space_fused_hundreds=True,
+                      spoken_forms=False, canonical_unicode=False)
+
+normalize_for_tts("السعر النهائي 355,000 ريال", "ar", VOICE_AGENT)
 # 'السعر النهائي ثلاث مئة وخمسة وخمسين ألف ريال'
-normalize_for_tts("خلني أسجل رقمك 0551234567", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("خلني أسجل رقمك 0551234567", "ar", VOICE_AGENT)
 # 'خلني أسجل رقمك صفر خمسة خمسة واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
-normalize_for_tts("كود العرض 4471 صالح", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("اتصل على 010 01234567", "ar", VOICE_AGENT)
+# 'اتصل على صفر واحد صفر صفر واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
+normalize_for_tts("كود العرض 4471 صالح", "ar", VOICE_AGENT)
 # 'كود العرض أربعة أربعة سبعة واحد صالح'
-normalize_for_tts("نسبة التمويل 4.5%", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("نسبة التمويل 4.5%", "ar", VOICE_AGENT)
 # 'نسبة التمويل أربعة فاصلة خمسة في المئة'
 ```
 
@@ -355,14 +494,15 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | Flag | Rule |
 | --- | --- |
 | `strip_controls` | drop zero-width and bidirectional control characters |
-| `spell_out_codes` | read `X5`-shaped codes character by character from `spelled_codes()`, after the lexicon |
+| `spell_out_codes` | read `X5`-shaped codes character by character from `spelled_codes()`, after the lexicon; a run of 8 to 17 with a digit is a VIN, its digits read as Arabic words |
 | `speak_percent` | `4.5%` becomes `4.5 في المئة`, then the number is spoken |
 | `keep_code_digits` | up to four digits beside a Latin word, `MG 5` or `7 Series`, belong to the name and are kept from every number rule |
 | `phone_shapes` | patterns of a phone number in running text; a match is read digit by digit |
+| `phone_regions` | ISO 3166-1 regions whose numbering plans are recognised; a valid number of one of them, written with `+` or `00` and the country code, with the region's trunk prefix, or after an identifier word, is read digit by digit |
 | `long_digit_runs` | eleven or more digits are a reference, read digit by digit |
 | `phone_prefixes` | patterns a bare digit run matches whole when it is a phone number; a run written with `+` is one too |
 | `identifier_words` | words after which a number is a reference: `الكود 4729`, `برقم الحجز 3401`. A proclitic may be attached and one other word may stand between |
-| `cardinal_numbers` | speak Arabic-Indic and ASCII numbers as cardinals ahead of `spoken_forms`, so the next three flags apply |
+| `cardinal_numbers` | speak Arabic-Indic and ASCII numbers as cardinals ahead of `spoken_forms`, so the next three flags apply. A whole number directly after a rank noun is the ordinal agreeing with it: `الطابق 3` is `الطابق الثالث`, `الفئة 5` is `الفئة الخامسة`. This holds from 1 to 99; from 100 the number stays a cardinal. The nouns, their genders and their sources are in `arbtok/data/rank_ordinals.tsv` |
 | `leave_unspeakable_numbers` | a number that cannot be spoken is left as written and the rest is still read; otherwise the error is raised |
 | `oblique_numbers` | cardinals in the oblique case, the one connected speech uses |
 | `space_fused_hundreds` | in those cardinals `ثلاثمئة` becomes `ثلاث مئة`; a synthesizer keeps the spaced form and garbles the fused one |
@@ -370,6 +510,7 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `number_forms` | your own words for values, `{100: "مية"}`, over the lect's or instead of them; set with `with_number_forms` |
 | `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
+| `drop_false_starts` | a two- or three-letter word ending in tatweel is dropped with the whitespace after it where the next word begins the same way: `الـ السيارة` becomes `السيارة`; a one-letter fragment is kept, since it is also how a detached clitic is written; Arabic only, on by default |
 
 ### Numbers in the words a lect actually uses
 
@@ -379,9 +520,9 @@ is `ثلاثمئة` Jidda says `تلتمية` and Abu Dhabi `ثلاثمية`. `d
 the number parser for the lect's own words, under that lect's ISO 639-3 code.
 
 ```python
-normalize_for_tts("السعر 350 ريال", "ar", KSA_VOICE_AGENT)
+normalize_for_tts("السعر 350 ريال", "ar", VOICE_AGENT)
 # 'السعر ثلاث مئة وخمسين ريال'
-normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", KSA_VOICE_AGENT, dialect_numbers=True)
+normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", VOICE_AGENT, dialect_numbers=True)
 # 'السعر تلت مية وخمسين ريال'
 ```
 
@@ -410,16 +551,60 @@ your words, so a run records which words it used.
 A price and a phone number cannot be told apart by length, so nothing here
 guesses from length alone below eleven digits: a phone number is known by its
 prefix or by the word before it. `موديل 4729` stays a quantity because `موديل`
-is not an identifier word. `KSA_PHONE_SHAPES`, `KSA_PHONE_PREFIXES` and
-`IDENTIFIER_WORDS` are plain tuples; pass your own for another country or
-another vocabulary.
+is not an identifier word. `ARAB_PHONE_REGIONS` and `IDENTIFIER_WORDS` are plain
+tuples; pass your own for another vocabulary. `phone_shapes` and `phone_prefixes`
+take your own patterns for numbers the bundled plans do not cover; no preset sets
+them.
+
+`phone_regions` names the regions whose numbering plans are read, and
+`ARAB_PHONE_REGIONS` lists the 22 members of the Arab League. The plans are bundled
+in `arbtok/data/phone_plans.json`: for each region its country code, its trunk
+prefix and, for each number type, the pattern and lengths of a national number, and
+the digits a number of that type starts with, each with the lengths such a number has.
+The table is built by `scripts/build_phone_plans.py` from `resources/PhoneNumberMetadata.xml`
+of Google's libphonenumber (https://github.com/google/libphonenumber), and its
+`source` field names the release tag and the sha256 of the file it read.
+
+A run of 7 to 15 digits, in groups split by spaces or hyphens, is read digit by digit
+when it is a valid number and it also says it is a phone number. A run that starts
+with `+` or `00` names its country, and is read when the rest is a number of that
+country in the bundled plans, whichever regions are configured. Otherwise the plans
+of `phone_regions` are tried, and the run is read when it starts with a three-digit
+country code and a mobile number (`966 50 123 4567`), or with the region's trunk
+prefix (`0` in most of them), or when it is a toll-free, shared-cost or unified
+number of eight digits or more (`8001000341`, `920012345`), whose first digits say
+what it is, or when it follows an identifier word. So `اتصل على 010 01234567` is an
+Egyptian mobile, while a bare Kuwaiti
+`50012345` stays a quantity until it follows a word such as `رقمي`: in the Gulf and
+the Maghreb there is no trunk prefix, and eight digits are a price as often as a
+phone number. A run whose first groups are a date, `05-06-2024`, is never read this
+way unless it starts with `+` or `00`, and a run that touches another digit across a
+comma, a point, a slash or a colon is part of a longer number, a date or a time.
+
+A run that says it is a phone number is read digit by digit even when the plans do
+not hold it as a valid number, so a short or a long number is still read out:
+
+- a run led by `+` with five digits or more, the `+` dropped (`+9665012345`);
+- a run led by `00` and a country code of the plans, with five digits or more after
+  the `00`;
+- a run of seven digits or more after an identifier word (`الموحد 9200012345`);
+- a run of nine digits or more that starts with a three-digit country code of
+  `phone_regions` and a digit that region's mobile numbers start with (`966501234`);
+- a run of 8 to 11 digits that starts with the first three digits of a toll-free,
+  shared-cost or unified number of `phone_regions`, at a length the plan gives numbers
+  that start with them.
+
+So `السعر 92000123 ريال` stays a price: it starts with 920, but a Saudi unified
+number has nine digits, and no word before it says it is a phone number. When a run
+of groups holds a valid number, the longest valid number is read and the rest of the
+run keeps its own reading.
 
 The rules from `speak_percent` to `identifier_words`, and `dialect_numbers` and
 `number_forms` with them, write Arabic words, so they raise `ValueError` for a
 `lang` that is not Arabic.
 
-`KSA_VOICE_AGENT` leaves `spoken_forms` and `canonical_unicode` off, because it
-speaks the numbers itself. `TtsNorm.describe()` gives the string to record, as
+`VOICE_AGENT` leaves `spoken_forms` and `canonical_unicode` off, because its
+cardinals speak the numbers. `TtsNorm.describe()` gives the string to record, as
 `AsrNorm.describe()` does.
 
 ### Before synthesis

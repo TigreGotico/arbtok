@@ -11,8 +11,22 @@ langcodes
 # `normalize_asr(spoken_numbers_to_digits)` left most of the teens in a real transcript as
 # words. Measured on the human transcripts of the SADA corpus: 1,167 one-word teens in 190
 # spellings, of which the older parser read 66.
-ovos-number-parser>=0.21.0a1
-ovos-date-parser>=0.6.4a1
+# The cardinal pass says a number after a rank noun as an ordinal agreeing with the noun,
+# الفئة 5 as الفئة الخامسة and القرن 21 as القرن الحادي والعشرين, through pronounce_ordinal.
+# Below 0.22.0a1 the parser's Arabic ordinals are masculine and nominative only. From
+# 0.22.7a1 the parser reads only attested Arabic: ميه and ماية, Egyptian spellings of
+# "water", are not "hundred" there, so fix_asr_errors' repair of a recogniser's ماية and
+# ميه inside a number is the only place they become one, and "كباية ميه" stays water.
+# From 0.22.10a1 a word that is also an ordinary word -- مية "water", الست "the lady",
+# التلات "Tuesday" -- is a number only when its context makes it one, so
+# `normalize_asr(spoken_numbers_to_digits)` leaves "شربت مية باردة" as written, where
+# 0.22.9a1 gives "شربت 100 باردة" and turns "الست جات" into "6 جات".
+ovos-number-parser>=0.22.10a1
+# Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
+# with the fractions of the hour and the period words: `normalize_for_tts` takes the
+# words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour
+# and noon are not read the way the cited sources give them.
+ovos-date-parser>=0.31.5a1
 # Transitive, floored here because the combination is otherwise installable and breaks
 # on import rather than on resolve. ovos-config below 3.5.1a1 imports
 # `ovos_utils.xdg_utils`, which ovos-utils 0.0.14a5 does not ship, so `arbtok.plugin`
@@ -20,7 +34,16 @@ ovos-date-parser>=0.6.4a1
 # a healthy version. A worker pool whose initializer imports the plugin then hangs
 # instead of failing. Measured: `arbtok==0.0.0a81 ovos-utils==0.0.14a5` resolves without
 # complaint and reproduces it; with these floors it resolves to the working pair instead.
-ovos-utils>=0.15.1a1
+# Floored again at the release that stopped capping rich: 0.15.1a1 through 0.15.3a3 all
+# declare `rich>=13.7,<14.dev0`, and all of them satisfy a floor of 0.15.1a1, so a resolve
+# is free to pick one and produce an environment that cannot hold rich 14 or 15. arbtok
+# imports rich nowhere -- the cap arrives through this dependency alone, and `rich-click~=1.7`
+# beside it asks only for `rich>=12` and never was the constraint. With nothing else
+# holding ovos-utils down a resolver takes the newest and the conflict never shows; hold it
+# at 0.15.3a3 -- another package's pin, a constraints file, an environment already built --
+# and `rich==15.0.0` has no solution. The floor takes the capped releases out of the
+# solution space rather than leaving that to what else happens to be installed.
+ovos-utils>=0.15.4a1
 ovos-config>=3.5.1a1
 orthography2ipa>=7.95.1a1
 huggingface_hub
