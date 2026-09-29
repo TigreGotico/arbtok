@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a33](https://github.com/TigreGotico/arbtok/tree/0.0.2a33) (2026-09-29)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a32...0.0.2a33)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): drop an English possessive clitic when a code is spelled out [\#231](https://github.com/TigreGotico/arbtok/pull/231) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a32](https://github.com/TigreGotico/arbtok/tree/0.0.2a32) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a31...0.0.2a32)
