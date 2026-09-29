@@ -587,11 +587,22 @@ _LATIN_RUN_EDGE = r"(?<![A-Za-z0-9])", r"(?![A-Za-z0-9])"
 _CONSONANT_CAPS = "BCDFGHJKLMNPQRSTVWXZ"
 #: A code: a run of capitals and digits carrying at least one of each, or an
 #: initialism. A run of capitals that spells a word is neither, and TOYOTA and
-#: LAND ROVER DEFENDER are read rather than spelled.
-_CODE = re.compile(_LATIN_RUN_EDGE[0]
+#: LAND ROVER DEFENDER are read rather than spelled. The left boundary also
+#: refuses a position right after a digit's decimal mark, so "1.5T" does not
+#: start a code at "5T" and steal the fraction's digit from its decimal reading.
+_CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(?<!\d[.٫])"
                    + r"(?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
                    + f"|[{_CONSONANT_CAPS}]{{2,}})"
                    + _LATIN_RUN_EDGE[1])
+#: A decimal glued straight to a following code-shaped run, with no space to carry the
+#: fraction's last digit apart from it: "1.5T". :data:`_CODE` alone cannot read this,
+#: since a code has nothing to say about the "1." before it and a lone "T" spells no
+#: code on its own; this is read as the decimal followed by the spelled run before
+#: :data:`_CODE` ever sees it, so the fraction keeps its own digit and its own wording.
+_DECIMAL_CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(\d+[.٫]\d+)"
+                           + r"((?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
+                           + f"|[{_CONSONANT_CAPS}]{{2,}}|[A-Z]))"
+                           + _LATIN_RUN_EDGE[1])
 #: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
 _VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
 #: A number right before a :data:`_CODE`, which makes a unit symbol a unit.
@@ -606,9 +617,10 @@ _CAPITALISED_UNITS = ("hp", "kg", "km", "kw")
 #: scripts: an identifier like :data:`_CODE`, whose lowercase cases it holds, and an
 #: identifier is spoken whole or character by character, never with a digit run read
 #: as a number out of the middle of it. A run without a capital is not one:
-#: ``15h01`` is a time, ``7abibi`` Arabizi.
+#: ``15h01`` is a time, ``7abibi`` Arabizi. Its left boundary also refuses a position
+#: right after a digit's decimal mark, for the same reason :data:`_CODE`'s does.
 _CODE_CHARS = "A-Za-z0-9٠-٩۰-۹"
-_MIXED_CODE = re.compile(f"(?<![{_CODE_CHARS}])(?=[{_CODE_CHARS}]*[A-Z])"
+_MIXED_CODE = re.compile(f"(?<![{_CODE_CHARS}])(?<!\\d[.٫])(?=[{_CODE_CHARS}]*[A-Z])"
                          f"(?=[{_CODE_CHARS}]*[0-9٠-٩۰-۹])[{_CODE_CHARS}]+(?![{_CODE_CHARS}])")
 
 
@@ -1433,6 +1445,10 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.spell_out_codes:
         names = spelled_codes(lang)
         units = {symbol for symbol in cldr_units(lang) if symbol.isupper()}
+        def spell(run: str) -> str:
+            if _VIN.fullmatch(run):
+                return " ".join(_digit_by_digit(c, digit_forms) if c.isdigit() else names[c] for c in run)
+            return " ".join(names[c] for c in run)
         def code(m):
             run = m.group(0)
             # KM after a number is the unit, and so is GB, which the table capitalises
@@ -1440,9 +1456,16 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             if (run in units or run.lower() in _CAPITALISED_UNITS) \
                     and _NUMBER_BEFORE.search(m.string[:m.start()]):
                 return run
-            if _VIN.fullmatch(run):
-                return " ".join(_digit_by_digit(c, digit_forms) if c.isdigit() else names[c] for c in run)
-            return " ".join(names[c] for c in run)
+            return spell(run)
+        def decimal_code(m):
+            number, run = m.group(1), m.group(2)
+            # A unit symbol glued to its decimal is the unit's own reading to give, not
+            # this rule's; leave it for the code and unit rules exactly as before.
+            if run in units or run.lower() in _CAPITALISED_UNITS:
+                return m.group(0)
+            number = number.translate(_EASTERN_DIGITS).replace("٫", ".")
+            return hold(f"{_cardinal(number, lang, config)} {spell(run)}")
+        text = _DECIMAL_CODE.sub(decimal_code, text)
         text = _CODE.sub(code, text)
     # What the code reading did not take is an identifier all the same, and no rule
     # below reads a digit out of the middle of one.
