@@ -79,6 +79,28 @@ def test_a_comma_glued_to_a_code_is_not_this_rule():
     assert normalize_for_tts("1,500T", "ar", _SPELLS_CODES) == "واحد,فَيْفْ زِيرُو زِيرُو تِي"
 
 
+@pytest.mark.parametrize("written, spoken", [
+    ("1.5TB", "واحد فاصلة خمسة TB"),
+    ("3.5KM", "ثلاثة فاصلة خمسة KM"),
+    ("0.5KW", "صفر فاصلة خمسة KW"),
+], ids=["1.5TB", "3.5KM", "0.5KW"])
+def test_a_decimal_glued_to_a_unit_keeps_its_decimal_reading(written, spoken):
+    """A capitalised unit is never this rule's to spell, only the fraction's digit is: a
+    unit glued straight to its decimal used to be handed back unread, "1.5TB" surviving
+    as "واحد.5TB" with the raw digit and the unit's own Latin letters both reaching the
+    output. The decimal now reads and the unit is left exactly as the spaced form already
+    leaves it, "1.5 TB" reading "واحد فاصلة خمسة TB"."""
+    assert normalize_for_tts(written, "ar", _SPELLS_CODES) == spoken
+
+
+@pytest.mark.parametrize("written", ["1.5T's", "1.5T’s"])
+def test_a_decimal_glued_to_a_code_drops_a_possessive_clitic(written):
+    """An English possessive right after the glued code is not read: "1.5T's" is "1.5T"
+    owning something, not a fifth character to spell, straight or curly apostrophe
+    alike."""
+    assert normalize_for_tts(written, "ar", _SPELLS_CODES) == "واحد فاصلة خمسة تِي"
+
+
 @pytest.mark.parametrize("lang, written, spoken", [
     ("ar", "1,000,000 km", "مليون كيلومتر"),
     ("en", "1,000,000 %", "one million per cent"),

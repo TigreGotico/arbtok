@@ -599,9 +599,12 @@ _CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(?<!\d[.٫])"
 #: since a code has nothing to say about the "1." before it and a lone "T" spells no
 #: code on its own; this is read as the decimal followed by the spelled run before
 #: :data:`_CODE` ever sees it, so the fraction keeps its own digit and its own wording.
+#: An English possessive clitic right after the run is dropped, unread, the way a code
+#: the decimal never touched loses it: "1.5T's" is "1.5T" owning something.
 _DECIMAL_CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(\d+[.٫]\d+)"
                            + r"((?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
                            + f"|[{_CONSONANT_CAPS}]{{2,}}|[A-Z]))"
+                           + r"(?:['’][sS])?"
                            + _LATIN_RUN_EDGE[1])
 #: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
 _VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
@@ -1459,12 +1462,14 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             return spell(run)
         def decimal_code(m):
             number, run = m.group(1), m.group(2)
-            # A unit symbol glued to its decimal is the unit's own reading to give, not
-            # this rule's; leave it for the code and unit rules exactly as before.
-            if run in units or run.lower() in _CAPITALISED_UNITS:
-                return m.group(0)
             number = number.translate(_EASTERN_DIGITS).replace("٫", ".")
-            return hold(f"{_cardinal(number, lang, config)} {spell(run)}")
+            spoken_number = _cardinal(number, lang, config)
+            # A unit symbol glued to its decimal reads the decimal and keeps the unit
+            # exactly as written, the same reading a space before it already gets: the
+            # unit is never this rule's to spell, only the fraction's digit is.
+            if run in units or run.lower() in _CAPITALISED_UNITS:
+                return hold(f"{spoken_number} {run}")
+            return hold(f"{spoken_number} {spell(run)}")
         text = _DECIMAL_CODE.sub(decimal_code, text)
         text = _CODE.sub(code, text)
     # What the code reading did not take is an identifier all the same, and no rule
