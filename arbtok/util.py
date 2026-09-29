@@ -466,23 +466,30 @@ def _normalize_number_word(word: str, full_lang: str, rbnf_engine) -> str:
         # A separator is a thousands grouping only where every one of them is
         # followed by exactly three digits, end to end ('1,500', '1,234,567'):
         # that is the shape PR 221's unit pass already requires before it reads a
-        # grouping. A separator followed by fewer digits ('12,5'), by more
-        # ('1,0000'), or by three that do not continue into a further complete
-        # group, is not that shape, and to a decimal-comma writer it marks the
-        # fraction: '12,5' reads as '12.5' does. A number has one fractional
-        # part, so only the first separator is read that way; any separator
-        # after it is dropped as a stray grouping mark around the fraction.
-        # An ambiguous full grouping like '1,500' keeps today's reading.
+        # grouping. A separator followed by fewer digits ('12,5') or by more
+        # ('1,0000') is not that shape, and to a decimal-comma writer it marks
+        # the fraction: '12,5' reads as '12.5' does. A number has one
+        # fractional part, so this reading applies only where the word carries
+        # exactly one separator. An ambiguous full grouping like '1,500' keeps
+        # today's reading.
         thousands_esc = re.escape(thousands_separator)
         if re.fullmatch(rf"\d{{1,3}}(?:{thousands_esc}\d{{3}})+", temp_cleaned_word):
             temp_cleaned_word = temp_cleaned_word.replace(thousands_separator, "")
-        else:
+        elif temp_cleaned_word.count(thousands_separator) == 1:
             head, _, tail = temp_cleaned_word.partition(thousands_separator)
-            candidate = head + "." + tail.replace(thousands_separator, "")
+            candidate = f"{head}.{tail}"
             if is_numeric(candidate):
                 temp_cleaned_word = candidate
-            elif is_numeric(temp_cleaned_word.replace(thousands_separator, "")):
-                temp_cleaned_word = temp_cleaned_word.replace(thousands_separator, "")
+        # Two or more separators that do not form a grouping are not this
+        # word's to resolve: folding every group after the first separator
+        # into one fraction ('1,2,3' -> '1.23') reads a number nobody wrote
+        # and can drop digits a wide float rounds away ('055,123,4567' lost
+        # its last group this way). ``temp_cleaned_word`` is left with its
+        # separators in, which is not numeric, so the word falls through
+        # unread here to the digit-run fallback below it always had
+        # (``_verbalize_residual_digits_ar``, which speaks every digit run on
+        # its own and leaves the separators as written) rather than to a
+        # reading invented for a shape nobody specified.
 
     # Check if the word is a valid number after processing
     if is_numeric(temp_cleaned_word):
