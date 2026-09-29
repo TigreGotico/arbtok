@@ -590,9 +590,15 @@ _CONSONANT_CAPS = "BCDFGHJKLMNPQRSTVWXZ"
 #: LAND ROVER DEFENDER are read rather than spelled. The left boundary also
 #: refuses a position right after a digit's decimal mark, so "1.5T" does not
 #: start a code at "5T" and steal the fraction's digit from its decimal reading.
+#: An English possessive or contraction clitic directly glued to the code
+#: (``'s``, ``’s``, ``'S``) is matched with it and dropped: Arabic marks
+#: possession by construction, not by a clitic, and a spoken "s" after Arabic
+#: letter names is noise. Other punctuation after a code is not this clitic
+#: and stays as written.
 _CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(?<!\d[.٫])"
-                   + r"(?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
+                   + r"(?P<code>(?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
                    + f"|[{_CONSONANT_CAPS}]{{2,}})"
+                   + r")(?:['’][sS])?"
                    + _LATIN_RUN_EDGE[1])
 #: A decimal glued straight to a following code-shaped run, with no space to carry the
 #: fraction's last digit apart from it: "1.5T". :data:`_CODE` alone cannot read this,
@@ -1453,7 +1459,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
                 return " ".join(_digit_by_digit(c, digit_forms) if c.isdigit() else names[c] for c in run)
             return " ".join(names[c] for c in run)
         def code(m):
-            run = m.group(0)
+            run = m["code"]
             # KM after a number is the unit, and so is GB, which the table capitalises
             # too; MG after one is the make, and mg the unit.
             if (run in units or run.lower() in _CAPITALISED_UNITS) \
