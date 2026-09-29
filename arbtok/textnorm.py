@@ -587,10 +587,15 @@ _LATIN_RUN_EDGE = r"(?<![A-Za-z0-9])", r"(?![A-Za-z0-9])"
 _CONSONANT_CAPS = "BCDFGHJKLMNPQRSTVWXZ"
 #: A code: a run of capitals and digits carrying at least one of each, or an
 #: initialism. A run of capitals that spells a word is neither, and TOYOTA and
-#: LAND ROVER DEFENDER are read rather than spelled.
+#: LAND ROVER DEFENDER are read rather than spelled. An English possessive or
+#: contraction clitic directly glued to the code (``'s``, ``’s``, ``'S``) is
+#: matched with it and dropped: Arabic marks possession by construction, not by
+#: a clitic, and a spoken "s" after Arabic letter names is noise. Other
+#: punctuation after a code is not this clitic and stays as written.
 _CODE = re.compile(_LATIN_RUN_EDGE[0]
-                   + r"(?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
+                   + r"(?P<code>(?:(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]+"
                    + f"|[{_CONSONANT_CAPS}]{{2,}})"
+                   + r")(?:['’][sS])?"
                    + _LATIN_RUN_EDGE[1])
 #: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
 _VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
@@ -1434,7 +1439,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         names = spelled_codes(lang)
         units = {symbol for symbol in cldr_units(lang) if symbol.isupper()}
         def code(m):
-            run = m.group(0)
+            run = m["code"]
             # KM after a number is the unit, and so is GB, which the table capitalises
             # too; MG after one is the make, and mg the unit.
             if (run in units or run.lower() in _CAPITALISED_UNITS) \
