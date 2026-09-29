@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a34](https://github.com/TigreGotico/arbtok/tree/0.0.2a34) (2026-09-29)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a33...0.0.2a34)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a comma followed by one or two digits is a decimal mark [\#230](https://github.com/TigreGotico/arbtok/pull/230) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a33](https://github.com/TigreGotico/arbtok/tree/0.0.2a33) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a32...0.0.2a33)
@@ -394,17 +402,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a14...0.0.1a15)
 
-**Merged pull requests:**
-
-- feat: Arabic unit, currency, territory and language names from Unicode CLDR [\#126](https://github.com/TigreGotico/arbtok/pull/126) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a14](https://github.com/TigreGotico/arbtok/tree/0.0.1a14) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a13...0.0.1a14)
-
-**Merged pull requests:**
-
-- fix: a unit symbol after a number is read in any case [\#125](https://github.com/TigreGotico/arbtok/pull/125) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a13](https://github.com/TigreGotico/arbtok/tree/0.0.1a13) (2026-09-20)
 
