@@ -288,6 +288,17 @@ normalize_for_tts("خلني أسجل رقمك 0551234567", "ar", VOICE_AGENT)
 # 'خلني أسجل رقمك صفر خمسة خمسة واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
 ```
 
+A licence plate written in Arabic script is read by the letters' names and digit by
+digit under `spell_out_plates`, which is off by default and which a voice agent turns
+on. The plate format is the one
+the [Saudi registration plate](https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Saudi_Arabia)
+uses, three letters from a set of seventeen, followed here by three or four digits:
+
+```python
+normalize_for_tts("أ ب ج ١٢٣٤", "ar", spell_out_plates=True)
+# 'ألف باء جيم واحد اثنين ثلاثة أربعة'
+```
+
 Every flag and the order the rules run in are in
 [docs/normalization.md](docs/normalization.md#numbers-a-voice-agent-reads-out).
 
