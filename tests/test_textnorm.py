@@ -691,7 +691,8 @@ def test_every_tts_rule_changes_some_output(flag):
              "300 ريال", "25 ريال", "٣٠٠", "المـرء", "15 رسالة", "350 ريال",
              "اتصل على 010 01234567",  # libphonenumber example number, MOBILE, EG
              "80012345",  # a caller's own prefix, shorter than long_digit_runs reaches
-             "الـ السيارة"]  # a tatweel false start, what drop_false_starts alone catches
+             "الـ السيارة",  # a tatweel false start, what drop_false_starts alone catches
+             "أ ب ج 1234"]  # a licence plate in Arabic script, what spell_out_plates alone reads
     # phone_regions reads these numbers too, so a caller's own pattern is shown on its own.
     alone = {"phone_regions": ()} if flag in ("phone_shapes", "phone_prefixes") else {}
     off = dataclasses.replace(KSA, spoken_forms=False, canonical_unicode=False, strip_controls=False,

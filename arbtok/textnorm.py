@@ -893,6 +893,27 @@ _ARABIC_ONLY = ("speak_percent", "phone_shapes", "phone_regions", "long_digit_ru
 # matches nothing outside the Arabic block.
 _FALSE_START = re.compile(r"(?<!\S)([\u0621-\u064A]{2,3})\u0640(\s+)(?=\1)")
 
+#: The name a letter standing on its own is read by: the names of the Arabic alphabet,
+#: as https://en.wikipedia.org/wiki/Arabic_alphabet lists them, unpointed. Every alif form is
+#: ألف; ى, one of the Saudi plate letters, is ألف مقصورة.
+_LETTER_NAMES = {
+    "أ": "ألف", "إ": "ألف", "آ": "ألف", "ا": "ألف", "ى": "ألف مقصورة", "ب": "باء", "ت": "تاء", "ث": "ثاء",
+    "ج": "جيم", "ح": "حاء", "خ": "خاء", "د": "دال", "ذ": "ذال", "ر": "راء", "ز": "زاي", "س": "سين", "ش": "شين",
+    "ص": "صاد", "ض": "ضاد", "ط": "طاء", "ظ": "ظاء", "ع": "عين", "غ": "غين", "ف": "فاء", "ق": "قاف", "ك": "كاف",
+    "ل": "لام", "م": "ميم", "ن": "نون", "ه": "هاء", "و": "واو", "ي": "ياء",
+}
+# A licence plate in Arabic script: three single letters, each optionally printed with a
+# tatweel (هـ) and followed by one space, then three or four digits in either script,
+# optionally spaced. It starts the text, follows whitespace or follows opening
+# punctuation, and may not run on into a word, a longer number or a decimal.
+_PLATE_EDGE = r'(?<![^\s(«"\[:\-])'
+_PLATE = re.compile(_PLATE_EDGE + rf"((?:[{''.join(_LETTER_NAMES)}]\u0640? ){{3}})"
+                    r"([0-9٠-٩](?: ?[0-9٠-٩]){2,3})(?!\w|[ .,٫٬][0-9٠-٩])")
+# A single Arabic letter, or a tatweel, standing on its own right before a plate's letters:
+# four letters, or letters spaced unevenly, are no plate, and the last three of them are
+# not one either. The conjunction و is the exception, which joins two plates.
+_LETTER_BEFORE = re.compile(_PLATE_EDGE + r"([\u0621-\u064A]\u0640?|\u0640)\s+$")
+
 
 @dataclasses.dataclass(frozen=True)
 class TtsNorm:
@@ -901,13 +922,38 @@ class TtsNorm:
     ``spoken_forms`` and ``canonical_unicode`` are on by default, which is what the
     G2P plugin runs. The rest are off. Those from ``speak_percent`` to
     ``space_fused_hundreds`` are rules a voice agent needs when it reads out prices,
-    phone numbers and booking references. Such an agent turns all of them on, with
+    phone numbers and booking references. Such an agent turns all of them on, and
+    ``spell_out_plates`` with them, with
     ``phone_regions=ARAB_PHONE_REGIONS`` and ``identifier_words=IDENTIFIER_WORDS``, and
     turns ``spoken_forms`` and ``canonical_unicode`` off, because the cardinals already
     speak its numbers.
     """
     #: Drop zero-width and bidirectional control characters.
     strip_controls: bool = False
+    #: A licence plate written in Arabic script is read letter by letter by the letters'
+    #: names and digit by digit: ``أ ب ج ١٢٣٤`` is ``ألف باء جيم واحد اثنين ثلاثة أربعة``.
+    #: Left bare, the letters are spoken as a word (``س ع د`` as the name سعد) and the
+    #: digits as one cardinal. A Saudi plate carries three letters from a set of
+    #: seventeen, "There are only 17 Arabic letters used on the registration plates"
+    #: (https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Saudi_Arabia),
+    #: and prints ه with a tatweel, هـ. A plate here is three single letters, each
+    #: optionally followed by a tatweel and then by one space, and then three or four
+    #: digits in either script, optionally spaced, not followed by a word character or
+    #: by a separator and another digit. The first letter starts the text or follows
+    #: whitespace or opening punctuation: ``(أ ب ج ١٢٣٤)`` is a plate. Two letters
+    #: are not one: ``ص ب 1234`` is a post office box. Any letter of
+    #: :data:`_LETTER_NAMES` is taken, since running text writes the plate's ا as أ.
+    #: Reading each letter by its name is the convention a speaker follows for a
+    #: spelled sequence; the plate standard does not prescribe it. A single letter
+    #: before a number is a label or a particle, not a plate: ``الباقة أ 1450 ريال``,
+    #: ``و 1500 ريال``. Nor is a run of four letters or more, or letters spaced
+    #: unevenly: a plate does not start right after another single letter or tatweel,
+    #: except the conjunction و, so ``أ ب ج ١٢٣٤ و د ر س ٥٦٧٨`` is two plates. The digits
+    #: take the words of a digit-by-digit reading, lect words included under
+    #: ``dialect_numbers``. Arabic only; runs before the lexicon, so a term made only
+    #: of digits, a model number such as ``530``, cannot take a plate's digits, and
+    #: before every number and code rule.
+    spell_out_plates: bool = False
     #: Read ``X5``-shaped codes character by character from :func:`spelled_codes`: a run of
     #: capitals and digits with at least one of each, not touching another letter or digit,
     #: or a run of two or more capitals with no vowel among them, which spells no word and
@@ -1011,7 +1057,8 @@ class TtsNorm:
     #: Arabic only; runs right after the lexicon, before any number or code rule can
     #: read the fragment, and before ``canonical_unicode`` drops the tatweel itself.
     drop_false_starts: bool = True
-    #: Terms and the way each is said, set with :meth:`with_lexicon`; applied first.
+    #: Terms and the way each is said, set with :meth:`with_lexicon`; applied before
+    #: every rule but ``strip_controls`` and ``spell_out_plates``.
     lexicon: Tuple[Tuple[str, str], ...] = ()
 
     def __post_init__(self):
@@ -1051,7 +1098,8 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _NUMBER_BEFORE, _CAPITALISED_UNITS, _MIXED_CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
-                             _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START)
+                             _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
+                             _PLATE_EDGE, _LETTER_BEFORE)
 _PLUGIN_DEFAULT = TtsNorm()
 
 
@@ -1403,9 +1451,10 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     ``normalize_for_tts(text, "ar", config, spell_out_codes=True)``.
 
     ``lexicon`` maps a Latin-script term to the way it is said, ``{"BMW": "بِي إِمْ
-    دَبَلْيُو"}``. It is applied first, the longest term first and without regard to
-    case. A term ends where a Latin letter or digit ends, so an Arabic prefix written
-    against it stays attached: ``بالBMW`` becomes ``بالبِي إِمْ دَبَلْيُو``. Give the
+    دَبَلْيُو"}``. It is applied before every other rule but ``strip_controls`` and
+    ``spell_out_plates``, the longest term first and without regard to case. A term
+    ends where a Latin letter or digit ends, so an Arabic prefix written against it
+    stays attached: ``بالBMW`` becomes ``بالبِي إِمْ دَبَلْيُو``. Give the
     spoken form fully pointed; an unpointed one leaves its vowels to the diacritizer.
 
     ``spell_out_codes`` reads what the lexicon did not claim and is written in
@@ -1417,6 +1466,10 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     a fragment of one, and its digits are read as Arabic words, one at a time. A run of
     letters and digits with a capital in it that is not read this way is left exactly as
     written: ``L809UPZ3V361`` stays whole rather than its digit runs being spoken.
+
+    ``spell_out_plates`` reads a licence plate written in Arabic script, three single
+    letters and three or four digits, by the letters' names and digit by digit:
+    ``أ ب ج ١٢٣٤`` becomes ``ألف باء جيم واحد اثنين ثلاثة أربعة``. Arabic only.
 
     ``spoken_forms`` writes dates, times, numbers and units as words in ``lang``.
     In Arabic, a clock time written in digits is read first, before any rule reads its
@@ -1448,11 +1501,6 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     phones, prefixes, context = _tts_patterns(dataclasses.replace(config, lexicon=()) if config.lexicon else config)
     if config.strip_controls:
         text = _CONTROLS.sub("", text)
-    if config.lexicon:
-        pattern, said = _term_pattern(config.lexicon)
-        text = pattern.sub(lambda m: said[m.group(1).lower()], text)
-    if config.drop_false_starts and is_arabic_lang(lang):
-        text = _FALSE_START.sub("", text)
     held: Dict[str, str] = {}
     # A private-use character stands in for each span no later rule may read; one the
     # text already holds is never used, so nothing of the text's own is rewritten on
@@ -1462,6 +1510,21 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         placeholder = next(free)
         held[placeholder] = span
         return placeholder
+    if config.spell_out_plates and is_arabic_lang(lang):
+        def plate(m):
+            before = _LETTER_BEFORE.search(m.string[:m.start()])
+            if before and before.group(1) != "و":
+                return m.group(0)
+            letters = " ".join(_LETTER_NAMES[c] for c in m.group(1).replace(_TATWEEL, "").split())
+            return hold(f"{letters} {_digit_by_digit(m.group(2), digit_forms)}")
+        # Before the lexicon: a plate is found by its Arabic letters, and a term that is
+        # only digits, a model number such as 530, must not take the plate's digits.
+        text = _PLATE.sub(plate, text)
+    if config.lexicon:
+        pattern, said = _term_pattern(config.lexicon)
+        text = pattern.sub(lambda m: said[m.group(1).lower()], text)
+    if config.drop_false_starts and is_arabic_lang(lang):
+        text = _FALSE_START.sub("", text)
     if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang):
         # Clock times are spoken before any rule reads their digits as a number, a
         # phone number or a code, and before "pm" can be read as the picometre. A

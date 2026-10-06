@@ -461,6 +461,45 @@ text are not units. `spoken_forms` does that for Arabic from the same CLDR table
 (`cldr_units()`): `المسافة 5 km` becomes `المسافة خمسة كيلومتر`. The unit takes its
 CLDR display name; it is not inflected for the number before it.
 
+### Licence plates in Arabic script
+
+A licence plate written in Arabic script is read by the letters' names and digit by
+digit. Left bare, its letters are spoken as a word, `س ع د` as the name سعد, and its
+digits as one cardinal. `spell_out_plates` is off by default, as `spell_out_codes`
+is, and applies to Arabic only; a voice agent turns it on.
+
+```python
+normalize_for_tts("أ ب ج ١٢٣٤", "ar", spell_out_plates=True)
+# 'ألف باء جيم واحد اثنين ثلاثة أربعة'
+normalize_for_tts("هـ و ى ١٢٣٤", "ar", spell_out_plates=True)
+# 'هاء واو ألف مقصورة واحد اثنين ثلاثة أربعة'
+```
+
+A Saudi plate carries three letters, and "There are only 17
+Arabic letters used on the registration plates"
+([Vehicle registration plates of Saudi Arabia](https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Saudi_Arabia)):
+ا ب ح د ر س ص ط ع ق ك ل م ن هـ و ى. The plate prints ه with a tatweel, `هـ`.
+The rule takes three single letters, each optionally followed by a tatweel and then by
+one space, and then three or four digits in either script, optionally spaced. The
+first letter starts the text or follows whitespace or opening punctuation, so
+`(أ ب ج ١٢٣٤)` and `«أ ب ج ١٢٣٤»` are read whole. It takes any letter that has a
+name, since running text writes the plate's ا as أ.
+
+Reading each letter by its name, as the alphabet names it (أ إ آ ا are all ألف, ى is
+ألف مقصورة), is the convention a speaker follows for a spelled sequence; the plate
+standard does not prescribe it. The digits take the words of a digit-by-digit
+reading, the lect's under `dialect_numbers` and yours under `number_forms`.
+
+What is not a plate reads as it does without the rule: a single letter before a
+number, which is a label or a particle (`الباقة أ 1450 ريال`, `و 1500 ريال`); two
+letters, which are an abbreviation (`ص ب 1234` is a post office box); four letters
+or more; letters spaced unevenly; five digits, two digits, a decimal, or a second
+group of digits. A plate does not start right after another single letter or a
+tatweel, with one exception: the conjunction و, so `أ ب ج ١٢٣٤ و د ر س ٥٦٧٨` is two
+plates. A letter's name is a word, so a reading is never read again
+as a plate: `ألف ١٢٣٤` is a cardinal. The rule runs before the lexicon, so a term
+made only of digits, a model number such as `530`, cannot take a plate's digits.
+
 ### Numbers a voice agent reads out
 
 A reply holds prices, phone numbers and booking references, and a plain
@@ -489,11 +528,12 @@ normalize_for_tts("نسبة التمويل 4.5%", "ar", VOICE_AGENT)
 ```
 
 Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied after
-`strip_controls`:
+`strip_controls` and `spell_out_plates`:
 
 | Flag | Rule |
 | --- | --- |
 | `strip_controls` | drop zero-width and bidirectional control characters |
+| `spell_out_plates` | a licence plate in Arabic script, three single letters and three or four digits, is read by the letters' names and digit by digit: `أ ب ج ١٢٣٤` is `ألف باء جيم واحد اثنين ثلاثة أربعة`; Arabic only |
 | `spell_out_codes` | read `X5`-shaped codes character by character from `spelled_codes()`, after the lexicon; a run of 8 to 17 with a digit is a VIN, its digits read as Arabic words |
 | `speak_percent` | `4.5%` becomes `4.5 في المئة`, then the number is spoken |
 | `keep_code_digits` | up to four digits beside a Latin word, `MG 5` or `7 Series`, belong to the name and are kept from every number rule |
