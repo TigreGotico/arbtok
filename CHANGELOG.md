@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a37](https://github.com/TigreGotico/arbtok/tree/0.0.2a37) (2026-10-06)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a36...0.0.2a37)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): Arabic-script licence plates read letter by name and digit by digit [\#238](https://github.com/TigreGotico/arbtok/pull/238) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a36](https://github.com/TigreGotico/arbtok/tree/0.0.2a36) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a35...0.0.2a36)
@@ -386,10 +394,6 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a18...0.0.1a19)
 
-**Merged pull requests:**
-
-- feat: Cairene Egyptian cardinals, with the source's age priced in [\#132](https://github.com/TigreGotico/arbtok/pull/132) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a18](https://github.com/TigreGotico/arbtok/tree/0.0.1a18) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a17...0.0.1a18)
@@ -401,10 +405,6 @@
 ## [0.0.1a16](https://github.com/TigreGotico/arbtok/tree/0.0.1a16) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a15...0.0.1a16)
-
-**Merged pull requests:**
-
-- fix: an Arabic variety named by its own language code is Arabic [\#131](https://github.com/TigreGotico/arbtok/pull/131) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a15](https://github.com/TigreGotico/arbtok/tree/0.0.1a15) (2026-09-20)
 
