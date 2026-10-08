@@ -41,8 +41,15 @@ def _ref_letter_forms(tokens):
     return [t for t in tokens if t]
 
 
+_CLOSING = re.compile(r"(?<!\S)(و?)(?:(?:في|فى) (?:[أإا]?مان) الله|ف[أإا]?مان الله|ف[أإا]?مانيلا)(?!\S)")
+
+
+def _ref_closing(tokens):
+    return _CLOSING.sub(r"\1في أمان الله", " ".join(tokens)).split()
+
+
 def ref_cer_norm(text):
-    return _ref_letter_forms(ref_cer_strip(text))
+    return _ref_letter_forms(_ref_closing(ref_cer_strip(text)))
 
 
 def ref_cer_marks_first(text):
@@ -51,7 +58,7 @@ def ref_cer_marks_first(text):
 
 
 def ref_cer_norm_marks_first(text):
-    return _ref_letter_forms(ref_cer_marks_first(text))
+    return _ref_letter_forms(_ref_closing(ref_cer_marks_first(text)))
 
 
 def ref_gate(text):
@@ -68,7 +75,7 @@ HAND = [
     "سطر\nسطر\tسطر سطر سطر\x1cسطر", "é é ﻻ ﷲ", "صلى الله عليه وسلم ۖ ۗ ؐ", "ـ َ ُ ِ ّ ْ",
     "هل؟ نعم، لا؛ «نص» ٪ ـ _ snake_case", "İstanbul STRASSE ǅ",
     "السعر خمسة وأربعون ألف ريال", "عندي ثلاثة كتب", "الرقم 0 5 5 3 1 7 9 2 4 5",
-    "ست مية او عشرة الف",
+    "ست مية او عشرة الف", "شكرا فمانيلا", "وفمان الله", "فى مان الله", "في مانيلا", "وفي أمان الله.",
 ]
 
 _ALPHABET = (list("ابتثجحخدذرزسشصضطظعغفقكلمنهويءآأإٱؤئةىپچڤگ") + list("ًٌٍَُِّْ")

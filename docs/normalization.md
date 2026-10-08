@@ -112,6 +112,19 @@ Every row of `arbtok/data/term_lexicons/cars-sa.tsv` carries the page the
 spelling was read from and the day. `scripts/build_term_lexicon.py` builds the
 file and takes only spellings a public page published.
 
+**`unify_spoken_variants`** writes one spoken form that is spelled several ways as
+one spelling. The Gulf and Saudi closing `في أمان الله` is said as a single run,
+and a transcriber may write it as one word, `فمان الله` or `فمانيلا`, where a
+recognizer writes the three words. The rule gives the three words, with or without
+the hamza on `أمان`. It reads unpointed spelling, so the mark rules run first, and
+it takes only the spellings with no space between `ف` and `مان`: `في مانيلا` is
+"in Manila" and stays. `CER_NORM` and `CER_NORM_MARKS_FIRST` have it on.
+
+```python
+normalize_asr("شكرا فمانيلا", unify_spoken_variants=True)
+# 'شكرا في أمان الله'
+```
+
 Other rules that help a parser: `fold_digits` turns `١٢` into `12`,
 `strip_controls` drops zero-width and bidirectional characters, `strip_harakat`
 and its siblings drop marks, `fold_case` lowers Latin text.
@@ -126,9 +139,9 @@ sides.
 | --- | --- |
 | `TRUTH_CHECK` | checking a transcript against a re-transcription, and code-switch detection: marks and letter forms only, digits and punctuation pass through |
 | `CER_STRIP` | the TTS bake-off CER instrument: punctuation blanked, then harakat and tatweel dropped |
-| `CER_NORM` | `CER_STRIP` with letter forms unified and a word-final bare hamza dropped |
+| `CER_NORM` | `CER_STRIP` with letter forms unified, a word-final bare hamza dropped and spoken variants unified |
 | `CER_MARKS_FIRST` | references that carry diacritics or transcriber markup: markup dropped, every mark dropped, then punctuation |
-| `CER_NORM_MARKS_FIRST` | `CER_MARKS_FIRST` with letter forms unified and a word-final bare hamza dropped |
+| `CER_NORM_MARKS_FIRST` | `CER_MARKS_FIRST` with letter forms unified, a word-final bare hamza dropped and spoken variants unified |
 | `INTELLIGIBILITY_GATE` | intelligibility of synthetic speech: marks dropped, letter forms unified, everything outside the Arabic block blanked |
 
 ```python
@@ -215,6 +228,7 @@ Rules run in this order. A lexicon is applied after the mark rules and before
 | `strip_quranic_marks` | U+0610–U+061A, U+06D6–U+06ED |
 | `strip_tatweel` | U+0640 |
 | `fix_asr_errors` | recognizer spellings that are not the Arabic said are repaired: inside a spoken number, `ماية` becomes the hundred `مية` and `او` becomes the conjunction `و` (Arabic only) |
+| `unify_spoken_variants` | one spoken form written several ways is written one way: `فمانيلا`, `فمان الله` and `في مان الله` become the three words `في أمان الله` (Arabic only) |
 | `spoken_numbers_to_digits` | number words become digits |
 | `join_dictated_digits` | seven or more single digits in a row become one run |
 | `unify_alef` | آ أ إ ٱ become ا |
