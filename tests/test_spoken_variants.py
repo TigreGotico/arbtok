@@ -11,7 +11,7 @@ from arbtok.textnorm import AsrNorm, CER_NORM, CER_NORM_MARKS_FIRST, normalize_a
 THREE_WORDS = normalize_asr("في أمان الله", CER_NORM_MARKS_FIRST)
 
 FUSED = ["فمانيلا", "فمان الله", "في مان الله", "فأمان الله", "فامان الله", "فأمانيلا",
-         "في أمان الله", "في امان الله", "في إمان الله"]
+         "في أمان الله", "في امان الله", "في إمان الله", "فى مان الله", "فى أمان الله"]
 
 
 def edits(a, b):
@@ -30,6 +30,12 @@ def edits(a, b):
 def test_every_spelling_of_the_closing_normalises_to_the_three_words(bundle, written):
     assert normalize_asr(written, bundle) == normalize_asr("في أمان الله", bundle)
     assert normalize_asr(written, bundle).count(" ") == 2
+
+
+@pytest.mark.parametrize("bundle", [CER_NORM, CER_NORM_MARKS_FIRST], ids=["CER_NORM", "CER_NORM_MARKS_FIRST"])
+@pytest.mark.parametrize("written", ["وفمان الله", "وفمانيلا", "وفي مان الله", "وفى امان الله"])
+def test_a_leading_conjunction_stays_on_the_closing(bundle, written):
+    assert normalize_asr(written, bundle) == "و" + normalize_asr("في أمان الله", bundle)
 
 
 def test_the_fused_word_costs_no_edit_against_the_recognisers_three_words():

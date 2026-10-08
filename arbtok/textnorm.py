@@ -276,11 +276,12 @@ _HUNDRED = "مية"
 # The Gulf and Saudi closing "في أمان الله" ("in God's keeping") is said as one run, fi-man-illah,
 # and a transcriber writes the run as one word: فمان الله, or فمانيلا, which is also the name of
 # Manila fused to ف. Only the spellings without a space between ف and مان are taken as the
-# closing; "في مانيلا" is "in Manila" and stays. The hamza on أمان is written or left off.
+# closing; "في مانيلا" is "in Manila" and stays. The hamza on أمان is written or left off, في is
+# written with ya or alef maqsura, and a leading conjunction و stays on the closing.
 _FAREWELL = "في أمان الله"
 _FAREWELL_SPELLINGS = re.compile(
-    r"(?<!\w)(?:في\s+[أإا]?مان\s+الله|ف[أإا]?مان\s+الله|ف[أإا]?مانيلا)(?!\w)")
-_SPOKEN_VARIANTS = ((_FAREWELL_SPELLINGS, _FAREWELL),)
+    r"(?<!\w)(و?)(?:(?:في|فى)\s+[أإا]?مان\s+الله|ف[أإا]?مان\s+الله|ف[أإا]?مانيلا)(?!\w)")
+_SPOKEN_VARIANTS = ((_FAREWELL_SPELLINGS, r"\1" + _FAREWELL),)
 
 
 def _spoken_variants(text: str) -> str:
