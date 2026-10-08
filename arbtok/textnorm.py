@@ -190,6 +190,11 @@ class AsrNorm:
     #: (``ست مية او عشرة الف`` is 610,000). Arabic only; it runs after the lexicon and
     #: before ``spoken_numbers_to_digits``.
     fix_asr_errors: bool = False
+    #: One spoken form written several ways is written one way: the dialect closing
+    #: "في أمان الله" is one word in some transcripts (``فمانيلا``, ``فمان الله``) and three
+    #: in a recognizer's, and the three-word form is what comes out. It reads unpointed
+    #: spelling, so it runs after the mark rules, and it runs after ``fix_asr_errors``.
+    unify_spoken_variants: bool = False
     #: Write number words as digits: ``خمسة وأربعون ألف`` becomes ``45000``. Runs after
     #: the lexicon, so a term spelled with a number word is a term first. Arabic-Indic
     #: digits the parser meets come back as ASCII, and the words of a text it changed
@@ -268,6 +273,22 @@ _MAYA_SPELLINGS = ("ماية", "مايه", "ميه")
 _HUNDRED = "مية"
 
 
+# The Gulf and Saudi closing "في أمان الله" ("in God's keeping") is said as one run, fi-man-illah,
+# and a transcriber writes the run as one word: فمان الله, or فمانيلا, which is also the name of
+# Manila fused to ف. Only the spellings without a space between ف and مان are taken as the
+# closing; "في مانيلا" is "in Manila" and stays. The hamza on أمان is written or left off.
+_FAREWELL = "في أمان الله"
+_FAREWELL_SPELLINGS = re.compile(
+    r"(?<!\w)(?:في\s+[أإا]?مان\s+الله|ف[أإا]?مان\s+الله|ف[أإا]?مانيلا)(?!\w)")
+_SPOKEN_VARIANTS = ((_FAREWELL_SPELLINGS, _FAREWELL),)
+
+
+def _spoken_variants(text: str) -> str:
+    for spellings, canonical in _SPOKEN_VARIANTS:
+        text = spellings.sub(canonical, text)
+    return text
+
+
 _NOTHING = AsrNorm()
 
 #: Names the rule set of :func:`normalize_asr`. It is a digest of the flags in their
@@ -278,7 +299,7 @@ ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HAR
                              _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
                              _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
                              _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER,
-                             _OR, _MAYA_SPELLINGS, _HUNDRED)
+                             _OR, _MAYA_SPELLINGS, _HUNDRED, _FAREWELL, _FAREWELL_SPELLINGS)
 
 
 @functools.lru_cache(maxsize=None)
@@ -529,6 +550,8 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
         text = _apply_lexicon(text, config)
     if config.fix_asr_errors and is_arabic_lang(lang):
         text = _or_as_and(_maya_as_hundred(text))
+    if config.unify_spoken_variants and is_arabic_lang(lang):
+        text = _spoken_variants(text)
     if config.spoken_numbers_to_digits:
         text = _numbers_to_digits(text, lang)
     if config.join_dictated_digits:
@@ -562,17 +585,20 @@ TRUTH_CHECK = AsrNorm(nfc=True, collapse_whitespace=True, **_ALL_MARKS, **_ALL_L
 CER_STRIP = AsrNorm(blank_punctuation=True, punctuation_before_marks=True,
                     strip_harakat=True, strip_tatweel=True, collapse_whitespace=True)
 
-#: :data:`CER_STRIP` with letter forms unified and a word-final bare hamza dropped.
-CER_NORM = dataclasses.replace(CER_STRIP, drop_word_final_hamza=True, **_ALL_LETTER_FORMS)
+#: :data:`CER_STRIP` with letter forms unified, a word-final bare hamza dropped and the spoken
+#: variants of one form written one way.
+CER_NORM = dataclasses.replace(CER_STRIP, drop_word_final_hamza=True, unify_spoken_variants=True,
+                               **_ALL_LETTER_FORMS)
 
 #: Transcriber markup dropped, then every mark, then punctuation: a pointed word
 #: stays one token. For references that carry diacritics or event labels.
 CER_MARKS_FIRST = AsrNorm(strip_event_markup=True, blank_punctuation=True,
                           collapse_whitespace=True, **_ALL_MARKS)
 
-#: :data:`CER_MARKS_FIRST` with letter forms unified and a word-final bare hamza dropped.
+#: :data:`CER_MARKS_FIRST` with letter forms unified, a word-final bare hamza dropped and the
+#: spoken variants of one form written one way.
 CER_NORM_MARKS_FIRST = dataclasses.replace(CER_MARKS_FIRST, drop_word_final_hamza=True,
-                                           **_ALL_LETTER_FORMS)
+                                           unify_spoken_variants=True, **_ALL_LETTER_FORMS)
 
 #: Intelligibility gate for synthetic speech: marks dropped, letter forms unified,
 #: and everything outside the Arabic block blanked, Latin code-switch included.

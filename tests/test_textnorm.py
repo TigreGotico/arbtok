@@ -112,7 +112,10 @@ def test_the_corpus_reaches_every_rule_of_every_reference():
 def test_every_flag_changes_some_output(flag):
     # The order flag only means something once both rules it orders are on.
     base = dict(blank_punctuation=True, strip_harakat=True) if flag == "punctuation_before_marks" else {}
-    assert any(normalize_asr(s, **base, **{flag: True}) != normalize_asr(s, **base) for s in CORPUS)
+    # A rule for one spoken form needs a string that holds it; the corpus stays free of it
+    # so that the bundles are still compared with their instruments on strings they share.
+    assert any(normalize_asr(s, **base, **{flag: True}) != normalize_asr(s, **base)
+               for s in CORPUS + ["شكرا فمانيلا"])
 
 
 def test_the_package_exports_what_the_documentation_imports():
