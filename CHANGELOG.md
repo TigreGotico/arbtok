@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a38](https://github.com/TigreGotico/arbtok/tree/0.0.2a38) (2026-10-08)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a37...0.0.2a38)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): the closing في أمان الله written as one word normalises to the three words under the CER bundles [\#241](https://github.com/TigreGotico/arbtok/pull/241) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a37](https://github.com/TigreGotico/arbtok/tree/0.0.2a37) (2026-10-06)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a36...0.0.2a37)
