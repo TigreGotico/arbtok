@@ -137,6 +137,14 @@ def _describe_parser() -> str:
         return "; ovos-number-parser unknown"
 
 
+def _describe_date_parser() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+    try:
+        return f"; ovos-date-parser {version('ovos-date-parser')}"
+    except PackageNotFoundError:
+        return "; ovos-date-parser unknown"
+
+
 @functools.lru_cache(maxsize=None)
 def _describe_phone_plans() -> str:
     # The plans decide which runs are phone numbers, so a description names the table by
@@ -199,6 +207,10 @@ class AsrNorm:
     #: the lexicon, so a term spelled with a number word is a term first. Arabic-Indic
     #: digits the parser meets come back as ASCII, and the words of a text it changed
     #: come back single-spaced.
+    #: In Arabic, a clock time spoken after الساعة is written in the digits
+    #: :func:`normalize_for_tts` reads as one: ``الساعة الثامنة والربع`` becomes
+    #: ``الساعة 8:15`` and ``الساعة السادسة مساء ودقيقة خمسة واربعين`` the 24-hour
+    #: ``الساعة 18:45``.
     spoken_numbers_to_digits: bool = False
     #: Seven or more single digits standing one by one become one run: a phone number
     #: read aloud arrives as ``0 5 5 3 1 7 9 2 4 5``. Shorter runs are left apart,
@@ -248,6 +260,7 @@ class AsrNorm:
         on = [f.name for f in dataclasses.fields(self) if getattr(self, f.name) is True]
         return (f"arbtok-asr-norm {ASR_NORM_VERSION}: {','.join(on) or 'none'}"
                 + _describe_lexicon(self.lexicon)
+                + (_describe_date_parser() if self.spoken_numbers_to_digits else "")
                 + (_describe_parser() if self.spoken_numbers_to_digits or self.fix_asr_errors else ""))
 
 
@@ -290,6 +303,34 @@ def _spoken_variants(text: str) -> str:
     return text
 
 
+# A spoken clock time, read back to the digits ``الساعة 7:30`` that :func:`normalize_for_tts`
+# speaks. Words are read without marks, since the date parser's ``nice_time`` writes ربعاً
+# with its tanween, and matched against the tables below in one letter form, since a
+# recognizer writes الساعه for الساعة. The number parser reads the word as written.
+_CLOCK_MARKS = str.maketrans({_TATWEEL: None, **{chr(c): None for c in range(0x064B, 0x0653)}})
+_CLOCK_FOLD = str.maketrans({**_ALEF, **_TA_MARBUTA, **_ALEF_MAQSURA})
+#: الساعة "the hour", alone or after و, ف, ب or ل. ساعة without the article is a duration.
+_CLOCK_WORD = re.compile(r"[وف]?(?:بال|لل|ال)ساعه")
+_ARABIC_WORD = re.compile("[\u0621-\u064A]+")
+#: The second word of the two-word hours الحادية عشرة and الثانية عشرة.
+_HOUR_TENS = ("عشر", "عشره")
+#: The parts of the hour said as fractions, in the words ``nice_time`` writes after و
+#: (والربع, والثلث, والنصف) and after إلا (إلا ربعاً, إلا ثلثاً). نص is the spoken half
+#: a recognizer writes for نصف.
+_HOUR_FRACTIONS = {"ربع": 15, "ربعا": 15, "ثلث": 20, "ثلثا": 20, "نص": 30, "نصف": 30}
+_EXCEPT = "الا"
+#: The minute words ``nice_time`` writes: دقيقة alone is one minute and the dual two.
+_MINUTE_WORDS = {"دقيقه": 1, "دقيقتان": 2, "دقيقتين": 2, "دقائق": None, "دقايق": None}
+#: Hour twelve said with ليلا is midnight, 0 on the 24-hour clock; the date parser reads
+#: ليلا as the afternoon words and gives 12.
+_NIGHT = "ليلا"
+#: Words after a bare hour that end the time rather than continue a noun phrase:
+#: "الساعة الثامنة تماماً", "الساعة الثامنة يوم الخميس". A day the date parser reads,
+#: اليوم or غدا, ends it too. Any other word may make الساعة "the hour" or "the watch":
+#: "الساعة الأولى من العلاج", "الساعة الثانية اللي اشتريتها".
+_TIME_ENDS = ("تماما", "بالضبط", "يوم")
+
+
 _NOTHING = AsrNorm()
 
 #: Names the rule set of :func:`normalize_asr`. It is a digest of the flags in their
@@ -300,7 +341,9 @@ ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HAR
                              _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
                              _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
                              _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER,
-                             _OR, _MAYA_SPELLINGS, _HUNDRED, _FAREWELL, _FAREWELL_SPELLINGS)
+                             _OR, _MAYA_SPELLINGS, _HUNDRED, _FAREWELL, _FAREWELL_SPELLINGS,
+                             _CLOCK_WORD, _HOUR_TENS, _HOUR_FRACTIONS, _EXCEPT, _MINUTE_WORDS, _NIGHT,
+                             _TIME_ENDS)
 
 
 @functools.lru_cache(maxsize=None)
@@ -508,6 +551,217 @@ def _or_as_and(text: str) -> str:
     return "".join(parts)
 
 
+def _folded(word: str) -> str:
+    return word.translate(_CLOCK_FOLD)
+
+
+@functools.lru_cache(maxsize=1 << 12)
+def _hour_value(words: str):
+    """The hour ``words`` name, read as an ordinal or a cardinal: الثامنة and ثمانية are 8."""
+    from ovos_number_parser import extract_number
+    value = extract_number(words, lang="ar", ordinals=True)
+    return None if value is False else value
+
+
+@functools.lru_cache(maxsize=1 << 12)
+def _period_hour(hour: int, word: str):
+    """The hour of the day the date parser reads in ``الساعة <hour> <word>``, or None
+    when it leaves ``word`` unread."""
+    from ovos_date_parser import extract_datetime
+    read = extract_datetime(f"الساعة {hour} {word}", "ar", datetime.datetime(2000, 1, 1))
+    return read[0].hour if read and not read[1].strip() else None
+
+
+@functools.lru_cache(maxsize=1 << 12)
+def _is_day(word: str) -> bool:
+    """Whether the date parser reads ``word`` alone as a day: اليوم, غدا, الخميس."""
+    from ovos_date_parser import extract_datetime
+    read = extract_datetime(word, "ar", datetime.datetime(2000, 1, 1))
+    return bool(read) and not read[1].strip()
+
+
+def _ends_time(keys, end) -> bool:
+    """Whether a bare hour at ``keys[end - 1]`` ends the phrase: the text or the clean
+    run of words ends there, or the next word ends a time."""
+    return end == len(keys) or _folded(keys[end]) in _TIME_ENDS or \
+        (bool(_ARABIC_WORD.fullmatch(keys[end])) and _is_day(keys[end]))
+
+
+def _is_day_period(word: str) -> bool:
+    """Whether ``word`` places an hour of the 12-hour clock in the day: مساء, صباحا, ظهرا,
+    ليلا and the other words the date parser reads that way. A word it reads as a day,
+    اليوم or غدا, moves no hour and is not one."""
+    return bool(_ARABIC_WORD.fullmatch(word)) and (
+        _period_hour(1, word) not in (None, 1) or _period_hour(12, word) not in (None, 12))
+
+
+def _minute_number(keys, j):
+    """The minutes a run of number words from ``keys[j]`` says, with the conjunction
+    written onto its first word or not, and the index after the run; None when the run
+    says no whole number of minutes. A run is words the number parser reads as one
+    number, each word changing what it reads, and the longest one wins: وإحدى عشرة is 11
+    though إحدى alone is no number, and in خمسة كيلو the number is خمسة."""
+    words = []
+    for k in range(j, min(j + 4, len(keys))):
+        if not _ARABIC_WORD.fullmatch(keys[k]):
+            break
+        words.append(keys[k])
+    if words and words[0][:1] == "و" and words[0] not in _WAW_INITIAL_NUMBERS:
+        words[0] = words[0][1:]
+    for n in range(len(words), 0, -1):
+        run = words[:n]
+        read = _number_value(" ".join(run))
+        if read is None or read != int(read) or not 1 <= read <= 59:
+            continue
+        if all(_number_value(" ".join(run[:k] + run[k + 1:])) != read for k in range(n)):
+            return int(read), j + n
+    return None
+
+
+@functools.lru_cache(maxsize=1 << 12)
+def _one_number(words: str):
+    """The whole number the parser writes ``words`` as, when it writes them as one."""
+    from ovos_number_parser import numbers_to_digits
+    read = numbers_to_digits(words, lang="ar")
+    return int(read) if read.isascii() and read.isdigit() else None
+
+
+def _minutes_before(keys, j):
+    """The minutes said after إلا, from ``keys[j]``: ربع, ثلث, دقيقة, دقيقتين, or a number
+    with or without a minute word after it; fewer than thirty, as a time before the hour
+    is told. Returns (minutes, True, index after them) or None."""
+    if j >= len(keys):
+        return None
+    word = _folded(keys[j])
+    if word in _HOUR_FRACTIONS:
+        minutes, end = _HOUR_FRACTIONS[word], j + 1
+    elif _MINUTE_WORDS.get(word):
+        minutes, end = _MINUTE_WORDS[word], j + 1
+    else:
+        said = _minute_number(keys, j)
+        if said is None:
+            return None
+        minutes, end = said
+        if end < len(keys) and _folded(keys[end]) in _MINUTE_WORDS:
+            end += 1
+    return (minutes, True, end) if minutes < 30 else None
+
+
+def _read_minutes(keys, j, cardinal_hour):
+    """The minutes said after the hour at ``keys[j]``: ``و`` and a number, دقيقة and a
+    number, a fraction after و, or after إلا a fraction or a number of minutes, which
+    count back from the hour. Returns (minutes, counted back, index after them) or None."""
+    if j >= len(keys):
+        return None
+    if _folded(keys[j]) == _EXCEPT:
+        return _minutes_before(keys, j + 1)
+    word, k = _folded(keys[j]), j
+    if word == "و" and j + 1 < len(keys):
+        word, k = _folded(keys[j + 1]), j + 1
+    elif word[:1] == "و":
+        word = word[1:]
+    elif word not in _MINUTE_WORDS:
+        return None
+    bare = word[2:] if word.startswith("ال") else word
+    if bare in _HOUR_FRACTIONS:
+        return _HOUR_FRACTIONS[bare], False, k + 1
+    if word in _MINUTE_WORDS:
+        said = _minute_number(keys, k + 1)
+        if said:
+            return said[0], False, said[1]
+        return (_MINUTE_WORDS[word], False, k + 1) if _MINUTE_WORDS[word] else None
+    said = _minute_number(keys, j if k == j else k)
+    if said is None:
+        return None
+    minutes, end = said
+    if cardinal_hour is not None and _one_number(" ".join(keys[cardinal_hour:end])) is not None:
+        # ثمانية وخمسين is fifty-eight: the parser writes the hour and the "minutes" as one number
+        return None
+    if end < len(keys) and _folded(keys[end]) in _MINUTE_WORDS:
+        end += 1
+    return minutes, False, end
+
+
+def _read_clock(keys, i):
+    """The digits of the clock time spoken from ``keys[i]``, which is الساعة, and the
+    index after it, or None when no clock time is said there."""
+    j = i + 1
+    if j >= len(keys) or not _ARABIC_WORD.fullmatch(keys[j]):
+        return None
+    words = 2 if j + 1 < len(keys) and _folded(keys[j + 1]) in _HOUR_TENS else 1
+    hour = _hour_value(" ".join(keys[j:j + words]))
+    if hour is None or hour != int(hour) or not 0 <= hour <= 23:
+        return None
+    hour = int(hour)
+    # الواحدة with its article is the hour as Arabic tells it, though it reads as 1 alone too
+    cardinal = not keys[j].startswith("ال") and _number_value(" ".join(keys[j:j + words])) == hour
+    end = j + words
+    period = minutes = None
+    if end < len(keys) and _is_day_period(keys[end]):
+        period, end = keys[end], end + 1
+    said = _read_minutes(keys, end, j if cardinal else None)
+    if said:
+        minutes, back, end = said
+        if period is None and end < len(keys) and _is_day_period(keys[end]):
+            period, end = keys[end], end + 1
+    if period is None and minutes is None:
+        return (f"{hour}", end) if not cardinal and _ends_time(keys, end) else None
+    if period is not None and not 1 <= hour <= 12:
+        return None
+    minutes = minutes or 0
+    if said and back:
+        # "الثانية عشرة إلا ربعاً مساءً" is 23:45: the period word places the time said, an
+        # hour before the one named. Counting back from one stays on the 12-hour clock:
+        # "الواحدة إلا ربعاً" is 12:45.
+        hour, minutes = hour - 1, 60 - minutes
+        if hour == 0:
+            hour = 12
+        elif hour < 0:
+            hour = 23
+    if period is not None and hour == 12 and _folded(period) == _NIGHT:
+        hour = 0
+    elif period is not None:
+        hour = _period_hour(hour, period)
+        if hour is None:
+            return None
+    return f"{hour}:{minutes:02d}", end
+
+
+def _clock_times(text: str) -> str:
+    """Write a spoken clock time after الساعة in the digits :func:`normalize_for_tts`
+    reads as one: ``الساعة الثامنة والربع`` is ``الساعة 8:15``, and with a period word,
+    ``الساعة السادسة مساء ودقيقة خمسة واربعين``, the 24-hour ``الساعة 18:45``.
+
+    The hour is the number parser's, as an ordinal or a cardinal; the minutes are its
+    cardinals, or the quarter, third and half of the hour; the period words are the date
+    parser's. An ordinal is a digit here only as the hour after الساعة: "الطابق الثامن"
+    stays as written. A cardinal hour with nothing after it, "الساعة ثمانية", is left to
+    the number pass, since "الساعة" is also "the watch" and "ثمانية الاف" its price.
+    """
+    parts = _WORDS_AND_GAPS.split(text)  # words at even positions, the gaps between them at odd
+    edges = [_EDGE_PUNCTUATION.match(w).groups() for w in parts[::2]]
+    keys = [core.translate(_CLOCK_MARKS) for _, core, _ in edges]
+    i = 0
+    while i < len(keys):
+        if not _CLOCK_WORD.fullmatch(_folded(keys[i])):
+            i += 1
+            continue
+        # punctuation inside the phrase separates things that were not said together
+        k = i + 1
+        while k < len(keys) and not edges[k - 1][2] and not edges[k][0]:
+            k += 1
+        read = _read_clock(keys[:k], i)
+        if read is None:
+            i += 1
+            continue
+        time, end = read
+        parts[2 * i] = f"{edges[i][0]}{edges[i][1]} {time}{edges[end - 1][2]}"
+        for p in range(2 * i + 1, 2 * end - 1):
+            parts[p] = ""
+        i = end
+    return "".join(parts)
+
+
 def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "ar",
                   **flags: bool) -> str:
     """Normalize a transcript for comparison.
@@ -554,6 +808,8 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
     if config.unify_spoken_variants and is_arabic_lang(lang):
         text = _spoken_variants(text)
     if config.spoken_numbers_to_digits:
+        if is_arabic_lang(lang):
+            text = _clock_times(text)
         text = _numbers_to_digits(text, lang)
     if config.join_dictated_digits:
         text = _DICTATED_DIGITS.sub(lambda m: _WHITESPACE.sub("", m.group(0)), text)
