@@ -4,7 +4,8 @@ import re
 import pytest
 
 from arbtok.dialects import lect_code
-from arbtok.textnorm import KSA_VOICE_AGENT, TtsNorm, normalize_for_tts
+from arbtok.textnorm import TtsNorm, normalize_for_tts
+from tests.voice_agent import VOICE_AGENT
 
 DIALECT = TtsNorm(cardinal_numbers=True, oblique_numbers=True,
                   space_fused_hundreds=True, dialect_numbers=True,
@@ -83,19 +84,19 @@ def test_a_teen_inside_a_year_is_replaced_and_the_rest_is_not():
 
 
 def test_digit_by_digit_readings_take_the_lects_words_too():
-    assert normalize_for_tts("رقمك 0553179", "ar-SA-x-hejaz", KSA_VOICE_AGENT, dialect_numbers=True) \
+    assert normalize_for_tts("رقمك 0553179", "ar-SA-x-hejaz", VOICE_AGENT, dialect_numbers=True) \
         == "رقمك صفر خمسة خمسة تلاتة واحد سبعة تسعة"
-    assert normalize_for_tts("رقمك 0553179", "ar", KSA_VOICE_AGENT) \
+    assert normalize_for_tts("رقمك 0553179", "ar", VOICE_AGENT) \
         == "رقمك صفر خمسة خمسة ثلاثة واحد سبعة تسعة"
 
 
 def test_the_flag_is_off_by_default_so_every_number_on_record_is_reproduced():
     for tag in ("ar", "ar-SA-x-hejaz", "ar-AE"):
-        assert normalize_for_tts("عندك 15 رسالة", tag, KSA_VOICE_AGENT) == "عندك خمسة عشر رسالة"
+        assert normalize_for_tts("عندك 15 رسالة", tag, VOICE_AGENT) == "عندك خمسة عشر رسالة"
 
 
 def test_a_callers_own_forms_are_used_with_no_lect_and_win_over_one():
-    assert normalize_for_tts("عندي 100 ريال", "ar", KSA_VOICE_AGENT.with_number_forms({100: "مية"})) \
+    assert normalize_for_tts("عندي 100 ريال", "ar", VOICE_AGENT.with_number_forms({100: "مية"})) \
         == "عندي مية ريال"
     both = TtsNorm(cardinal_numbers=True, oblique_numbers=True, dialect_numbers=True, spoken_forms=False,
                    canonical_unicode=False).with_number_forms({15: "خمستاشر"})
