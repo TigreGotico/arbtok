@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a39](https://github.com/TigreGotico/arbtok/tree/0.0.2a39) (2026-10-10)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a38...0.0.2a39)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): spoken\_numbers\_to\_digits reads a clock time spoken after الساعة [\#243](https://github.com/TigreGotico/arbtok/pull/243) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a38](https://github.com/TigreGotico/arbtok/tree/0.0.2a38) (2026-10-08)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a37...0.0.2a38)
