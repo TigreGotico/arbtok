@@ -626,6 +626,13 @@ def _one_number(words: str):
     return int(read) if read.isascii() and read.isdigit() else None
 
 
+def _indefinite_minute(word: str) -> str:
+    """``word`` without its article when it is a minute word: الدقيقة is the definite form
+    of دقيقة."""
+    bare = word[2:]
+    return bare if word.startswith("ال") and bare in _MINUTE_WORDS else word
+
+
 def _minutes_before(keys, j):
     """The minutes said after إلا, from ``keys[j]``: ربع, ثلث, دقيقة, دقيقتين, or a number
     with or without a minute word after it; fewer than thirty, as a time before the hour
@@ -660,8 +667,10 @@ def _read_minutes(keys, j, cardinal_hour):
         word, k = _folded(keys[j + 1]), j + 1
     elif word[:1] == "و":
         word = word[1:]
-    elif word not in _MINUTE_WORDS:
+    elif _indefinite_minute(word) not in _MINUTE_WORDS:
         return None
+    definite = _indefinite_minute(word) != word
+    word = _indefinite_minute(word)
     bare = word[2:] if word.startswith("ال") else word
     if bare in _HOUR_FRACTIONS:
         return _HOUR_FRACTIONS[bare], False, k + 1
@@ -669,6 +678,8 @@ def _read_minutes(keys, j, cardinal_hour):
         said = _minute_number(keys, k + 1)
         if said:
             return said[0], False, said[1]
+        if definite and _MINUTE_WORDS[word] == 1:
+            return None
         return (_MINUTE_WORDS[word], False, k + 1) if _MINUTE_WORDS[word] else None
     said = _minute_number(keys, j if k == j else k)
     if said is None:
