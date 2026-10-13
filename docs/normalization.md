@@ -300,8 +300,34 @@ about a code: `KM`, `KG`, `KW` and `HP`. After a number each of them is the unit
 `50 KM` is read as kilometres, and so is any symbol the unit table itself capitalises,
 `2 GB`. Every other symbol is read in the case it is written in, because there the
 capitals are the evidence of a code: `3 mg` is milligrams where `3 MG` is the make,
-and `2 ev` is electronvolts where `2 EV` is a car and is left as written. A symbol
-written before the number, `MG 5`, is the make either way.
+and `2 ev` is electronvolts where `2 EV` is a car and is left as written.
+
+A code written with a space between its letters and its digits, `MG 4` or `X 5`,
+is joined and read as the joined code. `spell_out_codes` joins one to three
+capitals and one or two digits standing alone before the lexicon runs, and reads
+`MG 4` as `MG4` and `X 5` as the lexicon's `X5`. The cited case is `MG 4`: German
+Wikipedia's page for the name opens "MG4 oder MG 4 steht für:" and lists the car
+as "MG 4 EV, Pkw-Modell"
+([revision 236735370](https://de.wikipedia.org/w/index.php?oldid=236735370)). That
+every model code written with a space names its joined code is this package's
+generalisation from that case. One small letter may lead, as in BMW's `iX 3`, and the code is joined in capitals,
+`IX3`, since only capitals are spelled. Three cases are not joined, because their
+digits are not a code's:
+
+| written | why it stays |
+|---|---|
+| `BMW 5 SERIES`, `BMW 5 سيريز`, `BMW 5 سيريس` | the digit numbers the series |
+| `MG 4,500` | the digit is part of a larger figure |
+| `SAR 50`, `SR 50`, `KM 20` | a currency code or abbreviation, or a capitalised unit symbol, makes the number an amount |
+
+The currency codes are the ISO 4217 codes of the bundled CLDR table. `SR` is not
+one, and is guarded because English Wikipedia's "Saudi riyal" gives the riyal's
+symbol as "SAR, SR, ر.س"
+([revision 1252604873](https://en.wikipedia.org/w/index.php?oldid=1252604873)).
+A Latin plate written with a space, `ABC 12`, is joined too, and reads letter by
+letter with English digits. So is a paper size, `ورق A 4`, which reads as `A4`
+already did. The currency codes, the abbreviations and the unit symbols are part of
+`TTS_NORM_VERSION`, so a change to the bundled tables moves the version.
 
 The lexicon comes first either way. A published reading of a name or of a whole
 model, `BMW 7 Series` among them, belongs in the lexicon, which is applied before
