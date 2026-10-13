@@ -5,7 +5,7 @@ import datetime
 import re
 import string
 from datetime import date
-from typing import Union, List, Tuple
+from typing import Optional, Union, List, Tuple
 
 from langcodes import tag_distance
 from ovos_date_parser import nice_time, nice_date
@@ -408,7 +408,7 @@ UNITS = {
 
 # Arabic unit names come from Unicode CLDR rather than from a list kept here; see
 # arbtok.textnorm.cldr_units and data/term_lexicons/units-cldr.tsv.
-from arbtok.textnorm import cldr_units  # noqa: E402
+from arbtok.textnorm import _CAPITALISED_UNITS, cldr_units  # noqa: E402
 
 UNITS["ar"] = cldr_units("ar")
 
@@ -427,6 +427,35 @@ def _get_number_separators(full_lang: str) -> tuple[str, str]:
         decimal_separator = ','
         thousands_separator = '.'
     return decimal_separator, thousands_separator
+
+
+def resolve_thousands_or_decimal(word: str, thousands_separator: str = ",") -> Optional[str]:
+    """The number ``word`` reads as, when its ``thousands_separator``s resolve to one
+    unambiguous shape, else ``None``.
+
+    A separator is a thousands grouping only where every one of them is followed by
+    exactly three digits, end to end ('1,500', '1,234,567'). A separator followed by
+    fewer digits ('12,5') or by more ('1,0000') is not that shape, and to a
+    decimal-comma writer it marks the fraction: '12,5' reads as '12.5' does. A number
+    has one fractional part, so this reading applies only where ``word`` carries
+    exactly one separator. An ambiguous full grouping like '1,500' keeps today's
+    reading (the grouped integer).
+
+    Two or more separators that do not form a grouping resolve nothing: folding every
+    group after the first separator into one fraction ('1,2,3' -> '1.23') reads a
+    number nobody wrote and can drop digits a wide float rounds away ('055,123,4567'
+    lost its last group this way). Shared by :mod:`arbtok.util`'s word-level number
+    reading and :mod:`arbtok.textnorm`'s cardinal-numbers pass.
+    """
+    thousands_esc = re.escape(thousands_separator)
+    if re.fullmatch(rf"\d{{1,3}}(?:{thousands_esc}\d{{3}})+", word):
+        return word.replace(thousands_separator, "")
+    if word.count(thousands_separator) == 1:
+        head, _, tail = word.partition(thousands_separator)
+        candidate = f"{head}.{tail}"
+        if is_numeric(candidate):
+            return candidate
+    return None
 
 
 def _normalize_number_word(word: str, full_lang: str, rbnf_engine) -> str:
@@ -462,12 +491,16 @@ def _normalize_number_word(word: str, full_lang: str, rbnf_engine) -> str:
     elif decimal_separator in temp_cleaned_word and is_numeric(temp_cleaned_word.replace(decimal_separator, ".", 1)):
         # Handle cases like '1,2' -> '1.2'
         temp_cleaned_word = temp_cleaned_word.replace(decimal_separator, ".")
-    elif thousands_separator in temp_cleaned_word and is_numeric(temp_cleaned_word.replace(thousands_separator, "")):
-        # Handle cases like '1.234' -> '1234' and '14,000,000' -> '14000000'.
-        # The guard strips every separator, not the first: a number grouped more
-        # than once stays non-numeric after one strip and falls through with its
-        # separators intact, which reads the groups as separate numbers.
-        temp_cleaned_word = temp_cleaned_word.replace(thousands_separator, "")
+    elif thousands_separator in temp_cleaned_word:
+        # See resolve_thousands_or_decimal for the rule. A word its separators do not
+        # resolve is left with them in, which is not numeric, so it falls through
+        # unread here to the digit-run fallback below it always had
+        # (``_verbalize_residual_digits_ar``, which speaks every digit run on its own
+        # and leaves the separators as written) rather than to a reading invented for
+        # a shape nobody specified.
+        resolved = resolve_thousands_or_decimal(temp_cleaned_word, thousands_separator)
+        if resolved is not None:
+            temp_cleaned_word = resolved
 
     # Check if the word is a valid number after processing
     if is_numeric(temp_cleaned_word):
@@ -607,6 +640,20 @@ def _unit_word(units: dict, symbol: str) -> str:
     return {k.lower(): v for k, v in units.items()}[symbol.lower()]
 
 
+#: CLDR gives "am" and "pm" as the symbols of the attometre and the picometre; after
+#: a clock time they are the 12-hour markers, and a time is not a measurement.
+_CLOCK_MARKERS = ("am", "pm")
+
+
+def _is_clock_time(match: re.Match) -> bool:
+    """Whether the number before an "am"/"pm" is an hour of the 12-hour clock, or the
+    minutes of an ``h:mm`` time."""
+    number = match.group(1)
+    if match.start() > 0 and match.string[match.start() - 1] == ":":
+        return number.isdigit() and int(number) < 60
+    return number.isdigit() and 1 <= int(number) <= 12
+
+
 def _normalize_units(text: str, full_lang: str) -> str:
     """
     Helper function to normalize units attached to numbers.
@@ -618,6 +665,16 @@ def _normalize_units(text: str, full_lang: str) -> str:
     if lang_code in UNITS:
         # Determine number separators for the language
         decimal_separator, thousands_separator = _get_number_separators(full_lang)
+        # A grouping is groups of three digits. Any other shape carrying a separator
+        # is not a number this pass reads, and is left exactly as it was written: a
+        # dot before fewer than three digits is a decimal point, not a grouping.
+        thousands, decimal = re.escape(thousands_separator), re.escape(decimal_separator)
+        grouped = re.compile(rf"\d{{1,3}}(?:{thousands}\d{{3}})+(?:{decimal}\d+)?")
+        # Anchored at both ends: a match may not begin right after a digit or a
+        # separator, nor stop in front of one, or a shape that forms no grouping is
+        # read from the digits after its separator with the rest left glued in front.
+        number_pattern_str = (rf"(?<![\d.,])({grouped.pattern}"
+                              rf"|\d+(?:[{decimal}.]\d+)?)(?![\d.,]*\d)")
 
         # Separate units into symbolic and alphanumeric
         symbolic_units = {k: v for k, v in UNITS[lang_code].items() if not k.isalnum()}
@@ -627,16 +684,13 @@ def _normalize_units(text: str, full_lang: str) -> str:
         sorted_symbolic = sorted(symbolic_units.keys(), key=len, reverse=True)
         symbolic_pattern_str = "|".join(re.escape(unit) for unit in sorted_symbolic)
         if symbolic_pattern_str:
-            # Pattern to match numbers with optional thousands and decimal separators
-            number_pattern_str = rf"(\d+[{re.escape(thousands_separator)}]?\d*[{re.escape(decimal_separator)}]?\d*)"
             symbolic_pattern = re.compile(number_pattern_str + r"\s*(" + symbolic_pattern_str + r")", re.IGNORECASE)
 
             def replace_symbolic(match):
                 number = match.group(1)
-                # Remove thousands separator and replace decimal separator for parsing
-                if thousands_separator in number and decimal_separator in number:
-                    number = number.replace(thousands_separator, "").replace(decimal_separator, ".")
-                elif decimal_separator != "." and decimal_separator in number:
+                if grouped.fullmatch(number):
+                    number = number.replace(thousands_separator, "")
+                if decimal_separator != ".":
                     number = number.replace(decimal_separator, ".")
                 unit_symbol = match.group(2)
                 unit_word = _unit_word(symbolic_units, unit_symbol)
@@ -652,18 +706,26 @@ def _normalize_units(text: str, full_lang: str) -> str:
         sorted_alphanumeric = sorted(alphanumeric_units.keys(), key=len, reverse=True)
         alphanumeric_pattern_str = "|".join(re.escape(unit) for unit in sorted_alphanumeric)
         if alphanumeric_pattern_str:
-            number_pattern_str = rf"(\d+[{re.escape(thousands_separator)}]?\d*[{re.escape(decimal_separator)}]?\d*)"
             alphanumeric_pattern = re.compile(number_pattern_str + r"\s*(" + alphanumeric_pattern_str + r")\b",
                                               re.IGNORECASE)
 
             def replace_alphanumeric(match):
                 number = match.group(1)
-                # Remove thousands separator and replace decimal separator for parsing
-                if thousands_separator in number and decimal_separator in number:
-                    number = number.replace(thousands_separator, "").replace(decimal_separator, ".")
-                elif decimal_separator != "." and decimal_separator in number:
+                if grouped.fullmatch(number):
+                    number = number.replace(thousands_separator, "")
+                if decimal_separator != ".":
                     number = number.replace(decimal_separator, ".")
                 unit_symbol = match.group(2)
+                if unit_symbol.lower() in _CLOCK_MARKERS and _is_clock_time(match):
+                    return match.group(0)
+                # Capitals a symbol is not written in are evidence of a code: "3 mg" is
+                # milligrams where "3 MG" is the make, and "2 EV" a car rather than two
+                # electronvolts. A symbol the table itself capitalises, GB, is untouched,
+                # and so are the four people capitalise whatever the table spells them.
+                written = next(k for k in alphanumeric_units if k.lower() == unit_symbol.lower())
+                if unit_symbol.isupper() and not written.isupper() \
+                        and unit_symbol.lower() not in _CAPITALISED_UNITS:
+                    return match.group(0)
                 unit_word = _unit_word(alphanumeric_units, unit_symbol)
                 return f"{pronounce_number(float(number) if '.' in number else int(number), full_lang)} {unit_word}"
 
