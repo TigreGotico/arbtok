@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a41](https://github.com/TigreGotico/arbtok/tree/0.0.2a41) (2026-10-13)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a40...0.0.2a41)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): the clock rule accepts the definite minute form [\#247](https://github.com/TigreGotico/arbtok/pull/247) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a40](https://github.com/TigreGotico/arbtok/tree/0.0.2a40) (2026-10-13)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a39...0.0.2a40)
