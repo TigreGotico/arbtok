@@ -14,6 +14,11 @@ FLAGS = dict(fix_asr_errors=True, spoken_numbers_to_digits=True)
 HEARD = [
     # an ordinal hour, as Arabic says the hour, with the minutes after دقيقة
     ("الساعة الثامنة ودقيقة خمسة عشر", "الساعة 8:15"),
+    ("الساعة الثامنة والدقيقة خمسة عشر", "الساعة 8:15"),
+    ("الساعة ثمانية والدقيقتين", "الساعة 8:02"),
+    ("الساعة الثامنة و الدقيقة خمسة عشر", "الساعة 8:15"),
+    ("الساعة الثامنة الدقيقة خمسة عشر", "الساعة 8:15"),
+    ("الساعة ثمانية والدقيقة خمسة وأربعين", "الساعة 8:45"),
     ("موعدك الساعة الثامنة ودقيقة خمسة عشر بكرة", "موعدك الساعة 8:15 بكرة"),
     ("الساعه الحادية عشرة والنصف", "الساعه 11:30"),
     ("الساعة الثامنة", "الساعة 8"),
@@ -70,6 +75,17 @@ def test_every_time_the_date_parser_speaks_reads_back_to_its_digits(hour):
             continue  # منتصف الليل, said without الساعة
         spoken = nice_time(datetime.datetime(2000, 1, 1, hour, minute), "ar", use_24hour=False, use_ampm=True)
         assert normalize_asr(spoken, **FLAGS) == f"الساعة {hour}:{minute:02d}", spoken
+
+
+# a definite minute word with no number after it is "the minute" or "precisely", no time
+DEFINITE_MINUTE_WITHOUT_NUMBER = ["الساعة الثامنة الدقيقة", "الساعة الثامنة والدقيقة",
+                                  "موعدك الساعة الثامنة الدقيقة بالضبط",
+                                  "الساعة ثمانية والدقيقة الأولى"]
+
+
+@pytest.mark.parametrize("text", DEFINITE_MINUTE_WITHOUT_NUMBER)
+def test_a_definite_minute_word_without_a_number_is_no_minute_count(text):
+    assert ":" not in normalize_asr(text, **FLAGS)
 
 
 UNCHANGED_ORDINALS = ["الطابق الثامن", "في الطابق الثامن ودقيقة", "الدرس الثامن ونص",
