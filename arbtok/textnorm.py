@@ -914,6 +914,26 @@ _CAPITALISED_UNITS = ("hp", "kg", "km", "kw")
 _CODE_CHARS = "A-Za-z0-9٠-٩۰-۹"
 _MIXED_CODE = re.compile(f"(?<![{_CODE_CHARS}])(?<!\\d[.٫])(?=[{_CODE_CHARS}]*[A-Z])"
                          f"(?=[{_CODE_CHARS}]*[0-9٠-٩۰-۹])[{_CODE_CHARS}]+(?![{_CODE_CHARS}])")
+#: Abbreviations of a currency written in capitals that are not its ISO 4217 code. English
+#: Wikipedia's "Saudi riyal" gives the riyal's symbol as "SAR, SR, ر.س"
+#: (https://en.wikipedia.org/w/index.php?oldid=1252604873).
+_CURRENCY_ABBREVIATIONS = ("SR",)
+#: The words a numbered series is written with in Arabic script, besides the Latin ``Series``.
+_SERIES_WORDS = ("سيريز", "سيرس", "سيريس")
+#: A code written with a space between its letters and its digits, ``MG 4`` or ``iX 3``:
+#: one to three capitals, after at most one small letter as in BMW's ``iX``, a space, and
+#: one or two digits standing alone. It is joined, in capitals, and read as the joined
+#: code is. The cited case is MG 4: German Wikipedia's page for the name opens "MG4 oder
+#: MG 4 steht für:" and lists the car as "MG 4 EV, Pkw-Modell"
+#: (https://de.wikipedia.org/w/index.php?oldid=236735370). That every model code written
+#: with a space names its joined code is this package's generalisation from that case.
+#: A paper size written with a space, ``A 4``, is joined too and reads as ``A4`` already
+#: did. Not joined: a digit before a
+#: series, ``BMW 5 SERIES`` or ``BMW 5 سيريز``, which numbers the series; a digit inside
+#: a larger figure, ``MG 4,500``; and an amount after a currency code or a unit symbol,
+#: ``SAR 50``, ``SR 50`` or ``KM 20``, which :func:`_not_code_letters` names.
+_SPACED_CODE = re.compile(r"(?<![A-Za-z0-9])([a-z]?[A-Z]{1,3}) ([0-9]{1,2})(?![0-9A-Za-z])(?![.,٫٬][0-9])"
+                          r"(?!\s+(?:(?i:series)\b|(?:" + "|".join(_SERIES_WORDS) + r")(?!\w)))")
 
 
 @functools.lru_cache(maxsize=None)
@@ -965,6 +985,18 @@ def _cldr_rows(name: str):
             and r["cldr_key"].split("/")[-1] not in _NOT_A_PLACE
             and (not r["cldr_key"].startswith("units/") or r["cldr_key"].startswith("units/long/"))]
     return sorted(rows, key=lambda r: (len(r["cldr_key"]), r["cldr_key"]))
+
+
+@functools.lru_cache(maxsize=None)
+def _not_code_letters(lang: str) -> frozenset:
+    """Capitals before a number that make it an amount, not a code's digits: the ISO 4217 codes
+    of the bundled CLDR currency table, ``SAR`` or ``USD``, the abbreviations of
+    :data:`_CURRENCY_ABBREVIATIONS`, ``SR``, and the unit symbols written in capitals,
+    ``KM`` or ``GB``."""
+    currencies = {r["cldr_key"].split("/")[2] for r in _term_rows("currencies-cldr")
+                  if r["cldr_key"].startswith("numbers/currencies/")}
+    units = {symbol for symbol in cldr_units(lang) if symbol.isupper()}
+    return frozenset(currencies | set(_CURRENCY_ABBREVIATIONS) | units | {u.upper() for u in _CAPITALISED_UNITS})
 
 
 @functools.lru_cache(maxsize=None)
@@ -1382,7 +1414,8 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
-                             _PLATE_EDGE, _LETTER_BEFORE)
+                             _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _CURRENCY_ABBREVIATIONS,
+                             tuple(sorted(_not_code_letters("ar"))))
 _PLUGIN_DEFAULT = TtsNorm()
 
 
@@ -1743,7 +1776,10 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     ``spell_out_codes`` reads what the lexicon did not claim and is written in
     capitals and digits with at least one of each, ``X5`` or ``GV70``, or in capitals
     with no vowel among them, ``BMW``, character by character from
-    :func:`spelled_codes`. Neither a number on its own nor a run of capitals that
+    :func:`spelled_codes`. A code written with a space, ``MG 4`` or ``iX 3``, is joined
+    first, before the lexicon, and read as ``MG4`` and ``IX3`` are; a digit before a
+    series, inside a larger figure, or after a currency code or unit symbol is not a
+    code's. Neither a number on its own nor a run of capitals that
     spells a word is a code: ``TOYOTA`` is read as a word. A run of
     8 to 17 such characters with a digit in it is a vehicle identification number, or
     a fragment of one, and its digits are read as Arabic words, one at a time. A run of
@@ -1803,6 +1839,12 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         # Before the lexicon: a plate is found by its Arabic letters, and a term that is
         # only digits, a model number such as 530, must not take the plate's digits.
         text = _PLATE.sub(plate, text)
+    if config.spell_out_codes:
+        # Before the lexicon, so a code written with a space reaches it joined, as the
+        # joined code does: "X 5" takes the lexicon's reading of "X5".
+        amounts = _not_code_letters(lang)
+        text = _SPACED_CODE.sub(lambda m: m.group(0) if m.group(1) in amounts
+                                else m.group(1).upper() + m.group(2), text)
     if config.lexicon:
         pattern, said = _term_pattern(config.lexicon)
         text = pattern.sub(lambda m: said[m.group(1).lower()], text)

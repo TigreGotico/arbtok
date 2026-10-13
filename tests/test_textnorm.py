@@ -390,6 +390,39 @@ def test_the_lexicon_claims_a_term_before_it_is_spelled_out():
         "جِي فِي سِفِنْتِي و إِكْسْ فَيْفْ"
 
 
+@pytest.mark.parametrize("spaced,joined", [
+    ("كم سعر MG 4؟", "كم سعر MG4؟"),
+    ("عندنا MG 5 بسعر ممتاز", "عندنا MG5 بسعر ممتاز"),
+    ("تبي X 5 ولا X 7؟", "تبي X5 ولا X7؟"),
+    ("عندنا iX 3 كهربائية", "عندنا IX3 كهربائية"),
+])
+def test_a_code_written_with_a_space_reads_as_the_joined_code(spaced, joined):
+    lexicon = TtsNorm().with_lexicon({"X5": "اكس فايف"})
+    assert normalize_for_tts(spaced, "ar", lexicon, spell_out_codes=True, **AS_WRITTEN) == \
+        normalize_for_tts(joined, "ar", lexicon, spell_out_codes=True, **AS_WRITTEN)
+
+
+def test_a_spaced_code_with_a_small_letter_is_spelled_in_capitals():
+    assert normalize_for_tts("عندنا iX 3 كهربائية", spell_out_codes=True, **AS_WRITTEN) == "عندنا آيْ إِكْسْ ثْرِي كهربائية"
+
+
+@pytest.mark.parametrize("text,kept", [
+    ("عندنا BMW 5 SERIES جديدة", " 5 "), ("عندنا BMW 5 سيريز جديدة", " 5 "), ("عندنا BMW 5 سيريس جديدة", " 5 "),
+    ("السعر MG 4,500 ريال", " 4,500 "), ("المبلغ SAR 50 فقط", "SAR 50"), ("المبلغ SR 50 فقط", " 50 "), ("مسافة KM 20", " 20"),
+])
+def test_a_series_a_larger_figure_and_an_amount_are_not_joined(text, kept):
+    assert kept in normalize_for_tts(text, spell_out_codes=True, **AS_WRITTEN)
+
+
+def test_a_paper_size_written_with_a_space_reads_as_the_joined_one():
+    joined = normalize_for_tts("ورق A4 للطباعة", spell_out_codes=True, **AS_WRITTEN)
+    assert normalize_for_tts("ورق A 4 للطباعة", spell_out_codes=True, **AS_WRITTEN) == joined == "ورق إِيهْ فُورْ للطباعة"
+
+
+def test_a_spaced_code_is_not_joined_without_spell_out_codes():
+    assert normalize_for_tts("كم سعر MG 4؟", **AS_WRITTEN) == "كم سعر MG 4؟"
+
+
 def test_a_spelled_code_leaves_no_digit_for_the_number_rules_and_a_bare_number_is_still_spoken():
     said = normalize_for_tts("X5 سنة 2023", spell_out_codes=True)
     assert "إِكْسْ فَيْفْ" in said and not re.search(r"[A-Za-z0-9]", said)
