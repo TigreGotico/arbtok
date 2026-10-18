@@ -143,6 +143,7 @@ sides.
 | `CER_MARKS_FIRST` | references that carry diacritics or transcriber markup: markup dropped, every mark dropped, then punctuation |
 | `CER_NORM_MARKS_FIRST` | `CER_MARKS_FIRST` with letter forms unified, a word-final bare hamza dropped and spoken variants unified |
 | `INTELLIGIBILITY_GATE` | intelligibility of synthetic speech: marks dropped, letter forms unified, everything outside the Arabic block blanked |
+| `CER_CANONICAL` | a written text against a recognizer's reading of it, or two readings of one recording: `CER_NORM_MARKS_FIRST` with numbers, codes, terms, dialect spellings and clitics each written one way |
 
 ```python
 from arbtok.textnorm import CER_NORM, TRUTH_CHECK
@@ -153,6 +154,45 @@ normalize_asr("مَرْحَبًا بِكُمْ، يا أَحْمَد!", TRUTH_CH
 ref_tokens = normalize_asr(reference, CER_NORM).split()
 hyp_tokens = normalize_asr(hypothesis, CER_NORM).split()
 ```
+
+### Scoring synthetic speech against the text it was given
+
+A voice is given `السعر 400,000 ريال` and a recognizer writes back `السعر اربع مية
+الف ريال`. Nothing was said wrong, and `CER_NORM_MARKS_FIRST` charges most of the
+digits. `CER_CANONICAL` brings both sides to one form, so that what remains between
+them is what was said differently:
+
+```python
+from arbtok.textnorm import CER_CANONICAL
+
+normalize_asr("السعر 400,000 ريال", CER_CANONICAL)          # 'السعر 400000 ريال'
+normalize_asr("السعر اربع مية الف ريال", CER_CANONICAL)     # 'السعر 400000 ريال'
+normalize_asr("موديل 2026", CER_CANONICAL)                  # 'موديل 2026'
+normalize_asr("موديل عشرين ستة وعشرين", CER_CANONICAL)      # 'موديل 2026'
+normalize_asr("متوفر عندنا X5", CER_CANONICAL)              # 'متوفر عندنا اكس 5'
+normalize_asr("متوفر عندنا اكس فايف", CER_CANONICAL)        # 'متوفر عندنا اكس 5'
+normalize_asr("سيارة LAND ROVER", CER_CANONICAL)            # 'سياره لاند روفر'
+```
+
+A different thing said still differs: `خمسة ونص` is `5.5` and `خمسة خمسة` is `5 5`,
+since the decimal mark survives the punctuation rule; `اكس سيفن` is not `X5`.
+
+Each equivalence has one of two kinds, and the rules hold only these:
+
+- **Spelling.** The same sounds written two ways: `400,000` and `400000`, `مية` and
+  `مئة`, `ايوا` and `ايوه`, `احجزلك` and `احجز لك`, `ڤ` and `ف`. These merge freely.
+- **Pronunciation, one meaning.** Two sayings of one word or one quantity: `ونص` and
+  `والنصف` are both a half, `عشرين ستة وعشرين` and `ألفين وستة وعشرين` are both 2026,
+  `فايف` and `خمسة` are both the 5 of a code, `هذي` and `هذه` are both "this". These
+  merge because they name the same thing; a dialect-fidelity measure must not use this
+  bundle.
+
+Every dialect pair in `unify_dialect_spellings` is one that two recognizers wrote both
+ways for the same audio. The terms are those of `canonical_term_lexicon()`: every
+Latin name and Arabic spelling in the bundled `cars-sa` and `common-en` tables, each
+written as `bundled_tts_lexicon` spells it. A term outside those tables stays in
+Latin and is charged against an Arabic reading of it; extend the lexicon with
+`CER_CANONICAL.with_lexicon({**canonical_term_lexicon(), **more})`.
 
 `CER_STRIP` and `CER_NORM` blank punctuation before they drop marks. A combining
 mark is not a word character, so in that order each mark becomes a space and a
@@ -227,19 +267,25 @@ Rules run in this order. A lexicon is applied after the mark rules and before
 | `strip_extended_marks` | U+0653–U+065F and the dagger alif U+0670 |
 | `strip_quranic_marks` | U+0610–U+061A, U+06D6–U+06ED |
 | `strip_tatweel` | U+0640 |
+| `split_term_proclitics` | a proclitic written onto a Latin word is written apart, `وMINI` as `و MINI`, and a lexicon spelling matches after a proclitic, `وام جي` (Arabic only) |
 | `fix_asr_errors` | recognizer spellings that are not the Arabic said are repaired: inside a spoken number, `ماية` becomes the hundred `مية` and `او` becomes the conjunction `و` (Arabic only) |
 | `unify_spoken_variants` | one spoken form written several ways is written one way: `فمانيلا`, `فمان الله` and `في مان الله` become the three words `في أمان الله` (Arabic only) |
+| `unify_dialect_spellings` | a word recognizers write two ways for the same audio is written one way: `هذي` as `هذه`, `معاك` as `معك` (Arabic only) |
+| `number_forms` | numbers written or said several ways are written one way: thousands separators, dates, percent, decimals, colloquial number words and years; `.` `:` `/` `%` inside a number survive `blank_punctuation` |
 | `spoken_numbers_to_digits` | number words become digits |
 | `join_dictated_digits` | seven or more single digits in a row become one run |
+| `spell_codes` | a code is written as its letter names and digits, `X5` as `اكس 5`, and English digit names in a run of letter names are digits (Arabic only) |
 | `unify_alef` | آ أ إ ٱ become ا |
 | `unify_ta_marbuta` | ة becomes ه |
 | `unify_alef_maqsura` | ى becomes ي |
 | `unify_hamza_carriers` | ئ becomes ي, ؤ becomes و |
+| `unify_loan_letters` | ڤ پ گ چ ڨ become ف ب ك ج ق |
 | `fold_digits` | Arabic-Indic and Extended Arabic-Indic digits become ASCII |
 | `fold_case` | `str.lower()` |
 | `arabic_block_only` | blank everything outside U+0600–U+06FF |
 | `blank_punctuation` | blank what is neither a word character nor whitespace |
 | `drop_word_final_hamza` | drop a bare ء that ends a word |
+| `join_clitics` | a lone و joins the next word, ل with its pronoun joins the word before, and عبد with the name after it, ان شا الله, الحمد لله, يا رب and ما في are one word each (Arabic only) |
 | `collapse_whitespace` | one space between words, ends trimmed |
 
 `arabic_block_only` also blanks Latin text, including a term the lexicon just

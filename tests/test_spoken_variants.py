@@ -64,4 +64,4 @@ def test_the_rule_is_off_unless_asked_for_and_arabic_only():
     assert ": unify_spoken_variants" in AsrNorm(unify_spoken_variants=True).describe()
     on = [n for n in textnorm.__all__ if isinstance(getattr(textnorm, n), AsrNorm)
           and getattr(textnorm, n).unify_spoken_variants]
-    assert sorted(on) == ["CER_NORM", "CER_NORM_MARKS_FIRST"]
+    assert sorted(on) == ["CER_CANONICAL", "CER_NORM", "CER_NORM_MARKS_FIRST"]

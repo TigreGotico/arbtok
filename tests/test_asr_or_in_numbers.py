@@ -59,7 +59,8 @@ def test_the_repair_is_arabic_only_and_off_by_default():
     assert AsrNorm().fix_asr_errors is False
     bundles = [getattr(textnorm, name) for name in textnorm.__all__
                if isinstance(getattr(textnorm, name), AsrNorm)]
-    assert len(bundles) == 6 and not any(bundle.fix_asr_errors for bundle in bundles)
+    assert len(bundles) == 7
+    assert [b for b in bundles if b.fix_asr_errors] == [textnorm.CER_CANONICAL]
     assert normalize_asr("ست مية او عشرة الف", fix_asr_errors=True, lang="fa") == "ست مية او عشرة الف"
     described = AsrNorm(fix_asr_errors=True).describe()
     assert ": fix_asr_errors;" in described and "; ovos-number-parser " in described
