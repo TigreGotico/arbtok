@@ -1571,6 +1571,14 @@ _NUMBER_BEFORE = re.compile(r"[0-9٠-٩۰-۹]\s*$")
 #: ``3 MG`` is the make, and ``2 EV`` is a car rather than two electronvolts. Sorted,
 #: because :data:`TTS_NORM_VERSION` names it and a set's repr is not stable.
 _CAPITALISED_UNITS = ("hp", "kg", "km", "kw")
+# A number written against one of those symbols, in any case and with "/h" after km, or
+# against كم, the Arabic kilometre: ``100km``, ``100KM``, ``120km/h``, ``100كم``. The
+# number and the unit are two words, and a space is put between them so each is read as
+# it is when written apart; joined, the digits are no number to the cardinals and
+# ``100KM`` is a code to ``spell_out_codes``.
+_GLUED_UNIT = re.compile(r"(?<![0-9٠-٩A-Za-z.,٫٬])([0-9]+(?:[.,][0-9]+)*|[٠-٩]+(?:[٫٬][٠-٩]+)*)"
+                         r"(?=(?:(?i:" + "|".join(_CAPITALISED_UNITS) + r")(?i:/h)?(?![A-Za-z0-9])"
+                         r"|كم(?![\u0621-\u064A])))")
 #: A run of letters and digits with a capital in it, in any of the three digit
 #: scripts: an identifier like :data:`_CODE`, whose lowercase cases it holds, and an
 #: identifier is spoken whole or character by character, never with a digit run read
@@ -1825,7 +1833,7 @@ _FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, sorted(_FUSED_HUNDREDS, 
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*[%٪]")
 _LONG_RUN = re.compile(r"(?<![0-9٠-٩])\+?\d{10,}(?![0-9])")
 _CODE_DIGITS = re.compile(r"(?<![\dA-Za-z])(?<!\d[,.٬،٫])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))"
-                          r"(?![\dA-Za-z])(?![,.٬،٫]\d)")
+                          r"(?![\dA-Za-z])(?![,.٬،٫]\d)(?! (?i:" + "|".join(_CAPITALISED_UNITS) + r")(?i:/h)?(?![A-Za-z0-9]))")
 _DIGIT_RUN = re.compile(r"(?<![0-9A-Za-z٠-٩])(\+?\d+)(?![0-9A-Za-z])")
 _WESTERN_NUMBER = re.compile(r"(?<![0-9A-Za-z])(\d+(?:,\d+)*(?:\.\d+)?)(?![0-9A-Za-z])")
 _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])(?<![0-9٠-٩],)"
@@ -2007,7 +2015,8 @@ class TtsNorm:
     #: ``4.5%`` becomes ``4.5 في المئة``, and the number is then spoken like any other.
     speak_percent: bool = False
     #: A number of up to four digits beside a Latin word, ``MG 5`` or ``7 Series``,
-    #: belongs to the name and is kept from every number rule below.
+    #: belongs to the name and is kept from every number rule below. A number before a
+    #: unit symbol, ``100 km`` or ``5 KG``, is a quantity and is not kept.
     keep_code_digits: bool = False
     #: Patterns of a phone number in running text; a match is read digit by digit.
     phone_shapes: Tuple[str, ...] = ()
@@ -2126,7 +2135,7 @@ class TtsNorm:
 #: :meth:`TtsNorm.describe`, each by a digest. A record that must distinguish two runs
 #: keeps the ``describe()`` string, not the version alone.
 TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN,
-                             _NUMBER_BEFORE, _CAPITALISED_UNITS, _MIXED_CODE, _DIGIT_WORDS,
+                             _NUMBER_BEFORE, _CAPITALISED_UNITS, _GLUED_UNIT, _MIXED_CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK, _ARABIC_MARKERS,
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
@@ -2510,6 +2519,10 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     with a hyphen inside it that is not joined, ``SAR-50`` or ``COVID-19``, is read part
     by part, so its digits are spoken.
 
+    A number written against a unit symbol, ``100km``, ``120km/h`` or ``100كم``, is
+    read as the number and the unit written apart are, wherever ``spell_out_codes`` or
+    the cardinals run: ``100KM`` is no code and ``100km`` no unreadable run of digits.
+
     ``spell_out_plates`` reads a licence plate written in Arabic script, three single
     letters and three or four digits, by the letters' names and digit by digit:
     ``أ ب ج ١٢٣٤`` becomes ``ألف باء جيم واحد اثنين ثلاثة أربعة``. Arabic only.
@@ -2565,6 +2578,9 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         # Before the lexicon: a plate is found by its Arabic letters, and a term that is
         # only digits, a model number such as 530, must not take the plate's digits.
         text = _PLATE.sub(plate, text)
+    if config.spell_out_codes or config.cardinal_numbers or config.dialect_numbers or config.number_forms:
+        # Before the lexicon and the codes, so a unit written apart takes its own reading.
+        text = _GLUED_UNIT.sub(r"\1 ", text)
     if config.spell_out_codes:
         # Before the lexicon, so a code written with a space reaches it joined, as the
         # joined code does: "X 5" takes the lexicon's reading of "X5".

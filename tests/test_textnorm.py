@@ -458,6 +458,14 @@ def test_an_amount_and_a_range_are_not_joined(text, amount):
     assert amount in said and not re.search("[0-9٠-٩]", said), said
 
 
+def test_a_code_with_a_second_hyphen_is_not_joined():
+    """F-150-2 is a longer run, not the code F-150 and a 2: joining its head would spell F150."""
+    config = dataclasses.replace(VOICE_AGENT, spell_out_codes=True)
+    joined = normalize_for_tts("F150", "ar", config)
+    said = normalize_for_tts("سيارة F-150-2", "ar", config)
+    assert joined not in said and not re.search("[0-9]", said), said
+
+
 def test_an_identifier_after_a_hyphen_is_read_digit_by_digit():
     assert normalize_for_tts("رقم الحجز AB-12345", "ar", VOICE_AGENT) == "رقم الحجز AB-واحد اثنين ثلاثة أربعة خمسة"
 
