@@ -189,7 +189,7 @@ Each equivalence has one of two kinds, and the rules hold only these:
 
 Every dialect pair in `unify_dialect_spellings` is one that two recognizers wrote both
 ways for the same audio. The terms are those of `canonical_term_lexicon()`: every
-Latin name and Arabic spelling in the bundled `cars-sa` and `common-en` tables, each
+Latin name and Arabic spelling in the bundled `cars-sa`, `common-en` and `spoken-sa` tables, each
 written as `bundled_tts_lexicon` spells it. A term outside those tables stays in
 Latin and is charged against an Arabic reading of it; extend the lexicon with
 `CER_CANONICAL.with_lexicon({**canonical_term_lexicon(), **more})`.
