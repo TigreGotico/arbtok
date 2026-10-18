@@ -1832,14 +1832,19 @@ _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])(?<![0-9٠-٩],)"
                              r"([٠-٩]{1,3}(?:[،٬][٠-٩]{3})+(?:[.٫][٠-٩]+)?"
                              r"|[٠-٩]+(?:[.٫][٠-٩]+)?)(?![0-9٠-٩A-Za-z])(?!,[0-9٠-٩])")
 # A clock time written in digits: ``h:mm`` with two-digit minutes, an hour followed by
-# "am" or "pm", or either after a written الساعة. A score written with a one-digit second
-# part, ``2:1``, is none; neither is a time inside a longer run of digits, nor ``15h01``,
-# which :mod:`arbtok.util` reads.
+# "am" or "pm", or either after a written الساعة. Arabic abbreviates the two as ص
+# (صباحًا) and م (مساءً), written as a word of their own after the time; they mark a time
+# only after ``h:mm`` or after الساعة, since after a bare number م is also the metre, and
+# not before ب standing alone, since ص ب and ص.ب are a post office box. A
+# score written with a one-digit second part, ``2:1``, is none; neither is a time inside a
+# longer run of digits, nor ``15h01``, which :mod:`arbtok.util` reads.
 _CLOCK = re.compile(r"(?<![0-9٠-٩A-Za-z:.,٫])"
                     r"(?:(?P<saa>الساع[ةه])\s+)?"
                     r"(?P<hour>[0-9٠-٩]{1,2})(?::(?P<minute>[0-9٠-٩]{2}))?"
-                    r"(?:\s?(?P<marker>[aApP][mM])(?![A-Za-z]))?"
+                    r"(?:\s?(?P<marker>[aApP][mM])(?![A-Za-z])|\s(?P<arabic_marker>[صم])(?![\u0621-\u064A\u064B-\u0652])"
+                    r"(?!\s*[./]?\s*ب(?![\u0621-\u064A])))?"
                     r"(?![0-9٠-٩A-Za-z]|[:.,٫][0-9٠-٩])")
+_ARABIC_MARKERS = {"ص": "am", "م": "pm"}
 _PROCLITIC = r"[بولك]?ا?ل?"
 
 
@@ -2123,7 +2128,7 @@ class TtsNorm:
 TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CONTROLS, _CODE, _VIN,
                              _NUMBER_BEFORE, _CAPITALISED_UNITS, _MIXED_CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
-                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
+                             _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK, _ARABIC_MARKERS,
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
                              _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _HYPHENATED_CODE, _CURRENCY_ABBREVIATIONS,
                              tuple(sorted(_not_code_letters("ar"))))
@@ -2402,6 +2407,11 @@ def _spoken_clock(m: re.Match) -> Optional[str]:
     hour = int(m["hour"].translate(_EASTERN_DIGITS))
     minute = int(m["minute"].translate(_EASTERN_DIGITS)) if m["minute"] else 0
     marker = m["marker"].lower() if m["marker"] else None
+    if m["arabic_marker"]:
+        if m["minute"] is None and m["saa"] is None:
+            return None
+        # on an hour the 12-hour clock does not have, the mark only repeats the period
+        marker = _ARABIC_MARKERS[m["arabic_marker"]] if 1 <= hour <= 12 else None
     if marker is None and m["minute"] is None and m["saa"] is None:
         return None
     if minute > 59 or hour > 23 or (marker and not 1 <= hour <= 12):
@@ -2509,7 +2519,9 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     digits: ``7:30 pm`` and ``19:30`` become ``الساعة السابعة والنصف مساءً``, in the words
     of the date parser's ``nice_time``. A time is ``h:mm`` with two-digit minutes, an
     hour of the 12-hour clock followed by "am" or "pm", or either after a written
-    ``الساعة``. A score written with two-digit minutes, ``3:10``, reads as a time too.
+    ``الساعة``. ص and م after ``h:mm`` or after ``الساعة`` are "am" and "pm" in Arabic:
+    ``4:15 م`` is ``الساعة الرابعة والربع مساءً``. A score written with two-digit minutes,
+    ``3:10``, reads as a time too.
     ``canonical_unicode`` drops tatweel, applies NFC, orders shadda before its
     vowel and settles the spellings of مائة: the form the tokenizer reads.
     ``strip_controls`` drops zero-width and bidirectional control characters,
