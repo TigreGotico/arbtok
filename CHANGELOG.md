@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a44](https://github.com/TigreGotico/arbtok/tree/0.0.2a44) (2026-10-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a43...0.0.2a44)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): Najdi takes the parser's cited cardinals [\#263](https://github.com/TigreGotico/arbtok/pull/263) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a43](https://github.com/TigreGotico/arbtok/tree/0.0.2a43) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a42...0.0.2a43)
