@@ -945,6 +945,17 @@ _SERIES_WORDS = ("سيريز", "سيرس", "سيريس")
 #: ``SAR 50``, ``SR 50`` or ``KM 20``, which :func:`_not_code_letters` names.
 _SPACED_CODE = re.compile(r"(?<![A-Za-z0-9])([a-z]?[A-Z]{1,3}) ([0-9]{1,2})(?![0-9A-Za-z])(?![.,٫٬][0-9])"
                           r"(?!\s+(?:(?i:series)\b|(?:" + "|".join(_SERIES_WORDS) + r")(?!\w)))")
+#: A code written with a hyphen between its letters and its digits, ``F-150``, ``CX-5`` or
+#: ``GV-70``: one to three capitals, after at most one small letter, a hyphen, and one to
+#: four digits standing alone. It is joined and read as the joined code is. Not joined: a
+#: digit inside a larger figure, and an amount after a currency code or a unit symbol,
+#: ``SAR-50``, which :func:`_not_code_letters` names. The two spellings name one thing: English
+#: Wikipedia redirects "Mazda CX5" to its article "Mazda CX-5"
+#: (https://en.wikipedia.org/w/index.php?oldid=1379166699), and both "Ford F150" and
+#: "Ford F-150" to "Ford F-Series" (https://en.wikipedia.org/w/index.php?oldid=1376068744).
+#: A hyphenated term in the caller's lexicon keeps the lexicon's reading.
+_HYPHENATED_CODE = re.compile(r"(?<![A-Za-z0-9-])([a-z]?[A-Z]{1,3})-([0-9]{1,4})(?![0-9A-Za-z])(?!-[0-9A-Za-z])"
+                              r"(?![.,٫٬][0-9])")
 
 
 @functools.lru_cache(maxsize=None)
@@ -1425,7 +1436,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK,
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
-                             _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _CURRENCY_ABBREVIATIONS,
+                             _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _HYPHENATED_CODE, _CURRENCY_ABBREVIATIONS,
                              tuple(sorted(_not_code_letters("ar"))))
 _PLUGIN_DEFAULT = TtsNorm()
 
@@ -1787,15 +1798,18 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     ``spell_out_codes`` reads what the lexicon did not claim and is written in
     capitals and digits with at least one of each, ``X5`` or ``GV70``, or in capitals
     with no vowel among them, ``BMW``, character by character from
-    :func:`spelled_codes`. A code written with a space, ``MG 4`` or ``iX 3``, is joined
-    first, before the lexicon, and read as ``MG4`` and ``IX3`` are; a digit before a
+    :func:`spelled_codes`. A code written with a space or a hyphen, ``MG 4``, ``iX 3`` or
+    ``F-150``, is joined first, before the lexicon, and read as ``MG4``, ``IX3`` and
+    ``F150`` are, unless the lexicon holds the hyphenated term itself; a digit before a
     series, inside a larger figure, or after a currency code or unit symbol is not a
     code's. Neither a number on its own nor a run of capitals that
     spells a word is a code: ``TOYOTA`` is read as a word. A run of
     8 to 17 such characters with a digit in it is a vehicle identification number, or
     a fragment of one, and its digits are read as Arabic words, one at a time. A run of
     letters and digits with a capital in it that is not read this way is left exactly as
-    written: ``L809UPZ3V361`` stays whole rather than its digit runs being spoken.
+    written: ``L809UPZ3V361`` stays whole rather than its digit runs being spoken. A run
+    with a hyphen inside it that is not joined, ``SAR-50`` or ``COVID-19``, is read part
+    by part, so its digits are spoken.
 
     ``spell_out_plates`` reads a licence plate written in Arabic script, three single
     letters and three or four digits, by the letters' names and digit by digit:
@@ -1856,6 +1870,9 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         amounts = _not_code_letters(lang)
         text = _SPACED_CODE.sub(lambda m: m.group(0) if m.group(1) in amounts
                                 else m.group(1).upper() + m.group(2), text)
+        terms = {term.lower() for term, _ in config.lexicon}
+        text = _HYPHENATED_CODE.sub(lambda m: m.group(0) if m.group(1) in amounts or m.group(0).lower() in terms
+                                    else m.group(1).upper() + m.group(2), text)
     if config.lexicon:
         pattern, said = _term_pattern(config.lexicon)
         text = pattern.sub(lambda m: said[m.group(1).lower()], text)
