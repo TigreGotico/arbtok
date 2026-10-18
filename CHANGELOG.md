@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a42](https://github.com/TigreGotico/arbtok/tree/0.0.2a42) (2026-10-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a41...0.0.2a42)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a code written with a hyphen is one code [\#249](https://github.com/TigreGotico/arbtok/pull/249) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a41](https://github.com/TigreGotico/arbtok/tree/0.0.2a41) (2026-10-13)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a40...0.0.2a41)
@@ -394,17 +402,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a22...0.0.1a23)
 
-**Merged pull requests:**
-
-- fix: the package supports Python 3.10 and up, and says so [\#143](https://github.com/TigreGotico/arbtok/pull/143) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a22](https://github.com/TigreGotico/arbtok/tree/0.0.1a22) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a21...0.0.1a22)
-
-**Merged pull requests:**
-
-- fix: floor the number parser at the release that reads colloquial teens [\#141](https://github.com/TigreGotico/arbtok/pull/141) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a21](https://github.com/TigreGotico/arbtok/tree/0.0.1a21) (2026-09-20)
 
