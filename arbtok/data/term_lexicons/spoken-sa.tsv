@@ -1,0 +1,9 @@
+# Terms Saudi call-centre agents say, written the way speech recognizers write them for lang "ar".
+# A row is here when two Arabic recognizers, reading the same recording, wrote arabic_form identically:
+# agreed_rows counts those readings, over transcribed agent turns that a recognizer vote marked trusted.
+# The recordings are private, so the counts are the evidence given. A term that agents do not say has no
+# row, however the term is spelled in print.
+# latin	arabic_form	basis	agreed_rows
+MINI	ميني	two recognizers agree	202
+Package	بكج	two recognizers agree	915
+3 SERIES	الفئة الثالثة	two recognizers agree	85

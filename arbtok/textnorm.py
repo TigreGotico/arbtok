@@ -1698,7 +1698,8 @@ def bundled_asr_lexicon(name: str = "cars-sa") -> Dict[str, str]:
     sites spell them; every row carries the page it was read from and the day. A name
     has as many entries as it has published spellings, since a recognizer may write
     any of them. ``common-en`` holds English terms in everyday use in their
-    conventional Arabic spelling.
+    conventional Arabic spelling. ``spoken-sa`` holds terms Saudi call-centre agents say, in
+    the spelling two recognizers agree on for the same recording.
     """
     if name.endswith("-cldr"):
         raise ValueError(f"{name!r} holds Arabic names of things, not spellings of Latin-script terms: "
@@ -1734,7 +1735,7 @@ def bundled_tts_lexicon(name: str = "cars-sa", pointed: bool = True) -> Dict[str
     return {latin: spelling for latin, (_, spelling) in chosen.items()}
 
 
-def canonical_term_lexicon(names: Tuple[str, ...] = ("cars-sa", "common-en")) -> Dict[str, str]:
+def canonical_term_lexicon(names: Tuple[str, ...] = ("cars-sa", "common-en", "spoken-sa")) -> Dict[str, str]:
     """Every spelling of a term, the Latin one and each Arabic one, mapped to one Arabic
     spelling of the term: for ``normalize_asr`` comparing two transcripts.
 
