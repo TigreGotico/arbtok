@@ -2137,6 +2137,21 @@ class TtsNorm:
     #: Hijri-range year and no era, a version number such as ``2.1.1400``, are left as
     #: written.
     cardinal_numbers: bool = False
+    #: Where a clock time is spoken, under ``cardinal_numbers`` or ``spoken_forms``, it is
+    #: read the way Saudi speech says it rather than in the date parser's literary words:
+    #: the hour as a cardinal, ``واحدة`` for one; a quarter past as ``وربع``, twenty past as
+    #: ``وثلث`` and half past as ``ونص``; forty and fifty minutes counted back from the next
+    #: hour, ``إلا ثلث`` and ``إلا عشرة``, since past a one-digit hour they would make one
+    #: number with it, ``أربعة وأربعين`` being 44; any other minute as ``و`` and its
+    #: cardinal, with ``دقيقة`` from eleven minutes up; and the part of the day by its
+    #: common word where the text says the period: ``الصباح`` from 5 to 11, ``الظهر`` from
+    #: 12 to 2, ``العصر`` from 3 to 5, ``المغرب`` at 6 and 7 and ``بالليل`` from 8 to 4.
+    #: So ``9:30`` is ``الساعة تسعة ونص`` where the parser says ``الساعة التاسعة والنصف``,
+    #: and ``14:00`` is ``الساعة اثنين الظهر`` where it says ``الساعة الثانية مساءً``.
+    #: Forty-five minutes past stays past the hour, ``وخمسة وأربعين دقيقة``, as it is said.
+    #: The numbers take the register ``oblique_numbers`` gives the cardinals and the lect's
+    #: words under ``dialect_numbers``.
+    colloquial_clock: bool = False
     #: A number ``cardinal_numbers`` cannot speak is left as written and the rest of
     #: the text is still read, where otherwise the error is raised. For a caller that
     #: must say something: one odd number should not cost the whole sentence.
@@ -2500,11 +2515,46 @@ def _cardinal(number: str, lang: str, config: TtsNorm) -> str:
     return words
 
 
-def _spoken_clock(m: re.Match) -> Optional[str]:
+# The common word for the part of the day an hour of the 24-hour clock falls in, from
+# the hour it starts at; an hour before the first is still the night.
+_DAY_PARTS = ((5, "الصباح"), (12, "الظهر"), (15, "العصر"), (18, "المغرب"), (20, "بالليل"))
+
+
+def _colloquial_clock(hour: int, minute: int, period: bool, lang: str, config: TtsNorm) -> str:
+    """``hour:minute`` as :attr:`TtsNorm.colloquial_clock` reads it, with the part of the
+    day after it when ``period`` asks for one."""
+    # forty and fifty minutes count back from the next hour: past a one-digit hour they
+    # would make one number with it, "أربعة وأربعين" being 44
+    back = minute in (40, 50)
+    twelve = (hour + back) % 12 or 12
+    words = ["الساعة", "واحدة" if twelve == 1 else _cardinal(str(twelve), lang, config)]
+    if minute == 15:
+        words.append("وربع")
+    elif minute == 20:
+        words.append("وثلث")
+    elif minute == 30:
+        words.append("ونص")
+    elif minute == 40:
+        words.append("إلا ثلث")
+    elif minute == 50:
+        words.append("إلا " + _cardinal("10", lang, config))
+    elif minute == 1:
+        words.append("ودقيقة")
+    elif minute == 2:
+        words.append("ودقيقتين" if config.oblique_numbers else "ودقيقتان")
+    elif minute:
+        words.append("و" + _cardinal(str(minute), lang, config) + (" دقيقة" if minute > 10 else ""))
+    if period:
+        words.append(next((word for start, word in reversed(_DAY_PARTS) if hour >= start), _DAY_PARTS[-1][1]))
+    return " ".join(words)
+
+
+def _spoken_clock(m: re.Match, lang: str, config: TtsNorm) -> Optional[str]:
     """The words of the clock time ``m`` matched, from the date parser's ``nice_time``,
     or None when the match is no clock time. ``nice_time`` gives the period word when
     it is asked for one, and it is asked when the text writes "am" or "pm" and for an
-    hour the 12-hour clock does not have."""
+    hour the 12-hour clock does not have. Under ``colloquial_clock`` the words are
+    :func:`_colloquial_clock`'s, asked for the period in the same cases."""
     hour = int(m["hour"].translate(_EASTERN_DIGITS))
     minute = int(m["minute"].translate(_EASTERN_DIGITS)) if m["minute"] else 0
     marker = m["marker"].lower() if m["marker"] else None
@@ -2521,9 +2571,11 @@ def _spoken_clock(m: re.Match) -> Optional[str]:
         hour += 12
     elif marker == "am" and hour == 12:
         hour = 0
+    period = bool(marker) or hour == 0 or hour > 12
+    if config.colloquial_clock:
+        return _colloquial_clock(hour, minute, period, lang, config)
     from ovos_date_parser import nice_time
-    return nice_time(datetime.datetime(2000, 1, 1, hour, minute), "ar",
-                     use_24hour=False, use_ampm=bool(marker) or hour == 0 or hour > 12)
+    return nice_time(datetime.datetime(2000, 1, 1, hour, minute), "ar", use_24hour=False, use_ampm=period)
 
 
 def _rank_ordinal(m: re.Match, config: TtsNorm) -> str:
@@ -2727,7 +2779,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         # config that speaks numbers as cardinals speaks times too: a time left to the
         # cardinals comes out "سبعة:30 pm".
         def clock(m):
-            spoken = _spoken_clock(m)
+            spoken = _spoken_clock(m, lang, config)
             if spoken is None:
                 return m.group(0)
             if m["saa"] and spoken.startswith("الساعة "):
