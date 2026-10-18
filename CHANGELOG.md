@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a50](https://github.com/TigreGotico/arbtok/tree/0.0.2a50) (2026-10-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a49...0.0.2a50)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): colloquial\_clock reads a clock time as Saudi speech says it [\#251](https://github.com/TigreGotico/arbtok/pull/251) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a49](https://github.com/TigreGotico/arbtok/tree/0.0.2a49) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a48...0.0.2a49)
@@ -393,10 +401,6 @@
 ## [0.0.1a31](https://github.com/TigreGotico/arbtok/tree/0.0.1a31) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a30...0.0.1a31)
-
-**Merged pull requests:**
-
-- refactor: take a lect's cardinals from the number parser [\#159](https://github.com/TigreGotico/arbtok/pull/159) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a30](https://github.com/TigreGotico/arbtok/tree/0.0.1a30) (2026-09-21)
 
