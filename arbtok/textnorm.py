@@ -1920,6 +1920,47 @@ def is_arabic_lang(lang: str) -> bool:
     return lang == "ar" or lang.startswith("ar-") or lang in ARABIC_LANGUAGE_CODES
 
 
+# What ``plain_orthography`` drops and folds. The harakat and tatweel go, and the Quranic
+# annotation marks with the end-of-ayah and rub el hizb signs (U+0610 to U+061A, U+06D6 to
+# U+06ED). A hamza or madda written as a combining mark (U+0653 to U+0655) goes after ا,
+# which a hamza on alef is folded to; after و and ي it is the hamza of ؤ and ئ, which the
+# transcripts keep, and it is composed with its letter. A dagger alef is a long a: after و,
+# as in الصلوٰة, it is written ا in place of the و, الصلاة, and after ى it goes, علىٰ being
+# على; elsewhere it is written ا, الكتٰب being الكتاب, except in the words whose standard
+# spelling leaves it out, هذا, ذلك, لكن, الله, الرحمن and their kin.
+_PLAIN_MARKS = re.compile("[\u064B-\u0652\u0640\u0610-\u061A\u06D6-\u06ED]")
+_PLAIN_HAMZA_ON_ALEF = re.compile("(?<=ا)[\u0653-\u0655]+")
+_PLAIN_COMPOSED = {"و\u0654": "ؤ", "ي\u0654": "ئ", "ى\u0654": "ئ"}
+_PLAIN_STRAY_HAMZA = re.compile("[\u0653-\u0655]")
+_PLAIN_LETTERS = str.maketrans({**_ALEF, "ڤ": "ف"})
+_DAGGER_WORD = re.compile("[\u0621-\u064A\u0671\u064B-\u0655\u0670\u0640\u06D6-\u06ED]*\u0670"
+                          "[\u0621-\u064A\u0671\u064B-\u0655\u0670\u0640\u06D6-\u06ED]*")
+_DAGGER_SILENT = frozenset({"هذا", "هذه", "هذان", "هذين", "هؤلاء", "ذلك", "ذلكم", "ذلكما", "لكن", "لكنه", "لكنها",
+                            "لكنهم", "لكنك", "الله", "لله", "اللهم", "اله", "الاله", "الرحمن", "طه", "اولئك", "هكذا"})
+
+
+def _plain_dagger(m: re.Match) -> str:
+    """The word ``m`` matched, carrying a dagger alef, with the dagger written as
+    :data:`_PLAIN_MARKS` says."""
+    word = m.group(0)
+    skeleton = re.sub("[\u064B-\u0655\u0670\u0640\u06D6-\u06ED]", "", word).translate(_PLAIN_LETTERS)
+    if skeleton in _DAGGER_SILENT or (skeleton[:1] in "وفبل" and skeleton[1:] in _DAGGER_SILENT):
+        return word.replace("\u0670", "")
+    word = re.sub("و[\u064B-\u0652]*\u0670", "ا", word)
+    word = re.sub("ى[\u064B-\u0652]*\u0670", "ى", word)
+    return word.replace("\u0670", "ا")
+
+
+def _plain_orthography(text: str) -> str:
+    """``text`` in the orthography :attr:`TtsNorm.plain_orthography` writes."""
+    text = _DAGGER_WORD.sub(_plain_dagger, text)
+    text = _PLAIN_MARKS.sub("", text)
+    text = _PLAIN_HAMZA_ON_ALEF.sub("", text)
+    for decomposed, composed in _PLAIN_COMPOSED.items():
+        text = text.replace(decomposed, composed)
+    return _PLAIN_STRAY_HAMZA.sub("", text).translate(_PLAIN_LETTERS)
+
+
 #: Rules whose output is Arabic words whatever ``lang`` says.
 _ARABIC_ONLY = ("speak_percent", "phone_shapes", "phone_regions", "long_digit_runs", "phone_prefixes", "identifier_words",
                 "dialect_numbers", "number_forms")
@@ -2097,6 +2138,16 @@ class TtsNorm:
     #: Arabic only; runs right after the lexicon, before any number or code rule can
     #: read the fragment, and before ``canonical_unicode`` drops the tatweel itself.
     drop_false_starts: bool = True
+    #: The output is written in the orthography speech-recognition transcripts use, the
+    #: one a voice trained on such transcripts read in training: no harakat, tatweel or
+    #: Quranic annotation marks, alef without its hamza (أ, إ, آ and ٱ are ا, and so is an
+    #: alef written with a combining madda or hamza) and ڤ as ف. A dagger alef, a long a,
+    #: is written ا, ``الكتٰب`` being ``الكتاب`` and ``الصلوٰة`` ``الصلاة``, except where the
+    #: standard spelling leaves it out, ``هٰذا`` being ``هذا``. A reading arbtok writes
+    #: pointed, a spelled code's ``بِي إِمْ دَبَلْيُو``, is written ``بي ام دبليو``, and the
+    #: number words ``ألف`` and ``أربعة`` are ``الف`` and ``اربعة``. ة, ى, ؤ and ئ are kept,
+    #: written composed or decomposed. The last rule to run, over the whole text.
+    plain_orthography: bool = False
     #: Terms and the way each is said, set with :meth:`with_lexicon`; applied before
     #: every rule but ``strip_controls`` and ``spell_out_plates``.
     lexicon: Tuple[Tuple[str, str], ...] = ()
@@ -2140,6 +2191,8 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK, _ARABIC_MARKERS,
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
                              _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _HYPHENATED_CODE, _CURRENCY_ABBREVIATIONS,
+                             _PLAIN_MARKS, _PLAIN_HAMZA_ON_ALEF, _PLAIN_COMPOSED, _PLAIN_STRAY_HAMZA, _PLAIN_LETTERS,
+                             _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
                              tuple(sorted(_not_code_letters("ar"))))
 _PLUGIN_DEFAULT = TtsNorm()
 
@@ -2674,4 +2727,6 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.canonical_unicode:
         from arbtok.tokenizer import normalize_unicode
         text = normalize_unicode(text)
+    if config.plain_orthography:
+        text = _plain_orthography(text)
     return text

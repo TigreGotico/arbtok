@@ -637,6 +637,7 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
 | `drop_false_starts` | a two- or three-letter word ending in tatweel is dropped with the whitespace after it where the next word begins the same way: `الـ السيارة` becomes `السيارة`; a one-letter fragment is kept, since it is also how a detached clitic is written; Arabic only, on by default |
+| `plain_orthography` | the output in the orthography speech-recognition transcripts use: no harakat, tatweel or Quranic marks, alef without hamza, a dagger alef written ا where the standard spelling has it, ڤ as ف, and ة, ى, ؤ and ئ kept, so `بِي إِمْ دَبَلْيُو` is `بي ام دبليو` and `ألف` is `الف`; the last rule, over the whole text |
 
 ### Numbers in the words a lect actually uses
 
