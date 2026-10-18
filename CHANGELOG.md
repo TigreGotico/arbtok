@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a45](https://github.com/TigreGotico/arbtok/tree/0.0.2a45) (2026-10-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a44...0.0.2a45)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): spoken-sa term table for the canonical lexicon [\#262](https://github.com/TigreGotico/arbtok/pull/262) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a44](https://github.com/TigreGotico/arbtok/tree/0.0.2a44) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a43...0.0.2a44)
@@ -386,17 +394,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a26...0.0.1a27)
 
-**Merged pull requests:**
-
-- Read a ya through the branches that decide something [\#149](https://github.com/TigreGotico/arbtok/pull/149) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a26](https://github.com/TigreGotico/arbtok/tree/0.0.1a26) (2026-09-20)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a25...0.0.1a26)
-
-**Merged pull requests:**
-
-- Let one module own idgham and iqlab of a final nun [\#150](https://github.com/TigreGotico/arbtok/pull/150) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a25](https://github.com/TigreGotico/arbtok/tree/0.0.1a25) (2026-09-20)
 
