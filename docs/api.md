@@ -169,8 +169,10 @@ directly; the functions take a lexicon no other way. An entry with an empty
 spelling raises `ValueError`.
 `describe() -> str` returns the string to record beside an error rate, lexicon
 included. Named bundles: `TRUTH_CHECK`, `CER_STRIP`, `CER_NORM`, `CER_MARKS_FIRST`,
-`CER_NORM_MARKS_FIRST`, `INTELLIGIBILITY_GATE`. `ASR_NORM_VERSION` names the
-rule set and is computed from it.
+`CER_NORM_MARKS_FIRST`, `CER_CANONICAL`, `INTELLIGIBILITY_GATE`. `ASR_NORM_VERSION`
+names the rule set and is computed from it. `canonical_term_lexicon(names)` maps every
+Latin and Arabic spelling of a bundled term to one Arabic spelling; `CER_CANONICAL`
+carries it.
 
 ### `normalize_for_tts(text, lang="ar", config=None, **flags) -> str`
 

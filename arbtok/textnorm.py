@@ -31,10 +31,10 @@ from pathlib import Path
 from typing import Dict, Mapping, Optional, Tuple
 
 __all__ = ["AsrNorm", "TtsNorm", "normalize_asr", "normalize_for_tts",
-           "TRUTH_CHECK", "CER_STRIP", "CER_NORM", "CER_MARKS_FIRST", "CER_NORM_MARKS_FIRST",
+           "TRUTH_CHECK", "CER_STRIP", "CER_NORM", "CER_MARKS_FIRST", "CER_NORM_MARKS_FIRST", "CER_CANONICAL",
            "INTELLIGIBILITY_GATE", "ARAB_PHONE_REGIONS",
            "IDENTIFIER_WORDS", "ASR_NORM_VERSION", "TTS_NORM_VERSION", "spelled_codes",
-           "bundled_asr_lexicon", "bundled_tts_lexicon", "cldr_units"]
+           "bundled_asr_lexicon", "bundled_tts_lexicon", "canonical_term_lexicon", "cldr_units"]
 
 _HARAKAT = "\u064B-\u0652"
 _EXTENDED_MARKS = "\u0653-\u065F\u0670"
@@ -166,10 +166,13 @@ def _rule_set(*definitions) -> str:
 class AsrNorm:
     """Which rules :func:`normalize_asr` applies. Every rule is off by default.
 
-    The rules run in the order the fields are listed, with one exception that is
-    itself a flag: ``punctuation_before_marks`` moves ``blank_punctuation`` ahead
-    of the mark rules. A lexicon, when one is passed, is applied after the mark
-    rules and before ``fix_asr_errors``.
+    The rules run in the order the fields are listed, with two exceptions that are
+    themselves flags: ``punctuation_before_marks`` moves ``blank_punctuation`` ahead
+    of the mark rules, and ``number_forms`` reads digits both before and after
+    ``spoken_numbers_to_digits`` and keeps the marks inside a number through
+    ``blank_punctuation``. The second half of ``spell_codes``, which reads runs of
+    letter names, runs after ``drop_word_final_hamza``. A lexicon, when one is passed,
+    is applied after ``split_term_proclitics`` and before ``fix_asr_errors``.
     """
     #: Unicode NFC, so a composed and a decomposed spelling compare equal.
     nfc: bool = False
@@ -191,6 +194,13 @@ class AsrNorm:
     strip_quranic_marks: bool = False
     #: Drop tatweel, U+0640.
     strip_tatweel: bool = False
+    #: A proclitic written onto a Latin-script word is written apart from it, ``وMINI`` as
+    #: ``و MINI``, and a lexicon spelling also matches after a proclitic on its first word,
+    #: ``وام جي`` as ``و`` and the term of ``ام جي``. The proclitics are و and ف, then ب, ك,
+    #: ل, ال or a combination of them (وبال, لل). A recognizer writes the proclitic onto the
+    #: Arabic spelling and a written text puts it before the Latin word; both are one word
+    #: said. A hyphen between two Latin words is a space: ``Test-Drive`` is ``Test Drive``.
+    split_term_proclitics: bool = False
     #: Recognizer output repaired to the Arabic it transcribes, each repair named with its
     #: evidence where it is made. Inside a spoken number, the recognizer's ماية is the
     #: hundred مية (``اربعماية الف`` is 400,000), and the conjunction و that Saudi and
@@ -203,6 +213,23 @@ class AsrNorm:
     #: in a recognizer's, and the three-word form is what comes out. It reads unpointed
     #: spelling, so it runs after the mark rules, and it runs after ``fix_asr_errors``.
     unify_spoken_variants: bool = False
+    #: A word that Saudi speech says or spells two ways is written one way, from the table
+    #: :data:`_DIALECT_SPELLINGS`: ``هذي`` as ``هذه``, ``معاك`` as ``معك``, ``ايوا`` as ``ايوه``.
+    #: Each pair is one where two recognizers wrote the two forms for the same audio.
+    unify_dialect_spellings: bool = False
+    #: Numbers written or said several ways are written one way. Written: digits are ASCII,
+    #: the thousands separator goes (``400,000`` is ``400000``), the Arabic decimal mark is
+    #: ``.``, a date is its day, the month's Gregorian name and its year (``18/9/2026`` and
+    #: ``18 أيلول 2026`` are ``18 سبتمبر 2026``), a clock time written with دقيقة takes the colon
+    #: (``الساعة 8 ودقيقة 15`` is ``الساعة 8:15``) and a unit symbol after a number is the
+    #: unit's Arabic name. Said, with ``spoken_numbers_to_digits``: ونص is ونصف, the half;
+    #: وحدة is واحدة; اطناش and اتناش are 12; فاصلة between two numbers is the decimal mark;
+    #: بالمية and في المية after a number are ``%``; a year said ``عشرين ستة وعشرين`` after
+    #: a month, سنة, عام or موديل is ``2026``; a day said as an ordinal before a month is
+    #: its number; and a fraction word that follows no number, ``ربع ساعة``, stays a word.
+    #: With ``blank_punctuation``, the marks inside a number, ``.`` ``:`` ``/`` and a ``%``
+    #: after it, are kept, since ``5.5`` and ``5 5`` are different things said.
+    number_forms: bool = False
     #: Write number words as digits: ``خمسة وأربعون ألف`` becomes ``45000``. Runs after
     #: the lexicon, so a term spelled with a number word is a term first. Arabic-Indic
     #: digits the parser meets come back as ASCII, and the words of a text it changed
@@ -216,6 +243,14 @@ class AsrNorm:
     #: read aloud arrives as ``0 5 5 3 1 7 9 2 4 5``. Shorter runs are left apart,
     #: because two small numbers side by side are two numbers.
     join_dictated_digits: bool = False
+    #: A code is written as its letter names and its digits: ``X5`` as ``اكس 5``, ``520i``
+    #: as ``520 اي``, ``GV70`` as ``جي في 70``. The letter names are those of
+    #: :func:`spelled_codes`, unpointed. In a run of letter names an English digit name is
+    #: its digit and the digits of the run are one number: ``اكس فايف`` is ``اكس 5`` and
+    #: ``جي في سيفن زيرو`` is ``جي في 70``. A recognizer writes a code's names fused, and a
+    #: word made only of names, at least one of them a digit name or a letter name that is
+    #: no Arabic word, is read as those names: ``اكستري`` is ``اكس 3``.
+    spell_codes: bool = False
     #: Alef with madda, with hamza above or below, and alef wasla become bare alef.
     unify_alef: bool = False
     #: Ta marbuta becomes ha.
@@ -224,6 +259,9 @@ class AsrNorm:
     unify_alef_maqsura: bool = False
     #: Ya with hamza becomes ya; waw with hamza becomes waw.
     unify_hamza_carriers: bool = False
+    #: The letters Arabic writing borrows for sounds it lacks are written with the Arabic
+    #: letter a recognizer writes for them: ڤ as ف, پ as ب, گ as ك, چ as ج, ڨ as ق.
+    unify_loan_letters: bool = False
     #: Arabic-Indic and Extended Arabic-Indic digits become ASCII digits.
     fold_digits: bool = False
     #: ``str.lower()``, for Latin-script terms.
@@ -235,6 +273,12 @@ class AsrNorm:
     blank_punctuation: bool = False
     #: Drop a bare hamza that ends a word.
     drop_word_final_hamza: bool = False
+    #: Words written apart or together are written together: a و standing alone joins the
+    #: word after it, a ل with its pronoun (لك, لي, لهم ...) joins the word before it, and
+    #: عبد with the name after it, ان شا الله, الحمد لله, يا رب and ما في are each one word.
+    #: Joined, a final silent alif after و goes (``يعملوا لك`` is ``يعملولك``). A doubled ل
+    #: stays: ``قال له`` "he said to him" is not ``قاله`` "he said it".
+    join_clitics: bool = False
     #: Runs of whitespace become one space, and the ends are trimmed.
     collapse_whitespace: bool = False
     #: Spellings and the terms they stand for, set with :meth:`with_lexicon`. It lives
@@ -333,18 +377,6 @@ _TIME_ENDS = ("تماما", "بالضبط", "يوم")
 
 _NOTHING = AsrNorm()
 
-#: Names the rule set of :func:`normalize_asr`. It is a digest of the flags in their
-#: order and of every pattern and table the rules use, so it changes when a rule or
-#: the order changes and cannot be left behind by an edit. It does not cover what a
-#: config carries as values: a lexicon is named by :meth:`AsrNorm.describe`, not here.
-ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HARAKAT, _EXTENDED_MARKS,
-                             _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
-                             _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
-                             _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER,
-                             _OR, _MAYA_SPELLINGS, _HUNDRED, _FAREWELL, _FAREWELL_SPELLINGS,
-                             _CLOCK_WORD, _HOUR_TENS, _HOUR_FRACTIONS, _EXCEPT, _MINUTE_WORDS, _NIGHT,
-                             _TIME_ENDS)
-
 
 @functools.lru_cache(maxsize=None)
 def _compiled(config: AsrNorm):
@@ -357,6 +389,7 @@ def _compiled(config: AsrNorm):
                         (config.unify_ta_marbuta, _TA_MARBUTA),
                         (config.unify_alef_maqsura, _ALEF_MAQSURA),
                         (config.unify_hamza_carriers, _HAMZA_CARRIERS),
+                        (config.unify_loan_letters, _LOAN_LETTERS),
                         (config.fold_digits, _DIGITS)):
         if on:
             table.update(mapping)
@@ -366,9 +399,12 @@ def _compiled(config: AsrNorm):
 
 @functools.lru_cache(maxsize=None)
 def _character_rules(config: AsrNorm) -> AsrNorm:
-    """The rules a spelling and a word are both read under before they are compared."""
+    """The rules a spelling and a word are both read under before they are compared: the
+    rules that read one word, not those that join, split or read several."""
     return dataclasses.replace(config, spoken_numbers_to_digits=False, strip_event_markup=False,
-                               collapse_whitespace=True, lexicon=())
+                               collapse_whitespace=True, lexicon=(), split_term_proclitics=False,
+                               number_forms=False, join_dictated_digits=False, spell_codes=False,
+                               join_clitics=False)
 
 
 @functools.lru_cache(maxsize=64)
@@ -394,19 +430,34 @@ def _apply_lexicon(text: str, config: AsrNorm) -> str:
     rules = _character_rules(config)
     edges = [_EDGE_PUNCTUATION.match(w).groups() for w in parts[::2]]
     forms = [_word_form(rules, core) for _, core, _ in edges]
-    out, i = [], 0
-    while i < len(edges):
+
+    def match(i, first):
         for n in range(min(longest, len(edges) - i), 0, -1):
             # Punctuation may open the first word and close the last; inside a spelling it
             # separates two things that were not said together.
             inside_clean = all(not edges[j][2] for j in range(i, i + n - 1)) and \
                 all(not edges[j][0] for j in range(i + 1, i + n))
-            term = index.get(tuple(forms[i:i + n])) if inside_clean and all(forms[i:i + n]) else None
+            words = (first,) + tuple(forms[i + 1:i + n])
+            term = index.get(words) if inside_clean and all(words) else None
             if term is not None:
-                out.append(edges[i][0] + term + edges[i + n - 1][2])
-                out.append(parts[2 * (i + n) - 1] if 2 * (i + n) - 1 < len(parts) else "")
-                i += n
-                break
+                return n, term
+        return None
+
+    out, i = [], 0
+    while i < len(edges):
+        found, proclitic = match(i, forms[i]), ""
+        if found is None and config.split_term_proclitics and forms[i]:
+            for k in range(len(forms[i]) - 2, 0, -1):
+                if re.fullmatch(_TERM_PROCLITIC, forms[i][:k]):
+                    found = match(i, forms[i][k:])
+                    if found is not None:
+                        proclitic = forms[i][:k] + " "
+                        break
+        if found is not None:
+            n, term = found
+            out.append(edges[i][0] + proclitic + term + edges[i + n - 1][2])
+            out.append(parts[2 * (i + n) - 1] if 2 * (i + n) - 1 < len(parts) else "")
+            i += n
         else:
             out.append(parts[2 * i])
             out.append(parts[2 * i + 1] if 2 * i + 1 < len(parts) else "")
@@ -477,6 +528,9 @@ def _maya_as_hundred(text: str) -> str:
             inside = (i > 0 and words[i - 1] in _HUNDRED_UNITS) or value(i + 1) == 1000 or \
                 (i > 0 and words[i - 1] == "و" and thousands(i - 2))
         elif head == "و":
+            inside = after_number
+        elif head[:1] == "و" and head[1:] in _HUNDRED_UNITS:
+            # "الف وسبعماية": the hundreds of a number after its thousands, fused to و
             inside = after_number
         else:
             # one proclitic ب, ل or ف may lead the fused word: "بخمسميه الف"
@@ -563,10 +617,25 @@ def _hour_value(words: str):
     return None if value is False else value
 
 
+#: The night as Saudi speech says it after an hour, which the date parser does not read:
+#: بالليل covers 8 in the evening to 4 in the morning, as ``colloquial_clock`` says it.
+_NIGHT_WORDS = ("بالليل", "الليل", "بليل")
+#: The morning as Saudi speech says it after an hour: الصبح, which the date parser does not read.
+_MORNING_WORDS = ("الصبح", "بالصبح", "الصباح", "بالصباح")
+
+
+def _night_hour(hour: int):
+    return hour + 12 if 8 <= hour <= 11 else 0 if hour == 12 else hour if 1 <= hour <= 4 else None
+
+
 @functools.lru_cache(maxsize=1 << 12)
 def _period_hour(hour: int, word: str):
     """The hour of the day the date parser reads in ``الساعة <hour> <word>``, or None
     when it leaves ``word`` unread."""
+    if _folded(word) in _NIGHT_WORDS:
+        return _night_hour(hour)
+    if _folded(word) in _MORNING_WORDS:
+        return hour if 1 <= hour <= 11 else None
     from ovos_date_parser import extract_datetime
     read = extract_datetime(f"الساعة {hour} {word}", "ar", datetime.datetime(2000, 1, 1))
     return read[0].hour if read and not read[1].strip() else None
@@ -591,7 +660,7 @@ def _is_day_period(word: str) -> bool:
     """Whether ``word`` places an hour of the 12-hour clock in the day: مساء, صباحا, ظهرا,
     ليلا and the other words the date parser reads that way. A word it reads as a day,
     اليوم or غدا, moves no hour and is not one."""
-    return bool(_ARABIC_WORD.fullmatch(word)) and (
+    return bool(_ARABIC_WORD.fullmatch(word)) and (_folded(word) in _NIGHT_WORDS + _MORNING_WORDS or
         _period_hour(1, word) not in (None, 1) or _period_hour(12, word) not in (None, 12))
 
 
@@ -773,6 +842,573 @@ def _clock_times(text: str) -> str:
     return "".join(parts)
 
 
+# The rules below make two transcripts of the same speech compare equal: a written text and
+# a recognizer's reading of it, or two recognizers' readings of one recording. Every
+# equivalence among them was found where two recognizers wrote the same audio two ways, or
+# where a written reference and a recognizer's reading of a correct rendering of it differ.
+
+
+def _fold_key(word: str) -> str:
+    """``word`` unpointed, with one alef, ha for ta marbuta and ya for alef maqsura: the
+    form the tables below are written in."""
+    return word.translate(_CLOCK_MARKS).translate(_CLOCK_FOLD)
+
+
+def _map_words(text: str, read) -> str:
+    """``text`` with each word that ``read`` gives a new form for in that form; punctuation
+    at a word's edges stays."""
+    parts = _WORDS_AND_GAPS.split(text)  # words at even positions, the gaps between them at odd
+    for i in range(0, len(parts), 2):
+        if parts[i]:
+            lead, core, trail = _EDGE_PUNCTUATION.match(parts[i]).groups()
+            new = read(core) if core else None
+            if new is not None:
+                parts[i] = f"{lead}{new}{trail}"
+    return "".join(parts)
+
+
+#: A proclitic chain: و or ف, then ب, ك, ل, ال or a combination of them.
+_TERM_PROCLITIC = "(?:[وف]?(?:[بك]?ال|لل|[بكل])|[وف])"
+_LATIN_PROCLITIC = re.compile(rf"(?<![^\s\W])({_TERM_PROCLITIC})(?=[A-Za-z])")
+#: A hyphen between two Latin words, ``Test-Drive`` or ``M-Sport``: the words are said as two.
+_LATIN_HYPHEN = re.compile(r"(?<=[A-Za-z])-(?=[A-Za-z])")
+
+
+def _split_latin_proclitics(text: str) -> str:
+    return _LATIN_HYPHEN.sub(" ", _LATIN_PROCLITIC.sub(r"\1 ", text))
+
+
+#: Words Saudi speech says or spells two ways, each written the way of its right-hand side.
+#: A "spelling" pair sounds alike, and one recognizer writes one form where another writes the
+#: other. A "pronunciation" pair is two sayings of one word with one meaning: two Arabic
+#: recognizers reading the same audio write it each way at least ten times, so the readback
+#: cannot tell the two apart, and the form written away is no other word. Not here, for that
+#: reason: رح, written away to راح, which is also "went"; طب, also "medicine"; فيه, also "in
+#: it"; اتفضل and اتشرف, whose alif is also the first person; تانية and انو, which the two
+#: recognizers wrote one way round fewer than ten times.
+_DIALECT_SPELLINGS = {
+    "هذي": "هذه",      # pronunciation: haadhi and haadhihi, "this"
+    "معاك": "معك",     # pronunciation: maʿaak and maʿak, "with you"
+    "كده": "كذا",      # pronunciation: kida and kidha, "like this"
+    "ايوا": "ايوه",    # spelling: aywa, the final a written alif or ha
+    "لسا": "لسه",      # spelling: lissa, "still"
+    "بكرا": "بكره",    # spelling: bukra, "tomorrow"
+    "حابب": "حاب",     # spelling: Habb, the doubled consonant written twice or once
+}
+
+
+def _dialect_spelling(word: str):
+    key = _fold_key(word)
+    if key in _DIALECT_SPELLINGS:
+        return _DIALECT_SPELLINGS[key]
+    if key[:1] in "وف" and key[1:] in _DIALECT_SPELLINGS:
+        return key[0] + _DIALECT_SPELLINGS[key[1:]]
+    return None
+
+
+#: Spellings of number words that the number parser does not read, written in one it does.
+#: ونص is the spoken half the parser reads as ونصف; اطناش and اتناش are twelve said with t,
+#: as the parser's اثناش is; ثلثمية is three hundred written without the long a; تالاف and
+#: تلاف are the thousands said with t; التامنة and التالتة are the ordinals said with t.
+#: Recognizers write each of them for Saudi agents' speech.
+_NUMBER_SPELLINGS = {"ونص": "ونصف", "اطناش": "اثناش", "اتناش": "اثناش", "ثلثميه": "ثلاثميه",
+                     "ثلثمية": "ثلاثمية", "تالاف": "الاف", "تلاف": "الاف", "التامن": "الثامن",
+                     "التامنه": "الثامنه", "التالت": "الثالث", "التالته": "الثالثه"}
+#: Of those, the ones a proclitic may be written onto: واتناش, لاطناش.
+_NUMBER_SPELLINGS_PROCLITIC = ("اطناش", "اتناش", "ثلثميه", "ثلثمية")
+#: وحدة, the one said waHda, is واحدة where it counts: after الساعة or مرة. Anywhere else it
+#: is also "unit" or, in وحده, "alone".
+_ONE_SAID = "وحده"
+_ONE_COUNTS = ("الساعه", "مره", "ومره", "بالساعه")
+#: The formal eleven and twelve, two words, and the one word the parser reads for each.
+_FORMAL_TEENS = {("احد", "عشر"): "احداش", ("احدي", "عشره"): "احداش", ("اثنا", "عشر"): "اثناش",
+                 ("اثني", "عشر"): "اثناش", ("اثنتا", "عشره"): "اثناش", ("اثنتي", "عشره"): "اثناش"}
+
+
+def _number_spelling(word: str):
+    key = _fold_key(word)
+    if key in _NUMBER_SPELLINGS:
+        return _NUMBER_SPELLINGS[key]
+    if key[:1] in "ولب" and key[1:] in _NUMBER_SPELLINGS_PROCLITIC:
+        return key[0] + _NUMBER_SPELLINGS[key[1:]]
+    return None
+
+
+def _number_words(text: str) -> str:
+    """The number spellings, وحدة where it counts, and the formal eleven and twelve as one word."""
+    text = _map_words(text, _number_spelling)
+    parts = _WORDS_AND_GAPS.split(text)
+    keys = [_fold_key(w) for w in parts[::2]]
+    for i in range(len(keys)):
+        if keys[i] == _ONE_SAID and i > 0 and keys[i - 1] in _ONE_COUNTS:
+            parts[2 * i] = "واحده"
+        if i + 1 < len(keys):
+            lead = "و" if keys[i][:1] == "و" and (keys[i][1:], keys[i + 1]) in _FORMAL_TEENS else ""
+            pair = (keys[i][len(lead):], keys[i + 1])
+            if pair in _FORMAL_TEENS:
+                parts[2 * i], parts[2 * i + 1], parts[2 * i + 2] = lead + _FORMAL_TEENS[pair], "", ""
+                keys[i + 1] = ""
+    return "".join(parts)
+
+
+_GROUPED_DIGITS = re.compile(r"(?<![0-9٠-٩.,٬٫])([0-9]{1,3}(?:[,٬][0-9]{3})+|[٠-٩]{1,3}(?:[,٬][٠-٩]{3})+)"
+                             r"(?![0-9٠-٩]|[,٬][0-9٠-٩])")
+_ARABIC_DECIMAL = re.compile(r"(?<=[0-9٠-٩])٫(?=[0-9٠-٩])")
+#: The fraction words, which the number parser reads alone as 0.25, 0.33... and 0.5.
+_FRACTIONS = ("ربع", "ثلث", "نص", "نصف", "وربع", "وثلث", "ونصف", "الربع", "الثلث", "النص", "النصف",
+              "والربع", "والثلث", "والنص", "والنصف")
+#: Private-use characters hold a fraction word the parser must not read.
+_HELD_FRACTION = 0xE100
+#: The months, in the spellings written Arabic and Gulf speech use: the Gregorian names, the
+#: Levantine ones, and the English names Gulf speech says. Written folded.
+_MONTHS = {"يناير": 1, "فبراير": 2, "مارس": 3, "ابريل": 4, "مايو": 5, "يونيو": 6, "يونيه": 6,
+           "يوليو": 7, "يوليه": 7, "اغسطس": 8, "سبتمبر": 9, "اكتوبر": 10, "نوفمبر": 11, "ديسمبر": 12,
+           "كانون الثاني": 1, "شباط": 2, "اذار": 3, "نيسان": 4, "ايار": 5, "حزيران": 6, "تموز": 7,
+           "اب": 8, "ايلول": 9, "تشرين الاول": 10, "تشرين الثاني": 11, "كانون الاول": 12,
+           "مارتش": 3, "جون": 6, "جولاي": 7, "اوقست": 8, "اوغست": 8}
+_MONTH = "|".join(sorted(map(re.escape, _MONTHS), key=len, reverse=True))
+#: The name a month is written with: the Gregorian name of written Arabic.
+_MONTH_NAMES = ("يناير", "فبراير", "مارس", "ابريل", "مايو", "يونيو", "يوليو", "اغسطس", "سبتمبر", "اكتوبر",
+                "نوفمبر", "ديسمبر")
+#: Words after which عشرين and a number past twenty is a year said the Saudi way: a month,
+#: سنة, عام, موديل, or في, "in".
+_YEAR_WORD = re.compile(rf"(?:[وفبل]?(?:ال)?(?:سنه|عام|موديل|موديله|موديلها|موديلات)|في|{_MONTH})")
+_TWENTY = ("عشرين", "عشرون")
+_DIGIT_DATE = re.compile(r"(?<![0-9/.\-])([0-9]{1,2})([/.\-])([0-9]{1,2})\2([0-9]{4}|[0-9]{2})(?![0-9]|[/.\-][0-9])")
+_ISO_DATE = re.compile(r"(?<![0-9/.\-])([0-9]{4})([/\-])([0-9]{1,2})\2([0-9]{1,2})(?![0-9]|[/.\-][0-9])")
+_NAMED_DATE = re.compile(rf"(?<![0-9/.])([0-9]{{1,2}}) (?:من )?({_MONTH})(?: ([0-9]{{4}}))?(?![^\s\W])")
+#: فاصلة, the decimal mark said, between a number and its decimals: one number, or digits said
+#: one by one, as decimals are read.
+_DECIMAL_WORD = re.compile(r"(?<![0-9.])([0-9]+) فاصل[ةهت]? ([0-9](?: [0-9])+|[0-9]+)(?![0-9.])")
+#: Zeros that end a decimal say nothing: 1500.50 is 1500.5, as فاصلة خمسين and فاصلة خمسة both say.
+_DECIMAL_ZEROS = re.compile(r"(?<![0-9.])([0-9]+)\.([0-9]*?)0+(?![0-9.])")
+_PERCENT_WORDS = re.compile(r"([0-9]+(?:\.[0-9]+)?)\s*(?:[%٪]|(?:بال|في ال)(?:مي[ةه]|مئ[ةه]|مائ[ةه]))(?![^\s\W])")
+#: A time in digits with what places it in the day after it: م or pm, ص or am, or a period word.
+_DIGIT_TIME_PERIOD = re.compile(r"(?<![0-9:])([0-9]{1,2}):([0-9]{2}) ?(pm|PM|am|AM|م|ص|[\u0621-\u064A]+)(?![^\s\W])")
+_PADDED_HOUR = re.compile(r"(?<![0-9:])0([0-9]):(?=[0-9]{2}(?![0-9]))")
+#: A day and month in digits with no year, ``30/6``: read as a date when the day cannot be the
+#: top of a fraction's month, from 13, or a date word comes before it. ``1/2`` alone is a half.
+_DAY_MONTH = re.compile(r"(?<![0-9/.\-])([0-9]{1,2})/([0-9]{1,2})(?![0-9]|[/.\-][0-9])")
+_DATE_WORDS = ("يوم", "تاريخ", "بتاريخ", "التاريخ", "ينتهي", "تنتهي")
+_ON_THE_HOUR = re.compile(r"(?<![0-9:])([0-9]{1,2}):00(?![0-9:])")
+_PERCENT_BEFORE = re.compile(r"(?<![0-9.])[%٪]([0-9]+(?:\.[0-9]+)?)")
+_CLOCK_MINUTE_WORD = re.compile(r"(الساع[ةه]) ([0-9]{1,2})(?: و?دقيق[ةه] ([0-9]{1,2})| و([0-9]{1,2}) دقيق[ةه])(?![0-9])")
+_UNIT_AFTER_NUMBER = r"(?<=[0-9])( ?)({})(?![A-Za-z])"
+
+
+def _held(word: str) -> str:
+    return chr(_HELD_FRACTION + _FRACTIONS.index(word))
+
+
+def _hold_fractions(text: str) -> str:
+    """Each fraction word that follows no number held from the parser: ``ربع ساعة`` is a
+    quarter of an hour, and the parser would write it 0.25."""
+    parts = _WORDS_AND_GAPS.split(text)
+    words = parts[::2]
+    for i, word in enumerate(words):
+        key = _fold_key(word)
+        if key not in _FRACTIONS:
+            continue
+        before = words[i - 1] if i > 0 else ""
+        if before and (before[-1:].isdigit() or _number_value(before) is not None):
+            continue
+        parts[2 * i] = _held(key)
+    return "".join(parts)
+
+
+_PERCENT_SAID = re.compile(r"(?<![^\s\W])(?:بال|في ال)(?:مي[ةه]|مئ[ةه]|مائ[ةه])(?![^\s\W])")
+
+
+def _percent_words(text: str) -> str:
+    """بالمية or في المية after a number word as ``٪``, before the parser reads its مية as a
+    hundred: ``خمسة وعشرين في المية`` is 25%. After any other word it is "in the water"."""
+    def said(m):
+        before = text[:m.start()].split()
+        last = before[-1] if before else ""
+        return "٪" if last and (last[-1:].isdigit() or _number_value(last) is not None) else m.group(0)
+    return _PERCENT_SAID.sub(said, text)
+
+
+def _release_fractions(text: str) -> str:
+    return "".join(_FRACTIONS[ord(c) - _HELD_FRACTION] if _HELD_FRACTION <= ord(c) < _HELD_FRACTION + len(_FRACTIONS)
+                   else c for c in text)
+
+
+def _year_value(words):
+    """The year 20xx said as عشرين and the number past two thousand, from 20 to 99, read
+    from ``words``; with the count of words it took, or None."""
+    for n in (3, 2, 1):
+        if len(words) < n:
+            continue
+        value = _number_value(" ".join(words[:n]))
+        if value is not None and value == int(value) and 20 <= value <= 99 \
+                and all(_number_value(" ".join(words[:n][:k] + words[:n][k + 1:])) != value for k in range(n)):
+            return int(value), n
+    return None
+
+
+def _spoken_years(text: str) -> str:
+    """``موديل عشرين ستة وعشرين`` as ``موديل 2026``: the year said the way Saudi speech says
+    a year from 2020, after a month, سنة, عام or موديل."""
+    parts = _WORDS_AND_GAPS.split(text)
+    words = [_fold_key(w) for w in parts[::2]]
+    i = 1
+    while i < len(words) - 1:
+        if words[i] in _TWENTY and (_YEAR_WORD.fullmatch(words[i - 1])
+                                    or (i > 1 and _YEAR_WORD.fullmatch(f"{words[i - 2]} {words[i - 1]}"))):
+            read = _year_value(words[i + 1:i + 4])
+            if read:
+                value, n = read
+                parts[2 * i] = f"20{value}"
+                for p in range(2 * i + 1, 2 * (i + n) + 1):
+                    parts[p] = ""
+                i += n
+        i += 1
+    return "".join(parts)
+
+
+def _ordinal_days(text: str) -> str:
+    """A day said as an ordinal before a month, ``الثامن عشر من سبتمبر``, as its number,
+    ``18 سبتمبر``. Read before the cardinals, which take the عشر of an ordinal teen alone."""
+    parts = _WORDS_AND_GAPS.split(text)
+    words = [_fold_key(w) for w in parts[::2]]
+    i = 0
+    while i < len(words):
+        read = _ordinal_day(words, i) if words[i].startswith("ال") else None
+        if read is None:
+            i += 1
+            continue
+        value, end = read
+        parts[2 * i] = str(value)
+        for p in range(2 * i + 1, 2 * end - 1):
+            parts[p] = ""
+        i = end
+    return "".join(parts)
+
+
+def _every_word_counts(span, value) -> bool:
+    """Whether each word of ``span`` changes the number it reads: in السابعة السابعة the second
+    word is a repeat, not part of the number."""
+    return len(span) == 1 or all(_hour_value(" ".join(span[:k] + span[k + 1:])) != value for k in range(len(span)))
+
+
+def _ordinal_day(words, i):
+    """The day of the month the ordinal from ``words[i]`` names when a month follows it, and
+    the index after the ordinal; None otherwise. The first word must be no cardinal: الاثنين,
+    which the parser reads as two, is Monday."""
+    for n in (3, 2, 1):
+        end = i + n
+        month_at = end + 1 if end < len(words) and words[end] == "من" else end
+        if month_at >= len(words) or not (words[month_at] in _MONTHS or
+                                          " ".join(words[month_at:month_at + 2]) in _MONTHS):
+            continue
+        span = words[i:end]
+        if not all(_ARABIC_WORD.fullmatch(w) and _hour_value(w) is not None for w in span) \
+                or _number_value(span[0]) is not None:
+            continue
+        value = _hour_value(" ".join(span))
+        if value is not None and value == int(value) and 1 <= value <= 31 and _every_word_counts(span, value):
+            return int(value), end
+    return None
+
+
+def _month_number(name: str) -> int:
+    return _MONTHS[_fold_key(name)]
+
+
+def _named_date(m: re.Match) -> str:
+    day, name, year = m.groups()
+    month_number = _month_number(name)
+    if not 1 <= int(day) <= 31:
+        return m.group(0)
+    return f"{int(day)} {_MONTH_NAMES[month_number - 1]}" + (f" {year}" if year else "")
+
+
+def _digit_date(m: re.Match) -> str:
+    day, _, month, year = m.groups()
+    if not (1 <= int(day) <= 31 and 1 <= int(month) <= 12):
+        return m.group(0)
+    return f"{int(day)} {_MONTH_NAMES[int(month) - 1]} {year if len(year) == 4 else '20' + year}"
+
+
+def _iso_date(m: re.Match) -> str:
+    year, _, month, day = m.groups()
+    if not (1 <= int(day) <= 31 and 1 <= int(month) <= 12):
+        return m.group(0)
+    return f"{int(day)} {_MONTH_NAMES[int(month) - 1]} {year}"
+
+
+@functools.lru_cache(maxsize=None)
+def _unit_names():
+    names = {symbol: name.translate(_CLOCK_MARKS) for symbol, name in cldr_units("ar").items()
+             if re.fullmatch("[A-Za-z]+", symbol)}
+    names.update({u.upper(): names[u] for u in _CAPITALISED_UNITS if u in names})
+    pattern = re.compile(_UNIT_AFTER_NUMBER.format("|".join(sorted(map(re.escape, names), key=len, reverse=True))))
+    return pattern, names
+
+
+def _written_numbers(text: str) -> str:
+    """The rules of ``number_forms`` that read digits: before the parser and after it."""
+    text = _GROUPED_DIGITS.sub(lambda m: re.sub("[,٬]", "", m.group(1)), text)
+    text = _ARABIC_DECIMAL.sub(".", text)
+    text = _ISO_DATE.sub(_iso_date, _DIGIT_DATE.sub(_digit_date, text.translate(_EASTERN_DIGITS)))
+    folded = text.translate(_CLOCK_FOLD)  # one letter for one letter, so spans carry over
+    out, last = [], 0
+    for m in _NAMED_DATE.finditer(folded):
+        out.append(text[last:m.start()] + _named_date(m))
+        last = m.end()
+    text = "".join(out) + text[last:]
+    text = _DECIMAL_WORD.sub(lambda m: f"{m.group(1)}.{m.group(2).replace(' ', '')}", text)
+    text = _DECIMAL_ZEROS.sub(lambda m: f"{m.group(1)}.{m.group(2)}" if m.group(2) else m.group(1), text)
+    text = _PERCENT_WORDS.sub(r"\1%", _PERCENT_BEFORE.sub(r"\1%", text))
+    text = _CLOCK_MINUTE_WORD.sub(lambda m: f"{m.group(1)} {int(m.group(2))}:{int(m.group(3) or m.group(4)):02d}"
+                                  if int(m.group(2)) <= 24 and int(m.group(3) or m.group(4)) <= 59 else m.group(0), text)
+    text = _DAY_MONTH.sub(_day_month, _PADDED_HOUR.sub(r"\1:", text))
+    text = _ON_THE_HOUR.sub(r"\1", _DIGIT_TIME_PERIOD.sub(_digit_time_period, text))
+    pattern, names = _unit_names()
+    return pattern.sub(lambda m: " " + names[m.group(2)], text)
+
+
+def _day_month(m: re.Match) -> str:
+    day, month = int(m.group(1)), int(m.group(2))
+    before = m.string[:m.start()].split()
+    dated = bool(before) and _fold_key(before[-1]) in _DATE_WORDS
+    if not (1 <= day <= 31 and 1 <= month <= 12 and (day >= 13 or dated)):
+        return m.group(0)
+    return f"{day} {_MONTH_NAMES[month - 1]}"
+
+
+def _rank_ordinals(text: str) -> str:
+    """An ordinal after a rank noun as its number: ``الفئة الخامسة`` is ``الفئة 5``, as
+    ``normalize_for_tts`` says ``الفئة 5``. The nouns are those of ``data/rank_ordinals.tsv``."""
+    nouns = {_fold_key(n) for n in _RANK_NOUNS}
+    parts = _WORDS_AND_GAPS.split(text)
+    words = [_fold_key(w) for w in parts[::2]]
+    for i in range(len(words) - 1):
+        noun = words[i]
+        bare = noun[2:] if noun.startswith("ال") else noun[3:] if noun[:3] in ("وال", "بال", "فال") else noun
+        if bare not in nouns:
+            continue
+        for n in (3, 2, 1):
+            span = words[i + 1:i + 1 + n]
+            if len(span) < n or not all(_ARABIC_WORD.fullmatch(w) and _hour_value(w) is not None for w in span) \
+                    or _number_value(span[0]) is not None:
+                continue
+            value = _hour_value(" ".join(span))
+            if value is not None and value == int(value) and 1 <= value <= 99 and _every_word_counts(span, value):
+                parts[2 * (i + 1)] = str(int(value))
+                for p in range(2 * (i + 1) + 1, 2 * (i + n) + 1):
+                    parts[p] = ""
+                break
+    return "".join(parts)
+
+
+def _digit_time_period(m: re.Match) -> str:
+    """``9:30 م`` and ``4:30 العصر`` on the 24-hour clock, as the clock reading writes a time
+    said with its period: ``21:30``, ``16:30``. A time on the hour is then the hour alone,
+    since ``الساعة سبعة`` says 7:00."""
+    hour, minute, word = int(m.group(1)), m.group(2), m.group(3)
+    if not 1 <= hour <= 12:
+        return m.group(0)
+    if word in ("pm", "PM", "م"):
+        hour = hour % 12 + 12
+    elif word in ("am", "AM", "ص"):
+        hour = hour % 12
+    elif _is_day_period(word):
+        read = 0 if hour == 12 and _folded(word) == _NIGHT else _period_hour(hour, word)
+        if read is None:
+            return m.group(0)
+        hour = read
+    else:
+        return m.group(0)
+    return f"{hour}:{minute}"
+
+
+@functools.lru_cache(maxsize=None)
+def _code_names():
+    """Each Latin capital's name and each digit's English name, unpointed: from
+    :func:`spelled_codes`, with the long-vowel spellings a recognizer writes for the digit
+    names (فايف beside فيف, سيفن beside سفن, وان beside ون)."""
+    names = {c: _fold_key(n) for c, n in spelled_codes("ar").items()}
+    letters = {c: n for c, n in names.items() if c.isalpha()}
+    # J and G share a spelling in the table; a recognizer writes J جاي where it hears it.
+    # E and I are both اي in a recognizer's writing, and B and P both بي: those stay one.
+    letters["J"] = "جاي"
+    digits = {n: c for c, n in names.items() if c.isdigit()}
+    digits.update({"وان": "1", "تري": "3", "فايف": "5", "سيكس": "6", "سيفن": "7", "ناين": "9", "ايت": "8"})
+    digits.update(_ENGLISH_TENS)
+    return letters, digits
+
+
+#: Digit names that are also Arabic words: فور "at once", تو "just", ثري "rich", تري "you
+#: see", سفن "ships". After a letter name that is a particle, في "in", بي "with me", او "or",
+#: ان "that", كي "so that" or the article ال, alone, they are those words: بي فور is "me at
+#: once" and او تو "or just", so V, B, O, N, K and L with these digits are not read as codes.
+_WORD_DIGIT_NAMES = ("فور", "تو", "ثري", "تري", "سفن")
+_PREPOSITION_LETTERS = ("في", "بي", "او", "ان", "كي", "ال")
+#: The English tens a code's digits are said with, ``كيو فيفتي`` for Q50.
+_ENGLISH_TENS = {"تونتي": "20", "ثيرتي": "30", "ثرتي": "30", "فورتي": "40", "فيفتي": "50", "سكستي": "60",
+                 "سيكستي": "60", "سفنتي": "70", "سيفنتي": "70", "ايتي": "80", "ناينتي": "90"}
+
+
+#: Letter names that are also Arabic words: في "in", اي "which", ام "mother", ان "that",
+#: بي "with me", جي "came", دي, تي, سي, اس, ار, اف, او "or", ال, كي "so that", يو,
+#: ايه "what". The others, اكس, دبليو, زد, كيو, اتش, واي, are names only.
+_NAME_ONLY_LETTERS = ("اتش", "اكس", "دبليو", "زد", "كيو", "واي")
+#: The borrowed letters and the Arabic letter written for each.
+_LOAN_LETTERS = {"ڤ": "ف", "پ": "ب", "گ": "ك", "چ": "ج", "ڨ": "ق"}
+#: Punctuation outside a number: ``.`` ``:`` ``/`` between two digits and ``%`` after one stay.
+_PUNCTUATION_OUTSIDE_NUMBERS = re.compile(r"(?<![0-9])[.:/]|[.:/](?![0-9])|(?<![0-9])%|[^\w\s.:/%]")
+_LATIN_CODE = re.compile(r"(?<![A-Za-z0-9])(?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]+(?![A-Za-z0-9])")
+
+
+def _spelled_code(m: re.Match) -> str:
+    token = m.group(0)
+    # capitals beside a number, as on a plate, ABC 1234, are spelled whatever they spell
+    beside_number = re.fullmatch("[A-Z]{1,4}", token) and (re.match(r" ?[0-9]", m.string[m.end():])
+                                                            or re.search(r"[0-9] ?$", m.string[:m.start()]))
+    is_code = any(c.isdigit() for c in token) or (2 <= len(token) <= 4 and all(c in _CONSONANT_CAPS for c in token)) \
+        or re.fullmatch("[a-z]?[A-Z]", token) or re.fullmatch("[a-z][A-Z]{1,3}", token) or beside_number
+    if not is_code:
+        return token
+    letters, _ = _code_names()
+    pieces = re.findall("[0-9]+|[A-Za-z]", token)
+    return " ".join(p if p.isdigit() else letters[p.upper()] for p in pieces)
+
+
+@functools.lru_cache(maxsize=1 << 16)
+def _split_names(rest: str):
+    """``rest`` as a run of code names, longest name first, or None. Each tail is read once."""
+    if not rest:
+        return ()
+    letters, digits = _code_names()
+    names = set(letters.values()) | set(digits)
+    for k in range(len(rest), 1, -1):
+        if rest[:k] in names:
+            tail = _split_names(rest[k:])
+            if tail is not None:
+                return (rest[:k],) + tail
+    return None
+
+
+@functools.lru_cache(maxsize=1 << 12)
+def _fused_names(word: str):
+    """``word`` as the code names it is made of, or None: two or more names, every one a
+    digit name or one of them a letter name that is no Arabic word, and not beginning with
+    ال, the article: التو is "just now", not L2."""
+    letters, digits = _code_names()
+    pieces = _split_names(word)
+    if not pieces or len(pieces) < 2 or pieces[0] == "ال":
+        return None
+    if all(p in digits for p in pieces) or any(p in _NAME_ONLY_LETTERS for p in pieces):
+        return list(pieces)
+    return None
+
+
+def _code_runs(text: str) -> str:
+    """Runs of letter names, digit names and digits read as one code: English digit names as
+    digits, the digits of the run as one number."""
+    letters, digits = _code_names()
+    letter_names = set(letters.values())
+    words = []
+    for word in text.split(" "):
+        key = _fold_key(word)
+        fused = _fused_names(key) if key and not word.isdigit() and key not in letter_names and key not in digits \
+            else None
+        words.extend(fused or [word])
+
+    def kind(w):
+        k = _fold_key(w)
+        return "L" if k in letter_names else "E" if k in digits else "D" if w.isdigit() else None
+
+    out, i = [], 0
+    while i < len(words):
+        if kind(words[i]) is None:
+            out.append(words[i])
+            i += 1
+            continue
+        j = i
+        while j < len(words) and kind(words[j]) is not None:
+            j += 1
+        run = words[i:j]
+        kinds = [kind(w) for w in run]
+        # A run is a code when it has an English digit name, a letter name that is no Arabic
+        # word, or two letter names: في, اي and جي before a number are "in", "which" and
+        # "came". A digit name that is a word does not count after في or بي alone.
+        letters_said = [_fold_key(w) for w, k in zip(run, kinds) if k == "L"]
+        digit_said = any(k == "E" and (_fold_key(w) not in _WORD_DIGIT_NAMES
+                                       or not set(letters_said) <= set(_PREPOSITION_LETTERS))
+                         for w, k in zip(run, kinds))
+        if len(run) >= 2 and "L" in kinds and (digit_said or kinds.count("L") >= 2
+                                                or any(_fold_key(w) in _NAME_ONLY_LETTERS for w in run)):
+            merged, tens = [], False
+            for w, k in zip(run, kinds):
+                d = digits[_fold_key(w)] if k == "E" else w if k == "D" else None
+                if d is not None and merged and merged[-1].isdigit():
+                    if tens and len(d) == 1:
+                        merged[-1] = str(int(merged[-1]) + int(d))
+                    else:
+                        merged[-1] += d
+                else:
+                    merged.append(d if d is not None else w)
+                tens = k == "E" and _fold_key(w) in _ENGLISH_TENS
+            run = merged
+        out.extend(run)
+        i = j
+    return " ".join(out)
+
+
+#: ل with an attached pronoun: "to you", "to me", "to them" ...
+_LAM_PRONOUNS = ("لك", "لكم", "لكي", "لكو", "لنا", "له", "لها", "لهم", "لهن", "لي")
+#: Pairs written as one word or two: the first word and what the second must be.
+_COMPOUNDS = (("ان", ("شا", "شاء")), ("الحمد", ("لله",)), ("يا", ("رب",)), ("ما", ("في",)))
+
+
+def _join_clitics(text: str) -> str:
+    words = text.split(" ")
+    out = []
+    for w in words:
+        if not w:
+            out.append(w)
+            continue
+        prev = out[-1] if out else ""
+        if prev == "و":
+            out[-1] = "و" + w
+        elif w in _LAM_PRONOUNS and re.fullmatch("[\u0621-\u064A]+", prev):
+            if prev.endswith("وا"):
+                prev = prev[:-1]
+            out[-1] = prev + w
+        elif prev in ("عبد", "وعبد") and w.startswith("ال"):
+            out[-1] = prev + w
+        elif any(prev in (first, "و" + first) and w in second for first, second in _COMPOUNDS):
+            out[-1] = prev + w
+        else:
+            out.append(w)
+    return " ".join(out)
+
+
+#: Names the rule set of :func:`normalize_asr`. It is a digest of the flags in their
+#: order and of every pattern and table the rules use, so it changes when a rule or
+#: the order changes and cannot be left behind by an edit. It does not cover what a
+#: config carries as values: a lexicon is named by :meth:`AsrNorm.describe`, not here.
+ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HARAKAT, _EXTENDED_MARKS,
+                             _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
+                             _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
+                             _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER,
+                             _OR, _MAYA_SPELLINGS, _HUNDRED, _FAREWELL, _FAREWELL_SPELLINGS,
+                             _CLOCK_WORD, _HOUR_TENS, _HOUR_FRACTIONS, _EXCEPT, _MINUTE_WORDS, _NIGHT,
+                             _TIME_ENDS, _TERM_PROCLITIC, _LATIN_HYPHEN, _DIALECT_SPELLINGS, _MORNING_WORDS,
+                             _PADDED_HOUR, _DAY_MONTH, _DATE_WORDS, _WORD_DIGIT_NAMES, _PREPOSITION_LETTERS,
+                             _DECIMAL_ZEROS,
+                             _NIGHT_WORDS, _ONE_SAID, _ONE_COUNTS, _FORMAL_TEENS, _DIGIT_TIME_PERIOD, _ON_THE_HOUR,
+                             _PERCENT_BEFORE, _ENGLISH_TENS,
+                             _NUMBER_SPELLINGS, _NUMBER_SPELLINGS_PROCLITIC, _GROUPED_DIGITS, _ARABIC_DECIMAL,
+                             _FRACTIONS, _MONTHS, _MONTH_NAMES, _YEAR_WORD, _TWENTY, _DIGIT_DATE, _ISO_DATE, _NAMED_DATE,
+                             _DECIMAL_WORD, _PERCENT_WORDS, _PERCENT_SAID, _CLOCK_MINUTE_WORD, _UNIT_AFTER_NUMBER,
+                             _NAME_ONLY_LETTERS, _LOAN_LETTERS, _PUNCTUATION_OUTSIDE_NUMBERS, _LATIN_CODE,
+                             _LAM_PRONOUNS, _COMPOUNDS)
+
+
 def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "ar",
                   **flags: bool) -> str:
     """Normalize a transcript for comparison.
@@ -812,18 +1448,33 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
         text = _PUNCTUATION.sub(" ", text)
     if marks:
         text = marks.sub("", text)
+    arabic = is_arabic_lang(lang)
+    if config.split_term_proclitics and arabic:
+        text = _split_latin_proclitics(text)
     if config.lexicon:
         text = _apply_lexicon(text, config)
-    if config.fix_asr_errors and is_arabic_lang(lang):
+    if config.fix_asr_errors and arabic:
         text = _or_as_and(_maya_as_hundred(text))
-    if config.unify_spoken_variants and is_arabic_lang(lang):
+    if config.unify_spoken_variants and arabic:
         text = _spoken_variants(text)
+    if config.unify_dialect_spellings and arabic:
+        text = _map_words(text, _dialect_spelling)
+    if config.number_forms:
+        text = _written_numbers(text)
+        if arabic:
+            text = _number_words(text)
     if config.spoken_numbers_to_digits:
-        if is_arabic_lang(lang):
+        if arabic:
             text = _clock_times(text)
+            if config.number_forms:
+                text = _percent_words(_hold_fractions(_rank_ordinals(_ordinal_days(_spoken_years(text)))))
         text = _numbers_to_digits(text, lang)
+        if config.number_forms:
+            text = _release_fractions(_written_numbers(text))
     if config.join_dictated_digits:
         text = _DICTATED_DIGITS.sub(lambda m: _WHITESPACE.sub("", m.group(0)), text)
+    if config.spell_codes and arabic:
+        text = _LATIN_CODE.sub(_spelled_code, text)
     if table:
         text = text.translate(table)
     if config.fold_case:
@@ -831,9 +1482,13 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
     if config.arabic_block_only:
         text = _NOT_ARABIC_BLOCK.sub(" ", text)
     if config.blank_punctuation and not config.punctuation_before_marks:
-        text = _PUNCTUATION.sub(" ", text)
+        text = (_PUNCTUATION_OUTSIDE_NUMBERS if config.number_forms else _PUNCTUATION).sub(" ", text)
     if config.drop_word_final_hamza:
         text = _WORD_FINAL_HAMZA.sub("", text)
+    if config.spell_codes and arabic:
+        text = _code_runs(text)
+    if config.join_clitics and arabic:
+        text = _join_clitics(text)
     if config.collapse_whitespace:
         text = _WHITESPACE.sub(" ", text).strip()
     return text
@@ -1077,6 +1732,39 @@ def bundled_tts_lexicon(name: str = "cars-sa", pointed: bool = True) -> Dict[str
         if row["latin"] not in chosen or rank < chosen[row["latin"]][0]:
             chosen[row["latin"]] = (rank, spelling)
     return {latin: spelling for latin, (_, spelling) in chosen.items()}
+
+
+def canonical_term_lexicon(names: Tuple[str, ...] = ("cars-sa", "common-en")) -> Dict[str, str]:
+    """Every spelling of a term, the Latin one and each Arabic one, mapped to one Arabic
+    spelling of the term: for ``normalize_asr`` comparing two transcripts.
+
+    The one spelling is the term's in :func:`bundled_tts_lexicon`, unpointed, so a written
+    ``LAND ROVER`` and a recognizer's ``لاند روفر`` both become what a voice is asked to say,
+    and a recognizer's spelling that differs from it by a letter still counts one letter. An
+    Arabic spelling of several words is also matched written as one word.
+    Where two tables spell one thing, the first named wins.
+    """
+    lexicon: Dict[str, str] = {}
+    for name in names:
+        said = bundled_tts_lexicon(name, pointed=False)
+        for spelling, term in bundled_asr_lexicon(name).items():
+            lexicon.setdefault(spelling, said[term])
+            # a recognizer writes a two-word name as one, لاندروفر for لاند روفر
+            lexicon.setdefault(spelling.replace(" ", ""), said[term])
+        for term, spelling in said.items():
+            lexicon.setdefault(term, spelling)
+    return lexicon
+
+
+#: Two transcripts of the same speech, a written text and a recognizer's reading of it or two
+#: readings, brought to one form, so that what is left between them is what was said
+#: differently: :data:`CER_NORM_MARKS_FIRST` with numbers read as digits and written one way,
+#: codes spelled as their letter names, the terms of :func:`canonical_term_lexicon` written
+#: as they are said, dialect spellings unified and clitics joined.
+CER_CANONICAL = dataclasses.replace(
+    CER_NORM_MARKS_FIRST, split_term_proclitics=True, fix_asr_errors=True, unify_dialect_spellings=True,
+    number_forms=True, spoken_numbers_to_digits=True, join_dictated_digits=True, spell_codes=True,
+    unify_loan_letters=True, fold_case=True, join_clitics=True).with_lexicon(canonical_term_lexicon())
 
 
 @functools.lru_cache(maxsize=64)
