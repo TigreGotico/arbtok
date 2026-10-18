@@ -654,13 +654,12 @@ normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", VOICE_AGENT, diale
 
 The words are the parser's, quoted there from a published grammar with its page,
 and it composes the number the same way whichever lect it speaks: a lect differs
-in its words and not in its arithmetic. It has words for Hijazi `acw`, Gulf `afb`
-and Cairene Egyptian `arz`. What arbtok adds is the translation from the tag you
+in its words and not in its arithmetic. It has words for Hijazi `acw`, Gulf `afb`,
+Najdi `ars` and Cairene Egyptian `arz`. What arbtok adds is the translation from the tag you
 passed to that code, `arbtok.lect_code`, which walks the orthography2ipa parent
 chain, so Kuwaiti and Qatari take the Gulf code from the node they descend from.
-**A lect the parser has no cited words for keeps the literary ones**, Najdi
-included: no source has been read for it, and a form no source gives is not
-written.
+**A lect the parser has no cited words for keeps the literary ones**: a form no
+source gives is not written. `ar-SA` resolves to Najdi and takes its words.
 
 **The numeral is all this changes.** Arabic makes the counted noun agree with the
 number, and the dialects covered agree in the same direction: two to ten take a
