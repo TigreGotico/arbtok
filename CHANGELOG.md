@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a47](https://github.com/TigreGotico/arbtok/tree/0.0.2a47) (2026-10-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a46...0.0.2a47)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a number written against its unit is read as one written apart [\#255](https://github.com/TigreGotico/arbtok/pull/255) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a46](https://github.com/TigreGotico/arbtok/tree/0.0.2a46) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a45...0.0.2a46)
@@ -393,10 +401,6 @@
 ## [0.0.1a28](https://github.com/TigreGotico/arbtok/tree/0.0.1a28) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a27...0.0.1a28)
-
-**Merged pull requests:**
-
-- Keep a moon letter's gemination after the definite article [\#153](https://github.com/TigreGotico/arbtok/pull/153) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a27](https://github.com/TigreGotico/arbtok/tree/0.0.1a27) (2026-09-21)
 
