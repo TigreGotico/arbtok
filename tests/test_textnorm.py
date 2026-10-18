@@ -419,6 +419,48 @@ def test_a_paper_size_written_with_a_space_reads_as_the_joined_one():
     assert normalize_for_tts("ورق A 4 للطباعة", spell_out_codes=True, **AS_WRITTEN) == joined == "ورق إِيهْ فُورْ للطباعة"
 
 
+@pytest.mark.parametrize("hyphenated,joined", [
+    ("سيارة F-150 جديدة", "سيارة F150 جديدة"),
+    ("عندنا CX-5 بسعر ممتاز", "عندنا CX5 بسعر ممتاز"),
+    ("تبي GV-70 ولا X-5؟", "تبي GV70 ولا X5؟"),
+])
+def test_a_code_written_with_a_hyphen_reads_as_the_joined_code(hyphenated, joined):
+    lexicon = TtsNorm().with_lexicon({"X5": "اكس فايف"})
+    said = normalize_for_tts(hyphenated, "ar", lexicon, spell_out_codes=True, cardinal_numbers=True, **AS_WRITTEN)
+    assert said == normalize_for_tts(joined, "ar", lexicon, spell_out_codes=True, cardinal_numbers=True, **AS_WRITTEN)
+    assert not re.search("[A-Za-z0-9]", said), said
+
+
+def test_a_hyphenated_code_in_the_lexicon_keeps_the_lexicons_reading():
+    lexicon = TtsNorm().with_lexicon({"F-150": "إف ون فيفتي"})
+    assert normalize_for_tts("سيارة F-150 جديدة", "ar", lexicon, spell_out_codes=True, **AS_WRITTEN) \
+        == "سيارة إف ون فيفتي جديدة"
+
+
+HYPHENATED_RUNS = ["سيارة F-150 جديدة", "عندنا CX-5 بسعر ممتاز", "فيروس COVID-19", "المبلغ SAR-50 فقط",
+                   "المبلغ USD-100 فقط", "رقم الحجز AB-12345", "الرقم SA-2026-1234", "القطعة A-123-456",
+                   "سيارة F-150-2", "الفترة 2020-2025"]
+
+
+@pytest.mark.parametrize("config", [TtsNorm(), VOICE_AGENT, dataclasses.replace(VOICE_AGENT, spell_out_codes=True)],
+                         ids=["default", "voice agent", "voice agent spelling codes"])
+@pytest.mark.parametrize("written", HYPHENATED_RUNS)
+def test_every_digit_of_a_hyphenated_run_is_spoken(written, config):
+    """Joined or not, a hyphenated run reaches the synthesizer with its digits spoken."""
+    assert not re.search("[0-9٠-٩]", normalize_for_tts(written, "ar", config))
+
+
+@pytest.mark.parametrize("text,amount", [("المبلغ SAR-50 فقط", "SAR"), ("المبلغ USD-100 فقط", "USD"),
+                                         ("الفترة 2020-2025", "ألفين وعشرين")])
+def test_an_amount_and_a_range_are_not_joined(text, amount):
+    said = normalize_for_tts(text, "ar", dataclasses.replace(VOICE_AGENT, spell_out_codes=True))
+    assert amount in said and not re.search("[0-9٠-٩]", said), said
+
+
+def test_an_identifier_after_a_hyphen_is_read_digit_by_digit():
+    assert normalize_for_tts("رقم الحجز AB-12345", "ar", VOICE_AGENT) == "رقم الحجز AB-واحد اثنين ثلاثة أربعة خمسة"
+
+
 def test_a_spaced_code_is_not_joined_without_spell_out_codes():
     assert normalize_for_tts("كم سعر MG 4؟", **AS_WRITTEN) == "كم سعر MG 4؟"
 
