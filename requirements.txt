@@ -21,7 +21,9 @@ langcodes
 # التلات "Tuesday" -- is a number only when its context makes it one, so
 # `normalize_asr(spoken_numbers_to_digits)` leaves "شربت مية باردة" as written, where
 # 0.22.9a1 gives "شربت 100 باردة" and turns "الست جات" into "6 جات".
-ovos-number-parser>=0.22.10a1
+# From 0.24.0a1 the parser has cited Najdi cardinals under `ars`, so `dialect_numbers` speaks
+# 15 for ar-SA and ar-SA-x-najd as خمسطعش; an older parser gives the literary خمسة عشر.
+ovos-number-parser>=0.24.0a1
 # Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
 # with the fractions of the hour and the period words: `normalize_for_tts` takes the
 # words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour

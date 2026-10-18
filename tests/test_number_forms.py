@@ -28,11 +28,22 @@ def test_a_tag_naming_no_lect_carries_no_code(tag):
     assert lect_code(tag) is None
 
 
-@pytest.mark.parametrize("tag", ["ar", "ar-SA", "ar-SA-x-najd", "ar-MA", "ar-IQ", "ar-x-levantine"])
+@pytest.mark.parametrize("tag", ["ar", "ar-MA", "ar-IQ", "ar-x-levantine"])
 def test_a_lect_with_no_cited_words_keeps_the_literary_ones(tag):
-    """Najdi is the product's target lect and the parser has no words for it: no source
-    has been read for it, and a form no source gives is not written."""
+    """A form no source gives is not written."""
     assert normalize_for_tts("عندك 15 رسالة", tag, DIALECT) == "عندك خمسة عشر رسالة"
+
+
+@pytest.mark.parametrize("tag", ["ar-SA", "ar-SA-x-najd"])
+@pytest.mark.parametrize("written, spoken", [
+    ("عندك 15 رسالة", "عندك خمسطعش رسالة"),
+    ("عندك 12 رسالة", "عندك ثنعش رسالة"),
+    ("عندي 100 ريال", "عندي مية ريال"),
+])
+def test_najdi_takes_the_parsers_cited_najdi_words(tag, written, spoken):
+    """The parser's Najdi table, under ``ars``, cites Ingham, Najdi Arabic (1994), and
+    Van Wagoner, Spoken Arabic (Saudi) (1977); ``ar-SA`` resolves to Najdi."""
+    assert normalize_for_tts(written, tag, DIALECT) == spoken
 
 
 def test_the_classical_code_is_accepted_by_a_rule_that_speaks_arabic():
@@ -75,8 +86,10 @@ def test_the_three_lects_do_not_say_a_teen_alike():
 
 def test_the_egyptian_words_are_read_for_egypt_and_not_for_its_neighbours():
     assert normalize_for_tts("عندي 100 ريال", "ar-EG", DIALECT) == "عندي مية ريال"
-    for tag in ("ar-SA-x-najd", "ar-LY", "ar-x-levantine"):
+    for tag in ("ar-LY", "ar-x-levantine"):
         assert normalize_for_tts("عندي 100 ريال", tag, DIALECT) == "عندي مئة ريال"
+    assert normalize_for_tts("عندك 12 رسالة", "ar-SA-x-najd", DIALECT) \
+        != normalize_for_tts("عندك 12 رسالة", "ar-EG", DIALECT)
 
 
 def test_a_teen_inside_a_year_is_replaced_and_the_rest_is_not():
