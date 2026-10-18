@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a49](https://github.com/TigreGotico/arbtok/tree/0.0.2a49) (2026-10-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a48...0.0.2a49)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): the cardinals read a date written in digits as a date [\#250](https://github.com/TigreGotico/arbtok/pull/250) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a48](https://github.com/TigreGotico/arbtok/tree/0.0.2a48) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a47...0.0.2a48)
