@@ -636,6 +636,7 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `space_fused_hundreds` | in those cardinals `ثلاثمئة` becomes `ثلاث مئة`; a synthesizer keeps the spaced form and garbles the fused one |
 | `dialect_numbers` | the cardinals and the digit-by-digit readings take the words the lect `lang` names uses, asked of the number parser under that lect's ISO 639-3 code |
 | `number_forms` | your own words for values, `{100: "مية"}`, over the lect's or instead of them; set with `with_number_forms` |
+| `month_names` | your own words for the twelve months, January first, said wherever a month name is written and for a date in digits the cardinals read: with `جون` for June, `15 يونيو` is `15 جون`; a date `spoken_forms` alone reads keeps the date parser's month; Arabic only |
 | `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
 | `drop_false_starts` | a two- or three-letter word ending in tatweel is dropped with the whitespace after it where the next word begins the same way: `الـ السيارة` becomes `السيارة`; a one-letter fragment is kept, since it is also how a detached clitic is written; Arabic only, on by default |

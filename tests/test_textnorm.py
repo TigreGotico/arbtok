@@ -785,7 +785,8 @@ def test_every_tts_rule_changes_some_output(flag):
              "الـ السيارة",  # a tatweel false start, what drop_false_starts alone catches
              "أ ب ج 1234",  # a licence plate in Arabic script, what spell_out_plates alone reads
              "الساعة 9:30",  # a clock time, which colloquial_clock reads as it is said
-             "موديل 2026"]  # a year after موديل, which colloquial_years reads as it is said
+             "موديل 2026",  # a year after موديل, which colloquial_years reads as it is said
+             "15 يونيو"]  # a month name, which month_names says in the caller's word
     # phone_regions reads these numbers too, so a caller's own pattern is shown on its own.
     alone = {"phone_regions": ()} if flag in ("phone_shapes", "phone_prefixes") else {}
     off = dataclasses.replace(KSA, spoken_forms=False, canonical_unicode=False, strip_controls=False,
@@ -795,7 +796,9 @@ def test_every_tts_rule_changes_some_output(flag):
     # What a non-boolean rule holds when it is on: turning it on and off is what this compares.
     when_on = {"phone_shapes": (r"05[0-9](?:\s?[0-9]){7}",), "phone_regions": textnorm.ARAB_PHONE_REGIONS,
                "phone_prefixes": (r"800[0-9]{5}",),
-               "identifier_words": textnorm.IDENTIFIER_WORDS, "number_forms": ((15, "خمستاشر"),)}
+               "identifier_words": textnorm.IDENTIFIER_WORDS, "number_forms": ((15, "خمستاشر"),),
+               "month_names": ("يناير", "فبراير", "مارتش", "أبريل", "مي", "جون", "جولاي", "أوقست", "سبتمبر",
+                               "أكتوبر", "نوفمبر", "ديسمبر")}
     current = getattr(off, flag)
     other = (not current) if isinstance(current, bool) else (() if current else when_on[flag])
     assert any(normalize_for_tts(t, lang, off) != normalize_for_tts(t, lang, dataclasses.replace(off, **{flag: other}))
