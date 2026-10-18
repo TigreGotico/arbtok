@@ -1876,6 +1876,34 @@ _RANK_NOUNS = _rank_nouns()
 # ordinal, and the number stays a cardinal.
 _RANK_NUMBER = re.compile(r"(?<![^\s\W])(ف?" + _PROCLITIC + ")(" + "|".join(map(re.escape, _RANK_NOUNS))
                           + r")(\s+)([0-9]{1,2}|[٠-٩]{1,2})(?![0-9٠-٩A-Za-z]|[.,٫٬،][0-9٠-٩])")
+# A date written in digits: day, month and year, as Arabic writes it and as the Gulf
+# states order it (https://en.wikipedia.org/wiki/List_of_date_formats_by_country lists
+# day-month-year for each of them), with a slash, a hyphen or a dot between the parts and
+# a four-digit year; with slashes the year may have two digits. A four-digit year first
+# is ISO 8601's year, month and day. The era may follow the year, with or without a
+# space: هـ or ه for the Hijri calendar, م for the Gregorian. It may not touch a digit, a
+# Latin letter or another separator and digit: that is a longer run, and a piece of it is
+# no date.
+_DATE_DIGIT = "[0-9٠-٩]"
+_NUMERIC_DATE = re.compile(rf"(?<![0-9٠-٩A-Za-z])(?<![0-9٠-٩][/.\-:,٫])(?:"
+                           rf"(?P<day>{_DATE_DIGIT}{{1,2}})(?P<sep>[/.\-])(?P<month>{_DATE_DIGIT}{{1,2}})(?P=sep)"
+                           rf"(?P<year>{_DATE_DIGIT}{{4}}|(?<=/){_DATE_DIGIT}{{2}})"
+                           rf"|(?P<iso_year>{_DATE_DIGIT}{{4}})(?P<iso_sep>[/.\-])(?P<iso_month>{_DATE_DIGIT}{{1,2}})"
+                           rf"(?P=iso_sep)(?P<iso_day>{_DATE_DIGIT}{{1,2}}))"
+                           rf"(?P<era> ?(?:هـ|ه|م)(?![\u0621-\u064A]))?"
+                           rf"(?![0-9٠-٩A-Za-z])(?![/.\-:,٫][0-9٠-٩])")
+#: The month names the date parser's ``nice_date`` writes, January first.
+_MONTH_NAMES = ("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر",
+                "نوفمبر", "ديسمبر")
+#: The months of the Hijri calendar, Muharram first, as
+#: https://en.wikipedia.org/wiki/Islamic_calendar lists them in Arabic.
+_HIJRI_MONTH_NAMES = ("محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان",
+                      "رمضان", "شوال", "ذو القعدة", "ذو الحجة")
+# The years a date is read in: Gregorian years of the last century and this one, and the
+# Hijri years they overlap with (1900 is 1317 AH, 2099 is 1522 AH). A four-digit year in
+# the Hijri range is a Hijri date even without هـ, since no Gregorian year has its value.
+_GREGORIAN_YEARS = range(1900, 2100)
+_HIJRI_YEARS = range(1300, 1600)
 # A run of digits in groups, with a leading ``+`` if any, split by spaces or hyphens as a
 # phone number is written. Its digits are all ASCII or all Arabic-Indic: a number written
 # after a phone number in the other script is another number. It may not touch a digit
@@ -2098,6 +2126,16 @@ class TtsNorm:
     #: whole number from 1 to 99 written directly after a rank noun is the ordinal that
     #: agrees with the noun: ``الطابق 3`` is ``الطابق الثالث`` and ``الفئة 5`` is
     #: ``الفئة الخامسة``. The nouns and their sources are in ``data/rank_ordinals.tsv``.
+    #: A date written in digits, day, month and year as Arabic writes it or an ISO year
+    #: first, is read as its day, its month by the name ``nice_date`` gives it and its year:
+    #: ``10/6/2026`` is ``عشرة يونيو ألفين وستة وعشرين``, where the cardinals alone would
+    #: read three numbers and leave the slashes between them. A Hijri date, marked by هـ
+    #: or ه or by a year from 1300 to 1599, takes the Hijri month's name and says its era
+    #: as ``هجري``, and a م after a Gregorian year is said ``ميلادي``. A two-digit year is
+    #: this century's, ``31/12/30`` being 2030: the dates an agent reads out are bookings
+    #: and warranties. A year outside those ranges and 1900 to 2099, and a dotted run with a
+    #: Hijri-range year and no era, a version number such as ``2.1.1400``, are left as
+    #: written.
     cardinal_numbers: bool = False
     #: A number ``cardinal_numbers`` cannot speak is left as written and the rest of
     #: the text is still read, where otherwise the error is raised. For a caller that
@@ -2193,6 +2231,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _HYPHENATED_CODE, _CURRENCY_ABBREVIATIONS,
                              _PLAIN_MARKS, _PLAIN_HAMZA_ON_ALEF, _PLAIN_COMPOSED, _PLAIN_STRAY_HAMZA, _PLAIN_LETTERS,
                              _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
+                             _NUMERIC_DATE, _MONTH_NAMES, _HIJRI_MONTH_NAMES, _GREGORIAN_YEARS, _HIJRI_YEARS,
                              tuple(sorted(_not_code_letters("ar"))))
 _PLUGIN_DEFAULT = TtsNorm()
 
@@ -2502,6 +2541,40 @@ def _rank_ordinal(m: re.Match, config: TtsNorm) -> str:
                                                       case=_number_case(config))
 
 
+def _spoken_date(m: re.Match, lang: str, config: TtsNorm, hold) -> str:
+    """The date ``m`` matched as its day, its month by name and its year, the day and the
+    year spoken as cardinals and held from every later rule; the match unchanged when it is
+    no date of a year in :data:`_GREGORIAN_YEARS` or :data:`_HIJRI_YEARS`. A Hijri date
+    takes the Hijri month's name. An era written after the year is said: هـ and ه as هجري,
+    م as ميلادي. A two-digit year is this century's: the dates a voice agent reads out are
+    bookings, deliveries and warranties, ahead rather than behind. A date written with dots
+    and a year of the Hijri range but no era is a version number, ``2.1.1400``, and is left
+    as written."""
+    if m["iso_year"]:
+        year, month, day = m["iso_year"], m["iso_month"], m["iso_day"]
+    else:
+        year, month, day = m["year"], m["month"], m["day"]
+    written = len(year)
+    year, month, day = (int(part.translate(_EASTERN_DIGITS)) for part in (year, month, day))
+    if written == 2:
+        year += 2000
+    era = (m["era"] or "").strip()
+    dotted = "." in (m["sep"], m["iso_sep"])
+    if era in ("هـ", "ه") or (year in _HIJRI_YEARS and not era):
+        if not (year in _HIJRI_YEARS and 1 <= month <= 12 and 1 <= day <= 30) or (dotted and not era):
+            return m.group(0)
+        name, after = _HIJRI_MONTH_NAMES[month - 1], " هجري" if era else ""
+    else:
+        if year not in _GREGORIAN_YEARS:
+            return m.group(0)
+        try:
+            datetime.date(year, month, day)
+        except ValueError:
+            return m.group(0)
+        name, after = _MONTH_NAMES[month - 1], " ميلادي" if era else ""
+    return f"{hold(_cardinal(str(day), lang, config))} {name} {hold(_cardinal(str(year), lang, config))}{after}"
+
+
 def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     from arbtok.util import resolve_thousands_or_decimal
 
@@ -2691,6 +2764,11 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     # What the code reading did not take is an identifier all the same, and no rule
     # below reads a digit out of the middle of one.
     text = _MIXED_CODE.sub(lambda m: hold(m.group(0)), text)
+    if (config.cardinal_numbers or config.dialect_numbers or config.number_forms) and is_arabic_lang(lang):
+        # Before any rule reads a digit of it: the cardinals would read each part on its
+        # own and leave the separators between them, and a day after an identifier word
+        # would be read digit by digit.
+        text = _NUMERIC_DATE.sub(lambda m: _spoken_date(m, lang, config, hold), text)
     if config.speak_percent:
         text = _PERCENT.sub(lambda m: f"{m.group(1)} في المئة", text)
     if config.keep_code_digits:
