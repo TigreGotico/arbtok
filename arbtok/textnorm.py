@@ -622,6 +622,9 @@ def _hour_value(words: str):
 _NIGHT_WORDS = ("بالليل", "الليل", "بليل")
 #: The morning as Saudi speech says it after an hour: الصبح, which the date parser does not read.
 _MORNING_WORDS = ("الصبح", "بالصبح", "الصباح", "بالصباح")
+#: The evening as Saudi speech says it after an hour: المغرب, at 6 and 7, as ``colloquial_clock``
+#: says it; the date parser does not read it.
+_EVENING_WORDS = ("المغرب", "بالمغرب")
 
 
 def _night_hour(hour: int):
@@ -629,13 +632,16 @@ def _night_hour(hour: int):
 
 
 @functools.lru_cache(maxsize=1 << 12)
-def _period_hour(hour: int, word: str):
+def _period_hour(hour: int, word: str, evening: bool = False):
     """The hour of the day the date parser reads in ``الساعة <hour> <word>``, or None
-    when it leaves ``word`` unread."""
+    when it leaves ``word`` unread. With ``evening``, which ``number_forms`` asks for,
+    المغرب places hours 5 to 7 in the evening."""
     if _folded(word) in _NIGHT_WORDS:
         return _night_hour(hour)
     if _folded(word) in _MORNING_WORDS:
         return hour if 1 <= hour <= 11 else None
+    if _folded(word) in _EVENING_WORDS:
+        return hour + 12 if evening and 5 <= hour <= 7 else None
     from ovos_date_parser import extract_datetime
     read = extract_datetime(f"الساعة {hour} {word}", "ar", datetime.datetime(2000, 1, 1))
     return read[0].hour if read and not read[1].strip() else None
@@ -656,11 +662,12 @@ def _ends_time(keys, end) -> bool:
         (bool(_ARABIC_WORD.fullmatch(keys[end])) and _is_day(keys[end]))
 
 
-def _is_day_period(word: str) -> bool:
+def _is_day_period(word: str, evening: bool = False) -> bool:
     """Whether ``word`` places an hour of the 12-hour clock in the day: مساء, صباحا, ظهرا,
-    ليلا and the other words the date parser reads that way. A word it reads as a day,
-    اليوم or غدا, moves no hour and is not one."""
+    ليلا and the other words the date parser reads that way, and with ``evening`` المغرب.
+    A word it reads as a day, اليوم or غدا, moves no hour and is not one."""
     return bool(_ARABIC_WORD.fullmatch(word)) and (_folded(word) in _NIGHT_WORDS + _MORNING_WORDS or
+        (evening and _folded(word) in _EVENING_WORDS) or
         _period_hour(1, word) not in (None, 1) or _period_hour(12, word) not in (None, 12))
 
 
@@ -762,9 +769,26 @@ def _read_minutes(keys, j, cardinal_hour):
     return minutes, False, end
 
 
-def _read_clock(keys, i):
-    """The digits of the clock time spoken from ``keys[i]``, which is الساعة, and the
-    index after it, or None when no clock time is said there."""
+#: The words a clock phrase can span from الساعة: hour, period, minutes and their words.
+_CLOCK_WINDOW = 16
+#: Spellings a recognizer writes for the period words with their tanween heard as a letter:
+#: مساءً heard as مساءن or مساءنا, صباحاً as صباحن or صباحنا.
+_PERIOD_SPELLINGS = {"مساءن": "مساء", "مساءنا": "مساء", "مساءا": "مساء", "صباحن": "صباحا", "صباحنا": "صباحا"}
+
+
+def _period_spelling(word: str) -> str:
+    return _PERIOD_SPELLINGS.get(_folded(word), word)
+
+
+def _read_clock(keys, i, tolerant=False):
+    """The digits of the clock time spoken from ``keys[i]``, which is الساعة, the index
+    after it, and the words inside it that are not part of the time; None when no clock
+    time is said there.
+
+    With ``tolerant``, a period word may carry its tanween as a letter, and one word may
+    stand between the hour and دقيقة, as in ``السابعة مساء انه دقيقة خمسة عشر`` where a
+    recognizer heard و as انه. That word is not dropped: it is handed back to be written
+    after the time, so it still counts as a word said."""
     j = i + 1
     if j >= len(keys) or not _ARABIC_WORD.fullmatch(keys[j]):
         return None
@@ -773,19 +797,29 @@ def _read_clock(keys, i):
     if hour is None or hour != int(hour) or not 0 <= hour <= 23:
         return None
     hour = int(hour)
+    if tolerant:
+        keys = [_period_spelling(k) for k in keys]
     # الواحدة with its article is the hour as Arabic tells it, though it reads as 1 alone too
     cardinal = not keys[j].startswith("ال") and _number_value(" ".join(keys[j:j + words])) == hour
     end = j + words
     period = minutes = None
-    if end < len(keys) and _is_day_period(keys[end]):
+    residue = ""
+    if end < len(keys) and _is_day_period(keys[end], tolerant):
         period, end = keys[end], end + 1
     said = _read_minutes(keys, end, j if cardinal else None)
+    filler = tolerant and end + 1 < len(keys) and _ARABIC_WORD.fullmatch(keys[end]) \
+        and _number_value(keys[end]) is None \
+        and _indefinite_minute(_folded(keys[end + 1]).lstrip("و")) in _MINUTE_WORDS
+    if not said and filler:
+        said = _read_minutes(keys, end + 1, j if cardinal else None)
+        if said:
+            residue = keys[end]
     if said:
         minutes, back, end = said
-        if period is None and end < len(keys) and _is_day_period(keys[end]):
+        if period is None and end < len(keys) and _is_day_period(keys[end], tolerant):
             period, end = keys[end], end + 1
     if period is None and minutes is None:
-        return (f"{hour}", end) if not cardinal and _ends_time(keys, end) else None
+        return (f"{hour}", end, "") if not cardinal and _ends_time(keys, end) else None
     if period is not None and not 1 <= hour <= 12:
         return None
     minutes = minutes or 0
@@ -801,13 +835,13 @@ def _read_clock(keys, i):
     if period is not None and hour == 12 and _folded(period) == _NIGHT:
         hour = 0
     elif period is not None:
-        hour = _period_hour(hour, period)
+        hour = _period_hour(hour, period, tolerant)
         if hour is None:
             return None
-    return f"{hour}:{minutes:02d}", end
+    return f"{hour}:{minutes:02d}", end, residue
 
 
-def _clock_times(text: str) -> str:
+def _clock_times(text: str, tolerant: bool = False) -> str:
     """Write a spoken clock time after الساعة in the digits :func:`normalize_for_tts`
     reads as one: ``الساعة الثامنة والربع`` is ``الساعة 8:15``, and with a period word,
     ``الساعة السادسة مساء ودقيقة خمسة واربعين``, the 24-hour ``الساعة 18:45``.
@@ -830,12 +864,14 @@ def _clock_times(text: str) -> str:
         k = i + 1
         while k < len(keys) and not edges[k - 1][2] and not edges[k][0]:
             k += 1
-        read = _read_clock(keys[:k], i)
+        # a clock phrase is a dozen words at most: read it from a window, not the whole run
+        read = _read_clock(keys[i:min(k, i + _CLOCK_WINDOW)], 0, tolerant)
         if read is None:
             i += 1
             continue
-        time, end = read
-        parts[2 * i] = f"{edges[i][0]}{edges[i][1]} {time}{edges[end - 1][2]}"
+        time, end, residue = read
+        end += i
+        parts[2 * i] = f"{edges[i][0]}{edges[i][1]} {time}{' ' + residue if residue else ''}{edges[end - 1][2]}"
         for p in range(2 * i + 1, 2 * end - 1):
             parts[p] = ""
         i = end
@@ -992,6 +1028,10 @@ _DAY_MONTH = re.compile(r"(?<![0-9/.\-])([0-9]{1,2})/([0-9]{1,2})(?![0-9]|[/.\-]
 _DATE_WORDS = ("يوم", "تاريخ", "بتاريخ", "التاريخ", "ينتهي", "تنتهي")
 _ON_THE_HOUR = re.compile(r"(?<![0-9:])([0-9]{1,2}):00(?![0-9:])")
 _PERCENT_BEFORE = re.compile(r"(?<![0-9.])[%٪]([0-9]+(?:\.[0-9]+)?)")
+#: The same with one word between the hour and دقيقة, which the clock reading did not place:
+#: the time is still written as one, ``الساعة 3:45``, and the word follows it, so that a time
+#: half read is compared as a time and not as digits against words.
+_CLOCK_MINUTE_LOOSE = re.compile(r"(الساع[ةه]) ([0-9]{1,2}) ([\u0621-\u064A]+) و?دقيق[ةه] ([0-9]{1,2})(?![0-9])")
 _CLOCK_MINUTE_WORD = re.compile(r"(الساع[ةه]) ([0-9]{1,2})(?: و?دقيق[ةه] ([0-9]{1,2})| و([0-9]{1,2}) دقيق[ةه])(?![0-9])")
 _UNIT_AFTER_NUMBER = r"(?<=[0-9])( ?)({})(?![A-Za-z])"
 
@@ -1163,6 +1203,8 @@ def _written_numbers(text: str) -> str:
     text = _PERCENT_WORDS.sub(r"\1%", _PERCENT_BEFORE.sub(r"\1%", text))
     text = _CLOCK_MINUTE_WORD.sub(lambda m: f"{m.group(1)} {int(m.group(2))}:{int(m.group(3) or m.group(4)):02d}"
                                   if int(m.group(2)) <= 24 and int(m.group(3) or m.group(4)) <= 59 else m.group(0), text)
+    text = _CLOCK_MINUTE_LOOSE.sub(lambda m: f"{m.group(1)} {int(m.group(2))}:{int(m.group(4)):02d} {m.group(3)}"
+                                   if int(m.group(2)) <= 24 and int(m.group(4)) <= 59 else m.group(0), text)
     text = _DAY_MONTH.sub(_day_month, _PADDED_HOUR.sub(r"\1:", text))
     text = _ON_THE_HOUR.sub(r"\1", _DIGIT_TIME_PERIOD.sub(_digit_time_period, text))
     pattern, names = _unit_names()
@@ -1214,8 +1256,8 @@ def _digit_time_period(m: re.Match) -> str:
         hour = hour % 12 + 12
     elif word in ("am", "AM", "ص"):
         hour = hour % 12
-    elif _is_day_period(word):
-        read = 0 if hour == 12 and _folded(word) == _NIGHT else _period_hour(hour, word)
+    elif _is_day_period(word, True):
+        read = 0 if hour == 12 and _folded(word) == _NIGHT else _period_hour(hour, word, True)
         if read is None:
             return m.group(0)
         hour = read
@@ -1400,7 +1442,8 @@ ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HAR
                              _TIME_ENDS, _TERM_PROCLITIC, _LATIN_HYPHEN, _DIALECT_SPELLINGS, _MORNING_WORDS,
                              _PADDED_HOUR, _DAY_MONTH, _DATE_WORDS, _WORD_DIGIT_NAMES, _PREPOSITION_LETTERS,
                              _DECIMAL_ZEROS,
-                             _NIGHT_WORDS, _ONE_SAID, _ONE_COUNTS, _FORMAL_TEENS, _DIGIT_TIME_PERIOD, _ON_THE_HOUR,
+                             _NIGHT_WORDS, _EVENING_WORDS, _PERIOD_SPELLINGS, _CLOCK_MINUTE_LOOSE, _CLOCK_WINDOW,
+                             _ONE_SAID, _ONE_COUNTS, _FORMAL_TEENS, _DIGIT_TIME_PERIOD, _ON_THE_HOUR,
                              _PERCENT_BEFORE, _ENGLISH_TENS,
                              _NUMBER_SPELLINGS, _NUMBER_SPELLINGS_PROCLITIC, _GROUPED_DIGITS, _ARABIC_DECIMAL,
                              _FRACTIONS, _MONTHS, _MONTH_NAMES, _YEAR_WORD, _TWENTY, _DIGIT_DATE, _ISO_DATE, _NAMED_DATE,
@@ -1465,7 +1508,7 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
             text = _number_words(text)
     if config.spoken_numbers_to_digits:
         if arabic:
-            text = _clock_times(text)
+            text = _clock_times(text, tolerant=config.number_forms)
             if config.number_forms:
                 text = _percent_words(_hold_fractions(_rank_ordinals(_ordinal_days(_spoken_years(text)))))
         text = _numbers_to_digits(text, lang)
