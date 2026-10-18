@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a48](https://github.com/TigreGotico/arbtok/tree/0.0.2a48) (2026-10-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a47...0.0.2a48)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): plain\_orthography writes the output as recogniser transcripts do [\#256](https://github.com/TigreGotico/arbtok/pull/256) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a47](https://github.com/TigreGotico/arbtok/tree/0.0.2a47) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a46...0.0.2a47)
@@ -386,17 +394,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a29...0.0.1a30)
 
-**Merged pull requests:**
-
-- fix: every word exception produces a reading the rules do not [\#155](https://github.com/TigreGotico/arbtok/pull/155) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.1a29](https://github.com/TigreGotico/arbtok/tree/0.0.1a29) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1a28...0.0.1a29)
-
-**Merged pull requests:**
-
-- fix: a shadda never geminates a reading that ends in a length mark [\#156](https://github.com/TigreGotico/arbtok/pull/156) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1a28](https://github.com/TigreGotico/arbtok/tree/0.0.1a28) (2026-09-21)
 
