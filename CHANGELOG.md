@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a46](https://github.com/TigreGotico/arbtok/tree/0.0.2a46) (2026-10-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a45...0.0.2a46)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): ص and م after a clock time are its am and pm [\#264](https://github.com/TigreGotico/arbtok/pull/264) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a45](https://github.com/TigreGotico/arbtok/tree/0.0.2a45) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a44...0.0.2a45)
