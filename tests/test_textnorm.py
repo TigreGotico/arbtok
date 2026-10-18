@@ -784,7 +784,8 @@ def test_every_tts_rule_changes_some_output(flag):
              "80012345",  # a caller's own prefix, shorter than long_digit_runs reaches
              "الـ السيارة",  # a tatweel false start, what drop_false_starts alone catches
              "أ ب ج 1234",  # a licence plate in Arabic script, what spell_out_plates alone reads
-             "الساعة 9:30"]  # a clock time, which colloquial_clock reads as it is said
+             "الساعة 9:30",  # a clock time, which colloquial_clock reads as it is said
+             "موديل 2026"]  # a year after موديل, which colloquial_years reads as it is said
     # phone_regions reads these numbers too, so a caller's own pattern is shown on its own.
     alone = {"phone_regions": ()} if flag in ("phone_shapes", "phone_prefixes") else {}
     off = dataclasses.replace(KSA, spoken_forms=False, canonical_unicode=False, strip_controls=False,
