@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a58](https://github.com/TigreGotico/arbtok/tree/0.0.2a58) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a57...0.0.2a58)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a spoken number agrees with the word after it [\#282](https://github.com/TigreGotico/arbtok/pull/282) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a57](https://github.com/TigreGotico/arbtok/tree/0.0.2a57) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a56...0.0.2a57)
@@ -384,10 +392,6 @@
 ## [0.0.2a9](https://github.com/TigreGotico/arbtok/tree/0.0.2a9) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a8...0.0.2a9)
-
-**Merged pull requests:**
-
-- fix\(util\): a 12-hour clock marker is not the unit that shares its symbol [\#177](https://github.com/TigreGotico/arbtok/pull/177) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a8](https://github.com/TigreGotico/arbtok/tree/0.0.2a8) (2026-09-21)
 
