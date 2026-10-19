@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a63](https://github.com/TigreGotico/arbtok/tree/0.0.2a63) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a62...0.0.2a63)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): colloquial\_units says a kilometre كيلو, and ص ب is read صندوق بريد [\#281](https://github.com/TigreGotico/arbtok/pull/281) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a62](https://github.com/TigreGotico/arbtok/tree/0.0.2a62) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a61...0.0.2a62)
@@ -384,10 +392,6 @@
 ## [0.0.2a14](https://github.com/TigreGotico/arbtok/tree/0.0.2a14) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a13...0.0.2a14)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): speak clock times as Arabic speakers say them [\#187](https://github.com/TigreGotico/arbtok/pull/187) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a13](https://github.com/TigreGotico/arbtok/tree/0.0.2a13) (2026-09-21)
 
