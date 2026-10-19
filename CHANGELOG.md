@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a59](https://github.com/TigreGotico/arbtok/tree/0.0.2a59) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a58...0.0.2a59)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): years after موديلات and و, h.mm after الساعة, a colon after an identifier [\#287](https://github.com/TigreGotico/arbtok/pull/287) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a58](https://github.com/TigreGotico/arbtok/tree/0.0.2a58) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a57...0.0.2a58)
