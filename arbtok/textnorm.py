@@ -1919,6 +1919,28 @@ _RANK_NOUNS = _rank_nouns()
 # ordinal, and the number stays a cardinal.
 _RANK_NUMBER = re.compile(r"(?<![^\s\W])(ف?" + _PROCLITIC + ")(" + "|".join(map(re.escape, _RANK_NOUNS))
                           + r")(\s+)([0-9]{1,2}|[٠-٩]{1,2})(?![0-9٠-٩A-Za-z]|[.,٫٬،][0-9٠-٩])")
+
+
+def _feminine_counted_nouns() -> Tuple[str, ...]:
+    """The plurals of ``data/feminine_counted_nouns.tsv``, which cites the source of each."""
+    lines = (Path(__file__).parent / "data" / "feminine_counted_nouns.tsv").read_text(encoding="utf-8").splitlines()
+    return tuple(line.split("\t")[0] for line in lines if line and not line.startswith("#"))
+
+
+# A plural of :func:`_feminine_counted_nouns` written right after a number, with a hamza on
+# its alef or without one. A number from 3 to 10 before it takes its short form.
+_FEMININE_COUNTED = re.compile(r"\s+(?:" + "|".join(re.escape(noun).replace("أ", "[أا]")
+                                                     for noun in _feminine_counted_nouns())
+                               + r")(?![\u0621-\u064A])")
+# Two hundred before ألف, مليون or مليار, as the parser composes 200,000: the dual is in
+# construct with the noun after it and drops its nun, مئتي ألف and in the nominative مئتا
+# ألف. Ryding (2005), chapter 15, section 1.7: "The dual suffix here obeys the law of
+# nuun-drop when it goes into an 'iDaafa with a following counted noun"; section 1.9 gives
+# 200,000 as "mi'at-aa 'alf-in".
+_CONSTRUCT_HUNDREDS = re.compile(r"(?<!\S)(و?مئت)(ين|ان)(?= (?:ألف|مليون|مليار)(?!\S))")
+# A digit written against the Arabic letter after it: the number and the word are two words,
+# and the number's last word must not fuse to the word, خمسة وأربعين ألفريال.
+_NUMBER_AGAINST_WORD = re.compile(r"(?<=[0-9٠-٩])(?=[\u0621-\u063A\u0641-\u064A])")
 # A date written in digits: day, month and year, as Arabic writes it and as the Gulf
 # states order it (https://en.wikipedia.org/wiki/List_of_date_formats_by_country lists
 # day-month-year for each of them), with a slash, a hyphen or a dot between the parts and
@@ -2212,7 +2234,13 @@ class TtsNorm:
     #: this century's, ``31/12/30`` being 2030: the dates an agent reads out are bookings
     #: and warranties. A year outside those ranges and 1900 to 2099, and a dotted run with a
     #: Hijri-range year and no era, a version number such as ``2.1.1400``, are left as
-    #: written.
+    #: written. A number from 3 to 10 written right before a plural whose singular is
+    #: feminine takes its short form, ``5 سنوات`` being ``خمس سنوات`` and ``8 سيارات``
+    #: ``ثماني سيارات``; the plurals and their sources are in
+    #: ``data/feminine_counted_nouns.tsv``, and a value ``number_forms`` gives a word for
+    #: keeps that word. Two hundred before ألف, مليون or مليار is in construct, ``مئتي ألف``.
+    #: A number written against the Arabic word after it is read apart from the word:
+    #: ``45,000ريال`` as ``45,000 ريال``.
     cardinal_numbers: bool = False
     #: Where a clock time is spoken, under ``cardinal_numbers`` or ``spoken_forms``, it is
     #: read the way Saudi speech says it rather than in the date parser's literary words:
@@ -2345,6 +2373,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _NUMBER_BEFORE, _CAPITALISED_UNITS, _GLUED_UNIT, _MIXED_CODE, _DIGIT_WORDS,
                              _FUSED_HUNDREDS, _PERCENT, _LONG_RUN, _CODE_DIGITS, _DIGIT_RUN, _WESTERN_NUMBER,
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK, _ARABIC_MARKERS,
+                             _FEMININE_COUNTED, _CONSTRUCT_HUNDREDS, _NUMBER_AGAINST_WORD,
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
                              _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _HYPHENATED_CODE, _CURRENCY_ABBREVIATIONS,
                              _PLAIN_MARKS, _PLAIN_HAMZA_ON_ALEF, _PLAIN_COMPOSED, _PLAIN_STRAY_HAMZA, _PLAIN_LETTERS,
@@ -2606,15 +2635,23 @@ def _digit_by_digit(run: str, forms: Mapping[int, str] = {}) -> str:
     return " ".join(forms.get(int(d), _DIGIT_WORDS[d]) for d in run.translate(_EASTERN_DIGITS) if d in _DIGIT_WORDS)
 
 
-def _cardinal(number: str, lang: str, config: TtsNorm) -> str:
+def _cardinal(number: str, lang: str, config: TtsNorm, feminine_noun: bool = False) -> str:
+    """``number`` in words. ``feminine_noun`` says a plural whose singular is feminine follows
+    it, so a number from 3 to 10 takes its short form, and eight its construct ثماني."""
     from ovos_number_parser import pronounce_number
+    from ovos_number_parser.util import GrammaticalGender
     value = float(number) if "." in number else int(number)
-    words = pronounce_number(value, lang=_number_lang(lang, config), case=_number_case(config))
+    short = feminine_noun and isinstance(value, int) and 3 <= value <= 10
+    words = pronounce_number(value, lang=_number_lang(lang, config), case=_number_case(config),
+                             gender=GrammaticalGender.FEMININE if short else GrammaticalGender.MASCULINE)
+    if short and words == "ثمان":
+        words = "ثماني"
     forms, pattern, said = _lect_forms(lang, config)
     if isinstance(value, int) and value in forms:
         words = forms[value]
     elif pattern:
         words = pattern.sub(lambda m: m.group(1) + said[m.group(2)], words)
+    words = _CONSTRUCT_HUNDREDS.sub(lambda m: m.group(1) + ("ي" if m.group(2) == "ين" else "ا"), words)
     if config.space_fused_hundreds:
         words = _FUSED_HUNDREDS_RE.sub(lambda m: _FUSED_HUNDREDS[m.group(0)], words)
     return words
@@ -2770,9 +2807,9 @@ def _named_month(m: re.Match, names: Tuple[str, ...]) -> str:
 def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     from arbtok.util import resolve_thousands_or_decimal
 
-    def speak(written: str, number: str) -> str:
+    def speak(written: str, number: str, feminine_noun: bool = False) -> str:
         try:
-            return _cardinal(number, lang, config)
+            return _cardinal(number, lang, config, feminine_noun)
         except Exception:
             if config.leave_unspeakable_numbers:
                 return written
@@ -2780,12 +2817,12 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
 
     def eastern(m):
         number = m.group(0).translate(_EASTERN_DIGITS).replace("٬", "").replace("،", "").replace("٫", ".")
-        return speak(m.group(0), number)
+        return speak(m.group(0), number, bool(_FEMININE_COUNTED.match(m.string, m.end())))
 
     def western(m):
         raw = m.group(0)
         if "," not in raw:
-            return speak(raw, raw)
+            return speak(raw, raw, bool(_FEMININE_COUNTED.match(m.string, m.end())))
         # A comma reaches here only where it is not the (already ambiguity-resolved)
         # thousands grouping _WESTERN_NUMBER itself matches whole: see
         # resolve_thousands_or_decimal for the rule a lone or a malformed separator
@@ -2802,6 +2839,7 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
         # always read.
         return ",".join(speak(g, g) for g in int_part.split(",")) + frac_part
 
+    text = _NUMBER_AGAINST_WORD.sub(" ", text)
     if config.colloquial_years:
         text = _YEAR.sub(lambda m: _colloquial_years(m, lang, config), text)
     text = _RANK_NUMBER.sub(lambda m: _rank_ordinal(m, config), text)
