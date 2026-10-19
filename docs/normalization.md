@@ -630,14 +630,14 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `identifier_words` | words after which a number is a reference: `الكود 4729`, `برقم الحجز 3401`. A proclitic may be attached and one other word may stand between |
 | `cardinal_numbers` | speak Arabic-Indic and ASCII numbers as cardinals ahead of `spoken_forms`, so the next three flags apply. A whole number directly after a rank noun is the ordinal agreeing with it: `الطابق 3` is `الطابق الثالث`, `الفئة 5` is `الفئة الخامسة`. This holds from 1 to 99; from 100 the number stays a cardinal. The nouns, their genders and their sources are in `arbtok/data/rank_ordinals.tsv`. A date written in digits, day, month and year or an ISO year first, is read as its day, its month by name and its year: `10/6/2026` is `عشرة يونيو ألفين وستة وعشرين` |
 | `colloquial_clock` | where a clock time is spoken, it is read as Saudi speech says it: `9:30` is `الساعة تسعة ونص`, `14:00` is `الساعة اثنين الظهر`; the hour a cardinal, `وربع` and `ونص` for the quarter and the half, and the part of the day by its common word where the text gives the period |
-| `colloquial_years` | a year from 2020 to 2099 after سنة, عام, موديل or a month name is read as Saudi speech says it: `موديل 2026` is `موديل عشرين ستة وعشرين`; an earlier year, or a four-digit number with no such word before it, stays a cardinal |
+| `colloquial_years` | a year from 2020 to 2099 after سنة, عام, موديل, موديلات or a month name is read as Saudi speech says it: `موديل 2026` is `موديل عشرين ستة وعشرين`, and a second year after و is read the same way on its own; an earlier year, or a four-digit number with no such word before it, stays a cardinal |
 | `leave_unspeakable_numbers` | a number that cannot be spoken is left as written and the rest is still read; otherwise the error is raised |
 | `oblique_numbers` | cardinals in the oblique case, the one connected speech uses |
 | `space_fused_hundreds` | in those cardinals `ثلاثمئة` becomes `ثلاث مئة`; a synthesizer keeps the spaced form and garbles the fused one |
 | `dialect_numbers` | the cardinals and the digit-by-digit readings take the words the lect `lang` names uses, asked of the number parser under that lect's ISO 639-3 code |
 | `number_forms` | your own words for values, `{100: "مية"}`, over the lect's or instead of them; set with `with_number_forms` |
 | `month_names` | your own words for the twelve months, January first, said wherever a month name is written and for a date in digits the cardinals read: with `جون` for June, `15 يونيو` is `15 جون`; a date `spoken_forms` alone reads keeps the date parser's month; Arabic only |
-| `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default |
+| `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default. A time written with a dot after `الساعة`, `الساعة 9.30`, is a time, as it is under `cardinal_numbers`, unless an amount of money follows it: `سعر الساعة 12.50 ريال` is a decimal |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
 | `drop_false_starts` | a two- or three-letter word ending in tatweel is dropped with the whitespace after it where the next word begins the same way: `الـ السيارة` becomes `السيارة`; a one-letter fragment is kept, since it is also how a detached clitic is written; Arabic only, on by default |
 | `plain_orthography` | the output in the orthography speech-recognition transcripts use: no harakat, tatweel or Quranic marks, alef without hamza, a dagger alef written ا where the standard spelling has it, ڤ as ف, and ة, ى, ؤ and ئ kept, so `بِي إِمْ دَبَلْيُو` is `بي ام دبليو` and `ألف` is `الف`; the last rule, over the whole text |
@@ -679,9 +679,9 @@ your words, so a run records which words it used.
 
 A price and a phone number cannot be told apart by length, so nothing here
 guesses from length alone below eleven digits: a phone number is known by its
-prefix or by the word before it. `موديل 4729` stays a quantity because `موديل`
-is not an identifier word. `ARAB_PHONE_REGIONS` and `IDENTIFIER_WORDS` are plain
-tuples; pass your own for another vocabulary. `phone_shapes` and `phone_prefixes`
+prefix or by the word before it, and a colon may follow that word, `الكود: 4729`.
+`موديل 4729` stays a quantity because `موديل` is not an identifier word.
+`ARAB_PHONE_REGIONS` and `IDENTIFIER_WORDS` are plain tuples; pass your own for another vocabulary. `phone_shapes` and `phone_prefixes`
 take your own patterns for numbers the bundled plans do not cover; no preset sets
 them.
 

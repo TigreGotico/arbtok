@@ -1888,15 +1888,20 @@ _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])(?<![0-9٠-٩],)"
 # only after ``h:mm`` or after الساعة, since after a bare number م is also the metre, and
 # not before ب standing alone, since ص ب and ص.ب are a post office box. A
 # score written with a one-digit second part, ``2:1``, is none; neither is a time inside a
-# longer run of digits, nor ``15h01``, which :mod:`arbtok.util` reads.
+# longer run of digits, nor ``15h01``, which :mod:`arbtok.util` reads. After الساعة the
+# minutes may follow a dot, ``الساعة 9.30``, unless an amount of money follows, as in
+# ``سعر الساعة 12.50 ريال``, where it is a decimal.
 _CLOCK = re.compile(r"(?<![0-9٠-٩A-Za-z:.,٫])"
                     r"(?:(?P<saa>الساع[ةه])\s+)?"
-                    r"(?P<hour>[0-9٠-٩]{1,2})(?::(?P<minute>[0-9٠-٩]{2}))?"
+                    r"(?P<hour>[0-9٠-٩]{1,2})(?:(?P<sep>:|(?(saa)\.|(?!)))(?P<minute>[0-9٠-٩]{2}))?"
                     r"(?:\s?(?P<marker>[aApP][mM])(?![A-Za-z])|\s(?P<arabic_marker>[صم])(?![\u0621-\u064A\u064B-\u0652])"
                     r"(?!\s*[./]?\s*ب(?![\u0621-\u064A])))?"
                     r"(?![0-9٠-٩A-Za-z]|[:.,٫][0-9٠-٩])")
 _ARABIC_MARKERS = {"ص": "am", "م": "pm"}
+_MONEY_AFTER = re.compile(r"\s*(?:ريال|ر\.\s?س|دولار|درهم|دينار|جنيه|يورو|SAR|SR)(?![\u0621-\u064A])")
 _PROCLITIC = r"[بولك]?ا?ل?"
+# What may stand between an identifier word and its number: one other word, and a colon.
+_IDENTIFIER_GAP = r"(?:\s+[^\s\d]+)?\s*:?\s*$"
 
 
 def _rank_nouns() -> Dict[str, str]:
@@ -1954,15 +1959,16 @@ _YEAR_MONTHS = ("يناير", "فبراير", "مارس", "[أا]بريل", "م�
                 "[أا]كتوبر", "نوفمبر", "ديسمبر", "مارتش", "مي", "ماي", "جون", "جولاي", "[أا]وقست", "[أا]وغست")
 # A year after the word that says it is one, or after a month name: four digits in one
 # script, not part of a longer number or a decimal, and a second year after a slash or a
-# dash, a range or a choice, read in the same register as the first. The words are سنة,
-# موديل with the pronoun of "its model", and عام when it is definite, carries a proclitic
-# or follows a preposition, since a bare عام after a noun is "general", مدير عام. A
-# proclitic و, ف, ب or ل may be written on a month name.
+# dash, a range or a choice, read in the same register as the first, or after و, read on
+# its own; a number before ريال is a price and not a year. The words are سنة, موديل with
+# the pronoun of "its model" or as the plural موديلات, and عام when it is definite,
+# carries a proclitic or follows a preposition, since a bare عام after a noun is
+# "general", مدير عام. A proclitic و, ف, ب or ل may be written on a month name.
 _YEAR_PREPOSITIONS = ("في", "من", "منذ", "حتى", "إلى", "الى", "قبل", "بعد", "خلال", "نهاية", "بداية")
-_YEAR = re.compile(r"(?<![^\s\W])((?:ف?" + _PROCLITIC + r"(?:سن[ةه]|موديل(?:ها|ه)?)"
+_YEAR = re.compile(r"(?<![^\s\W])((?:ف?" + _PROCLITIC + r"(?:سن[ةه]|موديل(?:ات|ها|ه)?)"
                    r"|(?:ف?[بولك]ا?ل?|ال)عام|(?:" + "|".join(f"(?<={w} )" for w in _YEAR_PREPOSITIONS) + r"|^)عام"
                    r"|[وفبل]?(?:" + "|".join(_YEAR_MONTHS) + r"))\s+)([0-9]{4}|[٠-٩]{4})"
-                   r"(?:(\s*[/\-–]\s*)([0-9]{4}|[٠-٩]{4}))?"
+                   r"(?:(\s*[/\-–]\s*|\s+و\s*)([0-9]{4}|[٠-٩]{4})(?!\s*ريال))?"
                    r"(?![0-9٠-٩A-Za-z]|[.,٫٬،][0-9٠-٩])")
 # The names a month is written with, January first: the ones the date parser's
 # ``nice_date`` writes, with the spellings that drop the hamza of أبريل, أغسطس and أكتوبر
@@ -2195,7 +2201,8 @@ class TtsNorm:
     #: given, a run written with a leading ``+`` is one too.
     phone_prefixes: Tuple[str, ...] = ()
     #: Words after which a digit run is a reference and is read digit by digit:
-    #: ``الكود 4729``, ``برقم الحجز 3401``. One other word may stand between.
+    #: ``الكود 4729``, ``برقم الحجز 3401``. One other word may stand between, and a
+    #: colon may follow: ``الكود: 4729``.
     identifier_words: Tuple[str, ...] = ()
     #: Speak Arabic-Indic and ASCII numbers as cardinals here, ahead of
     #: ``spoken_forms``, so that the three flags below apply to them. A clock time is
@@ -2233,11 +2240,13 @@ class TtsNorm:
     #: way Saudi speech says it, عشرين and then the number past two thousand: ``موديل 2026``
     #: is ``موديل عشرين ستة وعشرين`` where the cardinal is ``ألفين وستة وعشرين``, and 2020
     #: is ``عشرين عشرين``. A number is a year here when it follows a word that says so,
-    #: سنة or موديل with a proclitic, عام when it is definite, carries a proclitic or
-    #: follows a preposition (a bare عام after a noun is "general", ``مدير عام``), or a
+    #: سنة or موديل with a proclitic, the plural موديلات, عام when it is definite, carries a
+    #: proclitic or follows a preposition (a bare عام after a noun is "general", ``مدير عام``), or a
     #: month name, ``15 يونيو 2026``; when it is the year of a date in digits,
     #: ``10/6/2026``; and when it is the second of two such years after a slash or a
-    #: dash, ``موديل 2026/2027``, though a range crossing 2020 or 2099 leaves both years to the cardinals. A year
+    #: dash, ``موديل 2026/2027``, though a range crossing 2020 or 2099 leaves both years to the cardinals;
+    #: a second year after و, ``موديل 2026 و 2025``, is read on its own, and a number
+    #: before ريال is a price. A year
     #: before 2020 keeps the cardinal, ``ألفين وخمسة عشر``, which is how it is said, and so
     #: does a bare four-digit number, which may as well be a price.
     colloquial_years: bool = False
@@ -2351,6 +2360,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
                              _NUMERIC_DATE, _MONTH_NAMES, _HIJRI_MONTH_NAMES, _GREGORIAN_YEARS, _HIJRI_YEARS,
                              _YEAR,
+                             _MONEY_AFTER, _IDENTIFIER_GAP,
                              _WRITTEN_MONTH, _MARCH_BEFORE, _MARCH_AFTER,
                              tuple(sorted(_not_code_letters("ar"))))
 _PLUGIN_DEFAULT = TtsNorm()
@@ -2362,7 +2372,7 @@ def _tts_patterns(config: TtsNorm):
     prefixes = re.compile("|".join(f"(?:{p})" for p in config.phone_prefixes)) if config.phone_prefixes else None
     context = re.compile(r"(?:^|[\s\W])" + _PROCLITIC + r"(?:"
                          + "|".join(re.escape(w) for w in config.identifier_words)
-                         + r")(?:\s+[^\s\d]+)?\s*$", re.IGNORECASE) if config.identifier_words else None
+                         + ")" + _IDENTIFIER_GAP, re.IGNORECASE) if config.identifier_words else None
     return phones, prefixes, context
 
 
@@ -2660,6 +2670,8 @@ def _spoken_clock(m: re.Match, lang: str, config: TtsNorm) -> Optional[str]:
     it is asked for one, and it is asked when the text writes "am" or "pm" and for an
     hour the 12-hour clock does not have. Under ``colloquial_clock`` the words are
     :func:`_colloquial_clock`'s, asked for the period in the same cases."""
+    if m["sep"] == "." and _MONEY_AFTER.match(m.string, m.end()):
+        return None
     hour = int(m["hour"].translate(_EASTERN_DIGITS))
     minute = int(m["minute"].translate(_EASTERN_DIGITS)) if m["minute"] else 0
     marker = m["marker"].lower() if m["marker"] else None
@@ -2748,10 +2760,13 @@ def _colloquial_years(m: re.Match, lang: str, config: TtsNorm) -> str:
     """The year ``m`` matched, and the second of a range when there is one, as
     :attr:`TtsNorm.colloquial_years` reads them. A range is read in one register: both
     years colloquially when both lie from 2020 to 2099, else both left for the cardinals,
-    so ``2019/2020`` is not read half one way and half the other."""
+    so ``2019/2020`` is not read half one way and half the other. Two years joined by و
+    are two years, each read on its own."""
     cue, first, joint, second = m.groups()
     if second is None:
         return cue + _colloquial_year(first, lang, config)
+    if joint.strip() == "و":
+        return cue + _colloquial_year(first, lang, config) + joint + _colloquial_year(second, lang, config)
     if not all(2020 <= int(y.translate(_EASTERN_DIGITS)) <= 2099 for y in (first, second)):
         return m.group(0)
     return cue + _colloquial_year(first, lang, config) + joint + _colloquial_year(second, lang, config)
@@ -2854,7 +2869,9 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     hour of the 12-hour clock followed by "am" or "pm", or either after a written
     ``الساعة``. ص and م after ``h:mm`` or after ``الساعة`` are "am" and "pm" in Arabic:
     ``4:15 م`` is ``الساعة الرابعة والربع مساءً``. A score written with two-digit minutes,
-    ``3:10``, reads as a time too.
+    ``3:10``, reads as a time too. After ``الساعة`` the minutes may follow a dot,
+    ``الساعة 9.30``, unless an amount of money follows: ``سعر الساعة 12.50 ريال`` is a
+    decimal.
     ``canonical_unicode`` drops tatweel, applies NFC, orders shadda before its
     vowel and settles the spellings of مائة: the form the tokenizer reads.
     ``strip_controls`` drops zero-width and bidirectional control characters,
