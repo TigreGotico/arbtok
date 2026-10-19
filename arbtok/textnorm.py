@@ -220,9 +220,15 @@ class AsrNorm:
     #: Numbers written or said several ways are written one way. Written: digits are ASCII,
     #: the thousands separator goes (``400,000`` is ``400000``), the Arabic decimal mark is
     #: ``.``, a date is its day, the month's Gregorian name and its year (``18/9/2026`` and
-    #: ``18 أيلول 2026`` are ``18 سبتمبر 2026``), a clock time written with دقيقة takes the colon
-    #: (``الساعة 8 ودقيقة 15`` is ``الساعة 8:15``) and a unit symbol after a number is the
-    #: unit's Arabic name. Said, with ``spoken_numbers_to_digits``: ونص is ونصف, the half;
+    #: ``18 أيلول 2026`` are ``18 سبتمبر 2026``, and مي after a day is مايو), a Hijri date, one
+    #: written with هـ or with a year from 1300 to 1599, takes the Hijri month's name and هـ is
+    #: هجري (``15/9/1447هـ`` is ``15 رمضان 1447 هجري``), a month beside a year in digits or after
+    #: شهر takes its Gregorian name (``جون 2026`` is ``يونيو 2026``), a clock time written with
+    #: دقيقة takes the colon (``الساعة 8 ودقيقة 15`` is ``الساعة 8:15``), a unit symbol after a
+    #: number is the unit's Arabic name, and the kilometre after a number, كم or كيلومتر, is
+    #: كيلومتر, as is the كيلو Saudi speech says after a word of distance (المسافة, ممشاها,
+    #: الصيانة, الضمان) or before في الساعة; a كيلو of weight stays كيلو. Said, with
+    #: ``spoken_numbers_to_digits``: ونص is ونصف, the half;
     #: وحدة is واحدة; اطناش and اتناش are 12; فاصلة between two numbers is the decimal mark;
     #: بالمية and في المية after a number are ``%``; a year said ``عشرين ستة وعشرين`` after
     #: a month, سنة, عام or موديل is ``2026``; a day said as an ordinal before a month is
@@ -245,9 +251,13 @@ class AsrNorm:
     #: thousands word in the singular is a number of its own: three to ten thousand take the
     #: plural, so ``الكفرات الاربعة الف وستمية`` is "the four tyres, 1600", ``4 1600``.
     spoken_numbers_to_digits: bool = False
-    #: Seven or more single digits standing one by one become one run: a phone number
-    #: read aloud arrives as ``0 5 5 3 1 7 9 2 4 5``. Shorter runs are left apart,
-    #: because two small numbers side by side are two numbers.
+    #: Digits read one by one that are one number become one run: seven or more single
+    #: digits, as a phone number read aloud arrives, ``0 5 5 3 1 7 9 2 4 5``; a number written
+    #: in groups as a phone number is, ``055 123 4567``, of seven to fifteen digits; and two to
+    #: six single digits after one of :data:`IDENTIFIER_WORDS`, ``رقم الحجز 4 8 2 1 3``, or after
+    #: a plate's three letters, which :func:`normalize_for_tts` reads one by one. A plate's
+    #: letters said by their names before a number, ``الف باء جيم``, are written as the letters.
+    #: Other short runs are left apart, because two small numbers side by side are two numbers.
     join_dictated_digits: bool = False
     #: A code is written as its letter names and its digits: ``X5`` as ``اكس 5``, ``520i``
     #: as ``520 اي``, ``GV70`` as ``جي في 70``. The letter names are those of
@@ -983,6 +993,98 @@ def _number_spelling(word: str):
     return None
 
 
+#: Words after which a number is a reference to be read out, not a quantity.
+#: :func:`normalize_for_tts` reads it digit by digit when ``identifier_words`` holds them,
+#: and ``join_dictated_digits`` joins the digits read out after one.
+IDENTIFIER_WORDS = ("كود", "الكود", "رمز", "الرمز",
+                    "رقم", "الرقم", "رقمك", "رقمه", "رقمي",
+                    "جوال", "جوالك", "جوالي", "هاتف", "موبايل", "تلفون",
+                    "فرع", "الفرع", "شاسيه", "الطلب", "الحجز",
+                    # Saudi Arabia's unified numbers, the 920 numbers a business gives.
+                    "الموحد", "الرقم الموحد",
+                    "code", "number", "no", "phone", "mobile", "branch", "ref", "pin", "otp")
+#: An identifier word at the end of a text, after a proclitic and before at most one other word.
+#: The word between may be a definite noun, ``رقم الحجز``, ``رمز التحقق``, and not a particle:
+#: in ``الحجز في 45 دقيقة`` the number is a quantity. Punctuation may follow either word.
+_IDENTIFIER_BEFORE = re.compile(rf"(?:^|[\s\W])(?:{_TERM_PROCLITIC})?(?:" + "|".join(map(re.escape, IDENTIFIER_WORDS))
+                                + r")[^\w\s]*(?:\s+ال[^\s\d]+)?\s*$", re.IGNORECASE)
+#: A number written in groups, as a phone number is: ``055 123 4567``, ``+966 55 123 4567``. It is
+#: one number when it has three groups or more, or starts with ``+`` or ``0``: two numbers side
+#: by side, ``64008 45``, are two.
+_DIGIT_GROUPS = re.compile(r"(?<![\d.,:/٫٬+\-])(?<!\d )(?<!\d-)(\+?\d{1,5})((?:(?:\s*-\s*|\s+)\d{1,4})+)"
+                           r"(?![\w%٪]|[.,:/٫٬]\d)")
+#: The digits of a phone number, from ITU-T E.164: at least seven, at most fifteen.
+_PHONE_LENGTHS = range(7, 16)
+#: Two to six single digits standing one by one.
+_SHORT_DICTATED = re.compile(r"(?<![\w.,:/٫٬+\-])(?<!\d\s)\d(?:\s+\d){1,5}(?!\s+\d)(?![\w%٪]|[.,:/٫٬]\d)")
+#: A licence plate: three single Arabic letters, not after a fourth, then three or four digits.
+_PLATE_DIGITS = re.compile(r"(?<!\S)(?<!\s[\u0621-\u064A] )(?<!^[\u0621-\u064A] )"
+                           r"((?:[\u0621-\u064A] ){3})(\d(?: \d){2,3})"
+                           r"(?![\w%٪]|[.,:/٫٬]\d)")
+
+
+def _phone_groups(m: re.Match) -> str:
+    digits = re.sub(r"\D", "", m.group(0))
+    one = m.group(1)[:1] in "+0" or len(re.findall(r"\d+", m.group(2))) >= 2
+    return digits if one and len(digits) in _PHONE_LENGTHS else m.group(0)
+
+
+def _joined_digits(text: str) -> str:
+    """Digits read one by one that are one number, joined: seven or more single digits; a
+    number written in groups whose digits are as many as a phone number's; two to six single
+    digits after one of :data:`IDENTIFIER_WORDS`; the digits of a plate. :func:`normalize_for_tts`
+    reads each of these digit by digit."""
+    text = _DICTATED_DIGITS.sub(lambda m: _WHITESPACE.sub("", m.group(0)), text)
+    text = _DIGIT_GROUPS.sub(_phone_groups, text)
+    text = _SHORT_DICTATED.sub(lambda m: _WHITESPACE.sub("", m.group(0))
+                               if _IDENTIFIER_BEFORE.search(m.string, 0, m.start()) else m.group(0), text)
+    return _PLATE_DIGITS.sub(lambda m: m.group(1) + m.group(2).replace(" ", ""), text)
+
+
+@functools.lru_cache(maxsize=None)
+def _plate_letter_names():
+    """Each letter name of :data:`_LETTER_NAMES` as a recognizer writes it, unpointed and with
+    or without its final hamza, as word tuples, mapped to its letter."""
+    names = {}
+    for letter, name in _LETTER_NAMES.items():
+        words = tuple(_fold_key(name).split())
+        names.setdefault(words, letter)
+        names.setdefault(words[:-1] + (words[-1].rstrip("ء"),), letter)
+    return names
+
+
+def _plate_letters(text: str) -> str:
+    """A plate's letters said by their names, ``الف باء جيم`` before a number, as the letters
+    ``ا ب ج``: :func:`normalize_for_tts` reads a plate's letters by their names."""
+    names = _plate_letter_names()
+    parts = _WORDS_AND_GAPS.split(text)
+    keys = [_fold_key(w) for w in parts[::2]]
+
+    def name_at(i):
+        for n in (2, 1):
+            if i + n <= len(keys) and tuple(keys[i:i + n]) in names:
+                return n, names[tuple(keys[i:i + n])]
+        return None
+
+    i = 0
+    while i < len(keys):
+        read, j = [], i
+        while len(read) < 3 and j < len(keys) and name_at(j):
+            n, letter = name_at(j)
+            read.append((j, n, letter))
+            j += n
+        after = keys[j] if j < len(keys) else ""
+        if len(read) == 3 and after and (after.isdigit() or _number_value(after) is not None):
+            for start, n, letter in read:
+                parts[2 * start] = letter
+                for p in range(2 * start + 1, 2 * (start + n) - 1):
+                    parts[p] = ""
+            i = j
+        else:
+            i += 1
+    return "".join(parts)
+
+
 def _number_words(text: str) -> str:
     """The number spellings, وحدة where it counts, and the formal eleven and twelve as one word."""
     text = _map_words(text, _number_spelling)
@@ -1014,7 +1116,7 @@ _MONTHS = {"يناير": 1, "فبراير": 2, "مارس": 3, "ابريل": 4, "
            "يوليو": 7, "يوليه": 7, "اغسطس": 8, "سبتمبر": 9, "اكتوبر": 10, "نوفمبر": 11, "ديسمبر": 12,
            "كانون الثاني": 1, "شباط": 2, "اذار": 3, "نيسان": 4, "ايار": 5, "حزيران": 6, "تموز": 7,
            "اب": 8, "ايلول": 9, "تشرين الاول": 10, "تشرين الثاني": 11, "كانون الاول": 12,
-           "مارتش": 3, "جون": 6, "جولاي": 7, "اوقست": 8, "اوغست": 8}
+           "مارتش": 3, "جون": 6, "جولاي": 7, "اوقست": 8, "اوغست": 8, "مي": 5}
 _MONTH = "|".join(sorted(map(re.escape, _MONTHS), key=len, reverse=True))
 #: The name a month is written with: the Gregorian name of written Arabic.
 _MONTH_NAMES = ("يناير", "فبراير", "مارس", "ابريل", "مايو", "يونيو", "يوليو", "اغسطس", "سبتمبر", "اكتوبر",
@@ -1023,8 +1125,16 @@ _MONTH_NAMES = ("يناير", "فبراير", "مارس", "ابريل", "ماي�
 #: سنة, عام, موديل, or في, "in".
 _YEAR_WORD = re.compile(rf"(?:[وفبل]?(?:ال)?(?:سنه|عام|موديل|موديله|موديلها|موديلات)|في|{_MONTH})")
 _TWENTY = ("عشرين", "عشرون")
-_DIGIT_DATE = re.compile(r"(?<![0-9/.\-])([0-9]{1,2})([/.\-])([0-9]{1,2})\2([0-9]{4}|[0-9]{2})(?![0-9]|[/.\-][0-9])")
-_ISO_DATE = re.compile(r"(?<![0-9/.\-])([0-9]{4})([/\-])([0-9]{1,2})\2([0-9]{1,2})(?![0-9]|[/.\-][0-9])")
+#: A date in digits, day first or year first, with the era written after it: هـ or ه for the
+#: Hijri calendar, م for the Gregorian.
+_DIGIT_DATE = re.compile(r"(?<![0-9/.\-])([0-9]{1,2})([/.\-])([0-9]{1,2})\2([0-9]{4}|[0-9]{2})(?![0-9]|[/.\-][0-9])"
+                         r"(?: ?(هـ?|م)(?![\u0621-\u064A]))?")
+_ISO_DATE = re.compile(r"(?<![0-9/.\-])([0-9]{4})([/\-])([0-9]{1,2})\2([0-9]{1,2})(?![0-9]|[/.\-][0-9])"
+                       r"(?: ?(هـ?|م)(?![\u0621-\u064A]))?")
+#: A month name with no day before it, which is a month where a year in digits follows it or
+#: شهر comes before it: ``نهاية جون 2026``, ``شهر جون``.
+_LONE_MONTH = re.compile(rf"(?<![^\s\W])([وفبل]?)({_MONTH})(?![^\s\W])")
+_MONTH_BESIDE_YEAR = re.compile(r"\s+[0-9]{4}(?![0-9])")
 _NAMED_DATE = re.compile(rf"(?<![0-9/.])([0-9]{{1,2}}) (?:من )?({_MONTH})(?: ([0-9]{{4}}))?(?![^\s\W])")
 #: فاصلة, the decimal mark said, between a number and its decimals: one number, or digits said
 #: one by one, as decimals are read.
@@ -1053,6 +1163,15 @@ _PERCENT_BEFORE = re.compile(r"(?<![0-9.])[%٪]([0-9]+(?:\.[0-9]+)?)")
 _CLOCK_MINUTE_LOOSE = re.compile(r"(الساع[ةه]) ([0-9]{1,2}) ([\u0621-\u064A]+) و?دقيق[ةه] ([0-9]{1,2})(?![0-9])")
 _CLOCK_MINUTE_WORD = re.compile(r"(الساع[ةه]) ([0-9]{1,2})(?: و?دقيق[ةه] ([0-9]{1,2})| و([0-9]{1,2}) دقيق[ةه])(?![0-9])")
 _UNIT_AFTER_NUMBER = r"(?<=[0-9])( ?)({})(?![A-Za-z])"
+#: The kilometre after a number, the symbol's name كيلومتر or the abbreviation كم, and the كيلو
+#: Saudi speech says for it; كيلو is also the kilogram, and is the kilometre only after a word
+#: of distance or before في الساعة.
+_KILOMETRE_SAID = re.compile(r"(?<![A-Za-z0-9.,])([0-9]+(?:\.[0-9]+)?) ?(كيلو ?متر(?:ات)?|كم|كيلو)(?![\u0621-\u064A])")
+#: The words before a number that make its كيلو a distance, folded: a distance, a car's
+#: mileage, a service interval, a warranty, a speed.
+_DISTANCE_WORDS = frozenset({"مسافه", "المسافه", "ممشي", "الممشي", "ممشاها", "ممشاه", "ماشيه", "ماشي", "مشت", "مشي",
+                             "يبعد", "تبعد", "بعيد", "صيانه", "الصيانه", "ضمان", "الضمان", "سرعه", "السرعه"})
+_PER_HOUR = re.compile(r"\s+(?:في\s+ال|بال)ساع[ةه](?![\u0621-\u064A])")
 
 
 def _held(word: str) -> str:
@@ -1226,18 +1345,29 @@ def _named_date(m: re.Match) -> str:
     return f"{int(day)} {_MONTH_NAMES[month_number - 1]}" + (f" {year}" if year else "")
 
 
-def _digit_date(m: re.Match) -> str:
-    day, _, month, year = m.groups()
-    if not (1 <= int(day) <= 31 and 1 <= int(month) <= 12):
+def _date_words(m: re.Match, day: str, separator: str, month: str, year: str, era) -> str:
+    """A date in digits as its day, its month's name and its year, as :func:`normalize_for_tts`
+    says it: a date with هـ, or with a year from 1300 to 1599 and no era, takes the Hijri
+    month's name, and the era is said, هـ as هجري and م as ميلادي. A date written with dots,
+    a Hijri year and no era is a version number and stays as written."""
+    day, month, year = int(day), int(month), int(year) if len(year) == 4 else 2000 + int(year)
+    hijri = era in ("ه", "هـ") or (era is None and year in _HIJRI_YEARS)
+    if not (1 <= day <= (30 if hijri else 31) and 1 <= month <= 12) or (hijri and year not in _HIJRI_YEARS) \
+            or (hijri and era is None and separator == "."):
         return m.group(0)
-    return f"{int(day)} {_MONTH_NAMES[int(month) - 1]} {year if len(year) == 4 else '20' + year}"
+    names = _HIJRI_MONTH_NAMES if hijri else _MONTH_NAMES
+    said = {"ه": " هجري", "هـ": " هجري", "م": " ميلادي"}.get(era, "")
+    return f"{day} {names[month - 1]} {year}{said}"
+
+
+def _digit_date(m: re.Match) -> str:
+    day, separator, month, year, era = m.groups()
+    return _date_words(m, day, separator, month, year, era)
 
 
 def _iso_date(m: re.Match) -> str:
-    year, _, month, day = m.groups()
-    if not (1 <= int(day) <= 31 and 1 <= int(month) <= 12):
-        return m.group(0)
-    return f"{int(day)} {_MONTH_NAMES[int(month) - 1]} {year}"
+    year, separator, month, day, era = m.groups()
+    return _date_words(m, day, separator, month, year, era)
 
 
 @functools.lru_cache(maxsize=None)
@@ -1260,6 +1390,12 @@ def _written_numbers(text: str) -> str:
         out.append(text[last:m.start()] + _named_date(m))
         last = m.end()
     text = "".join(out) + text[last:]
+    folded, out, last = text.translate(_CLOCK_FOLD), [], 0
+    for m in _LONE_MONTH.finditer(folded):
+        if _MONTH_BESIDE_YEAR.match(folded, m.end()) or folded[:m.start()].rstrip().endswith("شهر"):
+            out.append(text[last:m.start(2)] + _MONTH_NAMES[_MONTHS[m.group(2)] - 1])
+            last = m.end()
+    text = "".join(out) + text[last:]
     text = _DECIMAL_WORD.sub(lambda m: f"{m.group(1)}.{m.group(2).replace(' ', '')}", text)
     text = _DECIMAL_ZEROS.sub(lambda m: f"{m.group(1)}.{m.group(2)}" if m.group(2) else m.group(1), text)
     text = _PERCENT_WORDS.sub(r"\1%", _PERCENT_BEFORE.sub(r"\1%", text))
@@ -1271,7 +1407,27 @@ def _written_numbers(text: str) -> str:
     text = _DAY_MONTH.sub(_day_month, _PADDED_HOUR.sub(r"\1:", text))
     text = _ON_THE_HOUR.sub(r"\1", _DIGIT_TIME_PERIOD.sub(_digit_time_period, text))
     pattern, names = _unit_names()
-    return pattern.sub(lambda m: " " + names[m.group(2)], text)
+    return _kilometres(pattern.sub(lambda m: " " + names[m.group(2)], text))
+
+
+def _distance_before(text: str) -> bool:
+    """Whether one of the last four Arabic words of ``text`` is a word of distance, with or
+    without a proclitic; punctuation after it, ``المسافة؟``, does not hide it."""
+    for word in _ARABIC_WORD.findall(text)[-4:]:
+        key = _fold_key(word)
+        if key in _DISTANCE_WORDS or (key[:1] in "وفبل" and key[1:] in _DISTANCE_WORDS):
+            return True
+    return False
+
+
+def _kilometres(text: str) -> str:
+    """The kilometre after a number as كيلومتر: كم and كيلومتر always, كيلو where the text says
+    a distance. A weight in كيلو stays كيلو, so ``وزنها 5 كيلو`` and ``5 كيلومتر`` differ."""
+    def unit(m):
+        if m.group(2) == "كيلو" and not (_distance_before(text[:m.start()]) or _PER_HOUR.match(text, m.end())):
+            return m.group(0)
+        return f"{m.group(1)} كيلومتر"
+    return _KILOMETRE_SAID.sub(unit, text)
 
 
 def _day_month(m: re.Match) -> str:
@@ -1518,6 +1674,9 @@ ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HAR
                              _QURANIC_MARKS, _TATWEEL, _CONTROLS, _ALEF, _TA_MARBUTA, _ALEF_MAQSURA,
                              _HAMZA_CARRIERS, _DIGITS, _PUNCTUATION, _NOT_ARABIC_BLOCK, _WORD_FINAL_HAMZA,
                              _WHITESPACE, _DICTATED_DIGITS, _EDGE_PUNCTUATION, _EVENT, _LANGUAGE_WRAPPER,
+                             IDENTIFIER_WORDS, _IDENTIFIER_BEFORE, _DIGIT_GROUPS, _PHONE_LENGTHS, _SHORT_DICTATED,
+                             _PLATE_DIGITS, _LONE_MONTH, _MONTH_BESIDE_YEAR, _KILOMETRE_SAID, tuple(sorted(_DISTANCE_WORDS)),
+                             _PER_HOUR,
                              _OR, _MAYA_SPELLINGS, _HUNDRED, _FAREWELL, _FAREWELL_SPELLINGS,
                              _CLOCK_WORD, _HOUR_TENS, _HOUR_FRACTIONS, _EXCEPT, _MINUTE_WORDS, _NIGHT,
                              _TIME_ENDS, _TERM_PROCLITIC, _LATIN_HYPHEN, _DIALECT_SPELLINGS, _MORNING_WORDS,
@@ -1585,6 +1744,8 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
         text = _spoken_variants(text)
     if config.unify_dialect_spellings and arabic:
         text = _map_words(text, _dialect_spelling)
+    if config.join_dictated_digits and arabic:
+        text = _plate_letters(text)
     if config.number_forms:
         text = _written_numbers(text)
         if arabic:
@@ -1598,7 +1759,7 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
         if config.number_forms:
             text = _release_fractions(_written_numbers(text))
     if config.join_dictated_digits:
-        text = _DICTATED_DIGITS.sub(lambda m: _WHITESPACE.sub("", m.group(0)), text)
+        text = _joined_digits(text)
     if config.spell_codes and arabic:
         text = _LATIN_CODE.sub(_spelled_code, text)
     if table:
@@ -1979,14 +2140,6 @@ def _term_pattern(lexicon: Tuple[Tuple[str, str], ...]):
 #: resources/PhoneNumberMetadata.xml) at the release the file's ``source`` names.
 ARAB_PHONE_REGIONS = ("SA", "AE", "KW", "QA", "BH", "OM", "YE", "IQ", "JO", "LB", "SY",
                       "PS", "EG", "SD", "LY", "TN", "DZ", "MA", "MR", "SO", "DJ", "KM")
-#: Words after which a number is a reference to be read out, not a quantity.
-IDENTIFIER_WORDS = ("كود", "الكود", "رمز", "الرمز",
-                    "رقم", "الرقم", "رقمك", "رقمه", "رقمي",
-                    "جوال", "جوالك", "جوالي", "هاتف", "موبايل", "تلفون",
-                    "فرع", "الفرع", "شاسيه", "الطلب", "الحجز",
-                    # Saudi Arabia's unified numbers, the 920 numbers a business gives.
-                    "الموحد", "الرقم الموحد",
-                    "code", "number", "no", "phone", "mobile", "branch", "ref", "pin", "otp")
 
 _DIGIT_WORDS = dict(zip("0123456789", ("صفر", "واحد", "اثنين", "ثلاثة", "أربعة", "خمسة",
                                        "ستة", "سبعة", "ثمانية", "تسعة")))
@@ -2293,6 +2446,9 @@ _LATIN_PLATE = re.compile(rf"({_PLATE_WORD}(?:\s+[\u0621-\u064A\u0640]+)?\s*:?\s
 # four letters, or letters spaced unevenly, are no plate, and the last three of them are
 # not one either. The conjunction و is the exception, which joins two plates.
 _LETTER_BEFORE = re.compile(_PLATE_EDGE + r"([\u0621-\u064A]\u0640?|\u0640)\s+$")
+# normalize_asr reads plate letter names and Hijri month names from the tables above, which
+# are defined after ASR_NORM_VERSION; they are folded into it here, so it moves with them.
+ASR_NORM_VERSION = _rule_set(ASR_NORM_VERSION, _LETTER_NAMES, _HIJRI_MONTH_NAMES, _HIJRI_YEARS)
 
 
 @dataclasses.dataclass(frozen=True)
