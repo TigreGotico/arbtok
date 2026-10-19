@@ -326,7 +326,11 @@ no reading for it at all. Two inputs put Arabic in its place.
 A lexicon, set on the config with `with_lexicon`, maps a term to the way it is
 said. It is applied before anything else, the longest term first and without regard to case. A term ends where a
 Latin letter or digit ends, so an Arabic prefix written against it stays
-attached.
+attached, and a tatweel written between the two, `للـNissan`, is dropped once the
+term is read in Arabic: `للنيسان`. A spelled code drops it the same way. A digit
+written against the letters of a reading, the bundled `أتش1` for `H1`, is read apart
+from them by its English name, as a spelled code's digit is: `أتش وَنْ`, where the
+cardinals would otherwise fuse it to the letters as `أتشواحد`.
 
 `spell_out_codes=True` reads what the lexicon did not claim and is a code, one
 character at a time. A code is a run of capitals and digits with at least one of
@@ -357,8 +361,15 @@ as "MG 4 EV, Pkw-Modell"
 ([revision 236735370](https://de.wikipedia.org/w/index.php?oldid=236735370)). That
 every model code written with a space names its joined code is this package's
 generalisation from that case. One small letter may lead, as in BMW's `iX 3`, and the code is joined in capitals,
-`IX3`, since only capitals are spelled. Three cases are not joined, because their
-digits are not a code's:
+`IX3`, since only capitals are spelled. Written joined, `iX3` is read the same way.
+One of BMW's small suffix letters after two or three digits, `520i`, `330e`, `320d` or
+`M340i`, is part of the code too, and is read in capitals with the rest:
+`فَيْفْ تُو زِيرُو آيْ`. Every code is spelled one character at a time with the English
+digit names, so `LX600` is "six zero zero" and `520i` "five two zero i"; a
+consumer that wants the spoken hundreds, `خمس مية وعشرين آي`, puts the term in its
+lexicon, which is applied first. With `spell_out_codes` off and the cardinals on, a
+code written with a hyphen, `CX-5`, stays whole as `CX5` does, rather than its digit
+becoming `CX-خمسة`. Three cases are not joined, because their digits are not a code's:
 
 | written | why it stays |
 |---|---|
