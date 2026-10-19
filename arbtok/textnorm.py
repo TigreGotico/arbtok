@@ -1921,6 +1921,23 @@ _YEAR = re.compile(r"(?<![^\s\W])((?:ف?" + _PROCLITIC + r"(?:سن[ةه]|مود�
                    r"|[وفبل]?(?:" + "|".join(_YEAR_MONTHS) + r"))\s+)([0-9]{4}|[٠-٩]{4})"
                    r"(?:(\s*[/\-–]\s*)([0-9]{4}|[٠-٩]{4}))?"
                    r"(?![0-9٠-٩A-Za-z]|[.,٫٬،][0-9٠-٩])")
+# The names a month is written with, January first: the ones the date parser's
+# ``nice_date`` writes, with the spellings that drop the hamza of أبريل, أغسطس and أكتوبر
+# and the variants يونيه and يوليه. A name may carry the proclitic و, ف, ب or ل.
+_WRITTEN_MONTHS = ("يناير", "فبراير", "مارس", "[أا]بريل", "مايو", "يوني[وه]", "يولي[وه]", "[أا]غسطس", "سبتمبر",
+                   "[أا]كتوبر", "نوفمبر", "ديسمبر")
+_WRITTEN_MONTH = re.compile(r"(?<![\u0621-\u064A])([وفبل]?)(?:"
+                            + "|".join(f"(?P<m{i}>{name})" for i, name in enumerate(_WRITTEN_MONTHS))
+                            + r")(?![\u0621-\u064A])")
+# مارس is also the verb "he practised": it is the month next to a number, after شهر, or
+# beside another month name joined to it by إلى, حتى, لين, أو, و or a dash, as in a
+# range: من مارس إلى مايو.
+_MONTH_JOINER = r"\s*(?:إلى|الى|حتى|لين|أو|او|-|–|و)\s*"
+_ANY_MONTH = "(?:" + "|".join(_WRITTEN_MONTHS) + ")"
+# A number next to it is a digit, or a span an earlier rule spoke and holds: a date's day or year.
+_MARCH_BEFORE = re.compile("(?:[0-9٠-٩\uE000-\uF8FF]|" r"(?<![\u0621-\u064A])(?:ال)?شهر|(?<![\u0621-\u064A])[وفبل]?"
+                           + _ANY_MONTH + _MONTH_JOINER + r")\s*$")
+_MARCH_AFTER = re.compile("\\s*[0-9٠-٩\uE000-\uF8FF]|" + _MONTH_JOINER + "[فبل]?" + _ANY_MONTH + r"(?![\u0621-\u064A])")
 # A run of digits in groups, with a leading ``+`` if any, split by spaces or hyphens as a
 # phone number is written. Its digits are all ASCII or all Arabic-Indic: a number written
 # after a phone number in the other script is another number. It may not touch a digit
@@ -2008,7 +2025,7 @@ def _plain_orthography(text: str) -> str:
 
 #: Rules whose output is Arabic words whatever ``lang`` says.
 _ARABIC_ONLY = ("speak_percent", "phone_shapes", "phone_regions", "long_digit_runs", "phone_prefixes", "identifier_words",
-                "dialect_numbers", "number_forms")
+                "dialect_numbers", "number_forms", "month_names")
 
 # A whitespace-separated word of two or three Arabic letters and a tatweel, held together
 # with the whitespace after it, matched only where the word after it begins with the same
@@ -2201,6 +2218,17 @@ class TtsNorm:
     #: alone when ``dialect_numbers`` is off. Set with :meth:`with_number_forms`.
     #: Speaks numbers as cardinals, as ``cardinal_numbers`` does.
     number_forms: Tuple[Tuple[int, str], ...] = ()
+    #: Your own words for the twelve months, January first, said wherever a month name is
+    #: written: ``("يناير", "فبراير", "مارتش", "أبريل", "مي", "جون", "جولاي", "أوقست",
+    #: "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")`` reads ``15 يونيو`` as ``15 جون``, the
+    #: English names Gulf speech uses for March to August. A name is found in the spellings
+    #: the date parser writes and their common variants, with a proclitic attached; مارس
+    #: only next to a number, after شهر or joined to another month name, ``من مارس إلى
+    #: مايو``, since it is also a verb. A date written in digits that the cardinals read is
+    #: named before this rule runs, so its month takes the caller's word too; a date that
+    #: ``spoken_forms`` alone reads is named after it, in the date parser's words, and keeps
+    #: them. Arabic only.
+    month_names: Tuple[str, ...] = ()
     #: Dates, times, numbers and units as words in ``lang``.
     spoken_forms: bool = True
     #: Tatweel dropped, NFC, shadda ordered before its vowel, the spellings of مائة settled.
@@ -2237,8 +2265,11 @@ class TtsNorm:
     def __post_init__(self):
         object.__setattr__(self, "lexicon", _as_lexicon(self.lexicon))
         object.__setattr__(self, "number_forms", _as_number_forms(self.number_forms))
-        for name in ("phone_shapes", "phone_regions", "phone_prefixes", "identifier_words"):
+        for name in ("phone_shapes", "phone_regions", "phone_prefixes", "identifier_words", "month_names"):
             object.__setattr__(self, name, tuple(getattr(self, name)))
+        if self.month_names and (len(self.month_names) != 12
+                                 or not all(isinstance(w, str) and w.strip() for w in self.month_names)):
+            raise ValueError(f"month_names holds a word for each of the twelve months, not {self.month_names!r}")
 
     def with_lexicon(self, lexicon: Mapping[str, str]) -> "TtsNorm":
         """This config with ``lexicon``, a mapping from a term to its spoken form."""
@@ -2277,6 +2308,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
                              _NUMERIC_DATE, _MONTH_NAMES, _HIJRI_MONTH_NAMES, _GREGORIAN_YEARS, _HIJRI_YEARS,
                              _YEAR,
+                             _WRITTEN_MONTH, _MARCH_BEFORE, _MARCH_AFTER,
                              tuple(sorted(_not_code_letters("ar"))))
 _PLUGIN_DEFAULT = TtsNorm()
 
@@ -2682,6 +2714,16 @@ def _colloquial_years(m: re.Match, lang: str, config: TtsNorm) -> str:
     return cue + _colloquial_year(first, lang, config) + joint + _colloquial_year(second, lang, config)
 
 
+def _named_month(m: re.Match, names: Tuple[str, ...]) -> str:
+    """The month ``m`` matched in the caller's word for it, after its proclitic; مارس
+    unchanged where no number, شهر or joined month stands next to it."""
+    month = int(m.lastgroup[1:])
+    if m.group(m.lastgroup) == "مارس" and not (_MARCH_BEFORE.search(m.string, 0, m.start(m.lastgroup))
+                                               or _MARCH_AFTER.match(m.string, m.end())):
+        return m.group(0)
+    return m.group(1) + names[month]
+
+
 def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     from arbtok.util import resolve_thousands_or_decimal
 
@@ -2878,6 +2920,8 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         # own and leave the separators between them, and a day after an identifier word
         # would be read digit by digit.
         text = _NUMERIC_DATE.sub(lambda m: _spoken_date(m, lang, config, hold), text)
+    if config.month_names:
+        text = _WRITTEN_MONTH.sub(lambda m: _named_month(m, config.month_names), text)
     if config.speak_percent:
         text = _PERCENT.sub(lambda m: f"{m.group(1)} في المئة", text)
     if config.keep_code_digits:
