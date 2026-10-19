@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a64](https://github.com/TigreGotico/arbtok/tree/0.0.2a64) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a63...0.0.2a64)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): CER\_CANONICAL joins digits read one by one and reads dates and units as said [\#284](https://github.com/TigreGotico/arbtok/pull/284) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a63](https://github.com/TigreGotico/arbtok/tree/0.0.2a63) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a62...0.0.2a63)
@@ -379,7 +387,6 @@
 **Merged pull requests:**
 
 - fix\(textnorm\): a config that speaks cardinals speaks clock times too [\#192](https://github.com/TigreGotico/arbtok/pull/192) ([JarbasAl](https://github.com/JarbasAl))
-- fix\(textnorm\): kept code digits stop at a grouped number [\#189](https://github.com/TigreGotico/arbtok/pull/189) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a15](https://github.com/TigreGotico/arbtok/tree/0.0.2a15) (2026-09-21)
 
