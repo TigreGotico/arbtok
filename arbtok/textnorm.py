@@ -1904,6 +1904,23 @@ _HIJRI_MONTH_NAMES = ("محرم", "صفر", "ربيع الأول", "ربيع ا�
 # the Hijri range is a Hijri date even without هـ, since no Gregorian year has its value.
 _GREGORIAN_YEARS = range(1900, 2100)
 _HIJRI_YEARS = range(1300, 1600)
+# The month names a year may follow: the ones the date parser's ``nice_date`` writes, with
+# the spellings that drop the hamza of أبريل, أغسطس and أكتوبر and the variants يونيه and
+# يوليه, and the English names as Gulf speech says and writes them for March to August.
+_YEAR_MONTHS = ("يناير", "فبراير", "مارس", "[أا]بريل", "مايو", "يوني[وه]", "يولي[وه]", "[أا]غسطس", "سبتمبر",
+                "[أا]كتوبر", "نوفمبر", "ديسمبر", "مارتش", "مي", "ماي", "جون", "جولاي", "[أا]وقست", "[أا]وغست")
+# A year after the word that says it is one, or after a month name: four digits in one
+# script, not part of a longer number or a decimal, and a second year after a slash or a
+# dash, a range or a choice, read in the same register as the first. The words are سنة,
+# موديل with the pronoun of "its model", and عام when it is definite, carries a proclitic
+# or follows a preposition, since a bare عام after a noun is "general", مدير عام. A
+# proclitic و, ف, ب or ل may be written on a month name.
+_YEAR_PREPOSITIONS = ("في", "من", "منذ", "حتى", "إلى", "الى", "قبل", "بعد", "خلال", "نهاية", "بداية")
+_YEAR = re.compile(r"(?<![^\s\W])((?:ف?" + _PROCLITIC + r"(?:سن[ةه]|موديل(?:ها|ه)?)"
+                   r"|(?:ف?[بولك]ا?ل?|ال)عام|(?:" + "|".join(f"(?<={w} )" for w in _YEAR_PREPOSITIONS) + r"|^)عام"
+                   r"|[وفبل]?(?:" + "|".join(_YEAR_MONTHS) + r"))\s+)([0-9]{4}|[٠-٩]{4})"
+                   r"(?:(\s*[/\-–]\s*)([0-9]{4}|[٠-٩]{4}))?"
+                   r"(?![0-9٠-٩A-Za-z]|[.,٫٬،][0-9٠-٩])")
 # A run of digits in groups, with a leading ``+`` if any, split by spaces or hyphens as a
 # phone number is written. Its digits are all ASCII or all Arabic-Indic: a number written
 # after a phone number in the other script is another number. It may not touch a digit
@@ -2152,6 +2169,18 @@ class TtsNorm:
     #: The numbers take the register ``oblique_numbers`` gives the cardinals and the lect's
     #: words under ``dialect_numbers``.
     colloquial_clock: bool = False
+    #: A year from 2020 to 2099 among the numbers ``cardinal_numbers`` speaks is read the
+    #: way Saudi speech says it, عشرين and then the number past two thousand: ``موديل 2026``
+    #: is ``موديل عشرين ستة وعشرين`` where the cardinal is ``ألفين وستة وعشرين``, and 2020
+    #: is ``عشرين عشرين``. A number is a year here when it follows a word that says so,
+    #: سنة or موديل with a proclitic, عام when it is definite, carries a proclitic or
+    #: follows a preposition (a bare عام after a noun is "general", ``مدير عام``), or a
+    #: month name, ``15 يونيو 2026``; when it is the year of a date in digits,
+    #: ``10/6/2026``; and when it is the second of two such years after a slash or a
+    #: dash, ``موديل 2026/2027``, though a range crossing 2020 or 2099 leaves both years to the cardinals. A year
+    #: before 2020 keeps the cardinal, ``ألفين وخمسة عشر``, which is how it is said, and so
+    #: does a bare four-digit number, which may as well be a price.
+    colloquial_years: bool = False
     #: A number ``cardinal_numbers`` cannot speak is left as written and the rest of
     #: the text is still read, where otherwise the error is raised. For a caller that
     #: must say something: one odd number should not cost the whole sentence.
@@ -2247,6 +2276,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _PLAIN_MARKS, _PLAIN_HAMZA_ON_ALEF, _PLAIN_COMPOSED, _PLAIN_STRAY_HAMZA, _PLAIN_LETTERS,
                              _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
                              _NUMERIC_DATE, _MONTH_NAMES, _HIJRI_MONTH_NAMES, _GREGORIAN_YEARS, _HIJRI_YEARS,
+                             _YEAR,
                              tuple(sorted(_not_code_letters("ar"))))
 _PLUGIN_DEFAULT = TtsNorm()
 
@@ -2624,7 +2654,32 @@ def _spoken_date(m: re.Match, lang: str, config: TtsNorm, hold) -> str:
         except ValueError:
             return m.group(0)
         name, after = _MONTH_NAMES[month - 1], " ميلادي" if era else ""
+        if config.colloquial_years and 2020 <= year <= 2099:
+            return (f"{hold(_cardinal(str(day), lang, config))} {name} "
+                    f"{hold(_colloquial_year(str(year), lang, config))}{after}")
     return f"{hold(_cardinal(str(day), lang, config))} {name} {hold(_cardinal(str(year), lang, config))}{after}"
+
+
+def _colloquial_year(year: str, lang: str, config: TtsNorm) -> str:
+    """``year`` as :attr:`TtsNorm.colloquial_years` reads it, or as written when it is
+    outside 2020 to 2099, for the cardinals to read."""
+    value = int(year.translate(_EASTERN_DIGITS))
+    if not 2020 <= value <= 2099:
+        return year
+    return _cardinal("20", lang, config) + " " + _cardinal(str(value - 2000), lang, config)
+
+
+def _colloquial_years(m: re.Match, lang: str, config: TtsNorm) -> str:
+    """The year ``m`` matched, and the second of a range when there is one, as
+    :attr:`TtsNorm.colloquial_years` reads them. A range is read in one register: both
+    years colloquially when both lie from 2020 to 2099, else both left for the cardinals,
+    so ``2019/2020`` is not read half one way and half the other."""
+    cue, first, joint, second = m.groups()
+    if second is None:
+        return cue + _colloquial_year(first, lang, config)
+    if not all(2020 <= int(y.translate(_EASTERN_DIGITS)) <= 2099 for y in (first, second)):
+        return m.group(0)
+    return cue + _colloquial_year(first, lang, config) + joint + _colloquial_year(second, lang, config)
 
 
 def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
@@ -2662,6 +2717,8 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
         # always read.
         return ",".join(speak(g, g) for g in int_part.split(",")) + frac_part
 
+    if config.colloquial_years:
+        text = _YEAR.sub(lambda m: _colloquial_years(m, lang, config), text)
     text = _RANK_NUMBER.sub(lambda m: _rank_ordinal(m, config), text)
     text = _EASTERN_NUMBER.sub(eastern, text)
     return _WESTERN_NUMBER.sub(western, text)
