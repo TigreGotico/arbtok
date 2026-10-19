@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a51](https://github.com/TigreGotico/arbtok/tree/0.0.2a51) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a50...0.0.2a51)
+
+**Merged pull requests:**
+
+- fix\(util\): a digit run glued to Latin letters is read whole [\#258](https://github.com/TigreGotico/arbtok/pull/258) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a50](https://github.com/TigreGotico/arbtok/tree/0.0.2a50) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a49...0.0.2a50)
@@ -384,15 +392,10 @@
 **Merged pull requests:**
 
 - fix\(dialects\): resolve a tag with an unrecognised subtag as its parent [\#163](https://github.com/TigreGotico/arbtok/pull/163) ([JarbasAl](https://github.com/JarbasAl))
-- fix\(textnorm\): read a date on the fifth as a date, not as a Saudi mobile number [\#161](https://github.com/TigreGotico/arbtok/pull/161) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a1](https://github.com/TigreGotico/arbtok/tree/0.0.2a1) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.1...0.0.2a1)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): drop a leading + on every rule that reads a phone number [\#162](https://github.com/TigreGotico/arbtok/pull/162) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.1](https://github.com/TigreGotico/arbtok/tree/0.0.1) (2026-09-21)
 
