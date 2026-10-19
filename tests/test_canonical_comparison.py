@@ -215,7 +215,7 @@ def test_the_bench_bundle_charged_these(written, heard):
 
 def test_the_marks_inside_a_number_survive_the_punctuation_rule():
     assert normalize_asr("السعر 5.5 والموعد 8:15 يوم 18/9/2026 بخصم 25%.", CER_CANONICAL) \
-        == "السعر 5.5 والموعد 8:15 يوم 18 سبتمبر 2026 بخصم 25%"
+        == "السعر 5.5 والموعد الساعه 8:15 يوم 18 سبتمبر 2026 بخصم 25%"
     assert normalize_asr("السعر 5.5.", CER_NORM_MARKS_FIRST) == "السعر 5 5"
 
 
