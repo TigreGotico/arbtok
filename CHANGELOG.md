@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a67](https://github.com/TigreGotico/arbtok/tree/0.0.2a67) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a66...0.0.2a67)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a number before a unit after "year و" is no year [\#293](https://github.com/TigreGotico/arbtok/pull/293) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a66](https://github.com/TigreGotico/arbtok/tree/0.0.2a66) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a65...0.0.2a66)
@@ -372,10 +380,6 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a19...0.0.2a20)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): a phone run that says it is one is read digit by digit [\#195](https://github.com/TigreGotico/arbtok/pull/195) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a19](https://github.com/TigreGotico/arbtok/tree/0.0.2a19) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a18...0.0.2a19)
@@ -387,10 +391,6 @@
 ## [0.0.2a18](https://github.com/TigreGotico/arbtok/tree/0.0.2a18) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a17...0.0.2a18)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): a number after a rank word is spoken as an agreeing ordinal [\#194](https://github.com/TigreGotico/arbtok/pull/194) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a17](https://github.com/TigreGotico/arbtok/tree/0.0.2a17) (2026-09-21)
 
