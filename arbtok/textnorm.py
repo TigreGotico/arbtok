@@ -2956,8 +2956,17 @@ def _lect_forms(lang: str, config: TtsNorm):
     if not forms:
         return forms, None, {}
     from ovos_number_parser import pronounce_number
-    said = {pronounce_number(value, lang=_number_lang(lang, config), case=_number_case(config)): word
-            for value, word in forms.items()}
+    spoken, case = _number_lang(lang, config), _number_case(config)
+    said = {pronounce_number(value, lang=spoken, case=case): word for value, word in forms.items()}
+    # A count before a scale word can take a form of its own, the construct: the parser says
+    # 200,000 as مئتي ألف, not مئتين ألف. That form is asked of the parser too, as the words
+    # before ألف in the value times a thousand, and gets the caller's word as well.
+    thousand = pronounce_number(1000, lang=spoken, case=case)
+    for value, word in forms.items():
+        if 11 <= value <= 999:
+            counted = pronounce_number(value * 1000, lang=spoken, case=case)
+            if counted.endswith(" " + thousand):
+                said.setdefault(counted[:-len(thousand) - 1], word)
     pattern = re.compile(r"(?<!\S)(و?)(" + "|".join(re.escape(w) for w in sorted(said, key=len, reverse=True))
                          + r")(?!\S)")
     return forms, pattern, said
