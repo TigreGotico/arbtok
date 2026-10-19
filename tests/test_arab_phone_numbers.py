@@ -159,7 +159,7 @@ def test_a_number_in_the_other_digit_script_is_not_taken_into_a_phone_number():
 def test_a_number_after_the_phone_number_is_not_taken_into_it():
     # libphonenumber example number, MOBILE, EG
     said = normalize_for_tts("اتصل على 010 01234567 3 مرات", "ar", VOICE_AGENT)
-    assert said == f"اتصل على {one_by_one('01001234567')} ثلاثة مرات"
+    assert said == f"اتصل على {one_by_one('01001234567')} ثلاث مرات"
 
 
 @pytest.mark.parametrize("written", [

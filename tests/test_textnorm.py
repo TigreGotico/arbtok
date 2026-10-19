@@ -764,10 +764,10 @@ def test_a_phone_number_does_not_run_on_into_an_arabic_indic_number_after_it():
 
 def test_a_number_that_cannot_be_spoken_is_left_or_raised_as_the_config_says(monkeypatch):
     spoken = textnorm._cardinal
-    def refuses_300(number, lang, config):
+    def refuses_300(number, *args):
         if number == "300":
             raise RuntimeError("boom")
-        return spoken(number, lang, config)
+        return spoken(number, *args)
     monkeypatch.setattr(textnorm, "_cardinal", refuses_300)
     said = normalize_for_tts("السعر 300 ريال و 5 كتب", "ar", KSA)
     assert "300" in said and "خمسة" in said

@@ -639,7 +639,7 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `long_digit_runs` | eleven or more digits are a reference, read digit by digit |
 | `phone_prefixes` | patterns a bare digit run matches whole when it is a phone number; a run written with `+` is one too |
 | `identifier_words` | words after which a number is a reference: `الكود 4729`, `برقم الحجز 3401`. A proclitic may be attached and one other word may stand between |
-| `cardinal_numbers` | speak Arabic-Indic and ASCII numbers as cardinals ahead of `spoken_forms`, so the next three flags apply. A whole number directly after a rank noun is the ordinal agreeing with it: `الطابق 3` is `الطابق الثالث`, `الفئة 5` is `الفئة الخامسة`. This holds from 1 to 99; from 100 the number stays a cardinal. The nouns, their genders and their sources are in `arbtok/data/rank_ordinals.tsv`. A date written in digits, day, month and year or an ISO year first, is read as its day, its month by name and its year: `10/6/2026` is `عشرة يونيو ألفين وستة وعشرين` |
+| `cardinal_numbers` | speak Arabic-Indic and ASCII numbers as cardinals ahead of `spoken_forms`, so the next three flags apply. A whole number directly after a rank noun is the ordinal agreeing with it: `الطابق 3` is `الطابق الثالث`, `الفئة 5` is `الفئة الخامسة`. This holds from 1 to 99; from 100 the number stays a cardinal. The nouns, their genders and their sources are in `arbtok/data/rank_ordinals.tsv`. A date written in digits, day, month and year or an ISO year first, is read as its day, its month by name and its year: `10/6/2026` is `عشرة يونيو ألفين وستة وعشرين`. A number from 3 to 10 before a plural whose singular is feminine takes its short form, `5 سنوات` is `خمس سنوات`, and a number written against the Arabic word after it is read apart from it, `45,000ريال` as `45,000 ريال` |
 | `colloquial_clock` | where a clock time is spoken, it is read as Saudi speech says it: `9:30` is `الساعة تسعة ونص`, `14:00` is `الساعة اثنين الظهر`; the hour a cardinal, `وربع` and `ونص` for the quarter and the half, and the part of the day by its common word where the text gives the period |
 | `colloquial_years` | a year from 2020 to 2099 after سنة, عام, موديل or a month name is read as Saudi speech says it: `موديل 2026` is `موديل عشرين ستة وعشرين`; an earlier year, or a four-digit number with no such word before it, stays a cardinal |
 | `leave_unspeakable_numbers` | a number that cannot be spoken is left as written and the rest is still read; otherwise the error is raised |
@@ -676,12 +676,20 @@ chain, so Kuwaiti and Qatari take the Gulf code from the node they descend from.
 **A lect the parser has no cited words for keeps the literary ones**: a form no
 source gives is not written. `ar-SA` resolves to Najdi and takes its words.
 
-**The numeral is all this changes.** Arabic makes the counted noun agree with the
-number, and the dialects covered agree in the same direction: two to ten take a
-plural noun, eleven upwards take a singular, and three to ten drop their final
-vowel before a noun that follows. None of that happens here, because the text around
-the number is the author's and this rewrites a numeral in place. Write the noun the
-way the number you passed in requires.
+**The noun is the author's.** Arabic makes the counted noun agree with the number,
+and the dialects covered agree in the same direction: two to ten take a plural noun
+and eleven upwards a singular. The noun is left as written, because the text around
+the number is the author's; write it the way the number you passed in requires.
+
+The number agrees with the noun where the noun after it shows how. A number from 3 to
+10 written right before a plural whose singular is feminine takes its short form, as
+Standard Arabic and Saudi speech both say it: `5 سنوات` is `خمس سنوات`, `6 ثواني` is
+`ست ثواني` and `8 سيارات` is `ثماني سيارات`, eight taking its construct before the
+noun. `3 أيام` keeps `ثلاثة`, since يوم is masculine. The plurals and the source of
+each are in `arbtok/data/feminine_counted_nouns.tsv`; a plural not listed there keeps
+the long form. Your own word for a value, from `number_forms`, is said as you gave it.
+Two hundred before ألف, مليون or مليار is in construct and drops its nun: `200,000` is
+`مئتي ألف`, `مئتا ألف` in the nominative.
 
 The flag is off everywhere by default, so a number keeps its literary words
 unless you ask for a lect. `with_number_forms` gives your own words for values,
