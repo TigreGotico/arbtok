@@ -1782,15 +1782,20 @@ def _cldr_rows(name: str):
 
 
 @functools.lru_cache(maxsize=None)
-def _not_code_letters(lang: str) -> frozenset:
-    """Capitals before a number that make it an amount, not a code's digits: the ISO 4217 codes
-    of the bundled CLDR currency table, ``SAR`` or ``USD``, the abbreviations of
-    :data:`_CURRENCY_ABBREVIATIONS`, ``SR``, and the unit symbols written in capitals,
-    ``KM`` or ``GB``."""
+def _currency_codes() -> frozenset:
+    """The ISO 4217 codes of the bundled CLDR currency table, ``SAR`` or ``USD``, and the
+    abbreviations of :data:`_CURRENCY_ABBREVIATIONS`, ``SR``."""
     currencies = {r["cldr_key"].split("/")[2] for r in _term_rows("currencies-cldr")
                   if r["cldr_key"].startswith("numbers/currencies/")}
+    return frozenset(currencies | set(_CURRENCY_ABBREVIATIONS))
+
+
+@functools.lru_cache(maxsize=None)
+def _not_code_letters(lang: str) -> frozenset:
+    """Capitals before a number that make it an amount, not a code's digits: the currencies
+    of :func:`_currency_codes` and the unit symbols written in capitals, ``KM`` or ``GB``."""
     units = {symbol for symbol in cldr_units(lang) if symbol.isupper()}
-    return frozenset(currencies | set(_CURRENCY_ABBREVIATIONS) | units | {u.upper() for u in _CAPITALISED_UNITS})
+    return _currency_codes() | units | {u.upper() for u in _CAPITALISED_UNITS}
 
 
 @functools.lru_cache(maxsize=None)
@@ -1943,6 +1948,19 @@ _FUSED_HUNDREDS.update({stem + "مية": stem + " مية"
                                      "ثمان", "تمن", "تمان", "تسع")})
 _FUSED_HUNDREDS_RE = re.compile("|".join(map(re.escape, sorted(_FUSED_HUNDREDS, key=len, reverse=True))))
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*[%٪]")
+# The sign written before its number, as right-to-left text often puts it: ``%10``. A sign
+# with a Latin letter or a URL's punctuation beside it, ``a%20b`` or ``?q=%20``, is percent-
+# encoding and is left.
+_PERCENT_SIGN_FIRST = re.compile(r"(?<![0-9٠-٩A-Za-z.,٫٬%/=&?+])[%٪](\d+(?:\.\d+)?)"
+                                 r"(?![0-9٠-٩A-Za-z%]|[.,٫٬][0-9٠-٩])")
+# A number beside a Latin word, the word on either side of it.
+_LATIN_WORD_BEFORE = re.compile(r"([A-Za-z]+) $")
+_LATIN_WORD_AFTER = re.compile(r" ([A-Za-z]+)")
+# ر.س, the riyal's Arabic symbol, after a number: English Wikipedia's "Saudi riyal" gives the
+# symbol as "SAR, SR, ر.س" (https://en.wikipedia.org/w/index.php?oldid=1252604873). It is said
+# ريال, written after the number with a space or without one, and with a space after its dot
+# or without one. A dot after it may end the sentence, and is left.
+_RIYAL_SIGN = re.compile(r"(?<=[0-9٠-٩]) ?ر\. ?س(?![\u0621-\u064A])")
 _LONG_RUN = re.compile(r"(?<![0-9٠-٩])\+?\d{10,}(?![0-9])")
 _CODE_DIGITS = re.compile(r"(?<![\dA-Za-z])(?<!\d[,.٬،٫])(?:(?<=[A-Za-z] )\d{1,4}|\d{1,4}(?= [A-Za-z]))"
                           r"(?![\dA-Za-z])(?![,.٬،٫]\d)(?! (?i:" + "|".join(_CAPITALISED_UNITS) + r")(?i:/h)?(?![A-Za-z0-9]))")
@@ -2250,10 +2268,13 @@ class TtsNorm:
     #: L457L680", and leaves every model code of seven characters or fewer as it was.
     spell_out_codes: bool = False
     #: ``4.5%`` becomes ``4.5 في المئة``, and the number is then spoken like any other.
+    #: So does ``%4.5``, the sign written before its number, as right-to-left text often
+    #: puts it.
     speak_percent: bool = False
     #: A number of up to four digits beside a Latin word, ``MG 5`` or ``7 Series``,
     #: belongs to the name and is kept from every number rule below. A number before a
-    #: unit symbol, ``100 km`` or ``5 KG``, is a quantity and is not kept.
+    #: unit symbol, ``100 km`` or ``5 KG``, is a quantity and is not kept, and neither is
+    #: one beside a currency code, ``500 SAR`` or ``SR 50``.
     keep_code_digits: bool = False
     #: Patterns of a phone number in running text; a match is read digit by digit.
     phone_shapes: Tuple[str, ...] = ()
@@ -2446,6 +2467,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
                              _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _HYPHENATED_CODE, _CURRENCY_ABBREVIATIONS,
                              _PLAIN_MARKS, _PLAIN_HAMZA_ON_ALEF, _PLAIN_COMPOSED, _PLAIN_STRAY_HAMZA, _PLAIN_LETTERS,
+                             _PERCENT_SIGN_FIRST, _LATIN_WORD_BEFORE, _LATIN_WORD_AFTER, _RIYAL_SIGN,
                              _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
                              _NUMERIC_DATE, _MONTH_NAMES, _HIJRI_MONTH_NAMES, _GREGORIAN_YEARS, _HIJRI_YEARS,
                              _YEAR,
@@ -2959,6 +2981,8 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     A number written against a unit symbol, ``100km``, ``120km/h`` or ``100كم``, is
     read as the number and the unit written apart are, wherever ``spell_out_codes`` or
     the cardinals run: ``100KM`` is no code and ``100km`` no unreadable run of digits.
+    Where the cardinals run, ر.س after a number, the riyal's Arabic symbol, is said
+    ``ريال``: ``1,200 ر.س`` is ``ألف ومئتين ريال``.
 
     ``spell_out_plates`` reads a licence plate written in Arabic script, three single
     letters and three or four digits, by the letters' names and digit by digit:
@@ -3101,8 +3125,13 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         text = _WRITTEN_MONTH.sub(lambda m: _named_month(m, config.month_names), text)
     if config.speak_percent:
         text = _PERCENT.sub(lambda m: f"{m.group(1)} في المئة", text)
+        text = _PERCENT_SIGN_FIRST.sub(lambda m: f"{m.group(1)} في المئة", text)
     if config.keep_code_digits:
-        text = _CODE_DIGITS.sub(lambda m: hold(m.group(0)), text)
+        def code_digits(m):
+            beside = (_LATIN_WORD_BEFORE.search(m.string, 0, m.start())
+                      or _LATIN_WORD_AFTER.match(m.string, m.end()))
+            return m.group(0) if beside and beside.group(1) in _currency_codes() else hold(m.group(0))
+        text = _CODE_DIGITS.sub(code_digits, text)
     if phones:
         text = phones.sub(lambda m: _digit_by_digit(m.group(0), digit_forms), text)
     if config.phone_regions:
@@ -3123,6 +3152,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     # Asking for a lect's words, or for your own, is asking for numbers to be spoken:
     # both reach a number only through the cardinals.
     if config.cardinal_numbers or config.dialect_numbers or config.number_forms:
+        text = _RIYAL_SIGN.sub(" ريال", text)
         text = _speak_numbers(text, lang, config)
     if config.spoken_forms:
         from arbtok.util import normalize as spoken

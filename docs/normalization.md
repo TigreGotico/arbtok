@@ -553,6 +553,10 @@ money = bundled_tts_lexicon("currencies-cldr")
 normalize_for_tts("السعر 500 SAR", "ar", TtsNorm().with_lexicon(money))
 ```
 
+`ر.س`, the riyal's Arabic symbol, has no Latin letter for a lexicon to find. Where the
+cardinals speak numbers it is said `ريال` after a number, written with a space before it
+or against the digits: `1,200 ر.س` is `ألف ومئتين ريال`.
+
 A unit symbol is read only where it follows a number, because `in` and `m` in running
 text are not units. `spoken_forms` does that for Arabic from the same CLDR table
 (`cldr_units()`): `المسافة 5 km` becomes `المسافة خمسة كيلومتر`. The unit takes its
@@ -632,8 +636,8 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `strip_controls` | drop zero-width and bidirectional control characters |
 | `spell_out_plates` | a licence plate in Arabic script, three single letters and three or four digits, is read by the letters' names and digit by digit: `أ ب ج ١٢٣٤` is `ألف باء جيم واحد اثنين ثلاثة أربعة`; Arabic only |
 | `spell_out_codes` | read `X5`-shaped codes character by character from `spelled_codes()`, after the lexicon; a run of 8 to 17 with a digit is a VIN, its digits read as Arabic words |
-| `speak_percent` | `4.5%` becomes `4.5 في المئة`, then the number is spoken |
-| `keep_code_digits` | up to four digits beside a Latin word, `MG 5` or `7 Series`, belong to the name and are kept from every number rule |
+| `speak_percent` | `4.5%` becomes `4.5 في المئة`, then the number is spoken; so does `%4.5`, the sign written first |
+| `keep_code_digits` | up to four digits beside a Latin word, `MG 5` or `7 Series`, belong to the name and are kept from every number rule; a number beside a currency code, `500 SAR` or `SR 50`, is an amount and is spoken |
 | `phone_shapes` | patterns of a phone number in running text; a match is read digit by digit |
 | `phone_regions` | ISO 3166-1 regions whose numbering plans are recognised; a valid number of one of them, written with `+` or `00` and the country code, with the region's trunk prefix, or after an identifier word, is read digit by digit |
 | `long_digit_runs` | eleven or more digits are a reference, read digit by digit |
