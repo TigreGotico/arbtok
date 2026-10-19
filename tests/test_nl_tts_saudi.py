@@ -131,8 +131,7 @@ PRICES = cases("price", "colloquial", [
     ("تبدأ الأسعار من 119,900 ريال", "تبدأ الأسعار من مئة وتسعة عشر ألف وتسع مئة ريال"),
     ("الضمان الممتد 4,800 ريال", "الضمان الممتد أربعة آلاف وثمان مئة ريال"),
     ("السعر 45000 ريال", "السعر خمسة وأربعين ألف ريال"),
-    ("السعر 500 SAR", "السعر خمس مئة SAR",
-     gap("keep_code_digits keeps an amount beside a currency code as digits, as if it were a model number")),
+    ("السعر 500 SAR", "السعر خمس مئة SAR"),
 ])
 
 DATES = cases("date", "colloquial", [
@@ -328,8 +327,7 @@ PERCENT = cases("percent", "colloquial", [
     ("خصم 50 % على التظليل", "خصم خمسين في المئة على التظليل"),
     ("تمويل 100% بدون دفعة", "تمويل مية في المئة بدون دفعة"),
     ("نسبة الربح 3.5% ثابتة", "نسبة الربح ثلاثة فاصلة خمسة في المئة ثابتة"),
-    ("%10 خصم على الكاش", "عشرة في المئة خصم على الكاش",
-     gap("a percent sign written before its number, as right-to-left text often puts it, is not read")),
+    ("%10 خصم على الكاش", "عشرة في المئة خصم على الكاش"),
     ("بنسبة 2.5٪ فقط", "بنسبة اثنين فاصلة خمسة في المئة فقط"),
     ("نسبة التمويل ٤٫٥٪", "نسبة التمويل اربعة فاصلة خمسة في المئة"),
     ("خصم 25% لفترة محدودة", "خصم خمسة وعشرين في المئة لفترة محدودة"),
@@ -660,8 +658,7 @@ def test_the_spoken_form_is_stable(profile, written, said):
 # handed a digit or an abbreviation it has no reading for.
 RESIDUE = [
     pytest.param("formal", "عندنا BMW 520i فل كامل", "520", id="residue-formal-01-lowercase-code-digits"),
-    pytest.param("colloquial", "المجموع 1,200 ر.س", "ر.س", id="residue-colloquial-02-riyal-abbreviation",
-                 marks=pytest.mark.xfail(strict=True, reason="ر.س after an amount is left as the abbreviation")),
+    pytest.param("colloquial", "المجموع 1,200 ر.س", "ر.س", id="residue-colloquial-02-riyal-abbreviation"),
     pytest.param("terms", "هيونداي H1 للعائلة", "أتشواحد", id="residue-terms-06-lexicon-digit"),
     pytest.param("plates", "العنوان ص ب 1234", "ص ب", id="residue-plates-07-post-office-box",
                  marks=pytest.mark.xfail(strict=True, reason="ص ب, the post office box, is left as the "
