@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a57](https://github.com/TigreGotico/arbtok/tree/0.0.2a57) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a56...0.0.2a57)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): CER\_CANONICAL reads مية بالمية, a definite count before الف, and H1 as said [\#285](https://github.com/TigreGotico/arbtok/pull/285) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a56](https://github.com/TigreGotico/arbtok/tree/0.0.2a56) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a55...0.0.2a56)
@@ -385,17 +393,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a7...0.0.2a8)
 
-**Merged pull requests:**
-
-- feat\(textnorm\): read phone numbers of every Arabic-speaking country [\#174](https://github.com/TigreGotico/arbtok/pull/174) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a7](https://github.com/TigreGotico/arbtok/tree/0.0.2a7) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a6...0.0.2a7)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): spoken forms read literary numbers whatever lect the tag names [\#175](https://github.com/TigreGotico/arbtok/pull/175) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a6](https://github.com/TigreGotico/arbtok/tree/0.0.2a6) (2026-09-21)
 
