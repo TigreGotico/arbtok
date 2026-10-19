@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a54](https://github.com/TigreGotico/arbtok/tree/0.0.2a54) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a53...0.0.2a54)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): a time read with a one-letter variant is still a time [\#267](https://github.com/TigreGotico/arbtok/pull/267) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a53](https://github.com/TigreGotico/arbtok/tree/0.0.2a53) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a52...0.0.2a53)
@@ -392,10 +400,6 @@
 ## [0.0.2a4](https://github.com/TigreGotico/arbtok/tree/0.0.2a4) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a3...0.0.2a4)
-
-**Merged pull requests:**
-
-- fix: French donor lexicon reads six before a pause and ships the elided forms [\#168](https://github.com/TigreGotico/arbtok/pull/168) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a3](https://github.com/TigreGotico/arbtok/tree/0.0.2a3) (2026-09-21)
 
