@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a61](https://github.com/TigreGotico/arbtok/tree/0.0.2a61) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a60...0.0.2a61)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): read Saudi plates and VINs the way they are written [\#279](https://github.com/TigreGotico/arbtok/pull/279) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a60](https://github.com/TigreGotico/arbtok/tree/0.0.2a60) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a59...0.0.2a60)
@@ -392,10 +400,6 @@
 ## [0.0.2a11](https://github.com/TigreGotico/arbtok/tree/0.0.2a11) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a10...0.0.2a11)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): a description names the phone plans it read [\#182](https://github.com/TigreGotico/arbtok/pull/182) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a10](https://github.com/TigreGotico/arbtok/tree/0.0.2a10) (2026-09-21)
 
