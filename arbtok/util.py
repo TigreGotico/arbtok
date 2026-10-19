@@ -408,7 +408,7 @@ UNITS = {
 
 # Arabic unit names come from Unicode CLDR rather than from a list kept here; see
 # arbtok.textnorm.cldr_units and data/term_lexicons/units-cldr.tsv.
-from arbtok.textnorm import _CAPITALISED_UNITS, cldr_units  # noqa: E402
+from arbtok.textnorm import _CAPITALISED_UNITS, cldr_units, spelled_codes  # noqa: E402
 
 UNITS["ar"] = cldr_units("ar")
 
@@ -766,8 +766,20 @@ def is_fraction(word: str) -> bool:
 # Arabic-Indic and extended (Persian) digits mapped to ASCII so one rule covers them all.
 _AR_INDIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 # A digit run that is NOT part of an Arabizi token (Latin+digit, where 3=ع, 7=ح), with an
-# optional trailing percent sign. The Latin lookarounds keep "3ala"/"7abibi" for the Arabizi path.
-_RESIDUAL_NUM = re.compile(r"(?<![A-Za-z])(\d+)(\s*%)?(?![A-Za-z])")
+# optional trailing percent sign. The Latin lookarounds keep "3ala"/"7abibi" for the Arabizi path;
+# the digit lookarounds keep the run whole, so a run glued to a letter is never cut short and
+# read in part ("520i" is not 52 and a 0).
+_RESIDUAL_NUM = re.compile(r"(?<![A-Za-z\d])(\d+)(\s*%)?(?![A-Za-z\d])")
+# A run of two digits or more glued to Latin letters, before or after it: a model code
+# ("520i", "M340i") or a number and its unit ("100kms"). Arabizi writes a letter with one
+# digit at a time, so a run of two or more is a number. The letters on either side are
+# taken with it: one letter alone is a code letter, read by its name; more are a word or
+# a unit, left as written for the paths that read Latin words.
+# A lone small h or s after the number is the hour or the second, their SI symbols
+# (https://en.wikipedia.org/wiki/International_System_of_Units): "24h" and "90s" are a
+# span of time, read as its unit's name, not as a code letter.
+_GLUED_TIME_UNITS = {"h": "ساعة", "s": "ثانية"}
+_GLUED_DIGIT_RUN = re.compile(r"(?<![A-Za-z\d])([A-Za-z]*)(\d{2,})([A-Za-z]*)(?![A-Za-z\d])")
 # A lone percent sign (ASCII "%" or Arabic "٪") left behind once its number was verbalized.
 _RESIDUAL_PERCENT = re.compile(r"\s*[%٪]")
 # Spoken form of "%".
@@ -789,6 +801,21 @@ def _verbalize_residual_digits_ar(text: str) -> str:
         words = pronounce_number(int(m.group(1)), lang="ar")
         return f"{words} {_PERCENT_WORD_AR}" if m.group(2) else words
 
+    names = spelled_codes("ar")
+
+    def letters(run: str, after: bool) -> str:
+        if after and run in _GLUED_TIME_UNITS:
+            return _GLUED_TIME_UNITS[run]
+        return names.get(run.upper(), run) if len(run) == 1 else run
+
+    def glued(m: "re.Match") -> str:
+        before, digits, after = m.groups()
+        if not (before or after):
+            return m.group(0)
+        return " ".join(part for part in (letters(before, False), pronounce_number(int(digits), lang="ar"),
+                                          letters(after, True)) if part)
+
+    text = _GLUED_DIGIT_RUN.sub(glued, text)
     text = _RESIDUAL_NUM.sub(repl, text)
     # A percent sign that survived the number pass (the digit was verbalized but the "%" was
     # left behind) must still be spoken, never reach the phoneme map as a bare symbol.
