@@ -103,3 +103,20 @@ def test_the_default_config_is_unchanged_for_these_shapes():
     """The G2P plugin's config spells no code, so these shapes read as they always did."""
     assert normalize_for_tts("مازدا CX-5 متوفرة") == "مازدا CX خمسة متوفرة"
     assert normalize_for_tts("BMW iX3") == "BMW iX3"
+
+
+@pytest.mark.parametrize("written, said", [
+    ("i4", "آيْ فُورْ"),
+    ("BMW i7 كهربائية", "بِي إِمْ دَبَلْيُو آيْ سِفَنْ كهربائية"),
+    ("740Li", "سِفَنْ فُورْ زِيرُو إِلْ آيْ"),
+    ("BMW 740Li فل", "بِي إِمْ دَبَلْيُو سِفَنْ فُورْ زِيرُو إِلْ آيْ فل"),
+], ids=["i4", "i7 in a sentence", "740Li", "740Li in a sentence"])
+def test_bmw_i_models_and_the_long_wheelbase_suffix_are_spelled(written, said):
+    assert normalize_for_tts(written, "ar", VOICE_AGENT) == said
+
+
+@pytest.mark.parametrize("written", ["i", "i123", "ix4", "740Lx", "Li"],
+                         ids=["no digit", "three digits", "two small letters", "another suffix", "no number"])
+def test_what_is_not_an_i_model_or_a_long_wheelbase_code_is_not_spelled(written):
+    said = normalize_for_tts(written, "ar", VOICE_AGENT)
+    assert "آيْ" not in said, said

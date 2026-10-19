@@ -18,12 +18,12 @@ PLATES = [
     ("أ ب ج ١٢٣٤", "ألف باء جيم واحد اثنين ثلاثة أربعة"),
     ("س ع د ٥٦٧٨", "سين عين دال خمسة ستة سبعة ثمانية"),
     ("أ ب هـ ١٢٣٤", "ألف باء هاء واحد اثنين ثلاثة أربعة"),
-    ("هـ و ى ١٢٣٤", "هاء واو ألف مقصورة واحد اثنين ثلاثة أربعة"),
+    ("هـ و ى ١٢٣٤", "هاء واو ياء واحد اثنين ثلاثة أربعة"),
     ("أ ب ج 1234", "ألف باء جيم واحد اثنين ثلاثة أربعة"),
     ("أ ب ج ١٢ ٣٤", "ألف باء جيم واحد اثنين ثلاثة أربعة"),
 ]
 PLATE_IDS = ["arabic-indic digits", "a name if read bare", "ha printed with a tatweel",
-             "tatweel first, alif maqsura", "ascii digits", "spaced digits"]
+             "tatweel first, the dotless ya", "ascii digits", "spaced digits"]
 
 
 @pytest.mark.parametrize("written, said", PLATES, ids=PLATE_IDS)
@@ -83,7 +83,6 @@ def test_a_single_letter_or_a_letter_name_before_a_number_is_no_plate(written, s
     "أ ب ج 12345",
     "أ ب ج 1234.5",
     "أ ب ج 1234 5678",
-    "ا ب ح ١٢",
     "أ ب ج ١٢٣٤ريال",
     "ء ب ج د ١٢٣٤",
     "ة ب ج د ١٢٣٤",
@@ -92,7 +91,7 @@ def test_a_single_letter_or_a_letter_name_before_a_number_is_no_plate(written, s
     "بقيمة أ ب 300 ريال",
 ], ids=["doubled space after the first letter", "doubled space before the digits",
         "doubled space between letters", "four letters", "five digits", "a decimal",
-        "two digit groups", "two digits", "digits run into a word", "hamza before three letters",
+        "two digit groups", "digits run into a word", "hamza before three letters",
         "ta marbuta before three letters", "tatweel before three letters", "two letters before a year",
         "two letters before a price"])
 def test_what_is_not_a_plate_reads_as_it_does_without_the_rule(written):
@@ -127,3 +126,105 @@ def test_the_rule_is_arabic_only():
 def test_the_rule_is_off_by_default():
     assert normalize_for_tts("أ ب ج ١٢٣٤") == normalize_for_tts("أ ب ج ١٢٣٤", "ar", spell_out_plates=False)
     assert normalize_for_tts("أ ب ج ١٢٣٤").startswith("أ ب ج ")
+
+
+@pytest.mark.parametrize("written, said", [
+    ("ن ى ى ٤٢٦٦", "نون ياء ياء أربعة اثنين ستة ستة"),
+    ("ى ى ى 1111", "ياء ياء ياء واحد واحد واحد واحد"),
+], ids=["two of them", "all three"])
+def test_the_dotless_ya_of_a_plate_is_named_ya(written, said):
+    """The plate prints ي without its dots; ألف مقصورة names a different letter."""
+    said_now = normalize_for_tts(written, "ar", VOICE_AGENT, **ON)
+    assert said_now == said
+    assert "مقصورة" not in said_now
+
+
+@pytest.mark.parametrize("written, said", [
+    ("أ ب ج 12", "ألف باء جيم واحد اثنين"),
+    ("ا ب ح ١٢", "ألف باء حاء واحد اثنين"),
+    ("هـ و ى 7", "هاء واو ياء سبعة"),
+    ("رقم اللوحة ر س ع ٥٦٧", "رقم اللوحة راء سين عين خمسة ستة سبعة"),
+], ids=["two digits", "two arabic-indic digits", "one digit", "three digits"])
+def test_a_plate_of_fewer_than_four_digits_is_read_digit_by_digit(written, said):
+    assert normalize_for_tts(written, "ar", VOICE_AGENT, **ON) == said
+
+
+@pytest.mark.parametrize("written, said", [
+    ("أ ب ج - 1234", "ألف باء جيم واحد اثنين ثلاثة أربعة"),
+    ("أ ب ج-1234", "ألف باء جيم واحد اثنين ثلاثة أربعة"),
+    ("أ ب ج – ١٢٣٤", "ألف باء جيم واحد اثنين ثلاثة أربعة"),
+], ids=["spaced hyphen", "hyphen", "en dash"])
+def test_a_dash_between_the_letters_and_the_digits_is_not_read(written, said):
+    assert normalize_for_tts(written, "ar", VOICE_AGENT, **ON) == said
+
+
+@pytest.mark.parametrize("written, said", [
+    ("اللوحة ١٢٣٤ أ ب ج", "اللوحة واحد اثنين ثلاثة أربعة ألف باء جيم"),
+    ("اللوحة 6477 ص هـ ر، صح؟", "اللوحة ستة أربعة سبعة سبعة صاد هاء راء، صح؟"),
+    ("اللوحة 1234-د ر س جاهزة", "اللوحة واحد اثنين ثلاثة أربعة دال راء سين جاهزة"),
+], ids=["arabic-indic digits", "before a comma", "a hyphen and a word after"])
+def test_a_plate_written_digits_first_is_read_as_written(written, said):
+    assert normalize_for_tts(written, "ar", VOICE_AGENT, **ON) == said
+
+
+@pytest.mark.parametrize("written", [
+    "اختار 2 أ و ب",
+    "1234 أ ب ج د",
+    "12 أ ب ج",
+    "1234 أ ب جملة",
+], ids=["a count before options", "four letters", "two digits first", "a word after two letters"])
+def test_digits_before_letters_that_are_not_a_plate_read_as_without_the_rule(written):
+    said = normalize_for_tts(written, "ar", VOICE_AGENT, **ON)
+    assert said == normalize_for_tts(written, "ar", VOICE_AGENT, spell_out_plates=False)
+
+
+@pytest.mark.parametrize("written, said", [
+    ("اللوحة XTR 6477", "اللوحة إِكْسْ تِي آرْ ستة أربعة سبعة سبعة"),
+    ("لوحة سيارتك KSA 1234", "لوحة سيارتك كَيْ إِسْ إِيهْ واحد اثنين ثلاثة أربعة"),
+    ("اللوحة 1234 ABJ", "اللوحة واحد اثنين ثلاثة أربعة إِيهْ بِي جَيْ"),
+    ("رقم لوحتها: DRS-٥٦٧٨.", "رقم لوحتها: دِي آرْ إِسْ خمسة ستة سبعة ثمانية."),
+    ("واللوحة ABJ 12", "واللوحة إِيهْ بِي جَيْ واحد اثنين"),
+], ids=["consonants", "a word between", "digits first", "a colon and a hyphen", "two digits"])
+def test_the_plates_latin_row_after_a_plate_word_is_spelled_and_read_digit_by_digit(written, said):
+    assert normalize_for_tts(written, "ar", VOICE_AGENT, **ON) == said
+
+
+@pytest.mark.parametrize("written", [
+    "عندنا SUV 2024",
+    "مرسيدس GLE 450 متوفرة",
+    "اللوحة BMW 1234",
+    "اللوحة ABJ 12345",
+    "اللوحة ABJD 1234",
+], ids=["no plate word", "a model with no plate word", "letters off the plate", "five digits", "four letters"])
+def test_capitals_and_a_number_that_are_not_a_latin_plate_read_as_without_the_rule(written):
+    said = normalize_for_tts(written, "ar", VOICE_AGENT, **ON)
+    assert said == normalize_for_tts(written, "ar", VOICE_AGENT, spell_out_plates=False)
+
+
+@pytest.mark.parametrize("written", ["أ ب ج 12", "أ ب ج - 1234", "اللوحة ١٢٣٤ أ ب ج", "اللوحة XTR 6477",
+                                     "ن ى ى ٤٢٦٦"])
+def test_every_new_plate_reading_is_read_again_unchanged(written):
+    said = normalize_for_tts(written, "ar", VOICE_AGENT, **ON)
+    assert normalize_for_tts(said, "ar", VOICE_AGENT, **ON) == said
+    assert not any(c.isdigit() or c.isascii() and c.isalpha() for c in said), said
+
+
+@pytest.mark.parametrize("written, said", [
+    ("أ ب ج1234", "ألف باء جيم واحد اثنين ثلاثة أربعة"),
+    ("اللوحة أ ب هـ١٢٣٤", "اللوحة ألف باء هاء واحد اثنين ثلاثة أربعة"),
+], ids=["ascii digits", "ha with its tatweel, arabic-indic digits"])
+def test_digits_written_against_the_last_letter_are_still_a_plate(written, said):
+    assert normalize_for_tts(written, "ar", VOICE_AGENT, **ON) == said
+
+
+@pytest.mark.parametrize("written, said", [
+    ("اللوحة xtr 6477", "اللوحة إِكْسْ تِي آرْ ستة أربعة سبعة سبعة"),
+    ("لوحتها 1234 Abj", "لوحتها واحد اثنين ثلاثة أربعة إِيهْ بِي جَيْ"),
+], ids=["small letters", "mixed case, digits first"])
+def test_the_latin_row_in_small_letters_is_read_as_in_capitals(written, said):
+    assert normalize_for_tts(written, "ar", VOICE_AGENT, **ON) == said
+
+
+def test_a_latin_word_after_a_plate_word_is_not_a_plate():
+    said = normalize_for_tts("اللوحة bmw 1234", "ar", VOICE_AGENT, **ON)
+    assert said == normalize_for_tts("اللوحة bmw 1234", "ar", VOICE_AGENT, spell_out_plates=False)

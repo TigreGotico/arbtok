@@ -164,3 +164,65 @@ def test_every_capitalised_unit_symbol_is_one_the_unit_table_reads():
                                      "ABCDEFGHJKLMN"])
 def test_what_is_not_a_code_is_left_as_written(written):
     assert normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN) == written
+
+
+ISO_VIN = "JTDKB20U793456789"
+ISO_VIN_SAID = ("جَيْ تِي دِي كَيْ بِي اثنين صفر يُو سبعة تسعة ثلاثة أربعة خمسة ستة سبعة ثمانية تسعة")
+
+
+@pytest.mark.parametrize("written", ["jtdkb20u793456789", "Jtdkb20U793456789"], ids=["small", "mixed"])
+def test_a_whole_vin_in_small_letters_is_read_in_capitals(written):
+    assert normalize_for_tts(f"رقم الهيكل {written}", spell_out_codes=True, **AS_WRITTEN) == \
+        "رقم الهيكل " + ISO_VIN_SAID
+
+
+@pytest.mark.parametrize("written", ["JTDKB20U7-93456789", "JTD-KB20U-793456789"], ids=["one hyphen", "two"])
+def test_a_vin_in_groups_joined_by_hyphens_is_read_as_one(written):
+    assert normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN) == ISO_VIN_SAID
+
+
+@pytest.mark.parametrize("written", ["رقم الهيكل JTD KB20U 793456789", "الشاصي: JTD-KB20U 793456789",
+                                     "VIN JTD KB20U 793456789"], ids=["spaces", "a colon, mixed", "VIN"])
+def test_a_vin_in_groups_after_a_word_that_names_it_is_read_as_one(written):
+    assert normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN).endswith(ISO_VIN_SAID)
+
+
+def test_a_vin_fragment_in_groups_after_a_word_that_names_it_is_read_as_one():
+    assert normalize_for_tts("رقم الهيكل WBA 7F2 C51 JG", spell_out_codes=True, **AS_WRITTEN) == \
+        "رقم الهيكل " + PARITY_VIN
+
+
+@pytest.mark.parametrize("written, said", [
+    ("رقم الهيكل ينتهي بـ ABC1234", "رقم الهيكل ينتهي بـ إِيهْ بِي سِي واحد اثنين ثلاثة أربعة"),
+    ("آخر ستة من الشاصي A00435", "آخر ستة من الشاصي إِيهْ صفر صفر أربعة ثلاثة خمسة"),
+], ids=["seven after two words", "six right after"])
+def test_a_short_run_after_a_word_that_names_the_vin_is_read_as_a_vin(written, said):
+    assert normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN) == said
+
+
+@pytest.mark.parametrize("written", [
+    "عندنا JTD KB20U 793456789",
+    "MG5 2024 SUV 1234567",
+    "WBA-7F2",
+    "رقم الهيكل للسيارة الجديدة من BMW X5",
+    "X5 و X6",
+    "abcdefgh12345678",
+    "jtdkb20u79345678io",
+], ids=["spaces, no vin word", "groups, no vin word", "eleven short of seventeen", "a model code after words",
+        "two codes", "sixteen small", "small with I and O"])
+def test_what_is_not_a_vin_reads_as_it_did(written):
+    joined = normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN)
+    assert "صفر" not in joined and "واحد" not in joined and "اثنين" not in joined, joined
+
+
+SPOKEN_NUMBERS = TtsNorm(spell_out_codes=True, cardinal_numbers=True, oblique_numbers=True, **AS_WRITTEN)
+
+
+@pytest.mark.parametrize("written, number, not_said", [
+    ("رقم الهيكل L457L680 100 ألف كيلو", "مئة ألف كيلو", "صفر واحد صفر صفر"),
+    ("رقم الشاصي WBA7F2C51JG 2024", "ألفين وأربعة وعشرين", "اثنين صفر اثنين أربعة"),
+    ("رقم الشاصي حق BMW X5 2024", "ألفين وأربعة وعشرين", "خمسة اثنين صفر"),
+], ids=["mileage after a fragment", "year after a vin", "brand, model and year"])
+def test_a_number_after_a_vin_or_a_model_is_not_joined_to_it(written, number, not_said):
+    said = normalize_for_tts(written, "ar", SPOKEN_NUMBERS)
+    assert number in said and not_said not in said, said
