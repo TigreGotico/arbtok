@@ -573,6 +573,21 @@ text are not units. `spoken_forms` does that for Arabic from the same CLDR table
 (`cldr_units()`): `المسافة 5 km` becomes `المسافة خمسة كيلومتر`. The unit takes its
 CLDR display name; it is not inflected for the number before it.
 
+A voice agent that speaks its numbers through the cardinals, with `spoken_forms` off,
+reads no unit symbol this way. For the kilometre, the unit its replies carry most,
+`colloquial_units` says it the way Saudi agents do, `كيلو`, written `km` or `كم`:
+`الصيانة كل 10000 كم` becomes `الصيانة كل عشرة آلاف كيلو`. Without it, `كم` after a
+number reads as the word "how much". `كم` stays the question wherever it can be one: before
+a question mark or a noun, and after a year or a Latin model name, so `كامري 2024 كم؟` and
+`عندي 3 كم سؤال` are left alone; it is the kilometre before the end of the text, other
+punctuation, or a word that follows a distance (من, في, بس, كل, و and the like).
+
+The post office box is written `ص ب`, `ص.ب` or `ص. ب.` before its number. Read as it
+stands it is two letter names or the word ص, so wherever the cardinals speak the number
+it is read `صندوق بريد`: `ص ب 1234` becomes `صندوق بريد ألف ومئتين وأربعة وثلاثين`. The rule skips `ص ب` after
+another single letter, where the two letters end a plate (`ح ص ب 1234`), and after a
+number, where ص is the morning.
+
 ### Licence plates in Arabic script
 
 A licence plate written in Arabic script is read by the letters' names and digit by
@@ -671,6 +686,7 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `cardinal_numbers` | speak Arabic-Indic and ASCII numbers as cardinals ahead of `spoken_forms`, so the next three flags apply. A whole number directly after a rank noun is the ordinal agreeing with it: `الطابق 3` is `الطابق الثالث`, `الفئة 5` is `الفئة الخامسة`. This holds from 1 to 99; from 100 the number stays a cardinal. The nouns, their genders and their sources are in `arbtok/data/rank_ordinals.tsv`. A date written in digits, day, month and year or an ISO year first, is read as its day, its month by name and its year: `10/6/2026` is `عشرة يونيو ألفين وستة وعشرين`. A number from 3 to 10 before a plural whose singular is feminine takes its short form, `5 سنوات` is `خمس سنوات`, and a number written against the Arabic word after it is read apart from it, `45,000ريال` as `45,000 ريال` |
 | `colloquial_clock` | where a clock time is spoken, it is read as Saudi speech says it: `9:30` is `الساعة تسعة ونص`, `14:00` is `الساعة اثنين الظهر`; the hour a cardinal, `وربع` and `ونص` for the quarter and the half, and the part of the day by its common word where the text gives the period |
 | `colloquial_years` | a year from 2020 to 2099 after سنة, عام, موديل, موديلات or a month name is read as Saudi speech says it: `موديل 2026` is `موديل عشرين ستة وعشرين`, and a second year after و is read the same way on its own; an earlier year, or a four-digit number with no such word before it, stays a cardinal |
+| `colloquial_units` | a kilometre after a number in digits, `km`, `km/h` or `كم`, is said as Saudi speech says it: `10000 كم` is `عشرة آلاف كيلو` and `120 km/h` is `مئة وعشرين كيلو بالساعة`; a lexicon term for the symbol keeps its reading (Arabic only) |
 | `leave_unspeakable_numbers` | a number that cannot be spoken is left as written and the rest is still read; otherwise the error is raised |
 | `oblique_numbers` | cardinals in the oblique case, the one connected speech uses |
 | `space_fused_hundreds` | in those cardinals `ثلاثمئة` becomes `ثلاث مئة`; a synthesizer keeps the spaced form and garbles the fused one |
