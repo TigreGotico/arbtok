@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a56](https://github.com/TigreGotico/arbtok/tree/0.0.2a56) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a55...0.0.2a56)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): spell iX3, 520i and CX-5 as codes, and drop a tatweel before a term [\#280](https://github.com/TigreGotico/arbtok/pull/280) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a55](https://github.com/TigreGotico/arbtok/tree/0.0.2a55) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a54...0.0.2a55)
