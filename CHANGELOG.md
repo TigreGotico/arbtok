@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a53](https://github.com/TigreGotico/arbtok/tree/0.0.2a53) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a52...0.0.2a53)
+
+**Merged pull requests:**
+
+- feat\(textnorm\): month\_names says each month in the caller's word for it [\#253](https://github.com/TigreGotico/arbtok/pull/253) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a52](https://github.com/TigreGotico/arbtok/tree/0.0.2a52) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a51...0.0.2a52)
