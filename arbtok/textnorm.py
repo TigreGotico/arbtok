@@ -1670,6 +1670,22 @@ _SMALL_SUFFIX_CODE = re.compile(r"(?<![A-Za-z0-9])(?<!\d[.٫])([A-Z]{0,2}[0-9]{2
 #: Digits written against the Arabic letters of a lexicon reading, the ``1`` of the bundled
 #: ``أتش1`` for H1, which no number rule can read apart from the letters before them.
 _READING_DIGITS = re.compile(r"(?<=[\u0621-\u064A\u064B-\u0652])[0-9]+")
+#: A kilometre after a number in digits standing on its own, with or without a space:
+#: ``km`` in any case, ``km/h``, or the Arabic ``كم`` standing as a word. The number is
+#: not part of a code, ``MG5 كم صافي`` being "how much net for the MG5".
+_KILOMETRE_SYMBOL = re.compile(r"(?<![A-Za-z0-9٠-٩.,٫٬])([0-9٠-٩]+(?:[.,٫٬][0-9٠-٩]+)*) ?"
+                               r"(?:(?i:km)(/(?i:h))?(?![A-Za-z0-9])|(كم)(?![\u0621-\u064A]))")
+#: A Latin word right before a number: the number is that name's, a model or its year.
+_AFTER_LATIN_WORD = re.compile(r"[A-Za-z0-9]\s+$")
+#: What follows كم when it is the kilometre: the end of the text, punctuation other than a
+#: question mark, or a word that follows a distance. Anything else, a question mark or a
+#: noun, makes it "how much" or "how many": كامري 2024 كم؟, عندي 3 كم سؤال.
+_AFTER_KILOMETRE = re.compile(r"\s*(?:$|[^\w\s؟?]|(?:من|في|عن|الى|إلى|لين|حتى|بس|فقط|تقريبا|تقريباً|يوميا|يومياً"
+                              r"|بالساعة|بالساعه|بالشهر|بالسنة|كل|و|او|أو)(?![\u0621-\u064A]))")
+#: A year in digits, which كم after it asks about: موديل 2024 كم سعرها.
+_YEAR_DIGITS = re.compile(r"(?:19|20)[0-9]{2}")
+#: The post office box abbreviated, ``ص ب``, ``ص.ب`` or ``ص. ب.``, before its number.
+_PO_BOX = re.compile(r'(?<![^\s(«"\[:\-])ص\.? ?ب\.?(?=:?\s*[0-9٠-٩])')
 #: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
 _VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
 #: A number right before a :data:`_CODE`, which makes a unit symbol a unit.
@@ -2183,7 +2199,7 @@ def _plain_orthography(text: str) -> str:
 
 #: Rules whose output is Arabic words whatever ``lang`` says.
 _ARABIC_ONLY = ("speak_percent", "phone_shapes", "phone_regions", "long_digit_runs", "phone_prefixes", "identifier_words",
-                "dialect_numbers", "number_forms", "month_names")
+                "dialect_numbers", "number_forms", "month_names", "colloquial_units")
 
 # A whitespace-separated word of two or three Arabic letters and a tatweel, held together
 # with the whitespace after it, matched only where the word after it begins with the same
@@ -2368,6 +2384,16 @@ class TtsNorm:
     #: before 2020 keeps the cardinal, ``ألفين وخمسة عشر``, which is how it is said, and so
     #: does a bare four-digit number, which may as well be a price.
     colloquial_years: bool = False
+    #: A kilometre written after a number in digits, as ``km`` in any case, ``km/h`` or the
+    #: Arabic ``كم``, is said the way Saudi speech says it: ``كيلو``, and ``كيلو بالساعة`` for
+    #: ``km/h``. Left alone, ``كم`` after a number reads as the word "how much" and ``km``
+    #: reaches the synthesizer in Latin letters. Agents say ``كيلو`` for the kilometre where
+    #: the written form is ``كيلومتر``. ``كم`` is the kilometre only before the end of the
+    #: text, punctuation other than a question mark, or a word that follows a distance (من,
+    #: في, بس, كل, و and the like), and not after a year or a Latin model name: before a
+    #: question mark or a noun it asks, ``كامري 2024 كم؟``, ``عندي 3 كم سؤال``. A term in
+    #: ``lexicon`` runs first and keeps its reading. Arabic only.
+    colloquial_units: bool = False
     #: A number ``cardinal_numbers`` cannot speak is left as written and the rest of
     #: the text is still read, where otherwise the error is raised. For a caller that
     #: must say something: one odd number should not cost the whole sentence.
@@ -2479,7 +2505,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _PERCENT_SIGN_FIRST, _LATIN_WORD_BEFORE, _LATIN_WORD_AFTER, _RIYAL_SIGN,
                              _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
                              _NUMERIC_DATE, _MONTH_NAMES, _HIJRI_MONTH_NAMES, _GREGORIAN_YEARS, _HIJRI_YEARS,
-                             _YEAR,
+                             _YEAR, _KILOMETRE_SYMBOL, _AFTER_LATIN_WORD, _AFTER_KILOMETRE, _YEAR_DIGITS, _PO_BOX,
                              _MONEY_AFTER, _IDENTIFIER_GAP,
                              _WRITTEN_MONTH, _MARCH_BEFORE, _MARCH_AFTER,
                              _TATWEEL_BEFORE_LATIN, _SMALL_LETTER_CODE, _SMALL_SUFFIX_CODE, _READING_DIGITS,
@@ -3080,6 +3106,28 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             text = pattern.sub(reading, text)
         else:
             text = pattern.sub(lambda m: said[m.group(1).lower()], text)
+    if config.colloquial_units:
+        # After the lexicon, which keeps a consumer's own reading of a unit symbol.
+        def kilometre(m):
+            # كم after a model's number or year, or before a question or a noun, asks:
+            # "HS 2026 كم؟" and "كامري 2024 كم؟" are "how much".
+            if m.group(3) and (_AFTER_LATIN_WORD.search(m.string[:m.start()])
+                               or _YEAR_DIGITS.fullmatch(m.group(1).translate(_EASTERN_DIGITS))
+                               or not _AFTER_KILOMETRE.match(m.string, m.end())):
+                return m.group(0)
+            return m.group(1) + (" كيلو بالساعة" if m.group(2) else " كيلو")
+        text = _KILOMETRE_SYMBOL.sub(kilometre, text)
+    if (config.cardinal_numbers or config.dialect_numbers or config.number_forms) and is_arabic_lang(lang):
+        # Spoken as two letter names or as the word ص, the abbreviation says nothing. Not
+        # after another single letter, where ص ب ends a plate (ح ص ب 1234), and not after a
+        # number, where ص is the morning.
+        def po_box(m):
+            before = m.string[:m.start()]
+            letter = _LETTER_BEFORE.search(before)
+            if letter and letter.group(1) != "و" or re.search(r"[0-9٠-٩]\s*$", before):
+                return m.group(0)
+            return "صندوق بريد"
+        text = _PO_BOX.sub(po_box, text)
     if config.drop_false_starts and is_arabic_lang(lang):
         text = _FALSE_START.sub("", text)
     if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang):

@@ -58,8 +58,8 @@ def test_two_plates_joined_by_waw_are_both_read():
 
 
 @pytest.mark.parametrize("written, said", [
-    ("ص ب 1234 الرياض 11564", "ص ب ألف ومئتين وأربعة وثلاثين الرياض أحد عشر ألف وخمس مئة وأربعة وستين"),
-    ("ص ب ٢٢٢٣ جدة", "ص ب ألفين ومئتين وثلاثة وعشرين جدة"),
+    ("ص ب 1234 الرياض 11564", "صندوق بريد ألف ومئتين وأربعة وثلاثين الرياض أحد عشر ألف وخمس مئة وأربعة وستين"),
+    ("ص ب ٢٢٢٣ جدة", "صندوق بريد ألفين ومئتين وثلاثة وعشرين جدة"),
     ("ط ق 123", "ط ق مئة وثلاثة وعشرين"),
 ], ids=["a post office box", "a post office box in arabic-indic digits", "two letters, ascii digits"])
 def test_two_letters_before_a_number_are_no_plate(written, said):

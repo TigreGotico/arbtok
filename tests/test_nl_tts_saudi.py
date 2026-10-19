@@ -45,7 +45,7 @@ FORMAL = TtsNorm(strip_controls=False, spell_out_plates=False, spell_out_codes=T
                  dialect_numbers=False, spoken_forms=False, canonical_unicode=False)
 # numbers-colloquial-terms-latin: numbers as Saudi speech says them, Latin terms kept, plain orthography.
 COLLOQUIAL = dataclasses.replace(FORMAL, spell_out_codes=False, keep_code_digits=False, space_fused_hundreds=False,
-                                 colloquial_clock=True, colloquial_years=True,
+                                 colloquial_clock=True, colloquial_years=True, colloquial_units=True,
                                  plain_orthography=True).with_number_forms(COLLOQUIAL_NUMBER_FORMS)
 PROFILES = {
     "formal": (FORMAL, "ar"),
@@ -83,7 +83,6 @@ def check(profile, written, said):
     assert normalize_for_tts(written, lang, config) == said
 
 
-KM_ARABIC = "كم after a number is left as written, which reads as the word 'how much'; the agents say كيلو"
 
 PRICES = cases("price", "colloquial", [
     ("سعر الكامري الجديدة 98,500 ريال شامل الضريبة", "سعر الكامري الجديدة ثمانية وتسعين الف وخمس مية ريال شامل الضريبة"),
@@ -295,6 +294,10 @@ PHONES = cases("phone", "colloquial", [
     ("حجزك برقم 7788 مؤكد", "حجزك برقم سبعة سبعة ثمانية ثمانية مؤكد"),
     ("العدد 8 سيارات", "العدد ثماني سيارات"),
     ("الرقم الموحد 920000123", "الرقم الموحد تسعة اثنين صفر صفر صفر صفر واحد اثنين ثلاثة"),
+    ("العنوان ص ب 1234 الرياض", "العنوان صندوق بريد الف وميتين واربعة وثلاثين الرياض"),
+    ("ص.ب 4455 جدة", "صندوق بريد اربعة الاف واربع مية وخمسة وخمسين جدة"),
+    ("ص. ب. 77 الدمام", "صندوق بريد سبعة وسبعين الدمام"),
+    ("ص ب: ٩٨٧ الخبر", "صندوق بريد: تسع مية وسبعة وثمانين الخبر"),
 ])
 
 UNITS = cases("unit", "colloquial", [
@@ -306,7 +309,7 @@ UNITS = cases("unit", "colloquial", [
     ("عزم الدوران 400 نيوتن متر", "عزم الدوران اربع مية نيوتن متر"),
     ("وزنها 1,800 كيلو", "وزنها الف وثمانمية كيلو"),
     ("ماشية 120 ألف", "ماشية مية وعشرين الف"),
-    ("الصيانة كل 10000 كم", "الصيانة كل عشرة الاف كيلو", gap(KM_ARABIC)),
+    ("الصيانة كل 10000 كم", "الصيانة كل عشرة الاف كيلو"),
     ("الاستهلاك 6.8 لتر لكل 100 كيلو", "الاستهلاك ستة فاصلة ثمانية لتر لكل مية كيلو"),
     ("الجنوط مقاس 18 انش", "الجنوط مقاس ثمانية عشر انش"),
     ("الشاشة 12.3 انش", "الشاشة اثني عشر فاصلة ثلاثة انش"),
@@ -316,6 +319,13 @@ UNITS = cases("unit", "colloquial", [
     ("ماشية 60,500 كيلو", "ماشية ستين الف وخمس مية كيلو"),
     ("الشنطة تشيل 500 لتر", "الشنطة تشيل خمس مية لتر"),
     ("البطارية 75 كيلوواط", "البطارية خمسة وسبعين كيلوواط"),
+    ("الصيانة كل 10000 km", "الصيانة كل عشرة الاف كيلو"),
+    ("الصيانة كل 10000km", "الصيانة كل عشرة الاف كيلو"),
+    ("المسافة ٢٥ كم من الفرع", "المسافة خمسة وعشرين كيلو من الفرع"),
+    ("ماشية 45,000 KM بس", "ماشية خمسة واربعين الف كيلو بس"),
+    ("السرعة القصوى 250 km/h", "السرعة القصوى ميتين وخمسين كيلو بالساعة"),
+    ("كم كيلو ماشية؟", "كم كيلو ماشية؟"),
+    ("بكم السيارة؟ ب 75 ألف", "بكم السيارة؟ ب خمسة وسبعين الف"),
 ])
 
 PERCENT = cases("percent", "colloquial", [
@@ -660,9 +670,7 @@ RESIDUE = [
     pytest.param("formal", "عندنا BMW 520i فل كامل", "520", id="residue-formal-01-lowercase-code-digits"),
     pytest.param("colloquial", "المجموع 1,200 ر.س", "ر.س", id="residue-colloquial-02-riyal-abbreviation"),
     pytest.param("terms", "هيونداي H1 للعائلة", "أتشواحد", id="residue-terms-06-lexicon-digit"),
-    pytest.param("plates", "العنوان ص ب 1234", "ص ب", id="residue-plates-07-post-office-box",
-                 marks=pytest.mark.xfail(strict=True, reason="ص ب, the post office box, is left as the "
-                                                             "abbreviation, as ر.س is")),
+    pytest.param("plates", "العنوان ص ب 1234", "ص ب", id="residue-plates-07-post-office-box"),
     pytest.param("formal", "السعر 45,000 ريال", "4", id="residue-formal-03-price"),
     pytest.param("colloquial", "الموعد 15/6/2026 الساعة 9:30", "/", id="residue-colloquial-04-date-and-time"),
     pytest.param("colloquial", "خصم ١٥٪ على موديل ٢٠٢٦", "٪", id="residue-colloquial-05-eastern-percent"),

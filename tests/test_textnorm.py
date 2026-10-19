@@ -796,6 +796,7 @@ def test_every_tts_rule_changes_some_output(flag):
              "أ ب ج 1234",  # a licence plate in Arabic script, what spell_out_plates alone reads
              "الساعة 9:30",  # a clock time, which colloquial_clock reads as it is said
              "موديل 2026",  # a year after موديل, which colloquial_years reads as it is said
+             "المسافة 10 كم",  # a kilometre after a number, which colloquial_units says كيلو
              "15 يونيو"]  # a month name, which month_names says in the caller's word
     # phone_regions reads these numbers too, so a caller's own pattern is shown on its own.
     alone = {"phone_regions": ()} if flag in ("phone_shapes", "phone_prefixes") else {}
