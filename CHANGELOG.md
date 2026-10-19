@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a55](https://github.com/TigreGotico/arbtok/tree/0.0.2a55) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a54...0.0.2a55)
+
+**Merged pull requests:**
+
+- test\(textnorm\): natural-language Saudi cases for TTS and scoring [\#274](https://github.com/TigreGotico/arbtok/pull/274) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a54](https://github.com/TigreGotico/arbtok/tree/0.0.2a54) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a53...0.0.2a54)
@@ -385,17 +393,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a5...0.0.2a6)
 
-**Merged pull requests:**
-
-- fix\(dialects\): a lect's ISO 639-3 code resolves back to its spec [\#171](https://github.com/TigreGotico/arbtok/pull/171) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a5](https://github.com/TigreGotico/arbtok/tree/0.0.2a5) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a4...0.0.2a5)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): read a widely spaced mobile and a run after an Eastern digit [\#170](https://github.com/TigreGotico/arbtok/pull/170) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a4](https://github.com/TigreGotico/arbtok/tree/0.0.2a4) (2026-09-21)
 
