@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a66](https://github.com/TigreGotico/arbtok/tree/0.0.2a66) (2026-10-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a65...0.0.2a66)
+
+**Merged pull requests:**
+
+- fix\(tts\): colloquial number forms cover the construct two hundred [\#291](https://github.com/TigreGotico/arbtok/pull/291) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a65](https://github.com/TigreGotico/arbtok/tree/0.0.2a65) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a64...0.0.2a65)
@@ -391,10 +399,6 @@
 ## [0.0.2a16](https://github.com/TigreGotico/arbtok/tree/0.0.2a16) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a15...0.0.2a16)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): a config that speaks cardinals speaks clock times too [\#192](https://github.com/TigreGotico/arbtok/pull/192) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a15](https://github.com/TigreGotico/arbtok/tree/0.0.2a15) (2026-09-21)
 
