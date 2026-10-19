@@ -362,8 +362,9 @@ as "MG 4 EV, Pkw-Modell"
 every model code written with a space names its joined code is this package's
 generalisation from that case. One small letter may lead, as in BMW's `iX 3`, and the code is joined in capitals,
 `IX3`, since only capitals are spelled. Written joined, `iX3` is read the same way.
-One of BMW's small suffix letters after two or three digits, `520i`, `330e`, `320d` or
-`M340i`, is part of the code too, and is read in capitals with the rest:
+BMW's `i4` to `i7`, a small i before one or two digits, are read as `I4` is. One of BMW's
+small suffix letters after two or three digits, `520i`, `330e`, `320d`, `M340i` or, after
+the long wheelbase's L, `740Li`, is part of the code too, and is read in capitals with the rest:
 `فَيْفْ تُو زِيرُو آيْ`. Every code is spelled one character at a time with the English
 digit names, so `LX600` is "six zero zero" and `520i` "five two zero i"; a
 consumer that wants the spoken hundreds, `خمس مية وعشرين آي`, puts the term in its
@@ -397,7 +398,17 @@ number or a booking reference is read with, one at a time, in the lect's words
 under `dialect_numbers`. ISO 3779 fixes the VIN at 17 capitals and digits, without
 I, O and Q. The floor of eight is a design choice that takes the fragments an agent
 reads back ("the last eight are L457L680") and leaves every model code of seven
-characters or fewer, such as `X5` or `GLE450`, with the English digit names.
+characters or fewer, such as `X5` or `GLE450`, with the English digit names. A
+shorter run right after a word that names the VIN (`رقم الهيكل`, `الشاصي`, `VIN`, with
+up to two Arabic words between) is the end of one and is read as a VIN is:
+`رقم الهيكل ينتهي بـ ABC1234` takes the Arabic digit words.
+
+A VIN is not always written as one run of capitals. A whole VIN written with small
+letters, `jtdkb20u793456789`, is read in capitals. A VIN written in groups is joined
+before any other code rule reads a group on its own: groups joined by hyphens when
+together they make seventeen characters, `JTDKB20U7-93456789`, and groups joined by
+hyphens or single spaces right after a word that names the VIN when together they make
+eight to seventeen, `رقم الهيكل WBA 7F2 C51 JG`.
 
 A run of letters and digits with a capital in it is read whole or character by
 character, never part by part. With `spell_out_codes` off it reaches the synthesizer
@@ -573,29 +584,43 @@ is, and applies to Arabic only; a voice agent turns it on.
 normalize_for_tts("أ ب ج ١٢٣٤", "ar", spell_out_plates=True)
 # 'ألف باء جيم واحد اثنين ثلاثة أربعة'
 normalize_for_tts("هـ و ى ١٢٣٤", "ar", spell_out_plates=True)
-# 'هاء واو ألف مقصورة واحد اثنين ثلاثة أربعة'
+# 'هاء واو ياء واحد اثنين ثلاثة أربعة'
 ```
 
 A Saudi plate carries three letters, and "There are only 17
 Arabic letters used on the registration plates"
 ([Vehicle registration plates of Saudi Arabia](https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Saudi_Arabia)):
-ا ب ح د ر س ص ط ع ق ك ل م ن هـ و ى. The plate prints ه with a tatweel, `هـ`.
-The rule takes three single letters, each optionally followed by a tatweel and then by
-one space, and then three or four digits in either script, optionally spaced. The
+ا ب ح د ر س ص ط ع ق ك ل م ن هـ و ى. The plate prints ه with a tatweel, `هـ`, and
+carries "three letters and up to four numbers"; a personalised or older plate "may
+contain one, two or three numbers" (the same article,
+[revision 1352834674](https://en.wikipedia.org/w/index.php?oldid=1352834674)).
+The rule takes three single letters, each optionally followed by a tatweel, separated
+by one space, and then, after one space, a dash or nothing, one to four digits in
+either script, optionally spaced: `أ ب ج1234` is a plate too. Three or four digits written first and the three letters
+after them, `١٢٣٤ أ ب ج`, are a plate too and are read in the order written. The
 first letter starts the text or follows whitespace or opening punctuation, so
 `(أ ب ج ١٢٣٤)` and `«أ ب ج ١٢٣٤»` are read whole. It takes any letter that has a
 name, since running text writes the plate's ا as أ.
 
-Reading each letter by its name, as the alphabet names it (أ إ آ ا are all ألف, ى is
-ألف مقصورة), is the convention a speaker follows for a spelled sequence; the plate
+Reading each letter by its name, as the alphabet names it (أ إ آ ا are all ألف), is
+the convention a speaker follows for a spelled sequence; the plate
 standard does not prescribe it. The digits take the words of a digit-by-digit
-reading, the lect's under `dialect_numbers` and yours under `number_forms`.
+reading, the lect's under `dialect_numbers` and yours under `number_forms`. ى is named
+ياء: on the plate it is the letter ي printed without its dots, which the plate's Latin
+row writes V and the article transliterates ỳ, not the alif maqsura that ends a word.
+
+The plate's Latin row is three of the capitals the plate maps its letters to,
+A B J D R S X T E G K L Z N H U V, written in either case, and up to four digits. After a word that names a
+plate (لوحة, اللوحة, لوحتها, with at most one word between), it is read by the
+capitals' names from `spelled_codes()` and digit by digit, in the order written:
+`اللوحة XTR 6477` is `اللوحة إِكْسْ تِي آرْ ستة أربعة سبعة سبعة`. Elsewhere three capitals
+and a number are a model name or a price, and the code rules read them.
 
 What is not a plate reads as it does without the rule: a single letter before a
 number, which is a label or a particle (`الباقة أ 1450 ريال`, `و 1500 ريال`); two
 letters, which are an abbreviation (`ص ب 1234` is a post office box); four letters
-or more; letters spaced unevenly; five digits, two digits, a decimal, or a second
-group of digits. A plate does not start right after another single letter or a
+or more; letters spaced unevenly; five digits, a decimal, or a second group of
+digits. A plate does not start right after another single letter or a
 tatweel, with one exception: the conjunction و, so `أ ب ج ١٢٣٤ و د ر س ٥٦٧٨` is two
 plates. A letter's name is a word, so a reading is never read again
 as a plate: `ألف ١٢٣٤` is a cardinal. The rule runs before the lexicon, so a term
@@ -634,8 +659,8 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | Flag | Rule |
 | --- | --- |
 | `strip_controls` | drop zero-width and bidirectional control characters |
-| `spell_out_plates` | a licence plate in Arabic script, three single letters and three or four digits, is read by the letters' names and digit by digit: `أ ب ج ١٢٣٤` is `ألف باء جيم واحد اثنين ثلاثة أربعة`; Arabic only |
-| `spell_out_codes` | read `X5`-shaped codes character by character from `spelled_codes()`, after the lexicon; a run of 8 to 17 with a digit is a VIN, its digits read as Arabic words |
+| `spell_out_plates` | a licence plate in Arabic script, three single letters and one to four digits, is read by the letters' names and digit by digit: `أ ب ج ١٢٣٤` is `ألف باء جيم واحد اثنين ثلاثة أربعة`; the plate's Latin row after a word that names a plate, `اللوحة XTR 6477`, by the capitals' names and digit by digit; Arabic only |
+| `spell_out_codes` | read `X5`-shaped codes character by character from `spelled_codes()`, after the lexicon; a run of 8 to 17 with a digit is a VIN, its digits read as Arabic words, and so is a shorter run after a word that names the VIN; a VIN in small letters or in groups is read as one |
 | `speak_percent` | `4.5%` becomes `4.5 في المئة`, then the number is spoken; so does `%4.5`, the sign written first |
 | `keep_code_digits` | up to four digits beside a Latin word, `MG 5` or `7 Series`, belong to the name and are kept from every number rule; a number beside a currency code, `500 SAR` or `SR 50`, is an amount and is spoken |
 | `phone_shapes` | patterns of a phone number in running text; a match is read digit by digit |

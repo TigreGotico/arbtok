@@ -1661,17 +1661,31 @@ _DECIMAL_CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(\d+[.٫]\d+)"
 _TATWEEL_BEFORE_LATIN = "(?<=[\u0621-\u064A])\u0640+"
 _TATWEEL_BEFORE_CODE = re.compile(_TATWEEL_BEFORE_LATIN + "(?=" + _CODE.pattern + ")")
 #: A code with one small letter before its capitals, BMW's ``iX3``: read as ``IX3`` is,
-#: the way ``iX 3`` written with a space already is.
-_SMALL_LETTER_CODE = re.compile(r"(?<![A-Za-z0-9])[a-z](?=[A-Z]{1,3}[0-9]{1,4}(?![A-Za-z0-9]))")
+#: the way ``iX 3`` written with a space already is; and BMW's ``i4`` to ``i7``, a small
+#: i before one or two digits, read as ``I4``.
+_SMALL_LETTER_CODE = re.compile(r"(?<![A-Za-z0-9])(?:[a-z](?=[A-Z]{1,3}[0-9]{1,4}(?![A-Za-z0-9]))"
+                                r"|i(?=[0-9]{1,2}(?![A-Za-z0-9])))")
 #: A model number with one small letter after its digits, ``520i``, ``330e``, ``320d`` or
-#: ``M340i``, BMW's suffixes for petrol, hybrid and diesel. It is a code, and its letter
-#: is read in capitals.
-_SMALL_SUFFIX_CODE = re.compile(r"(?<![A-Za-z0-9])(?<!\d[.٫])([A-Z]{0,2}[0-9]{2,3})([ide])(?![A-Za-z0-9])")
+#: ``M340i``, BMW's suffixes for petrol, hybrid and diesel, after an L for the long
+#: wheelbase, ``740Li``. It is a code, and its letters are read in capitals.
+_SMALL_SUFFIX_CODE = re.compile(r"(?<![A-Za-z0-9])(?<!\d[.٫])([A-Z]{0,2}[0-9]{2,3})(L?[ide])(?![A-Za-z0-9])")
 #: Digits written against the Arabic letters of a lexicon reading, the ``1`` of the bundled
 #: ``أتش1`` for H1, which no number rule can read apart from the letters before them.
 _READING_DIGITS = re.compile(r"(?<=[\u0621-\u064A\u064B-\u0652])[0-9]+")
 #: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
 _VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
+#: A whole VIN written with small letters: seventeen of the characters ISO 3779 allows, any
+#: case, a letter and a digit among them and a small letter, which :data:`_CODE` does not
+#: take. It is read in capitals.
+_SMALL_VIN = re.compile(r"(?<![A-Za-z0-9])(?=[A-Za-z0-9]*[0-9])(?=[A-Za-z0-9]*[a-z])"
+                        r"[A-HJ-NPR-Za-hj-npr-z0-9]{17}(?![A-Za-z0-9])")
+#: A VIN written in groups, ``JTDKB20U7-93456789`` or ``JTD KB20U 793456789``: runs of the
+#: characters ISO 3779 allows, in capitals, joined by single hyphens or spaces.
+_GROUPED_VIN = re.compile(r"(?<![A-Za-z0-9-])[A-HJ-NPR-Z0-9]+(?:[ -][A-HJ-NPR-Z0-9]+)+(?![A-Za-z0-9-])")
+#: A word that says a VIN follows, ``رقم الهيكل``, ``الشاصي`` or ``VIN``, with up to two
+#: Arabic words and a colon between it and the run: ``رقم الهيكل ينتهي بـ``.
+_VIN_WORD = re.compile(r"(?:(?<![\u0621-\u064A])[وفبل]?(?:ال)?(?:هيكل|شاصي|شاصيه|شاسي|شاسيه)"
+                       r"|(?<![A-Za-z])VIN(?![A-Za-z]))(?:\s+[\u0621-\u064A\u0640]+){0,2}\s*:?\s*$", re.IGNORECASE)
 #: A number right before a :data:`_CODE`, which makes a unit symbol a unit.
 _NUMBER_BEFORE = re.compile(r"[0-9٠-٩۰-۹]\s*$")
 #: The unit symbols written in capitals often enough that capitals are no evidence of
@@ -2195,20 +2209,40 @@ _FALSE_START = re.compile(r"(?<!\S)([\u0621-\u064A]{2,3})\u0640(\s+)(?=\1)")
 
 #: The name a letter standing on its own is read by: the names of the Arabic alphabet,
 #: as https://en.wikipedia.org/wiki/Arabic_alphabet lists them, unpointed. Every alif form is
-#: ألف; ى, one of the Saudi plate letters, is ألف مقصورة.
+#: ألف. ى is ياء: on a Saudi plate it is the letter ي printed without its dots, which the
+#: plate's Latin row writes V and Wikipedia transliterates ỳ
+#: (https://en.wikipedia.org/w/index.php?oldid=1352834674), not the alif maqsura that ends a
+#: word in running text.
 _LETTER_NAMES = {
-    "أ": "ألف", "إ": "ألف", "آ": "ألف", "ا": "ألف", "ى": "ألف مقصورة", "ب": "باء", "ت": "تاء", "ث": "ثاء",
+    "أ": "ألف", "إ": "ألف", "آ": "ألف", "ا": "ألف", "ى": "ياء", "ب": "باء", "ت": "تاء", "ث": "ثاء",
     "ج": "جيم", "ح": "حاء", "خ": "خاء", "د": "دال", "ذ": "ذال", "ر": "راء", "ز": "زاي", "س": "سين", "ش": "شين",
     "ص": "صاد", "ض": "ضاد", "ط": "طاء", "ظ": "ظاء", "ع": "عين", "غ": "غين", "ف": "فاء", "ق": "قاف", "ك": "كاف",
     "ل": "لام", "م": "ميم", "ن": "نون", "ه": "هاء", "و": "واو", "ي": "ياء",
 }
 # A licence plate in Arabic script: three single letters, each optionally printed with a
-# tatweel (هـ) and followed by one space, then three or four digits in either script,
-# optionally spaced. It starts the text, follows whitespace or follows opening
-# punctuation, and may not run on into a word, a longer number or a decimal.
+# tatweel (هـ) and separated by one space, then one to four digits in either script,
+# optionally spaced, after one space, a dash or nothing: أ ب ج1234. It starts the text, follows whitespace or
+# follows opening punctuation, and may not run on into a word, a longer number or a decimal.
 _PLATE_EDGE = r'(?<![^\s(«"\[:\-])'
-_PLATE = re.compile(_PLATE_EDGE + rf"((?:[{''.join(_LETTER_NAMES)}]\u0640? ){{3}})"
-                    r"([0-9٠-٩](?: ?[0-9٠-٩]){2,3})(?!\w|[ .,٫٬][0-9٠-٩])")
+_PLATE_LETTERS = rf"([{''.join(_LETTER_NAMES)}]\u0640?(?: [{''.join(_LETTER_NAMES)}]\u0640?){{2}})"
+_PLATE_DASH = r"(?: ?[-–—] ?| )"
+_PLATE = re.compile(_PLATE_EDGE + _PLATE_LETTERS + f"(?:{_PLATE_DASH})?"
+                    + r"([0-9٠-٩](?: ?[0-9٠-٩]){0,3})(?!\w|[ .,٫٬][0-9٠-٩])")
+# The same plate written digits first, as text typed left to right puts it: three or four
+# digits, then the three letters, which end at whitespace or closing punctuation and are
+# not followed by another single letter other than the conjunction و.
+_PLATE_DIGITS_FIRST = re.compile(_PLATE_EDGE + r"([0-9٠-٩](?: ?[0-9٠-٩]){2,3})" + _PLATE_DASH + _PLATE_LETTERS
+                                 + r"(?![^\s)»\"\].,،؛؟!:])(?!\s+(?!و(?!\S))[\u0621-\u064A]\u0640?(?!\S))")
+# The words that name a plate, with a proclitic and a possessive: لوحة, اللوحة, لوحتها, واللوحات.
+_PLATE_WORD = r"(?<![\u0621-\u064A])[وفبل]?(?:ال)?لوح(?:ة|ه|ات|ت(?:ها|ه|ك|ي|كم|هم))"
+# The plate's Latin row: three of the seventeen capitals the plate maps its letters to, in
+# either case, and up to four digits, in either order, after a word that names a plate and at most one
+# other word: ``اللوحة XTR 6477``, ``لوحة سيارتك 6477 XTR``.
+_LATIN_PLATE_LETTERS = "[ABDEGHJKLNRSTUVXZabdeghjklnrstuvxz]{3}"
+_LATIN_PLATE = re.compile(rf"({_PLATE_WORD}(?:\s+[\u0621-\u064A\u0640]+)?\s*:?\s*)"
+                          rf"(?:({_LATIN_PLATE_LETTERS}){_PLATE_DASH}([0-9٠-٩](?: ?[0-9٠-٩]){{0,3}})"
+                          rf"|([0-9٠-٩](?: ?[0-9٠-٩]){{0,3}}){_PLATE_DASH}({_LATIN_PLATE_LETTERS}))"
+                          r"(?![A-Za-z0-9٠-٩]|[ .,٫٬][0-9٠-٩])")
 # A single Arabic letter, or a tatweel, standing on its own right before a plate's letters:
 # four letters, or letters spaced unevenly, are no plate, and the last three of them are
 # not one either. The conjunction و is the exception, which joins two plates.
@@ -2236,10 +2270,18 @@ class TtsNorm:
     #: digits as one cardinal. A Saudi plate carries three letters from a set of
     #: seventeen, "There are only 17 Arabic letters used on the registration plates"
     #: (https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Saudi_Arabia),
-    #: and prints ه with a tatweel, هـ. A plate here is three single letters, each
-    #: optionally followed by a tatweel and then by one space, and then three or four
-    #: digits in either script, optionally spaced, not followed by a word character or
-    #: by a separator and another digit. The first letter starts the text or follows
+    #: and prints ه with a tatweel, هـ, and "three letters and up to four numbers"; a
+    #: personalised or older plate "may contain one, two or three numbers"
+    #: (https://en.wikipedia.org/w/index.php?oldid=1352834674). A plate here is three
+    #: single letters, each optionally followed by a tatweel, separated by one space, and
+    #: then, after one space, a dash or nothing, one to four digits in either script, optionally
+    #: spaced, not followed by a word character or by a separator and another digit. Three
+    #: or four digits written first and the three letters after them are a plate too, read
+    #: in the order written. ى is named ياء, the letter ي the plate prints without its
+    #: dots. The plate's Latin row, three of the capitals the plate maps its letters to
+    #: (A B J D R S X T E G K L Z N H U V), in either case, and up to four digits in either order, is read
+    #: after a word that names a plate, ``اللوحة XTR 6477``: the capitals by the names of
+    #: :func:`spelled_codes` and the digits one by one. The first letter starts the text or follows
     #: whitespace or opening punctuation: ``(أ ب ج ١٢٣٤)`` is a plate. Two letters
     #: are not one: ``ص ب 1234`` is a post office box. Any letter of
     #: :data:`_LETTER_NAMES` is taken, since running text writes the plate's ا as أ.
@@ -2272,6 +2314,12 @@ class TtsNorm:
     #: so only capitals are read this way. The floor of eight is a choice, not the
     #: standard's: it takes the fragments an agent reads back, "the last eight are
     #: L457L680", and leaves every model code of seven characters or fewer as it was.
+    #: A shorter run after a word that names the VIN, ``رقم الهيكل ينتهي بـ ABC1234`` or
+    #: ``الشاصي``, is the end of one and is read as a VIN is. A whole VIN written with small
+    #: letters is read in capitals, and a VIN written in groups, ``JTDKB20U7-93456789``, is
+    #: joined: groups joined by hyphens when they make seventeen characters, and groups
+    #: joined by hyphens or spaces after a word that names the VIN when they make eight to
+    #: seventeen.
     spell_out_codes: bool = False
     #: ``4.5%`` becomes ``4.5 في المئة``, and the number is then spoken like any other.
     #: So does ``%4.5``, the sign written before its number, as right-to-left text often
@@ -2474,7 +2522,8 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _EASTERN_NUMBER, _PROCLITIC, _LATIN_RUN_EDGE, _PHONE_CANDIDATE, _CLOCK, _ARABIC_MARKERS,
                              _FEMININE_COUNTED, _CONSTRUCT_HUNDREDS, _NUMBER_AGAINST_WORD,
                              _RANK_NOUNS, _RANK_NUMBER, _PHONE_EVIDENCE, _FALSE_START, _LETTER_NAMES, _PLATE,
-                             _PLATE_EDGE, _LETTER_BEFORE, _SPACED_CODE, _HYPHENATED_CODE, _CURRENCY_ABBREVIATIONS,
+                             _PLATE_EDGE, _LETTER_BEFORE, _PLATE_DIGITS_FIRST, _LATIN_PLATE, _SMALL_VIN, _GROUPED_VIN,
+                             _VIN_WORD, _SPACED_CODE, _HYPHENATED_CODE, _CURRENCY_ABBREVIATIONS,
                              _PLAIN_MARKS, _PLAIN_HAMZA_ON_ALEF, _PLAIN_COMPOSED, _PLAIN_STRAY_HAMZA, _PLAIN_LETTERS,
                              _PERCENT_SIGN_FIRST, _LATIN_WORD_BEFORE, _LATIN_WORD_AFTER, _RIYAL_SIGN,
                              _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
@@ -3000,8 +3049,10 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     ``ريال``: ``1,200 ر.س`` is ``ألف ومئتين ريال``.
 
     ``spell_out_plates`` reads a licence plate written in Arabic script, three single
-    letters and three or four digits, by the letters' names and digit by digit:
-    ``أ ب ج ١٢٣٤`` becomes ``ألف باء جيم واحد اثنين ثلاثة أربعة``. Arabic only.
+    letters and one to four digits, by the letters' names and digit by digit:
+    ``أ ب ج ١٢٣٤`` becomes ``ألف باء جيم واحد اثنين ثلاثة أربعة``, and the plate's Latin
+    row after a word that names a plate, ``اللوحة XTR 6477``, by the capitals' names and
+    digit by digit. Arabic only.
 
     ``spoken_forms`` writes dates, times, numbers and units as words in ``lang``.
     In Arabic, a clock time written in digits is read first, before any rule reads its
@@ -3047,15 +3098,41 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         held[placeholder] = span
         return placeholder
     if config.spell_out_plates and is_arabic_lang(lang):
+        def letter_names(letters):
+            return " ".join(_LETTER_NAMES[c] for c in letters.replace(_TATWEEL, "").split())
         def plate(m):
             before = _LETTER_BEFORE.search(m.string[:m.start()])
             if before and before.group(1) != "و":
                 return m.group(0)
-            letters = " ".join(_LETTER_NAMES[c] for c in m.group(1).replace(_TATWEEL, "").split())
-            return hold(f"{letters} {_digit_by_digit(m.group(2), digit_forms)}")
+            return hold(f"{letter_names(m.group(1))} {_digit_by_digit(m.group(2), digit_forms)}")
+        def latin_plate(m):
+            names = spelled_codes(lang)
+            letters, digits = (m.group(2), m.group(3)) if m.group(2) else (m.group(5), m.group(4))
+            spelled = " ".join(names[c] for c in letters.upper())
+            said = _digit_by_digit(digits, digit_forms)
+            return m.group(1) + hold(f"{spelled} {said}" if m.group(2) else f"{said} {spelled}")
         # Before the lexicon: a plate is found by its Arabic letters, and a term that is
         # only digits, a model number such as 530, must not take the plate's digits.
         text = _PLATE.sub(plate, text)
+        text = _PLATE_DIGITS_FIRST.sub(lambda m: hold(f"{_digit_by_digit(m.group(1), digit_forms)} "
+                                                      f"{letter_names(m.group(2))}"), text)
+        # Before the codes, which would spell the letters and leave the digits to the cardinals.
+        text = _LATIN_PLATE.sub(latin_plate, text)
+    if config.spell_out_codes:
+        # Before the units, the lexicon and the codes, which would each read one group
+        # of the VIN on its own.
+        def grouped_vin(m):
+            run = re.sub("[ -]", "", m.group(0))
+            if not (re.search("[A-Z]", run) and re.search("[0-9]", run)):
+                return m.group(0)
+            # A group with no letter after a shorter run is a number of its own, a mileage or
+            # a year: رقم الهيكل L457L680 100 ألف.
+            if _VIN_WORD.search(m.string[:m.start()]) and 8 <= len(run) <= 17 \
+                    and (len(run) == 17 or all(re.search("[A-Z]", g) for g in re.split("[ -]", m.group(0)))):
+                return run
+            return run if len(run) == 17 and " " not in m.group(0) else m.group(0)
+        text = _SMALL_VIN.sub(lambda m: m.group(0).upper(), text)
+        text = _GROUPED_VIN.sub(grouped_vin, text)
     if config.spell_out_codes or config.cardinal_numbers or config.dialect_numbers or config.number_forms:
         # Before the lexicon and the codes, so a unit written apart takes its own reading.
         text = _GLUED_UNIT.sub(r"\1 ", text)
@@ -3098,8 +3175,8 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.spell_out_codes:
         names = spelled_codes(lang)
         units = {symbol for symbol in cldr_units(lang) if symbol.isupper()}
-        def spell(run: str) -> str:
-            if _VIN.fullmatch(run):
+        def spell(run: str, vin: bool = False) -> str:
+            if vin or _VIN.fullmatch(run):
                 return " ".join(_digit_by_digit(c, digit_forms) if c.isdigit() else names[c] for c in run)
             return " ".join(names[c] for c in run)
         def code(m):
@@ -3109,7 +3186,8 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             if (run in units or run.lower() in _CAPITALISED_UNITS) \
                     and _NUMBER_BEFORE.search(m.string[:m.start()]):
                 return run
-            return spell(run)
+            # A short run after a word that names the VIN is the end of one, read as the VIN is.
+            return spell(run, vin=any(c.isdigit() for c in run) and bool(_VIN_WORD.search(m.string[:m.start()])))
         def decimal_code(m):
             number, run = m.group(1), m.group(2)
             number = number.translate(_EASTERN_DIGITS).replace("٫", ".")
