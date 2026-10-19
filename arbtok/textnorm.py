@@ -238,6 +238,9 @@ class AsrNorm:
     #: :func:`normalize_for_tts` reads as one: ``الساعة الثامنة والربع`` becomes
     #: ``الساعة 8:15`` and ``الساعة السادسة مساء ودقيقة خمسة واربعين`` the 24-hour
     #: ``الساعة 18:45``.
+    #: With ``number_forms``, a cardinal from three to ten with the article before the
+    #: thousands word in the singular is a number of its own: three to ten thousand take the
+    #: plural, so ``الكفرات الاربعة الف وستمية`` is "the four tyres, 1600", ``4 1600``.
     spoken_numbers_to_digits: bool = False
     #: Seven or more single digits standing one by one become one run: a phone number
     #: read aloud arrives as ``0 5 5 3 1 7 9 2 4 5``. Shorter runs are left apart,
@@ -249,7 +252,8 @@ class AsrNorm:
     #: its digit and the digits of the run are one number: ``اكس فايف`` is ``اكس 5`` and
     #: ``جي في سيفن زيرو`` is ``جي في 70``. A recognizer writes a code's names fused, and a
     #: word made only of names, at least one of them a digit name or a letter name that is
-    #: no Arabic word, is read as those names: ``اكستري`` is ``اكس 3``.
+    #: no Arabic word, is read as those names: ``اكستري`` is ``اكس 3``. A letter name written
+    #: against its digits, ``اتش1``, is the name and the digits: ``اتش 1``.
     spell_codes: bool = False
     #: Alef with madda, with hamza above or below, and alef wasla become bare alef.
     unify_alef: bool = False
@@ -1057,16 +1061,59 @@ def _hold_fractions(text: str) -> str:
 
 
 _PERCENT_SAID = re.compile(r"(?<![^\s\W])(?:بال|في ال)(?:مي[ةه]|مئ[ةه]|مائ[ةه])(?![^\s\W])")
+#: A hundred said before بالمية or في المية: ``مية بالمية`` is 100%.
+_HUNDRED_PERCENT = re.compile(r"(?<![^\s\W])(?:مي[ةه]|مئ[ةه]|مائ[ةه]|ماي[ةه])(\s+)"
+                              r"(?=(?:بال|في ال)(?:مي[ةه]|مئ[ةه]|مائ[ةه])(?![^\s\W]))")
 
 
 def _percent_words(text: str) -> str:
     """بالمية or في المية after a number word as ``٪``, before the parser reads its مية as a
-    hundred: ``خمسة وعشرين في المية`` is 25%. After any other word it is "in the water"."""
+    hundred: ``خمسة وعشرين في المية`` is 25%. After any other word it is "in the water".
+    A hundred before it, ``مية بالمية``, is 100%, unless the hundred is a part of a larger
+    number said before it, as in ``خمس مية بالمية``."""
+    def hundred(m):
+        before = text[:m.start()].split()
+        last = before[-1] if before else ""
+        part = last and (last[-1:].isdigit() or last in _HUNDRED_UNITS or _number_value(last) is not None)
+        return m.group(0) if part else "100" + m.group(1)
+
+    text = _HUNDRED_PERCENT.sub(hundred, text)
+
     def said(m):
         before = text[:m.start()].split()
         last = before[-1] if before else ""
         return "٪" if last and (last[-1:].isdigit() or _number_value(last) is not None) else m.group(0)
     return _PERCENT_SAID.sub(said, text)
+
+
+#: The article, after at most one proclitic, on a word.
+_DEFINITE = re.compile("[وفب]?ال(.+)")
+#: The thousands word in the singular, folded.
+_THOUSAND = "الف"
+
+
+def _definite_count(word: str) -> bool:
+    """Whether ``word`` is a cardinal from three to ten with the article: الاربعة, والخمسة."""
+    m = _DEFINITE.fullmatch(_fold_key(word))
+    value = _number_value(m.group(1)) if m else None
+    return value is not None and value == int(value) and 3 <= value <= 10
+
+
+def _numbers_read_apart(text: str, lang: str) -> str:
+    """The parser's digits for ``text``, read in pieces where a definite cardinal from three to
+    ten stands before the singular thousands word: three to ten thousand take the plural, so
+    in ``الاربعة الف وستمية``, "the four, 1600", the two are two numbers."""
+    parts = _WORDS_AND_GAPS.split(text)  # words at even positions, the gaps between them at odd
+    words = parts[::2]
+    pieces, start, offset = [], 0, 0
+    for i in range(len(words) - 1):
+        offset += len(parts[2 * i])
+        if _definite_count(words[i]) and _fold_key(words[i + 1]) == _THOUSAND:
+            pieces.append(text[start:offset])
+            start = offset
+        offset += len(parts[2 * i + 1])
+    pieces.append(text[start:])
+    return "".join(_numbers_to_digits(piece, lang) for piece in pieces)
 
 
 def _release_fractions(text: str) -> str:
@@ -1297,6 +1344,8 @@ _ENGLISH_TENS = {"تونتي": "20", "ثيرتي": "30", "ثرتي": "30", "فو
 #: بي "with me", جي "came", دي, تي, سي, اس, ار, اف, او "or", ال, كي "so that", يو,
 #: ايه "what". The others, اكس, دبليو, زد, كيو, اتش, واي, are names only.
 _NAME_ONLY_LETTERS = ("اتش", "اكس", "دبليو", "زد", "كيو", "واي")
+#: A word of Arabic letters and the digits after it, ``اتش1``: a letter name with its digit.
+_NAME_AND_DIGITS = re.compile(r"([\u0621-\u064A]+)([0-9]+)")
 #: The borrowed letters and the Arabic letter written for each.
 _LOAN_LETTERS = {"ڤ": "ف", "پ": "ب", "گ": "ك", "چ": "ج", "ڨ": "ق"}
 #: Punctuation outside a number: ``.`` ``:`` ``/`` between two digits and ``%`` after one stay.
@@ -1357,6 +1406,9 @@ def _code_runs(text: str) -> str:
         key = _fold_key(word)
         fused = _fused_names(key) if key and not word.isdigit() and key not in letter_names and key not in digits \
             else None
+        glued = _NAME_AND_DIGITS.fullmatch(key)
+        if glued and glued.group(1) in letter_names:
+            fused = list(glued.groups())
         words.extend(fused or [word])
 
     def kind(w):
@@ -1449,6 +1501,7 @@ ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HAR
                              _FRACTIONS, _MONTHS, _MONTH_NAMES, _YEAR_WORD, _TWENTY, _DIGIT_DATE, _ISO_DATE, _NAMED_DATE,
                              _DECIMAL_WORD, _PERCENT_WORDS, _PERCENT_SAID, _CLOCK_MINUTE_WORD, _UNIT_AFTER_NUMBER,
                              _NAME_ONLY_LETTERS, _LOAN_LETTERS, _PUNCTUATION_OUTSIDE_NUMBERS, _LATIN_CODE,
+                             _HUNDRED_PERCENT, _DEFINITE, _THOUSAND, _NAME_AND_DIGITS,
                              _LAM_PRONOUNS, _COMPOUNDS)
 
 
@@ -1511,7 +1564,7 @@ def normalize_asr(text: str, config: Optional[AsrNorm] = None, *, lang: str = "a
             text = _clock_times(text, tolerant=config.number_forms)
             if config.number_forms:
                 text = _percent_words(_hold_fractions(_rank_ordinals(_ordinal_days(_spoken_years(text)))))
-        text = _numbers_to_digits(text, lang)
+        text = _numbers_read_apart(text, lang) if config.number_forms and arabic else _numbers_to_digits(text, lang)
         if config.number_forms:
             text = _release_fractions(_written_numbers(text))
     if config.join_dictated_digits:
