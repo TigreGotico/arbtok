@@ -160,7 +160,7 @@ def test_every_capitalised_unit_symbol_is_one_the_unit_table_reads():
     assert set(textnorm._CAPITALISED_UNITS) <= units
 
 
-@pytest.mark.parametrize("written", ["530i", "1234567890", "wba7f2c51jg", "service",
+@pytest.mark.parametrize("written", ["1234567890", "wba7f2c51jg", "service",
                                      "ABCDEFGHJKLMN"])
 def test_what_is_not_a_code_is_left_as_written(written):
     assert normalize_for_tts(written, spell_out_codes=True, **AS_WRITTEN) == written

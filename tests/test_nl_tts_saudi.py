@@ -406,8 +406,7 @@ MODEL_CODES = cases("code", "formal", [
     ("سيارة MG5 اقتصادية", "سيارة إِمْ جِي فَيْفْ اقتصادية"),
     ("هيونداي H1 للعائلة", "هيونداي إِتْشْ وَنْ للعائلة"),
     ("لكزس LX600 الجديد", "لكزس إِلْ إِكْسْ سِكْسْ زِيرُو زِيرُو الجديد", note("character-by-character")),
-    ("BMW iX3 كهربائية", "بِي إِمْ دَبَلْيُو آيْ إِكْسْ ثْرِي كهربائية",
-     gap("iX3 written joined is left as written, while iX 3 written with a space is spelled")),
+    ("BMW iX3 كهربائية", "بِي إِمْ دَبَلْيُو آيْ إِكْسْ ثْرِي كهربائية"),
     ("BMW iX 3 كهربائية", "بِي إِمْ دَبَلْيُو آيْ إِكْسْ ثْرِي كهربائية"),
     ("السيارة MG 5 متوفرة", "السيارة إِمْ جِي فَيْفْ متوفرة"),
     ("إنفينيتي Q50 بالمعرض", "إنفينيتي كْيُو فَيْفْ زِيرُو بالمعرض"),
@@ -415,16 +414,24 @@ MODEL_CODES = cases("code", "formal", [
     ("عندنا BMW X7", "عندنا بِي إِمْ دَبَلْيُو إِكْسْ سِفَنْ"),
     ("لكزس ES300 متوفرة", "لكزس إِي إِسْ ثْرِي زِيرُو زِيرُو متوفرة"),
     ("قطع MG 4,500 ريال", "قطع إِمْ جِي أربعة آلاف وخمس مئة ريال"),
+    ("BMW iX1 و iX3 متوفرة", "بِي إِمْ دَبَلْيُو آيْ إِكْسْ وَنْ و آيْ إِكْسْ ثْرِي متوفرة"),
+    ("عندنا BMW 520i فل كامل", "عندنا بِي إِمْ دَبَلْيُو فَيْفْ تُو زِيرُو آيْ فل كامل",
+     note("character-by-character")),
+    ("BMW M340i و 330e", "بِي إِمْ دَبَلْيُو إِمْ ثْرِي فُورْ زِيرُو آيْ و ثْرِي ثْرِي زِيرُو إِي",
+     note("character-by-character")),
+    ("مرسيدس E300d بالمعرض", "مرسيدس إِي ثْرِي زِيرُو زِيرُو دِي بالمعرض", note("character-by-character")),
 ]) + cases("code", "colloquial", [
     ("عندنا X5 موديل 2025", "عندنا X5 موديل عشرين خمسة وعشرين"),
     ("BMW 520i فل كامل", "BMW 520i فل كامل"),
     ("جينيسيس G70 بسعر 185,000 ريال", "جينيسيس G70 بسعر مية وخمسة وثمانين الف ريال"),
     ("BMW iX3 كهربائية", "BMW iX3 كهربائية"),
-    ("مازدا CX-5 متوفرة", "مازدا CX-5 متوفرة",
-     gap("with spell_out_codes off a hyphenated code is read part by part and its digit becomes a cardinal")),
+    ("مازدا CX-5 متوفرة", "مازدا CX-5 متوفرة"),
     ("عندنا X5 و X6", "عندنا X5 و X6"),
     ("جينيسيس G70 2024", "جينيسيس G70 الفين واربعة وعشرين"),
     ("الـ GV80 وصلت", "ال GV80 وصلت"),
+    ("فورد F-150 بالمعرض", "فورد F-150 بالمعرض"),
+    ("عندنا GV-70 و CX-30", "عندنا GV-70 و CX-30"),
+    ("السعر SAR-50", "السعر SAR-خمسين"),
 ])
 
 TERMS = cases("term", "terms", [
@@ -432,8 +439,7 @@ TERMS = cases("term", "terms", [
     ("تبي تجرب الHyundai؟", "تبي تجرب الهيونداي؟"),
     ("سعر الصيانة بالHyundai أرخص", "سعر الصيانة بالهيونداي أرخص"),
     ("عندنا Hyundai وKia", "عندنا هيونداي وكيا"),
-    ("خصم للـNissan Patrol", "خصم للنيسان باترول",
-     gap("the tatweel written before a Latin term stays when the term's Arabic reading joins the proclitic")),
+    ("خصم للـNissan Patrol", "خصم للنيسان باترول"),
     ("فيها WiFi وBluetooth", "فيها واي فاي وبلوتوث"),
     ("الشاشة تدعم Apple CarPlay", "الشاشة تدعم أبل كاربلاي"),
     ("عندنا BMW X5", "عندنا بي ام دبليو إِكْسْ فَيْفْ"),
@@ -449,6 +455,10 @@ TERMS = cases("term", "terms", [
     ("عندنا Toyota Camry وTUCSON", "عندنا تويوتا كامري وتوسان"),
     ("عرض على الNissan", "عرض على النيسان"),
     ("سيارات Kia وHyundai وGenesis", "سيارات كيا وهيونداي وجينيسيس"),
+    ("بالـHyundai أرخص", "بالهيونداي أرخص"),
+    ("خصم للـ Nissan", "خصم للـ نيسان"),
+    ("عندنا هيونداي H1 وGRAND I10", "عندنا هيونداي أتش وَنْ وجراند آي وَنْ زِيرُو", note("character-by-character")),
+    ("بـBMW X5", "ببي ام دبليو إِكْسْ فَيْفْ"),
 ]) + cases("term", "colloquial", [
     ("خصم بالـBMW", "خصم بالBMW"),
     ("عندنا وX5 بعد", "عندنا وX5 بعد"),
@@ -657,14 +667,10 @@ def test_the_spoken_form_is_stable(profile, written, said):
 # Readings whose right spelling is open but whose wrong part is not: the synthesizer is
 # handed a digit or an abbreviation it has no reading for.
 RESIDUE = [
-    pytest.param("formal", "عندنا BMW 520i فل كامل", "520", id="residue-formal-01-lowercase-code-digits",
-                 marks=pytest.mark.xfail(strict=True, reason="520i, with a small letter, is neither spelled "
-                                                             "nor read, and reaches the synthesizer as digits")),
+    pytest.param("formal", "عندنا BMW 520i فل كامل", "520", id="residue-formal-01-lowercase-code-digits"),
     pytest.param("colloquial", "المجموع 1,200 ر.س", "ر.س", id="residue-colloquial-02-riyal-abbreviation",
                  marks=pytest.mark.xfail(strict=True, reason="ر.س after an amount is left as the abbreviation")),
-    pytest.param("terms", "هيونداي H1 للعائلة", "أتشواحد", id="residue-terms-06-lexicon-digit",
-                 marks=pytest.mark.xfail(strict=True, reason="the bundled cars-sa spelling of H1, أتش1, is read "
-                                                             "with the digit's word fused to the letter name")),
+    pytest.param("terms", "هيونداي H1 للعائلة", "أتشواحد", id="residue-terms-06-lexicon-digit"),
     pytest.param("plates", "العنوان ص ب 1234", "ص ب", id="residue-plates-07-post-office-box",
                  marks=pytest.mark.xfail(strict=True, reason="ص ب, the post office box, is left as the "
                                                              "abbreviation, as ر.س is")),

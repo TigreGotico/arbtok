@@ -1604,6 +1604,19 @@ _DECIMAL_CODE = re.compile(_LATIN_RUN_EDGE[0] + r"(\d+[.٫]\d+)"
                            + f"|[{_CONSONANT_CAPS}]{{2,}}|[A-Z]))"
                            + r"(?:['’][sS])?"
                            + _LATIN_RUN_EDGE[1])
+#: A tatweel written between an Arabic letter and a Latin term or code: ``للـNissan``.
+_TATWEEL_BEFORE_LATIN = "(?<=[\u0621-\u064A])\u0640+"
+_TATWEEL_BEFORE_CODE = re.compile(_TATWEEL_BEFORE_LATIN + "(?=" + _CODE.pattern + ")")
+#: A code with one small letter before its capitals, BMW's ``iX3``: read as ``IX3`` is,
+#: the way ``iX 3`` written with a space already is.
+_SMALL_LETTER_CODE = re.compile(r"(?<![A-Za-z0-9])[a-z](?=[A-Z]{1,3}[0-9]{1,4}(?![A-Za-z0-9]))")
+#: A model number with one small letter after its digits, ``520i``, ``330e``, ``320d`` or
+#: ``M340i``, BMW's suffixes for petrol, hybrid and diesel. It is a code, and its letter
+#: is read in capitals.
+_SMALL_SUFFIX_CODE = re.compile(r"(?<![A-Za-z0-9])(?<!\d[.٫])([A-Z]{0,2}[0-9]{2,3})([ide])(?![A-Za-z0-9])")
+#: Digits written against the Arabic letters of a lexicon reading, the ``1`` of the bundled
+#: ``أتش1`` for H1, which no number rule can read apart from the letters before them.
+_READING_DIGITS = re.compile(r"(?<=[\u0621-\u064A\u064B-\u0652])[0-9]+")
 #: A code :data:`_CODE` found that is a vehicle identification number or a fragment of one.
 _VIN = re.compile(r"(?=[A-Z0-9]*[0-9])[A-Z0-9]{8,17}")
 #: A number right before a :data:`_CODE`, which makes a unit symbol a unit.
@@ -1834,7 +1847,10 @@ CER_CANONICAL = dataclasses.replace(
 def _term_pattern(lexicon: Tuple[Tuple[str, str], ...]):
     said = {term.lower(): spoken for term, spoken in lexicon}
     longest_first = sorted(said, key=len, reverse=True)
-    return re.compile(_LATIN_RUN_EDGE[0] + "(" + "|".join(re.escape(t) for t in longest_first) + ")"
+    # A tatweel between an Arabic proclitic and the term only kept the Latin letters apart
+    # from it; once the term is read in Arabic it joins the proclitic, so the tatweel goes.
+    return re.compile(f"(?:{_TATWEEL_BEFORE_LATIN})?" + _LATIN_RUN_EDGE[0] + "("
+                      + "|".join(re.escape(t) for t in longest_first) + ")"
                       + _LATIN_RUN_EDGE[1], re.IGNORECASE), said
 
 
@@ -2352,6 +2368,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _NUMERIC_DATE, _MONTH_NAMES, _HIJRI_MONTH_NAMES, _GREGORIAN_YEARS, _HIJRI_YEARS,
                              _YEAR,
                              _WRITTEN_MONTH, _MARCH_BEFORE, _MARCH_AFTER,
+                             _TATWEEL_BEFORE_LATIN, _SMALL_LETTER_CODE, _SMALL_SUFFIX_CODE, _READING_DIGITS,
                              tuple(sorted(_not_code_letters("ar"))))
 _PLUGIN_DEFAULT = TtsNorm()
 
@@ -2820,7 +2837,10 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     دَبَلْيُو"}``. It is applied before every other rule but ``strip_controls`` and
     ``spell_out_plates``, the longest term first and without regard to case. A term
     ends where a Latin letter or digit ends, so an Arabic prefix written against it
-    stays attached: ``بالBMW`` becomes ``بالبِي إِمْ دَبَلْيُو``. Give the
+    stays attached: ``بالBMW`` becomes ``بالبِي إِمْ دَبَلْيُو``, and a tatweel written
+    between the two, ``للـNissan``, is dropped. A digit written against the letters of a
+    reading, the bundled ``أتش1`` for H1, is read apart from them by its English name, as
+    a spelled code's digit is: ``أتش وَنْ``. Give the
     spoken form fully pointed; an unpointed one leaves its vowels to the diacritizer.
 
     ``spell_out_codes`` reads what the lexicon did not claim and is written in
@@ -2830,14 +2850,20 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     ``F-150``, is joined first, before the lexicon, and read as ``MG4``, ``IX3`` and
     ``F150`` are, unless the lexicon holds the hyphenated term itself; a digit before a
     series, inside a larger figure, or after a currency code or unit symbol is not a
-    code's. Neither a number on its own nor a run of capitals that
+    code's. One small letter before the capitals is part of the code, ``iX3`` read as
+    ``IX3``, and so is one of BMW's small suffix letters after two or three digits,
+    ``520i``, ``330e`` or ``320d``, read as ``520I`` would be: every model code is spelled
+    character by character with the English names, ``LX600`` being "six zero zero" and
+    not "six hundred". Neither a number on its own nor a run of capitals that
     spells a word is a code: ``TOYOTA`` is read as a word. A run of
     8 to 17 such characters with a digit in it is a vehicle identification number, or
     a fragment of one, and its digits are read as Arabic words, one at a time. A run of
     letters and digits with a capital in it that is not read this way is left exactly as
     written: ``L809UPZ3V361`` stays whole rather than its digit runs being spoken. A run
     with a hyphen inside it that is not joined, ``SAR-50`` or ``COVID-19``, is read part
-    by part, so its digits are spoken.
+    by part, so its digits are spoken. With ``spell_out_codes`` off and the cardinals on,
+    a code written with a hyphen, ``CX-5``, is left whole as the joined ``CX5`` is, and its
+    digit is not read as a number.
 
     A number written against a unit symbol, ``100km``, ``120km/h`` or ``100كم``, is
     read as the number and the unit written apart are, wherever ``spell_out_codes`` or
@@ -2902,6 +2928,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         # Before the lexicon and the codes, so a unit written apart takes its own reading.
         text = _GLUED_UNIT.sub(r"\1 ", text)
     if config.spell_out_codes:
+        text = _SMALL_LETTER_CODE.sub(lambda m: m.group(0).upper(), text)
         # Before the lexicon, so a code written with a space reaches it joined, as the
         # joined code does: "X 5" takes the lexicon's reading of "X5".
         amounts = _not_code_letters(lang)
@@ -2912,7 +2939,15 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
                                     else m.group(1).upper() + m.group(2), text)
     if config.lexicon:
         pattern, said = _term_pattern(config.lexicon)
-        text = pattern.sub(lambda m: said[m.group(1).lower()], text)
+        if is_arabic_lang(lang):
+            # A digit in a reading takes the English name a code's digit takes, apart from
+            # the letters it was written against: أتش1 is أتش وَنْ, as H1 spelled is إِتْشْ وَنْ.
+            def reading(m):
+                return _READING_DIGITS.sub(lambda d: " " + " ".join(spelled_codes("ar")[c] for c in d.group(0)),
+                                           said[m.group(1).lower()])
+            text = pattern.sub(reading, text)
+        else:
+            text = pattern.sub(lambda m: said[m.group(1).lower()], text)
     if config.drop_false_starts and is_arabic_lang(lang):
         text = _FALSE_START.sub("", text)
     if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang):
@@ -2953,8 +2988,16 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             if run in units or run.lower() in _CAPITALISED_UNITS:
                 return hold(f"{spoken_number} {run}")
             return hold(f"{spoken_number} {spell(run)}")
+        text = _SMALL_SUFFIX_CODE.sub(lambda m: m.group(1) + m.group(2).upper(), text)
         text = _DECIMAL_CODE.sub(decimal_code, text)
+        # Spelled, a code is Arabic and joins the proclitic before it: بـABC is بإِيهْ.
+        text = _TATWEEL_BEFORE_CODE.sub("", text)
         text = _CODE.sub(code, text)
+    elif (config.cardinal_numbers or config.dialect_numbers or config.number_forms) and is_arabic_lang(lang):
+        # A hyphenated code left unspelled is an identifier like any other, and its digit
+        # is not a number: CX-5 stays CX-5 rather than becoming CX-خمسة.
+        amounts = _not_code_letters("ar")
+        text = _HYPHENATED_CODE.sub(lambda m: m.group(0) if m.group(1) in amounts else hold(m.group(0)), text)
     # What the code reading did not take is an identifier all the same, and no rule
     # below reads a digit out of the middle of one.
     text = _MIXED_CODE.sub(lambda m: hold(m.group(0)), text)

@@ -443,12 +443,22 @@ HYPHENATED_RUNS = ["سيارة F-150 جديدة", "عندنا CX-5 بسعر مم
                    "سيارة F-150-2", "الفترة 2020-2025"]
 
 
+# A model code written with a hyphen, which the voice agent keeps whole as it keeps the
+# joined code when it does not spell codes: F150 and CX5 stay as written there too.
+HYPHENATED_CODES = {"سيارة F-150 جديدة", "عندنا CX-5 بسعر ممتاز"}
+
+
 @pytest.mark.parametrize("config", [TtsNorm(), VOICE_AGENT, dataclasses.replace(VOICE_AGENT, spell_out_codes=True)],
                          ids=["default", "voice agent", "voice agent spelling codes"])
 @pytest.mark.parametrize("written", HYPHENATED_RUNS)
 def test_every_digit_of_a_hyphenated_run_is_spoken(written, config):
-    """Joined or not, a hyphenated run reaches the synthesizer with its digits spoken."""
-    assert not re.search("[0-9٠-٩]", normalize_for_tts(written, "ar", config))
+    """Joined or not, a hyphenated run reaches the synthesizer with its digits spoken,
+    unless it is a model code the config keeps whole."""
+    said = normalize_for_tts(written, "ar", config)
+    if config is VOICE_AGENT and written in HYPHENATED_CODES:
+        assert said == written
+    else:
+        assert not re.search("[0-9٠-٩]", said)
 
 
 @pytest.mark.parametrize("text,amount", [("المبلغ SAR-50 فقط", "SAR"), ("المبلغ USD-100 فقط", "USD"),
