@@ -18,6 +18,14 @@ from tests.voice_agent import VOICE_AGENT
     ("موديل 2026 و 2019", "موديل عشرين ستة وعشرين و ألفين وتسعة عشر"),
     # a number before ريال is a price, not a second year
     ("موديل 2026 و 2050 ريال خصم", "موديل عشرين ستة وعشرين و ألفين وخمسين ريال خصم"),
+    # nor is a number before a unit
+    ("موديل 2024 و 2050 كيلو", "موديل عشرين أربعة وعشرين و ألفين وخمسين كيلو"),
+    ("موديل 2024 و 2030 لتر", "موديل عشرين أربعة وعشرين و ألفين وثلاثين لتر"),
+    ("موديل 2024 و 2050 km", "موديل عشرين أربعة وعشرين و ألفين وخمسين km"),
+    # a word that only begins like a unit is no unit
+    ("موديل 2024 و 2025 كمان", "موديل عشرين أربعة وعشرين و عشرين خمسة وعشرين كمان"),
+    # كم is also "how much", and the year before it stays a year
+    ("موديل 2024 و 2025 كم سعرها", "موديل عشرين أربعة وعشرين و عشرين خمسة وعشرين كم سعرها"),
     # a range is still read in one register
     ("موديل 2019/2020", "موديل ألفين وتسعة عشر/ألفين وعشرين"),
 ])
@@ -30,6 +38,8 @@ def test_a_year_is_known_by_the_words_before_it(written, said):
     ("الموعد الساعة 10.15 الصبح", "الموعد الساعة عشرة وربع الصبح"),
     ("الموعد الساعه 4.20", "الموعد الساعه أربعة وثلث"),
     ("الموعد الساعة ٩.٣٠", "الموعد الساعة تسعة ونص"),
+    # كم is also "how much", and the time before it stays a time
+    ("الموعد الساعة 9.30 كم مرة قلت لك", "الموعد الساعة تسعة ونص كم مرة قلت لك"),
 ])
 def test_a_time_written_with_a_dot_after_alsaa_is_a_time(written, colloquial):
     assert normalize_for_tts(written, "ar", VOICE_AGENT, colloquial_clock=True) == colloquial
@@ -43,6 +53,8 @@ def test_a_time_written_with_a_dot_after_alsaa_is_a_time(written, colloquial):
     "سعر الساعة 12.50 ريال",
     "سعر الساعة 12.50 ر.س",
     "سعر الساعة 12.50 SAR",
+    # a unit after it
+    "الساعة 9.30 كيلو",
     # minutes past 59, and one digit after the dot
     "الساعة 9.75",
     "الساعة 9.5",

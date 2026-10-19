@@ -2189,8 +2189,8 @@ _EASTERN_NUMBER = re.compile(r"(?<![0-9٠-٩A-Za-z])(?<![0-9٠-٩],)"
 # not before ب standing alone, since ص ب and ص.ب are a post office box. A
 # score written with a one-digit second part, ``2:1``, is none; neither is a time inside a
 # longer run of digits, nor ``15h01``, which :mod:`arbtok.util` reads. After الساعة the
-# minutes may follow a dot, ``الساعة 9.30``, unless an amount of money follows, as in
-# ``سعر الساعة 12.50 ريال``, where it is a decimal.
+# minutes may follow a dot, ``الساعة 9.30``, unless an amount of money or a unit follows,
+# as in ``سعر الساعة 12.50 ريال``, where it is a decimal.
 _CLOCK = re.compile(r"(?<![0-9٠-٩A-Za-z:.,٫])"
                     r"(?:(?P<saa>الساع[ةه])\s+)?"
                     r"(?P<hour>[0-9٠-٩]{1,2})(?:(?P<sep>:|(?(saa)\.|(?!)))(?P<minute>[0-9٠-٩]{2}))?"
@@ -2198,7 +2198,12 @@ _CLOCK = re.compile(r"(?<![0-9٠-٩A-Za-z:.,٫])"
                     r"(?!\s*[./]?\s*ب(?![\u0621-\u064A])))?"
                     r"(?![0-9٠-٩A-Za-z]|[:.,٫][0-9٠-٩])")
 _ARABIC_MARKERS = {"ص": "am", "م": "pm"}
-_MONEY_AFTER = re.compile(r"\s*(?:ريال|ر\.\s?س|دولار|درهم|دينار|جنيه|يورو|SAR|SR)(?![\u0621-\u064A])")
+# A currency or a unit after a number, which makes the number an amount: a price, a distance,
+# a volume or a power, and not a time or a year.
+# كم is left out: it is also "how much", ``موديل 2025 كم سعرها``.
+_AMOUNT_WORD = (r"(?:ريال|ر\.\s?س|دولار|درهم|دينار|جنيه|يورو|كيلومترات|كيلومتر|كيلوواط|كيلو|[أا]ميال|ميل|لترات|لتر|حصان"
+                r"|(?i:SAR|SR|km|kg|hp|kw))(?![\u0621-\u064AA-Za-z])")
+_AMOUNT_AFTER = re.compile(r"\s*" + _AMOUNT_WORD)
 _PROCLITIC = r"[بولك]?ا?ل?"
 # What may stand between an identifier word and its number: one other word, and a colon.
 _IDENTIFIER_GAP = r"(?:\s+[^\s\d]+)?\s*:?\s*$"
@@ -2282,7 +2287,7 @@ _YEAR_MONTHS = ("يناير", "فبراير", "مارس", "[أا]بريل", "م�
 # A year after the word that says it is one, or after a month name: four digits in one
 # script, not part of a longer number or a decimal, and a second year after a slash or a
 # dash, a range or a choice, read in the same register as the first, or after و, read on
-# its own; a number before ريال is a price and not a year. The words are سنة, موديل with
+# its own; a number before a currency or a unit is an amount and not a year. The words are سنة, موديل with
 # the pronoun of "its model" or as the plural موديلات, and عام when it is definite,
 # carries a proclitic or follows a preposition, since a bare عام after a noun is
 # "general", مدير عام. A proclitic و, ف, ب or ل may be written on a month name.
@@ -2290,7 +2295,7 @@ _YEAR_PREPOSITIONS = ("في", "من", "منذ", "حتى", "إلى", "الى", "�
 _YEAR = re.compile(r"(?<![^\s\W])((?:ف?" + _PROCLITIC + r"(?:سن[ةه]|موديل(?:ات|ها|ه)?)"
                    r"|(?:ف?[بولك]ا?ل?|ال)عام|(?:" + "|".join(f"(?<={w} )" for w in _YEAR_PREPOSITIONS) + r"|^)عام"
                    r"|[وفبل]?(?:" + "|".join(_YEAR_MONTHS) + r"))\s+)([0-9]{4}|[٠-٩]{4})"
-                   r"(?:(\s*[/\-–]\s*|\s+و\s*)([0-9]{4}|[٠-٩]{4})(?!\s*ريال))?"
+                   r"(?:(\s*[/\-–]\s*|\s+و\s*)([0-9]{4}|[٠-٩]{4})(?!\s*" + _AMOUNT_WORD + "))?"
                    r"(?![0-9٠-٩A-Za-z]|[.,٫٬،][0-9٠-٩])")
 # The names a month is written with, January first: the ones the date parser's
 # ``nice_date`` writes, with the spellings that drop the hamza of أبريل, أغسطس and أكتوبر
@@ -2614,7 +2619,7 @@ class TtsNorm:
     #: ``10/6/2026``; and when it is the second of two such years after a slash or a
     #: dash, ``موديل 2026/2027``, though a range crossing 2020 or 2099 leaves both years to the cardinals;
     #: a second year after و, ``موديل 2026 و 2025``, is read on its own, and a number
-    #: before ريال is a price. A year
+    #: before a currency or a unit, ``و 2050 كيلو``, is an amount. A year
     #: before 2020 keeps the cardinal, ``ألفين وخمسة عشر``, which is how it is said, and so
     #: does a bare four-digit number, which may as well be a price.
     colloquial_years: bool = False
@@ -2741,7 +2746,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _DAGGER_WORD, tuple(sorted(_DAGGER_SILENT)),
                              _NUMERIC_DATE, _MONTH_NAMES, _HIJRI_MONTH_NAMES, _GREGORIAN_YEARS, _HIJRI_YEARS,
                              _YEAR, _KILOMETRE_SYMBOL, _AFTER_LATIN_WORD, _AFTER_KILOMETRE, _YEAR_DIGITS, _PO_BOX,
-                             _MONEY_AFTER, _IDENTIFIER_GAP,
+                             _AMOUNT_AFTER, _IDENTIFIER_GAP,
                              _WRITTEN_MONTH, _MARCH_BEFORE, _MARCH_AFTER,
                              _TATWEEL_BEFORE_LATIN, _SMALL_LETTER_CODE, _SMALL_SUFFIX_CODE, _READING_DIGITS,
                              tuple(sorted(_not_code_letters("ar"))))
@@ -3069,7 +3074,7 @@ def _spoken_clock(m: re.Match, lang: str, config: TtsNorm) -> Optional[str]:
     it is asked for one, and it is asked when the text writes "am" or "pm" and for an
     hour the 12-hour clock does not have. Under ``colloquial_clock`` the words are
     :func:`_colloquial_clock`'s, asked for the period in the same cases."""
-    if m["sep"] == "." and _MONEY_AFTER.match(m.string, m.end()):
+    if m["sep"] == "." and _AMOUNT_AFTER.match(m.string, m.end()):
         return None
     hour = int(m["hour"].translate(_EASTERN_DIGITS))
     minute = int(m["minute"].translate(_EASTERN_DIGITS)) if m["minute"] else 0
@@ -3283,7 +3288,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     ``الساعة``. ص and م after ``h:mm`` or after ``الساعة`` are "am" and "pm" in Arabic:
     ``4:15 م`` is ``الساعة الرابعة والربع مساءً``. A score written with two-digit minutes,
     ``3:10``, reads as a time too. After ``الساعة`` the minutes may follow a dot,
-    ``الساعة 9.30``, unless an amount of money follows: ``سعر الساعة 12.50 ريال`` is a
+    ``الساعة 9.30``, unless a currency or a unit follows: ``سعر الساعة 12.50 ريال`` is a
     decimal.
     ``canonical_unicode`` drops tatweel, applies NFC, orders shadda before its
     vowel and settles the spellings of مائة: the form the tokenizer reads.
