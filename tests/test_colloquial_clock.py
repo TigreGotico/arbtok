@@ -53,19 +53,12 @@ def test_a_number_that_is_no_time_is_untouched():
         normalize_for_tts("السعر 930 ريال", "ar", VOICE_AGENT)
 
 
-# normalize_asr reads a bare compound hour, "الساعة أحد عشر" with nothing after it, as
-# "الساعة أحد 10"; the same hour with minutes after it reads back.
-_BARE_COMPOUND_HOUR = pytest.mark.xfail(strict=True, reason="normalize_asr misreads a bare compound hour")
-
-
 @pytest.mark.parametrize("hour", range(1, 13))
 @pytest.mark.parametrize("minute", range(60))
-def test_the_recognizer_side_reads_every_minute_back(request, hour, minute):
+def test_the_recognizer_side_reads_every_minute_back(hour, minute):
     """What the option says for every minute of every hour is what normalize_asr reads back to
     the same time, so no reading is also another time: a time with no minutes reads back as
     the hour alone, as the literary reading does."""
-    if minute == 0 and hour >= 11:
-        request.applymarker(_BARE_COMPOUND_HOUR)
     said = normalize_for_tts(f"الساعة {hour}:{minute:02d}", "ar", VOICE_AGENT, colloquial_clock=True)
     read = f"الساعة {hour}:{minute:02d}" if minute else f"الساعة {hour}"
     assert normalize_asr(said, fix_asr_errors=True, spoken_numbers_to_digits=True) == read, said
