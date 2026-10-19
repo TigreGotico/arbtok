@@ -227,6 +227,9 @@ class AsrNorm:
     #: بالمية and في المية after a number are ``%``; a year said ``عشرين ستة وعشرين`` after
     #: a month, سنة, عام or موديل is ``2026``; a day said as an ordinal before a month is
     #: its number; and a fraction word that follows no number, ``ربع ساعة``, stays a word.
+    #: A clock time in digits is written after الساعة, as :func:`normalize_for_tts` says it:
+    #: ``14:00`` is ``الساعة 14``, and an hour after الساعة with م, ص, am, pm or a period word
+    #: is the hour of the 24-hour clock, ``الساعة 3 العصر`` as ``الساعة 15``.
     #: With ``blank_punctuation``, the marks inside a number, ``.`` ``:`` ``/`` and a ``%``
     #: after it, are kept, since ``5.5`` and ``5 5`` are different things said.
     number_forms: bool = False
@@ -796,7 +799,10 @@ def _read_clock(keys, i, tolerant=False):
     j = i + 1
     if j >= len(keys) or not _ARABIC_WORD.fullmatch(keys[j]):
         return None
-    words = 2 if j + 1 < len(keys) and _folded(keys[j + 1]) in _HOUR_TENS else 1
+    # الحادية عشرة is one hour in two words; in الساعة عشرة or عشرة عشرة the first word or the
+    # second is a repeat that changes nothing, and stays a word of its own
+    words = 2 if j + 1 < len(keys) and _folded(keys[j + 1]) in _HOUR_TENS \
+        and _every_word_counts(keys[j:j + 2], _hour_value(" ".join(keys[j:j + 2]))) else 1
     hour = _hour_value(" ".join(keys[j:j + words]))
     if hour is None or hour != int(hour) or not 0 <= hour <= 23:
         return None
@@ -822,6 +828,9 @@ def _read_clock(keys, i, tolerant=False):
         minutes, back, end = said
         if period is None and end < len(keys) and _is_day_period(keys[end], tolerant):
             period, end = keys[end], end + 1
+    if period is not None and end < len(keys) and _is_day_period(keys[end], tolerant):
+        # a period word said twice is not read as one time, so the second still counts
+        return None
     if period is None and minutes is None:
         return (f"{hour}", end, "") if not cardinal and _ends_time(keys, end) else None
     if period is not None and not 1 <= hour <= 12:
@@ -1025,6 +1034,12 @@ _DECIMAL_ZEROS = re.compile(r"(?<![0-9.])([0-9]+)\.([0-9]*?)0+(?![0-9.])")
 _PERCENT_WORDS = re.compile(r"([0-9]+(?:\.[0-9]+)?)\s*(?:[%٪]|(?:بال|في ال)(?:مي[ةه]|مئ[ةه]|مائ[ةه]))(?![^\s\W])")
 #: A time in digits with what places it in the day after it: م or pm, ص or am, or a period word.
 _DIGIT_TIME_PERIOD = re.compile(r"(?<![0-9:])([0-9]{1,2}):([0-9]{2}) ?(pm|PM|am|AM|م|ص|[\u0621-\u064A]+)(?![^\s\W])")
+#: The same after الساعة with the hour alone: ``الساعة 10 ص``, ``الساعة 3 العصر``, ``الساعة 12 pm``.
+_HOUR_PERIOD = re.compile(r"(الساع[ةه]) ([0-9]{1,2})(?![0-9:.,٫]) ?(pm|PM|am|AM|م|ص|[\u0621-\u064A]+)(?![^\s\W])")
+#: A clock time in digits with no الساعة before it, ``14:00``, or an hour with am or pm after
+#: it, ``12 pm``: :func:`normalize_for_tts` says الساعة before each, so it is written there.
+_BARE_CLOCK = re.compile(r"(?<![0-9:.,٫/])(?<!الساع[ةه] )(?=([0-9]{1,2})(?::([0-9]{2})(?![0-9:]|[.,٫][0-9])"
+                         r"| ?(?:pm|PM|am|AM)(?![A-Za-z])))")
 _PADDED_HOUR = re.compile(r"(?<![0-9:])0([0-9]):(?=[0-9]{2}(?![0-9]))")
 #: A day and month in digits with no year, ``30/6``: read as a date when the day cannot be the
 #: top of a fraction's month, from 13, or a date word comes before it. ``1/2`` alone is a half.
@@ -1252,6 +1267,7 @@ def _written_numbers(text: str) -> str:
                                   if int(m.group(2)) <= 24 and int(m.group(3) or m.group(4)) <= 59 else m.group(0), text)
     text = _CLOCK_MINUTE_LOOSE.sub(lambda m: f"{m.group(1)} {int(m.group(2))}:{int(m.group(4)):02d} {m.group(3)}"
                                    if int(m.group(2)) <= 24 and int(m.group(4)) <= 59 else m.group(0), text)
+    text = _HOUR_PERIOD.sub(_hour_period, _BARE_CLOCK.sub(_bare_clock, text))
     text = _DAY_MONTH.sub(_day_month, _PADDED_HOUR.sub(r"\1:", text))
     text = _ON_THE_HOUR.sub(r"\1", _DIGIT_TIME_PERIOD.sub(_digit_time_period, text))
     pattern, names = _unit_names()
@@ -1292,25 +1308,38 @@ def _rank_ordinals(text: str) -> str:
     return "".join(parts)
 
 
+def _placed_hour(hour: int, word: str):
+    """The hour of the 24-hour clock that ``hour`` of the 12-hour clock is with ``word``
+    after it, م or pm, ص or am, or a period word; None when ``word`` places no hour."""
+    if not 1 <= hour <= 12:
+        return None
+    if word in ("pm", "PM", "م"):
+        return hour % 12 + 12
+    if word in ("am", "AM", "ص"):
+        return hour % 12
+    if _is_day_period(word, True):
+        return 0 if hour == 12 and _folded(word) == _NIGHT else _period_hour(hour, word, True)
+    return None
+
+
 def _digit_time_period(m: re.Match) -> str:
     """``9:30 م`` and ``4:30 العصر`` on the 24-hour clock, as the clock reading writes a time
     said with its period: ``21:30``, ``16:30``. A time on the hour is then the hour alone,
     since ``الساعة سبعة`` says 7:00."""
-    hour, minute, word = int(m.group(1)), m.group(2), m.group(3)
-    if not 1 <= hour <= 12:
-        return m.group(0)
-    if word in ("pm", "PM", "م"):
-        hour = hour % 12 + 12
-    elif word in ("am", "AM", "ص"):
-        hour = hour % 12
-    elif _is_day_period(word, True):
-        read = 0 if hour == 12 and _folded(word) == _NIGHT else _period_hour(hour, word, True)
-        if read is None:
-            return m.group(0)
-        hour = read
-    else:
-        return m.group(0)
-    return f"{hour}:{minute}"
+    hour = _placed_hour(int(m.group(1)), m.group(3))
+    return m.group(0) if hour is None else f"{hour}:{m.group(2)}"
+
+
+def _hour_period(m: re.Match) -> str:
+    """``الساعة 3 العصر`` as ``الساعة 15``, as the clock reading writes ``الساعة ثلاثة العصر``."""
+    hour = _placed_hour(int(m.group(2)), m.group(3))
+    return m.group(0) if hour is None else f"{m.group(1)} {hour}"
+
+
+def _bare_clock(m: re.Match) -> str:
+    """الساعة before a clock time that has none, when its hour and minutes are a time of day."""
+    hour, minute = int(m.group(1)), m.group(2)
+    return "الساعة " if hour <= 23 and (minute is None or int(minute) <= 59) else ""
 
 
 @functools.lru_cache(maxsize=None)
@@ -1497,6 +1526,7 @@ ASR_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(AsrNorm)], _HAR
                              _NIGHT_WORDS, _EVENING_WORDS, _PERIOD_SPELLINGS, _CLOCK_MINUTE_LOOSE, _CLOCK_WINDOW,
                              _ONE_SAID, _ONE_COUNTS, _FORMAL_TEENS, _DIGIT_TIME_PERIOD, _ON_THE_HOUR,
                              _PERCENT_BEFORE, _ENGLISH_TENS,
+                             _HOUR_PERIOD, _BARE_CLOCK,
                              _NUMBER_SPELLINGS, _NUMBER_SPELLINGS_PROCLITIC, _GROUPED_DIGITS, _ARABIC_DECIMAL,
                              _FRACTIONS, _MONTHS, _MONTH_NAMES, _YEAR_WORD, _TWENTY, _DIGIT_DATE, _ISO_DATE, _NAMED_DATE,
                              _DECIMAL_WORD, _PERCENT_WORDS, _PERCENT_SAID, _CLOCK_MINUTE_WORD, _UNIT_AFTER_NUMBER,
