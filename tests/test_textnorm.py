@@ -563,15 +563,15 @@ def test_the_bundled_table_names_every_capital_and_every_digit_once():
     assert textnorm.spelled_codes("ar") == {c: pointed for c, _, pointed in _code_rows()}
 
 
-#: Each letter, the Arabic spelling attested for it, and the pointed form the table
-#: carries. docs/normalization.md cites the page each spelling was read from.
+#: Each letter, the Arabic spelling attested for it, and the form the table carries,
+#: pointed except F. docs/normalization.md cites the page each spelling was read from.
 CITED_LETTERS = [
     ("A", "إيه", "إِيهْ"),
     ("B", "بي", "بِي"),
     ("C", "سي", "سِي"),
     ("D", "دي", "دِي"),
     ("E", "إي", "إِي"),
-    ("F", "إف", "إِفْ"),
+    ("F", "إف", "إف"),
     ("G", "جي", "جِي"),
     ("H", "إتش", "إِتْشْ"),
     ("I", "آي", "آيْ"),
@@ -603,6 +603,34 @@ def test_a_letter_is_pointed_from_the_spelling_that_is_attested_for_it(character
     import re
     assert textnorm.spelled_codes("ar")[character] == pointed
     assert re.sub("[\u064B-\u0652\u0670]", "", pointed) == spelling
+
+
+def test_f_is_written_unpointed_because_a_voice_hears_the_pointed_form_as_v():
+    """A Saudi Arabic TTS voice read back by an Arabic speech recogniser, in VIN-like
+    nine-character codes: F unpointed gained 20.0 points [+6.7, +33.3] on 10 carriers and
+    13.3 [+3.3, +25.0] on 20 fresh ones over the pointed إِفْ, which is mostly heard as في."""
+    assert textnorm.spelled_codes("ar")["F"] == "إف"
+    said = lambda code: normalize_for_tts(code, "ar", spell_out_codes=True, **AS_WRITTEN)
+    assert said("F150") == "إف وَنْ فَيْفْ زِيرُو"
+
+
+def test_the_tts_rule_set_name_moves_with_the_code_table():
+    """The table is read from a file when the module is imported, and a row changed there
+    changes what every spelled code is said as, so the name has to change with it."""
+    import os, subprocess, sys
+    read = ("import pathlib; real = pathlib.Path.read_text\n"
+            "def patched(self, *a, **k):\n"
+            "    text = real(self, *a, **k)\n"
+            "    return text.replace('F\\tf\\tإف', 'F\\tf\\tإِفْ') if self.name == 'en-codes.ar.tsv' else text\n"
+            "pathlib.Path.read_text = patched\n"
+            "import arbtok.textnorm as t; print(t.TTS_NORM_VERSION, t.spelled_codes('ar')['F'])")
+    plain = "import arbtok.textnorm as t; print(t.TTS_NORM_VERSION, t.spelled_codes('ar')['F'])"
+    run = lambda code: subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                                      env={**os.environ, "PYTHONHASHSEED": "0"}).stdout.split()
+    (version, f), (changed_version, changed_f) = run(plain), run(read)
+    assert (f, changed_f) == ("إف", "إِفْ")
+    assert version == textnorm.TTS_NORM_VERSION
+    assert changed_version != version
 
 
 def test_every_letter_name_sounds_different_from_every_other():

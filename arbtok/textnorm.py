@@ -1957,7 +1957,8 @@ def spelled_codes(lang: str = "ar") -> Dict[str, str]:
 
     The names are the English ones as a speaker of ``lang`` says them. A pointed
     spelling is one the diacritizer leaves alone, so the reading is the table's and
-    not a guess from the sentence around it.
+    not a guess from the sentence around it. F is the exception and is unpointed, because
+    a voice hears the pointed form as V.
     """
     path = Path(__file__).parent / "data" / "tts_lexicons" / f"en-codes.{lang.split('-')[0]}.tsv"
     if not path.is_file():
@@ -2749,7 +2750,8 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _AMOUNT_AFTER, _IDENTIFIER_GAP,
                              _WRITTEN_MONTH, _MARCH_BEFORE, _MARCH_AFTER,
                              _TATWEEL_BEFORE_LATIN, _SMALL_LETTER_CODE, _SMALL_SUFFIX_CODE, _READING_DIGITS,
-                             tuple(sorted(_not_code_letters("ar"))))
+                             tuple(sorted(_not_code_letters("ar"))),
+                             tuple(sorted(spelled_codes("ar").items())))
 _PLUGIN_DEFAULT = TtsNorm()
 
 

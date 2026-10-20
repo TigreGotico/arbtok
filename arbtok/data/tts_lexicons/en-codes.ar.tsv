@@ -1,6 +1,6 @@
-# English letter names and digit words as an Arabic speaker says them, fully pointed,
-# for lang "ar". Columns: the character; the English word that names it; the pointed
-# Arabic spelling.
+# English letter names and digit words as an Arabic speaker says them, pointed except F,
+# for lang "ar". Columns: the character; the English word that names it; the Arabic
+# spelling, pointed except F, which is written bare because the voice hears it better so.
 #
 # A letter's consonant skeleton is the spelling Arabic writing attests for that letter,
 # each one cited to the page that prints it beside a Latin initialism in the table in
@@ -8,6 +8,9 @@
 # said differently in English are said differently here: G is "gee" and J is "jay" on
 # one skeleton. tests/test_textnorm.py holds every letter to its cited spelling and to
 # being heard apart from every other, B and P excepted.
+#
+# F is written unpointed, as a Saudi Arabic voice was measured to say it: the pointed
+# إِفْ is mostly heard as في, which is V. docs/normalization.md gives the figures.
 #
 # The digit words are nativized from data/donor_lexicons/en-GB.tsv, which is where every
 # row came from before the letters were cited; tests/test_textnorm.py still holds them
@@ -19,7 +22,7 @@ B	b	بِي
 C	c	سِي
 D	d	دِي
 E	e	إِي
-F	f	إِفْ
+F	f	إف
 G	g	جِي
 H	h	إِتْشْ
 I	i	آيْ
