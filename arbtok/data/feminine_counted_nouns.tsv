@@ -1,0 +1,41 @@
+# Plural nouns whose singular is feminine, before which a number from 3 to 10 takes its
+# short form: خمس سنوات, ست ثواني, ثماني سيارات, where ثلاثة أيام keeps the -a because يوم is
+# masculine. The cardinal pass of normalize_for_tts reads a number written directly before
+# one of these nouns that way.
+#
+# Agreement: Karin C. Ryding, "A Reference Grammar of Modern Standard Arabic" (Cambridge
+# University Press, 2005), chapter 15, section 1.3.1.1, read at archive.org item
+# 07AReferenceGrammarOfModernStandardArabic: "With an indefinite counted item, the numeral
+# shows reverse gender agreement and precedes the counted noun", under "(1) Feminine noun =
+# masculine numeral form", with "li-muddat-i thamaanii saacaat-in" glossed "for a period of
+# eight hours": eight takes the construct ثماني before its noun. The gender is the
+# singular's, and each singular here is marked feminine by its ة; the plural's own shape,
+# sound or broken, does not decide it.
+#
+# Columns: the plural as written after the number; its singular; the source, an Arabic
+# Wikipedia revision or the grammar; the sentence from that source. Each sentence shows the
+# plural after the short form of a number from 3 to 10: the evidence that the noun counts as
+# feminine.
+# plural	singular	source	quote
+سنوات	سنة	https://ar.wikipedia.org/w/index.php?oldid=68307087	يجب أن ينفذ التعداد الحالي في غضون ثلاث سنوات بعد أول اجتماع للكونجرس الأمريكي، وفي كل عشر سنوات
+سنين	سنة	https://ar.wikipedia.org/w/index.php?oldid=72786001	واصبح محمد باشا الخاصكي والياً على بغداد لمدة ثلاث سنين
+ساعات	ساعة	Ryding 2005, ch. 15 section 1.3.1.1	li-muddat-i thamaanii saacaat-in (singular saaca) for a period of eight hours
+دقائق	دقيقة	https://ar.wikipedia.org/w/index.php?oldid=76095575	بإيقافه عن اللعب لمدة دقيقتين أو خمس دقائق أو 10 دقائق أو إلى نهاية المبارة
+ثوان	ثانية	https://ar.wikipedia.org/w/index.php?oldid=68343366	إطلاق ستة صواريخ خلال ست ثوان من خلال ستة فوهات مدفعية
+ثواني	ثانية	https://ar.wikipedia.org/w/index.php?oldid=72093480	وتضئ بضوء أبيض وبشكل دائري كل ثلاث ثواني
+سيارات	سيارة	Ryding 2005, ch. 15 section 1.3.1.1	saraq-uu tisc-a sayyaaraat-in. (singular sayyaara) They stole nine cars.
+مرات	مرة	Ryding 2005, ch. 15 section 1.3.1.1	xams-a marraat-in fii l-yawm-i (singular marra) five times a day
+ليال	ليلة	https://ar.wikipedia.org/w/index.php?oldid=72678607	ثم تزوجها الزبير بن العوام وطلقها بعد سبع ليالٍ.
+ليالي	ليلة	https://ar.wikipedia.org/w/index.php?oldid=75675456	الثَلَاثُ المُحَاقْ هي أخر ثلاث ليالي من كل شهر قمري
+قطع	قطعة	https://ar.wikipedia.org/w/index.php?oldid=76375538	أما البطن فيتألف من ست قطع بسبب التحام بعض قطعه مع بعضها
+نسخ	نسخة	https://ar.wikipedia.org/w/index.php?oldid=76989156	شاركت الهند في ثلاث نسخ من كأس آسيا
+دفعات	دفعة	https://ar.wikipedia.org/w/index.php?oldid=75774492	تم تخريج أربع دفعات من الممرضين الجامعين من خريجي الكلية
+سرعات	سرعة	https://ar.wikipedia.org/w/index.php?oldid=72665705	وتصل القوة إلى العجلات الخلفية بواسطة علبة تروس أوتوماتيكية من ثماني سرعات
+أسطوانات	أسطوانة	https://ar.wikipedia.org/w/index.php?oldid=76540398	ماكان أس المزودة بمحرك من ست أسطوانات بشكل حرف بسعة 3 ليترات بقوة 340 حصاناً
+عجلات	عجلة	https://ar.wikipedia.org/w/index.php?oldid=75251152	بالعادة تكون عربة ذات شكل صندوق وتمشي على أربع عجلات
+وسائد	وسادة	https://ar.wikipedia.org/w/index.php?oldid=75479234	تشمل ميزات الأمان ست وسائد هوائية ومساند رأس أمامية نشطة
+شاشات	شاشة	https://ar.wikipedia.org/w/index.php?oldid=74093250	حتى ثلاث شاشات رئيسية قابلة للتخصيص
+فئات	فئة	https://ar.wikipedia.org/w/index.php?oldid=68531917	يتم تقسيمها إلى خمس فئات رئيسية
+رحلات	رحلة	https://ar.wikipedia.org/w/index.php?oldid=75094475	أجرت الشركة في 15 مايو 2022 ثلاث رحلات تجريبية بالطائرة
+غرف	غرفة	https://ar.wikipedia.org/w/index.php?oldid=76576561	ويتكوّن من ثلاثة أدوار يضم كل منها أربع غرف للعرض
+كلمات	كلمة	https://ar.wikipedia.org/w/index.php?oldid=73435197	وتتألف غالبًا من ثلاث إلى خمس كلمات

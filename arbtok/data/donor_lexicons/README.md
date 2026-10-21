@@ -57,13 +57,28 @@ pronouns, determiners, negation, common adverbs, discourse words, the forms of
 *falloir* that a conversation uses, and the numbers — because those are a finite list
 that can be checked by eye, and an open-class French dictionary is not.
 
-**Provenance.** Every reading is the highest-probability pronunciation of the word in
-the French MFA dictionary v3.0.0 (McAuliffe and Sonderegger 2024), distributed under
-CC BY 4.0. `fr-FR.sources.tsv` records, for each word, its class, the reading written
-here, the dictionary's own phone string and the probability it carries, so every row
-can be traced to the line it came from. Rebuild both files with
-`scripts/build_french_donor_lexicon.py <french_mfa.dict> <out_dir>`; the word list is
-in that script, grouped by class.
+**Provenance.** Every reading is a pronunciation the French MFA dictionary v3.0.0
+(McAuliffe and Sonderegger 2024) gives for the word, distributed under CC BY 4.0. It is the
+dictionary's highest-probability pronunciation, except for a word with sandhi forms:
+variants that differ only by a final consonant, which French sounds or drops by what
+follows. *six* is [si] before a consonant, [siz] before a vowel and [sis] before a pause,
+and the dictionary ranks [si] first. A lexicon consulted one word at a time reads each word
+as if it stood alone, which is before a pause, so among such variants the one written is
+the one the dictionary most often puts before a pause: the largest product of the
+pronunciation probability and the dictionary's probability that a pause follows the word.
+That rule gives *six* `sis` and keeps the first-ranked reading of every other word, including *dix* `dis`, *huit* `ɥit`, *cinq* `sɛ̃k` and *neuf* `nœf`, which the
+dictionary already ranks first in their sounded form. A final schwa is not a sandhi
+consonant, so *quatre* stays `katʁə`. The rule assumes a word is said alone, which holds for
+a numeral (*il en a six*). It does not hold for *tous*, which is `tu` as a determiner (*tous
+les jours*, *tous les deux*) and `tus` only as the stressed pronoun (*ils sont tous là*). A
+word-to-IPA map cannot tell the two apart, so *tous* is named as an exception in the build
+script and keeps `tu`, the determiner reading, because that is the common case.
+
+`fr-FR.sources.tsv` records, for each word, its class, the reading written here, the
+dictionary's own phone string, the probability it carries and the probability that a pause
+follows it, so every row can be traced to the line it came from. Rebuild both files with
+`scripts/build_french_donor_lexicon.py <french_mfa.dict> <out_dir>`; the word list is in
+that script, grouped by class.
 
 **Phones.** The dictionary writes the fronted allophones of /k/ and /ɡ/ before front
 vowels as `c` and `ɟ`, a palatalised `mʲ`, and `ʎ` for the *li* of *lieu*. These are
@@ -71,9 +86,21 @@ written back to `k`, `ɡ`, `m` and `lj`, which is the phonemic inventory the `fr
 spec and the adaptation maps in `arbtok.translit` are stated in. Nothing else is
 changed.
 
-**What is left out, and what does not take effect.** orthography2ipa splits a word at
-an apostrophe before it consults a lexicon, so an entry for *l'*, *c'est* or
-*aujourd'hui* would never be read; the build script reports these elided forms and
-writes none of them. *là-bas* and *peut-être* are not in the dictionary. And the
-`fr-FR` spec's own inline word readings outrank any lexicon, so for *le*, *de*, *je*,
-*ne* and *que* the spec's schwa is what is spoken, not the `ø` this dictionary gives.
+**Elided forms.** orthography2ipa looks a word up in the lexicon by its whole written form,
+apostrophe included, so the elided forms are entries of their own: *c'est* `sɛ`, *qu'il*
+`kil`, *n'est* `nɛ`, *jusqu'à* `ʒyska`, and the bare clitics *l'*, *d'*, *qu'*, *c'* and
+the rest. Read by rule, *c'est* is `sɛs` and *qu'il* is `kyil`. The keys are written with
+the ASCII apostrophe; a word typed with the typographic apostrophe U+2019 (*c’est*) misses
+them and is read by rule. orthography2ipa's sentence path splits a word at the apostrophe
+before the lookup, so this applies to single-word readings such as the ones
+`arbtok.translit.transliterate` asks for. *là-bas* and *peut-être* are not in the dictionary
+and are left out.
+
+**What the file changes.** It holds 217 entries. Read by the `fr-FR` rules alone, 157 of them
+already come out as the dictionary gives them. Of the other 60, three are overridden by the spec
+(below), so 57 entries change the donor reading, and 56 change what
+`transliterate(word, "ar-MA", donor="fr-FR")` returns (*euh* changes from `ø` to `œ`, which
+Moroccan Arabic adapts to the same vowel).
+
+The `fr-FR` spec's own inline word readings outrank any lexicon. For these entries the spec's
+reading is what is spoken, not the dictionary's: *le*, *me*, *hier*.

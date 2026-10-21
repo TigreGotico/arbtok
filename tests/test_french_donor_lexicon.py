@@ -1,11 +1,12 @@
 """The bundled French donor lexicon: closed-class words, read from a cited dictionary."""
 import importlib.util
+import re
 from pathlib import Path
 
 import pytest
 
 from arbtok import translit
-from arbtok.donor_lexicon import bundled_path
+from arbtok.donor_lexicon import bundled_path, ensure_registered
 
 DATA = Path(translit.__file__).parent / "data" / "donor_lexicons"
 FRENCH_PHONES = set("abdefijklmnopstuvwyzøœɑɔəɛɡɥɲʁʃʒ") | {"̃"}
@@ -30,7 +31,7 @@ def test_the_lexicon_is_bundled_where_the_donor_lookup_finds_it():
 
 
 def test_every_reading_is_the_cited_dictionarys_and_is_spelled_in_french_phones():
-    sources = {word: (ipa, phones) for word, _, ipa, phones, _ in _rows("fr-FR.sources.tsv")}
+    sources = {word: (ipa, phones) for word, _, ipa, phones, _, _ in _rows("fr-FR.sources.tsv")}
     assert (DATA / "fr-FR.sources.tsv").read_text(encoding="utf-8").startswith("# French MFA dictionary v3.0.0")
     mapping = _builder().PHONES
     for word, ipa in _rows("fr-FR.tsv"):
@@ -39,8 +40,35 @@ def test_every_reading_is_the_cited_dictionarys_and_is_spelled_in_french_phones(
     assert len(sources) == len(_rows("fr-FR.tsv"))
 
 
-def test_no_entry_is_one_the_donor_lookup_could_never_reach():
-    assert not [word for word, _ in _rows("fr-FR.tsv") if "'" in word]
+@pytest.mark.parametrize("word, donor, adapted", [
+    ("c'est", "sɛ", "si"), ("qu'il", "kil", "kil"), ("n'est", "nɛ", "ni"), ("s'est", "sɛ", "si"),
+    ("qu'elle", "kɛl", "kil"), ("jusqu'à", "ʒyska", "ʒiska"), ("c'", "s", "s"), ("qu'", "k", "k"),
+])
+def test_an_elided_form_is_read_from_the_lexicon_and_not_from_its_spelling(word, donor, adapted):
+    """By rule c'est keeps its final consonant and qu' reads its u as a vowel: sɛs, kyil, kyəl."""
+    assert dict(_rows("fr-FR.tsv"))[word] == donor
+    assert translit.transliterate(word, "ar-MA", donor="fr-FR") == adapted
+
+
+@pytest.mark.parametrize("word, donor", [("six", "sis"), ("dix", "dis"), ("huit", "ɥit"), ("tous", "tu")])
+def test_a_word_with_sandhi_forms_is_read_as_it_is_said_before_a_pause(word, donor):
+    """six is [si] before a consonant and [sis] alone; the dictionary ranks [si] first.
+
+    tous is the exception: its determiner use before an article dominates, so it stays [tu].
+    """
+    assert dict(_rows("fr-FR.tsv"))[word] == donor
+    assert translit.transliterate(word, "ar-MA", donor="fr-FR") == translit.nativize(donor, "ar-MA", donor="fr-FR")
+
+
+def test_the_readme_names_exactly_the_entries_the_spec_outranks():
+    from orthography2ipa import G2P
+    ensure_registered("fr-FR")
+    g2p = G2P("fr-FR")
+    outranked = {word for word, ipa in _rows("fr-FR.tsv") if g2p.transcribe_word(word) != ipa}
+    assert outranked
+    readme = (DATA / "README.md").read_text(encoding="utf-8")
+    paragraph = next(p for p in readme.split("\n\n") if "outrank any lexicon" in p)
+    assert set(re.findall(r"\*([^*\s]+)\*", paragraph)) == outranked
 
 
 @pytest.mark.parametrize("word, donor, adapted", [
@@ -59,9 +87,27 @@ def test_a_function_word_is_read_from_the_lexicon_and_not_from_its_spelling(word
 def test_the_builder_takes_the_most_probable_reading_and_says_what_it_left_out(tmp_path):
     builder = _builder()
     (tmp_path / "toy.dict").write_text(
-        "le\t0.07\t0.0\t0.0\t0.0\tl ə\n" "le\t0.99\t0.0\t0.0\t0.0\tl ø\n" "qui\t0.99\t0.0\t0.0\t0.0\tc i\n",
+        "le\t0.07\t0.0\t0.0\t0.0\tl ə\n" "le\t0.99\t0.0\t0.0\t0.0\tl ø\n" "qui\t0.99\t0.0\t0.0\t0.0\tc i\n"
+        "l'\t0.99\t0.01\t0.0\t0.0\tl\n",
         encoding="utf-8")
     builder.CLOSED_CLASSES = {"article": "le l'", "pronoun": "qui dont"}
-    written, absent, elided = builder.build(tmp_path / "toy.dict", tmp_path)
-    assert (written, absent, elided) == (2, ["dont"], ["l'"])
-    assert (tmp_path / "fr-FR.tsv").read_text(encoding="utf-8") == "le\tlø\nqui\tki\n"
+    written, absent = builder.build(tmp_path / "toy.dict", tmp_path)
+    assert (written, absent) == (3, ["dont"])
+    assert (tmp_path / "fr-FR.tsv").read_text(encoding="utf-8") == "l'\tl\nle\tlø\nqui\tki\n"
+
+
+def test_the_builder_takes_the_pre_pausal_form_of_a_final_consonant_and_nothing_else(tmp_path):
+    """The probabilities are the French MFA dictionary's own for six, vingt, quatre and tous."""
+    builder = _builder()
+    (tmp_path / "toy.dict").write_text(
+        "six\t0.99\t0.02\t1.85\t0.83\ts i\n" "six\t0.29\t0.03\t1.23\t0.97\ts i z\n"
+        "six\t0.72\t0.68\t1.06\t0.99\ts i s\n"
+        "vingt\t0.99\t0.19\t0.86\t1.02\tv ɛ̃\n" "vingt\t0.6\t0.04\t2.9\t0.57\tv ɛ̃ t\n"
+        "quatre\t0.99\t0.03\t1.0\t1.0\tk a t ʁ ə\n" "quatre\t0.75\t0.28\t1.0\t1.0\tk a t ʁ\n"
+        "tous\t0.04\t0.1\t1.76\t0.83\tt u z\n" "tous\t0.28\t0.53\t2.35\t0.75\tt u s\n"
+        "tous\t0.99\t0.02\t3.33\t0.61\tt u\n",
+        encoding="utf-8")
+    builder.CLOSED_CLASSES = {"number": "six vingt quatre", "determiner": "tous"}
+    assert builder.build(tmp_path / "toy.dict", tmp_path) == (4, [])
+    assert (tmp_path / "fr-FR.tsv").read_text(encoding="utf-8") == (
+        "quatre\tkatʁə\nsix\tsis\ntous\ttu\nvingt\tvɛ̃\n")
