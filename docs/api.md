@@ -208,7 +208,8 @@ Arabic.
 ### `spelled_codes(lang="ar") -> Dict[str, str]`
 
 Each Latin capital and ASCII digit mapped to its spoken English name in pointed
-Arabic. Raises `ValueError` for a language with no bundled table.
+Arabic, except `F`, which is written unpointed (`إف`) because a Saudi Arabic TTS
+voice hears the pointed `إِفْ` as `في`. Raises `ValueError` for a language with no bundled table.
 
 ### `cldr_units(lang="ar") -> Dict[str, str]`
 

@@ -423,7 +423,7 @@ With no digit and a vowel, it is a word and is never spelled.
 
 ```python
 normalize_for_tts("رقم الهيكل WBA7F2C51JG", "ar", TtsNorm(spell_out_codes=True))
-# 'رقم الهيكل دَبَلْيُو بِي إِي سبعة إِفْ اثنين سِي خمسة واحد جِيْ جِي'
+# 'رقم الهيكل دَبَلْيُو بِي إِيهْ سبعة إف اثنين سِي خمسة واحد جَيْ جِي'
 ```
 
 ```python
@@ -445,7 +445,7 @@ Sentence("إِكْسْ فَيْفْ", stress=False).ipa   # 'ʔiks fajf'
 ```
 
 The names `spell_out_codes` uses are in `spelled_codes()`: the 26 English letter
-names and the ten digit words, pointed.
+names and the ten digit words, pointed except F, which is written bare (see below).
 
 **No part of that table has been checked by a human speaker of Arabic.**
 
@@ -472,7 +472,7 @@ than invent a spelling for it.
 | C | `سي` | CNN | `سِي` | cee /siː/ |
 | D | `دي` | DVD | `دِي` | dee /diː/ |
 | E | `إي` | ESPN | `إِي` | ee /iː/ |
-| F | `إف` | KFC | `إِفْ` | ef /ɛf/ |
+| F | `إف` | KFC | `إف` | ef /ɛf/ |
 | G | `جي` | LG | `جِي` | gee /dʒiː/ |
 | H | `إتش` | HBO | `إِتْشْ` | aitch /eɪtʃ/ |
 | I | `آي` | IBM | `آيْ` | i /aɪ/ |
@@ -493,6 +493,23 @@ than invent a spelling for it.
 | X | `إكس` | Xbox | `إِكْسْ` | ex /ɛks/ |
 | Y | `واي` | واي إم سي إيه (أغنية) | `وَايْ` | wy /waɪ/ |
 | Z | `زد` | DF-ZF | `زِدْ` | zed /zɛd/ |
+
+`F` is the one letter written without points. A Saudi Arabic TTS voice read back
+by an Arabic speech recogniser, in VIN-like nine-character codes with the letter
+among digits and reliable letters, said the unpointed `إف` better than the pointed
+`إِفْ`: the gain was 20.0 points [+6.7, +33.3] on 10 carriers and 13.3 points
+[+3.3, +25.0] on 20 fresh carriers. The pointed form is mostly heard as `في`,
+which is V. For `Y`, `S`, `Z`, `L`, `U` and `N`
+no spelling beat the attested one.
+
+`F` is written bare in every spelled code: a VIN, a model code, an initialism such
+as `KFC`, `PDF`, `FM` or `F1`, and a letter glued to digits, so `سباق F15 اليوم`
+gives `سباق إف وَنْ فَيْفْ اليوم`. The measurement was made on code carriers only. The
+points are dropped everywhere because that changes no letter the voice reads; the
+voice takes undiacritized graphemes, whereas a spelling such as `بِيي` for B and P
+would add a letter. A path that diacritizes after normalisation, such as
+`arbtok.vocalize`, `ArbtokDiacritizer` or `ArbtokG2PPlugin`, turns the bare `إف`
+into `إِف`, so the bare form reaches only voices that read undiacritized text.
 
 Three rows are weaker than the rest and say so here. `X` is `إكس` from the page
 on the Xbox, which is a word rather than the letter; the vowels are the English

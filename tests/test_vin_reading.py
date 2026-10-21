@@ -11,7 +11,7 @@ AS_WRITTEN = dict(spoken_forms=False, canonical_unicode=False)
 
 # The VIN of the salesteq-cs-webrtc parity fixture row parity-token_canonicalization-079.
 PARITY_ROW = "رقم الهيكل WBA7F2C51JG على X5 موديل 2026."
-PARITY_VIN = "دَبَلْيُو بِي إِيهْ سبعة إِفْ اثنين سِي خمسة واحد جَيْ جِي"
+PARITY_VIN = "دَبَلْيُو بِي إِيهْ سبعة إف اثنين سِي خمسة واحد جَيْ جِي"
 
 
 def test_the_parity_fixture_vin_reads_its_digits_as_arabic_words():
@@ -47,7 +47,7 @@ def test_a_vin_takes_the_callers_digit_words():
     ("GLE450", "جِي إِلْ إِي فُورْ فَيْفْ زِيرُو"),
     ("ABC1234", "إِيهْ بِي سِي وَنْ تُو ثْرِي فُورْ"),
     ("BMW", "بِي إِمْ دَبَلْيُو"),
-    ("WBA7F2C51JG1234567", "دَبَلْيُو بِي إِيهْ سِفَنْ إِفْ تُو سِي فَيْفْ وَنْ جَيْ جِي"
+    ("WBA7F2C51JG1234567", "دَبَلْيُو بِي إِيهْ سِفَنْ إف تُو سِي فَيْفْ وَنْ جَيْ جِي"
                            " وَنْ تُو ثْرِي فُورْ فَيْفْ سِكْسْ سِفَنْ"),
 ], ids=["X5", "GLE450", "seven", "BMW", "eighteen"])
 def test_what_is_not_a_vin_keeps_the_code_reading(written, read):
