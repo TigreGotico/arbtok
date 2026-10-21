@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a68](https://github.com/TigreGotico/arbtok/tree/0.0.2a68) (2026-10-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a67...0.0.2a68)
+
+**Merged pull requests:**
+
+- fix\(textnorm\): say F unpointed in spelled codes and let a table change move TTS\_NORM\_VERSION [\#303](https://github.com/TigreGotico/arbtok/pull/303) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a67](https://github.com/TigreGotico/arbtok/tree/0.0.2a67) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a66...0.0.2a67)
