@@ -17,7 +17,7 @@ allophone pass yet.
 import functools
 import warnings
 from enum import Enum
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 from arbtok.textnorm import is_arabic_lang
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
@@ -185,7 +185,8 @@ _DIALECT_NAME_ALIASES = {
 }
 
 
-def _arabic_codes() -> List[str]:
+@functools.lru_cache(maxsize=None)
+def _arabic_codes() -> Tuple[str, ...]:
     """Available Arabic spec codes, ordered to steer ``closest_match`` ties.
 
     :func:`langcodes.closest_match` breaks equal-distance ties by list order, so
@@ -195,18 +196,23 @@ def _arabic_codes() -> List[str]:
     :data:`_REGION_DEFAULTS`, so a bare region matching several private-use
     siblings at distance zero (``ar-SA``) settles on the declared default
     (Najdi) rather than whichever sibling sorts first; then the rest, by code.
+
+    Built once: orthography2ipa enumerates its whole registry on every
+    ``available_codes`` call, which costs more than the rest of
+    :func:`spec_for_lang` together, and the registry does not change after it
+    loads.
     """
     from orthography2ipa import available_codes, resolve
 
     codes = [c for c in available_codes() if _is_arabic_code(c)]
     defaults = {resolve(c) for c in _REGION_DEFAULTS}
-    return sorted(
+    return tuple(sorted(
         codes,
         key=lambda c: (c != DEFAULT_LANG, c not in defaults, c),
-    )
+    ))
 
 
-def _dialect_index(codes: List[str]) -> Dict[str, str]:
+def _dialect_index(codes: Sequence[str]) -> Dict[str, str]:
     """Map a dialect token (spec private-use tokens + aliases) to its spec code."""
     from orthography2ipa import resolve
 
@@ -221,7 +227,7 @@ def _dialect_index(codes: List[str]) -> Dict[str, str]:
     return index
 
 
-def _exact_spec(tag: str, codes: List[str]) -> Optional[str]:
+def _exact_spec(tag: str, codes: Sequence[str]) -> Optional[str]:
     """The Arabic spec *tag* names exactly: a spec key in any case, or a tag
     orthography2ipa resolves exactly.
 
