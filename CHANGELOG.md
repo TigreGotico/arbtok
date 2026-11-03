@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a69](https://github.com/TigreGotico/arbtok/tree/0.0.2a69) (2026-11-03)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a68...0.0.2a69)
+
+**Merged pull requests:**
+
+- fix: find Arabic lects by declared language and resolve every key [\#305](https://github.com/TigreGotico/arbtok/pull/305) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.2a68](https://github.com/TigreGotico/arbtok/tree/0.0.2a68) (2026-10-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a67...0.0.2a68)
@@ -391,10 +399,6 @@
 ## [0.0.2a19](https://github.com/TigreGotico/arbtok/tree/0.0.2a19) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a18...0.0.2a19)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): ten unseparated digits read one by one, unless round [\#198](https://github.com/TigreGotico/arbtok/pull/198) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a18](https://github.com/TigreGotico/arbtok/tree/0.0.2a18) (2026-09-21)
 
