@@ -13,7 +13,7 @@ import pytest
 from arbtok.dialects import spec_for_lang
 from arbtok.lattice import word_ipa
 from arbtok.plugin import ArbtokG2PPlugin
-from orthography2ipa import WordContext
+from orthography2ipa import WordContext, resolve
 
 
 # ─── the allophone rules of a variety fire ──────────────────────────────
@@ -116,7 +116,7 @@ def test_msa_orthography_is_read_correctly_in_every_variety(lang, word, expected
     (None, "ar"),
 ])
 def test_spec_for_lang(tag, expected):
-    assert spec_for_lang(tag) == expected
+    assert spec_for_lang(tag) == resolve(expected)
 
 
 def test_ar_sa_yields_najdi_qaf_end_to_end():

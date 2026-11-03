@@ -7,7 +7,7 @@ dialect alias names appended — private use, a variant, an extension — and fo
 the underscore spellings.
 """
 import pytest
-from orthography2ipa import get
+from orthography2ipa import get, resolve
 
 from arbtok.dialects import _DIALECT_NAME_ALIASES, lect_code, spec_for_lang, supported_lects
 
@@ -43,7 +43,7 @@ def _ancestors(code):
 
 
 def test_cairo_reads_as_egypt():
-    assert spec_for_lang("ar-EG-x-cairo") == "ar-EG"
+    assert spec_for_lang("ar-EG-x-cairo") == resolve("ar-EG")
     assert lect_code("ar-EG-x-cairo") == "arz"
 
 
@@ -64,13 +64,13 @@ def test_cairo_reads_as_egypt():
     ("en-x-cairo", "ar"),
 ])
 def test_unrecognised_subtags_are_ignored(tag, expected):
-    assert spec_for_lang(tag) == expected
+    assert spec_for_lang(tag) == resolve(expected)
 
 
 @pytest.mark.parametrize("alias", sorted(_DIALECT_NAME_ALIASES))
 def test_every_alias_still_names_its_spec(alias):
-    token = _DIALECT_NAME_ALIASES[alias]
-    target = next(c for c in SPECS if c.endswith(f"-x-{token}"))
+    target = resolve(_DIALECT_NAME_ALIASES[alias])
+    assert target in SPECS
     for tag in (f"ar-x-{alias}", f"ar-{alias}", f"ar-SA-{alias}", f"ar-SA-x-{alias}",
                 f"ar-x-{alias}-x-unknownplace", f"ar_x_{alias}"):
         assert spec_for_lang(tag) == target, tag
