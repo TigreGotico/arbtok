@@ -2341,12 +2341,19 @@ ARABIC_LANGUAGE_CODES = frozenset({
 })
 
 
+#: Arabic varieties that ISO 639-3 lists outside the macrolanguage ``ara``. Hassaniya
+#: (``mey``) is one; orthography2ipa files its spec under Maghrebi Arabic, and it is
+#: written in Arabic script.
+_ARABIC_LANGUAGES_OUTSIDE_ARA = frozenset({"mey"})
+
+
 def is_arabic_lang(lang: str) -> bool:
-    """Whether ``lang`` names an Arabic variety: ``ar`` and every ``ar-…`` tag, plus the
-    ISO 639-3 code of an individual Arabic language (``arb``, ``arz``, ``ary``, ``ars``).
-    Case does not matter, as it does not in BCP-47, and neither does an underscore
-    written where a hyphen belongs (``ar_SA``), the same normalization
-    :func:`arbtok.spec_for_lang` applies before it resolves a tag.
+    """Whether ``lang`` names an Arabic variety: ``ar`` and every ``ar-…`` tag, plus every
+    tag led by the ISO 639-3 code of an individual Arabic language (``arb``, ``arz``,
+    ``arz-EG``, ``ary-MA``, ``ars-SA``, Hassaniya ``mey-MR``). Case does not matter, as
+    it does not in BCP-47, and neither does an underscore written where a hyphen belongs
+    (``ar_SA``), the same normalization :func:`arbtok.spec_for_lang` applies before it
+    resolves a tag.
 
     ``ara``, the ISO 639-3 code of the Arabic macrolanguage, is deliberately not in
     :data:`ARABIC_LANGUAGE_CODES`: that set holds individual-language codes, and the
@@ -2356,7 +2363,9 @@ def is_arabic_lang(lang: str) -> bool:
     resolves an unknown tag to MSA, so it calls every language on earth Arabic.
     """
     lang = lang.lower().replace("_", "-")
-    return lang == "ar" or lang.startswith("ar-") or lang in ARABIC_LANGUAGE_CODES
+    language = lang.split("-")[0]
+    return (language == "ar" or language in ARABIC_LANGUAGE_CODES
+            or language in _ARABIC_LANGUAGES_OUTSIDE_ARA)
 
 
 # What ``plain_orthography`` drops and folds. The harakat and tatweel go, and the Quranic
