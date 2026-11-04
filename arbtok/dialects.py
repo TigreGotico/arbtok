@@ -447,7 +447,10 @@ def _is_arabic_code(code: str) -> bool:
     ``ara``, a member of the macrolanguage, or Hassaniya ``mey``: the codes
     :func:`arbtok.textnorm.is_arabic_lang` accepts. A spec that declares no code
     is the language of its ``parent``, so a dialect child with no code of its own
-    and the Buckwalter romanization of ``ar`` count.
+    and the Buckwalter romanization of ``ar`` count. When no spec in the lineage
+    declares a code, the primary language subtag of the key decides: Babalia
+    Creole Arabic, ``ar-TD-x-babalia``, declares none under a clade parent, and
+    its tag names it Arabic.
 
     The lookalikes ``arc`` (Aramaic) and ``arn`` (Mapudungun) sort next to the
     Arabic keys and declare their own languages. So does Maltese (``mlt``),
@@ -465,7 +468,9 @@ def _is_arabic_code(code: str) -> bool:
         seen.add(node)
         spec = get(node)
         language, node = spec.iso639_3, spec.parent
-    return language is not None and (language == "ara" or is_arabic_lang(language))
+    if language is None:
+        return is_arabic_lang(code)
+    return language == "ara" or is_arabic_lang(language)
 
 
 def supported_lects() -> List[Lect]:
