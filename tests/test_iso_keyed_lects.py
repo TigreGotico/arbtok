@@ -122,6 +122,11 @@ def test_the_lects_without_gold_are_lects():
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
     import gold_code_switched as gcs
 
+    # orthography2ipa keeps the old key of a renamed spec as an exact alias, so
+    # a name still counts when it resolves exactly to a lect.
     codes = {lect.code for lect in supported_lects()}
-    assert gcs.NO_GOLD <= codes
-    assert set(gcs._roster()) == codes - gcs.SKIP - gcs.NO_GOLD
+    assert all(resolves_exactly(code) for code in gcs.NO_GOLD)
+    no_gold = {resolve(code) for code in gcs.NO_GOLD}
+    skip = {resolve(code) for code in gcs.SKIP}
+    assert no_gold <= codes
+    assert set(gcs._roster()) == codes - skip - no_gold
