@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a70](https://github.com/TigreGotico/arbtok/tree/0.0.2a70) (2026-11-04)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a69...0.0.2a70)
+
+**Merged pull requests:**
+
+- fix: exclude the no-gold lects by the key orthography2ipa registers [\#307](https://github.com/TigreGotico/arbtok/pull/307) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a69](https://github.com/TigreGotico/arbtok/tree/0.0.2a69) (2026-11-03)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a68...0.0.2a69)
