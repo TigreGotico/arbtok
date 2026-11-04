@@ -49,7 +49,7 @@ HARAKAT = "ًٌٍَُِّْٰ"
 _LATIN = re.compile(r"[A-Za-z]")
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
 
-# Every ar* spec arbtok resolves is covered EXCEPT ar-Latn-buckwalter: that code
+# Every ar* spec arbtok resolves is covered EXCEPT Buckwalter: that spec
 # is a Latin romanisation of Arabic, so a mixed Arabic/Latin sentence has no
 # stable Arabic run for the pipeline to phonemise — the whole line would look
 # Latin. It is a machine-readable regression anchor, not a spoken lect, and is
@@ -240,8 +240,12 @@ def _notes(sentence: str, lect: str, cs_words) -> str:
 
 
 def _roster():
+    """The lects with code-switched gold. SKIP and NO_GOLD name each spec by a key
+    orthography2ipa resolves; it keeps a renamed spec's old key as an exact alias."""
     import arbtok
-    return [l.code for l in arbtok.supported_lects() if l.code not in SKIP | NO_GOLD]
+    from orthography2ipa import resolve
+    excluded = {resolve(code) for code in SKIP | NO_GOLD}
+    return [l.code for l in arbtok.supported_lects() if l.code not in excluded]
 
 
 def _build_rows(lect):

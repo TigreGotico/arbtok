@@ -66,9 +66,21 @@ def test_gold_matches_pipeline(lect):
 
 
 def test_roster_excludes_buckwalter():
-    """ar-Latn-buckwalter is a romanisation anchor, not a code-switch lect."""
-    assert "ar-Latn-buckwalter" not in _lects()
-    assert "ar-Latn-buckwalter" in gcs.SKIP
+    """Buckwalter is a romanisation anchor, not a code-switch lect, under the key
+    orthography2ipa registers it by."""
+    from orthography2ipa import resolve
+
+    buckwalter = resolve("ar-Latn-buckwalter")
+    assert buckwalter not in _lects()
+    assert buckwalter in {resolve(code) for code in gcs.SKIP}
+
+
+def test_roster_excludes_every_lect_without_gold():
+    """No lect in SKIP or NO_GOLD reaches the roster under its registered key."""
+    from orthography2ipa import resolve
+
+    excluded = {resolve(code) for code in gcs.SKIP | gcs.NO_GOLD}
+    assert excluded.isdisjoint(_lects())
 
 
 def test_a_gold_row_holding_a_double_quote_survives_a_rewrite(tmp_path):
