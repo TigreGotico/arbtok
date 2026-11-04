@@ -22,7 +22,7 @@ PAIRS = [
     ("ar-SA-x-najd", "ar-SA-x-najd"), ("ars-SA", "ar-SA-x-najd"),
     ("ar-x-gulf", "ar-x-gulf"), ("afb", "ar-x-gulf"),
     ("ar-JO", "ar-JO"), ("ar-EG-x-saidi", "ar-EG-x-saidi"),
-    ("ar-EH", "ar-DZ"), ("ar-TR", "ar-TR-x-cukurova"),
+    ("ar-EH", "ar-DZ"), ("ar-TR", "ar-TR"),
     ("ar-x-najd", "ar-SA-x-najd"),
 ]
 
@@ -35,6 +35,20 @@ def test_a_tag_names_the_spec_orthography2ipa_gives_its_lect(tag, key):
     assert spec_for_lang(tag) == resolve(key)
     if resolves_exactly(tag):
         assert spec_for_lang(tag) == resolve(tag)
+
+
+def test_a_bare_region_reads_as_orthography2ipa_reads_it():
+    """A bare ``ar-`` region tag lands on the spec orthography2ipa resolves it to,
+    MSA included. Turkey's specs are all private-use lects and orthography2ipa
+    curates no default for ``ar-TR``, so a distance match over arbtok's lects
+    would read it as whichever Turkish lect ties first."""
+    regions = {code.split("-")[1] for code in dialects._arabic_codes()
+               if len(code.split("-")) > 1 and len(code.split("-")[1]) == 2}
+    assert "TR" in regions
+    wrong = {f"ar-{region}": (spec_for_lang(f"ar-{region}"), resolve(f"ar-{region}"))
+             for region in sorted(regions)
+             if spec_for_lang(f"ar-{region}") != resolve(f"ar-{region}")}
+    assert wrong == {}
 
 
 @pytest.mark.parametrize("tag", ["ar-EG", "ar-MA", "ar-SA-x-najd", "ar-x-gulf", "ar-LB"])

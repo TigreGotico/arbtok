@@ -296,7 +296,9 @@ def spec_for_lang(lang: Optional[str]) -> str:
       even though BCP-47 tag distance ignores private-use content;
     * a region resolves to that region's spec, defaulting to the most widely
       spoken variety when the region carries several (``ar-SA`` → Najdi,
-      ``ar-EG`` → Egyptian) via subtag-aware BCP-47 matching;
+      ``ar-EG`` → Egyptian) via subtag-aware BCP-47 matching; a region whose
+      only specs are private-use lects (``ar-TR``) reads as orthography2ipa
+      reads it, which is MSA unless orthography2ipa curates a default for it;
     * a subtag that names no spec and no dialect is ignored, so a tag never
       resolves to something less specific than its parent tag does
       (``ar-EG-x-cairo`` → ``ar-EG``, ``ar-SA-x-riyadh`` → ``ar-SA-x-najd``);
@@ -351,15 +353,19 @@ def spec_for_lang(lang: Optional[str]) -> str:
     if spec:
         return resolve(spec)
 
-    # 5. The dialect orthography2ipa's nearest-language match names: it carries
-    #    curated region defaults (``ar-TR`` is Çukurova, ``ar-EH`` is Algerian)
-    #    and it matches regions whatever language subtag the spec keys carry,
-    #    where BCP-47 distance from ``ar-EH`` to ``arq-DZ`` is that of two
-    #    languages. An answer of MSA is left to the match below, which reads
-    #    ``ary-MA`` as Moroccan where an orthography2ipa without ISO 639-3 keys
-    #    gives MSA.
+    # 5. The spec orthography2ipa resolves the tag to. It carries curated region
+    #    defaults (``ar-SA`` is Najdi), and its nearest-language match compares
+    #    regions whatever language subtag the spec keys carry, where BCP-47
+    #    distance from ``ar-EH`` to ``arq-DZ`` is that of two languages. For an
+    #    ``ar`` tag its answer stands, MSA included: a region whose only specs
+    #    are private-use lects (``ar-TR``) and that has no curated default
+    #    reads as MSA, not as whichever lect the match below ties on. For
+    #    another language subtag an answer of MSA is left to the match below,
+    #    which reads ``ary-MA`` as Moroccan where an orthography2ipa without
+    #    ISO 639-3 keys gives MSA.
     nearest = resolve(normalized)
-    if nearest in codes and nearest != DEFAULT_LANG:
+    if nearest in codes and (nearest != DEFAULT_LANG
+                             or normalized.split("-")[0].lower() == "ar"):
         return nearest
 
     # 6. Closest region-bearing spec via subtag-aware BCP-47 matching. Codes
