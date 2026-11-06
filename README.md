@@ -312,10 +312,13 @@ the call site, never applied implicitly:
 
 ```python
 from orthography2ipa import G2P
+from arbtok.o2i_plugins import pipeline
 
-G2P("ar").transcribe("كتب")                                   # 'ˈktb' — no vowels to read
-G2P("ar", plugins={"normalize": "arbtok"}).transcribe("كتب")  # 'ˈkatab' — arbtok restores them
+G2P("ar").transcribe("كتب")                              # 'ˈktb' — no vowels to read
+G2P("ar", pipeline=pipeline("ar")).transcribe("كتب")    # 'ˈkatab' — arbtok restores them
 ```
+
+`pipeline(lang)` gives orthography2ipa every arbtok step: `normalize_for_tts` as `expand`, the diacritizer as `mark`, the rescorers and the cross-word sandhi. `pipeline(lang, path="fusion")` selects the fusion diacritizer.
 
 ## Quality benchmarks
 

@@ -47,5 +47,5 @@ ovos-date-parser>=0.31.5a1
 # solution space rather than leaving that to what else happens to be installed.
 ovos-utils>=0.15.4a1
 ovos-config>=3.5.1a1
-orthography2ipa>=7.95.1a1
+orthography2ipa>=7.122.0a2
 huggingface_hub
