@@ -182,11 +182,7 @@ class ArbtokSandhi(SandhiPlugin):
             if at_pause:
                 rows.append(("", "", True))   # the pause itself
 
-        out = apply_cross_word(rows, lang=lang)
-
-        rewritten = [
-            out[i] for i, (_, _, is_pause) in enumerate(rows) if not is_pause
-        ]
+        rewritten = apply_cross_word(rows, lang=lang)
 
         restored = []
         for word, mark in zip(rewritten, marks):

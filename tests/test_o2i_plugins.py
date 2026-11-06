@@ -12,6 +12,9 @@ import pytest
 
 from orthography2ipa import G2P
 
+from arbtok.o2i_plugins import ArbtokSandhi
+from arbtok.sandhi import apply_cross_word
+
 ARBTOK = {"normalize": "arbtok", "sandhi": "arbtok"}
 
 
@@ -63,6 +66,26 @@ def test_the_stress_mark_survives_sandhi():
     not `min` — and the mark sits INSIDE the word, so it has to go back where it
     was rather than on the front."""
     assert G2P("ar", plugins=ARBTOK).transcribe("مَدِينَةٌ") == "maˈdiːna"
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("قَلَمٌ، كِتَابٌ.", "ˈqalam kiˈtaːb"),
+    ("مِنْ رَبِّهِمْ، مِنْ بَيْتِكَ", "ˈmir ˈrabbihim ˈmim ˈbajtik"),
+])
+def test_a_pause_inside_the_sentence(text, expected):
+    """Each clause reads as it reads alone, in the rows above."""
+    assert G2P("ar", plugins=ARBTOK).transcribe(text) == expected
+
+
+def test_the_plugin_returns_what_apply_cross_word_returns():
+    words = ["qalamun", "kitaːbun", "waladun"]
+    surfaces = ["قَلَمٌ", "كِتَابٌ", "وَلَدٌ"]
+    rows = [(words[0], surfaces[0], False), ("", "", True),
+            (words[1], surfaces[1], False), ("", "", True),
+            (words[2], surfaces[2], False)]
+
+    assert ArbtokSandhi().apply(words, surfaces, [True, True, False], "ar") \
+        == apply_cross_word(rows, lang="ar")
 
 
 # ─── and a variety's own phonology still fires ──────────────────────────
