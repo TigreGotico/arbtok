@@ -93,3 +93,45 @@ def test_the_plugin_returns_what_apply_cross_word_returns():
 def test_a_variety_keeps_its_own_phonology():
     """Najdi's gahawa epenthesis, through plain o2i."""
     assert G2P("ar-SA-x-najd", plugins=ARBTOK).transcribe("قَهْوَة") == "ˈɡahawa"
+
+
+# ─── the same steps as one Pipeline ─────────────────────────────────────
+
+from orthography2ipa import Pipeline  # noqa: E402
+
+from arbtok.o2i_plugins import _keep_letters, pipeline  # noqa: E402
+
+
+def test_pipeline_puts_the_vowels_back():
+    assert G2P("ar", pipeline=pipeline("ar")).transcribe("كتب") == "ˈkatab"
+
+
+def test_pipeline_holds_every_arbtok_step():
+    p = pipeline("ar")
+    assert isinstance(p, Pipeline)
+    assert p.expand is not None and p.mark is not None
+    assert p.rescore and isinstance(p.sandhi, ArbtokSandhi)
+
+
+@pytest.mark.parametrize("original, proposed, expected", [
+    ("كتب", "كَتَبَ", "كَتَبَ"),             # marks only
+    ("اكل", "أَكَلَ", "أَكَلَ"),             # a hamza on the written alif is a mark
+    ("مدرسه", "مَدْرَسَة", "مَدْرَسَه"),     # ة for ه swaps a letter: the written one returns
+    ("علي", "عَلَى", "عَلَي"),               # ى for ي, the same
+    ("كتاب", "كتب", "كتاب"),                 # letters that do not align: the word stays as written
+])
+def test_keep_letters(original, proposed, expected):
+    assert _keep_letters(original, proposed) == expected
+
+
+def test_pipeline_mark_keeps_the_written_letters(monkeypatch):
+    """A diacritizer that swaps ⟨ه⟩ for ⟨ة⟩ would make orthography2ipa raise. The
+    pipeline puts the written letter back, so the sentence reads as its marked
+    form with ⟨ه⟩."""
+    from arbtok.o2i_plugins import ArbtokDiacritizer
+
+    monkeypatch.setattr(ArbtokDiacritizer, "normalize",
+                        lambda self, text, lang: "هَذِهِ مَدْرَسَةٌ")
+    assert (G2P("ar", pipeline=pipeline("ar")).transcribe("هذه مدرسه")
+            == G2P("ar", pipeline=Pipeline(sandhi=ArbtokSandhi(), rescore=pipeline("ar").rescore,
+                                           expand=pipeline("ar").expand)).transcribe("هَذِهِ مَدْرَسَهٌ"))
