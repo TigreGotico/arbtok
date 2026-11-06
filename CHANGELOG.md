@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a73](https://github.com/TigreGotico/arbtok/tree/0.0.2a73) (2026-11-06)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a72...0.0.2a73)
+
+**Merged pull requests:**
+
+- feat: build an orthography2ipa Pipeline with arbtok.o2i\_plugins.pipeline [\#313](https://github.com/TigreGotico/arbtok/pull/313) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a72](https://github.com/TigreGotico/arbtok/tree/0.0.2a72) (2026-11-06)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a70...0.0.2a72)
@@ -388,10 +396,6 @@
 ## [0.0.2a23](https://github.com/TigreGotico/arbtok/tree/0.0.2a23) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a22...0.0.2a23)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): a hundred joined by و follows the thousands; the parser floor reads water as water [\#206](https://github.com/TigreGotico/arbtok/pull/206) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a22](https://github.com/TigreGotico/arbtok/tree/0.0.2a22) (2026-09-21)
 
