@@ -374,8 +374,9 @@ So the lattice's advantage over the bare model on this gold is mostly **undoing 
 hamza restoration**, not correcting ḥarakāt. A mask that knew the variety could refuse
 the restoration where the orthography does not use it, and would not need the repair.
 
-```bash
-ARBTOK_DIACRITIZER=fusion   # the step plugin's generator; ArbtokG2PPlugin takes fusion=
+```python
+ArbtokDiacritizer(path="fusion")   # the step plugin's generator; ArbtokG2PPlugin takes fusion=
+pipeline("ar", path="fusion")      # the same choice for an orthography2ipa Pipeline
 ```
 
 A value that is neither raises rather than falling back: a typo that silently kept the

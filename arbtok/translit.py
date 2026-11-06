@@ -381,12 +381,15 @@ def nativization_table(lang: str) -> Dict[str, str]:
     the conservative :data:`_DEFAULT_MAP`. Cached; the returned dict is read-only.
     """
     from arbtok.dialects import spec_for_lang
-    from orthography2ipa import get
+    from orthography2ipa import get, resolve
 
+    # A table is keyed by the code it was cited for, and orthography2ipa may install
+    # that lect under its ISO 639-3 key, so the keys are resolved before the walk.
+    tables = {resolve(key): table for key, table in _TABLES.items()}
     code: Optional[str] = spec_for_lang(lang)
     seen = set()
     while code and code not in seen:
-        table = _TABLES.get(code)
+        table = tables.get(code)
         if table is not None:
             return table
         seen.add(code)

@@ -176,6 +176,13 @@ def gold_dir() -> str:
                         "data", "gold", "arabic_tts")
 
 
+def gold_file(lect: str) -> str:
+    """The gold TSV of *lect*. orthography2ipa names each file by its spec key, which
+    may be an ISO 639-3 key where the caller names the lect by an older alias."""
+    from orthography2ipa import resolve
+    return os.path.join(gold_dir(), f"{resolve(lect)}.tsv")
+
+
 def strip_harakat(text: str) -> str:
     """Drop the vowel marks the writing may omit (every combining mark).
 
@@ -246,12 +253,15 @@ def run_lect_benchmark(codes: Optional[List[str]] = None,
     from arbtok.dialects import supported_lects
     from arbtok.plugin import ArbtokG2PPlugin
 
+    from orthography2ipa import resolve
+
     tiers = {lect.code: lect.tier for lect in supported_lects()}
 
     files = sorted(glob.glob(os.path.join(gold_dir(), "*.tsv")))
     available = {os.path.splitext(os.path.basename(f))[0]: f for f in files}
     if codes:
-        available = {c: available[c] for c in codes if c in available}
+        available = {c: available[resolve(c)] for c in codes
+                     if resolve(c) in available}
 
     espeak_on = with_espeak and _espeak_available()
     espeak = None
@@ -291,7 +301,7 @@ def run_lect_benchmark(codes: Optional[List[str]] = None,
             return {"per": cd / max(cl, 1), "wer": wd / max(wl, 1)}
 
         entry = {
-            "tier": tiers.get(code, "unknown"),
+            "tier": tiers.get(resolve(code), "unknown"),
             "sentences": n,
             "arbtok_diac": rates("diac"),
             "arbtok_undiac": rates("undiac"),

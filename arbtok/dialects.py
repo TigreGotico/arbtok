@@ -15,9 +15,11 @@ allophone pass yet.
 """
 
 import functools
+import warnings
 from enum import Enum
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
+from arbtok.textnorm import is_arabic_lang
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
                               FATHA, DAMMA, KASRA, DAGGER_ALIF, MADD,
                               HAMZA, ALEF_HAMZA_ABOVE, ALEF_HAMZA_BELOW, WAW_HAMZA, YA_HAMZA,
@@ -145,30 +147,46 @@ DEFAULT_LANG = "ar"
 #: resolves to. Saudi Arabia has six varieties in the data set; Najdi is the
 #: most widely spoken, so ``ar-SA`` (and ``ar-SA-najdi``, ``ar-x-najdi``, …)
 #: land on it rather than on whichever sibling happens to sort first.
+#:
+#: Every lect key in this module is a tag that orthography2ipa resolves exactly:
+#: a spec key or one of its permanent aliases. orthography2ipa may key a lect by
+#: its ISO 639-3 code (``ars-SA`` for ``ar-SA-x-najd``) and keep the older key as
+#: an alias, so a key is compared only after ``orthography2ipa.resolve`` turns it
+#: into the installed spec key.
 _REGION_DEFAULTS = ("ar-SA-x-najd",)
 
-#: Dialect names that a caller may write where the spec uses a different
-#: private-use token. langcodes ignores private-use content when it measures
-#: tag distance, so ``ar-x-najdi`` would otherwise fall through to MSA; these
-#: map the spoken adjective to the spec's own token.
+#: Dialect names that a caller may write in a subtag, and the lect each one names.
+#: langcodes ignores private-use content when it measures tag distance, so
+#: ``ar-x-najd`` would otherwise fall through to MSA. The private-use tokens of the
+#: installed spec keys are found without this table. It holds the spoken
+#: adjectives, and the tokens of the keys that orthography2ipa spells with an
+#: ISO 639-3 code (``ar-EG-x-saidi`` is ``aec-EG``).
 _DIALECT_NAME_ALIASES = {
-    "najdi": "najd",
-    "hejazi": "hejaz",
-    "hijazi": "hejaz",
-    "hijaz": "hejaz",
-    "qassimi": "qassim",
-    "gulf": "gulf",
-    "gulfi": "gulf",
-    "khaleeji": "gulf",
-    "levantine": "levantine",
-    "levant": "levantine",
-    "shami": "levantine",
-    "maghrebi": "maghrebi",
-    "maghribi": "maghrebi",
+    "najd": "ar-SA-x-najd",
+    "najdi": "ar-SA-x-najd",
+    "hejaz": "ar-SA-x-hejaz",
+    "hejazi": "ar-SA-x-hejaz",
+    "hijazi": "ar-SA-x-hejaz",
+    "hijaz": "ar-SA-x-hejaz",
+    "qassimi": "ar-SA-x-qassim",
+    "sharqiyya": "ar-SA-x-sharqiyya",
+    "gulf": "ar-x-gulf",
+    "gulfi": "ar-x-gulf",
+    "khaleeji": "ar-x-gulf",
+    "levantine": "ar-x-levantine",
+    "levant": "ar-x-levantine",
+    "shami": "ar-x-levantine",
+    "maghrebi": "ar-x-maghrebi",
+    "maghribi": "ar-x-maghrebi",
+    "saidi": "ar-EG-x-saidi",
+    "bedawi": "ar-EG-x-bedawi",
+    "dhofari": "ar-OM-x-dhofari",
+    "baharna": "ar-BH-x-baharna",
 }
 
 
-def _arabic_codes() -> List[str]:
+@functools.lru_cache(maxsize=None)
+def _arabic_codes() -> Tuple[str, ...]:
     """Available Arabic spec codes, ordered to steer ``closest_match`` ties.
 
     :func:`langcodes.closest_match` breaks equal-distance ties by list order, so
@@ -178,54 +196,125 @@ def _arabic_codes() -> List[str]:
     :data:`_REGION_DEFAULTS`, so a bare region matching several private-use
     siblings at distance zero (``ar-SA``) settles on the declared default
     (Najdi) rather than whichever sibling sorts first; then the rest, by code.
+
+    Built once: orthography2ipa enumerates its whole registry on every
+    ``available_codes`` call, which costs more than the rest of
+    :func:`spec_for_lang` together, and the registry does not change after it
+    loads.
     """
-    from orthography2ipa import available_codes
+    from orthography2ipa import available_codes, resolve
 
     codes = [c for c in available_codes() if _is_arabic_code(c)]
-    return sorted(
+    defaults = {resolve(c) for c in _REGION_DEFAULTS}
+    return tuple(sorted(
         codes,
-        key=lambda c: (c != DEFAULT_LANG, c not in _REGION_DEFAULTS, c),
-    )
+        key=lambda c: (c != DEFAULT_LANG, c not in defaults, c),
+    ))
 
 
-def _dialect_index(codes: List[str]) -> Dict[str, str]:
+def _dialect_index(codes: Sequence[str]) -> Dict[str, str]:
     """Map a dialect token (spec private-use tokens + aliases) to its spec code."""
+    from orthography2ipa import resolve
+
     index: Dict[str, str] = {}
     for code in codes:
         if "-x-" in code:
             index.setdefault(code.split("-x-")[-1].lower(), code)
-    for alias, token in _DIALECT_NAME_ALIASES.items():
-        target = index.get(token)
-        if target:
+    for alias, tag in _DIALECT_NAME_ALIASES.items():
+        target = resolve(tag)
+        if target in codes:
             index[alias] = target
     return index
+
+
+def _exact_spec(tag: str, codes: Sequence[str]) -> Optional[str]:
+    """The Arabic spec *tag* names exactly: a spec key in any case, or a tag
+    orthography2ipa resolves exactly.
+
+    orthography2ipa answers a spec key, an alias, a case variant, a BCP-47
+    standardization and its curated bare-tag defaults exactly; only its
+    nearest-language guess is refused here. So the key and every alias of a lect
+    land on the same spec, whichever key the installed orthography2ipa uses. A
+    spec key wins over orthography2ipa's answer, because BCP-47 standardization
+    reads ``ARB`` as ``ar`` where the caller named the ``arb`` spec.
+
+    A tag that orthography2ipa names exactly but that is not an Arabic lect
+    arbtok carries is read as MSA (:data:`DEFAULT_LANG`). The heuristics below
+    never see such a tag: they would match it to some other dialect, which is
+    worse than MSA because nothing says it happened. An Arabic tag read this way
+    raises a warning.
+    """
+    from orthography2ipa import resolve, resolves_exactly
+
+    for code in codes:
+        if code.lower() == tag.lower():
+            return code
+    if not resolves_exactly(tag):
+        return None
+    spec = resolve(tag)
+    if spec in codes:
+        return spec
+    if is_arabic_lang(tag):
+        warnings.warn(
+            f"{tag!r} names the orthography2ipa spec {spec!r}, which arbtok has no "
+            f"lect for; reading it as {DEFAULT_LANG!r} (Modern Standard Arabic)",
+            UserWarning, stacklevel=3)
+    return DEFAULT_LANG
+
+
+def _core_subtags(tag: str) -> List[str]:
+    """The language, extlang, script and region subtags that open *tag*.
+
+    These are the subtags BCP-47 tag distance measures; whatever follows them —
+    variants, extensions, private use — it ignores.
+    """
+    subtags = tag.split("-")
+    core, rest = subtags[:1], subtags[1:]
+    while rest and len(core) < 4 and len(rest[0]) == 3 and rest[0].isalpha():
+        core.append(rest.pop(0))
+    if rest and len(rest[0]) == 4 and rest[0].isalpha():
+        core.append(rest.pop(0))
+    if rest and ((len(rest[0]) == 2 and rest[0].isalpha())
+                 or (len(rest[0]) == 3 and rest[0].isdigit())):
+        core.append(rest.pop(0))
+    return core
 
 
 def spec_for_lang(lang: Optional[str]) -> str:
     """Resolve a language tag to an orthography2ipa Arabic spec code.
 
-    An exact spec code wins (``ar-SA-x-najd``, ``ar-EG``, ``ar-x-gulf``), so a
-    caller can name any variety the data set carries. Otherwise the tag is
-    matched to the closest available spec:
+    A tag that orthography2ipa resolves exactly wins: a spec key, an alias, a
+    case or underscore variant (``ar-SA-x-najd``, ``ars-SA``, ``ar-EG``,
+    ``arz-EG``, ``ar-x-gulf``, ``afb``). So a caller can name any variety the
+    data set carries, by its ISO 639-3 key or by an older private-use key, and
+    both name the same spec. An exact tag for a spec that is not an Arabic lect
+    reads as MSA, with a warning when the tag is an Arabic one. Otherwise the tag
+    is matched to the closest available spec:
 
     * a dialect named in a subtag — private-use or not — resolves to that
       variety's spec (``ar-x-najdi`` and ``ar-SA-najdi`` → ``ar-SA-x-najd``),
       even though BCP-47 tag distance ignores private-use content;
     * a region resolves to that region's spec, defaulting to the most widely
       spoken variety when the region carries several (``ar-SA`` → Najdi,
-      ``ar-EG`` → Egyptian) via subtag-aware BCP-47 matching;
+      ``ar-EG`` → Egyptian) via subtag-aware BCP-47 matching; a region whose
+      only specs are private-use lects (``ar-TR``) reads as orthography2ipa
+      reads it, which is MSA unless orthography2ipa curates a default for it;
+    * a subtag that names no spec and no dialect is ignored, so a tag never
+      resolves to something less specific than its parent tag does
+      (``ar-EG-x-cairo`` → ``ar-EG``, ``ar-SA-x-riyadh`` → ``ar-SA-x-najd``);
     * anything with no Arabic match — an unknown region, a non-Arabic tag —
       falls back to the ``ar`` (MSA) leaf rather than raising.
     """
     if not lang:
         return DEFAULT_LANG
 
+    from orthography2ipa import resolve
+
     codes = _arabic_codes()
     normalized = lang.replace("_", "-")
 
-    # 1. Exact spec code (case-insensitive) — a caller naming a variety directly.
-    lowered = {code.lower(): code for code in codes}
-    exact = lowered.get(normalized.lower())
+    # 1. A tag orthography2ipa resolves exactly — a caller naming a variety directly.
+    exact = _exact_spec(normalized, codes)
     if exact:
         return exact
 
@@ -239,7 +328,47 @@ def spec_for_lang(lang: Optional[str]) -> str:
         if match:
             return match
 
-    # 3. Closest region-bearing spec via subtag-aware BCP-47 matching. Codes
+    # 3. Variants, extensions and private-use subtags that name no spec are
+    #    invisible to tag distance, so left in they make the tag tie at zero
+    #    with ``ar`` (``ar`` maximizes to ``ar-Arab-EG``) or, over eight
+    #    characters, abort the match. They are dropped one at a time from the
+    #    end, stopping at a spec code, so the tag resolves as its parent does:
+    #    ``ar-EG-x-cairo`` as ``ar-EG``, ``ar-SA-x-riyadh`` as ``ar-SA``.
+    core = _core_subtags(normalized)
+    subtags = normalized.split("-")
+    while len(subtags) > len(core):
+        subtags.pop()
+        if len(subtags) > len(core) and len(subtags[-1]) == 1:
+            subtags.pop()
+        exact = _exact_spec("-".join(subtags), codes)
+        if exact:
+            return exact
+    normalized = "-".join(core)
+
+    # 4. An ISO 639-3 code this module gives a lect resolves back to that lect, so
+    #    a tag built from :func:`lect_code` names the variety it came from. A
+    #    sub-lect named in a subtag, and a spec reached by dropping subtags
+    #    (``afb-AE-x-cairo`` is ``afb-AE``), have already won above.
+    spec = _LANGUAGE_CODE_SPECS.get(normalized.lower().split("-")[0])
+    if spec:
+        return resolve(spec)
+
+    # 5. The spec orthography2ipa resolves the tag to. It carries curated region
+    #    defaults (``ar-SA`` is Najdi), and its nearest-language match compares
+    #    regions whatever language subtag the spec keys carry, where BCP-47
+    #    distance from ``ar-EH`` to ``arq-DZ`` is that of two languages. For an
+    #    ``ar`` tag its answer stands, MSA included: a region whose only specs
+    #    are private-use lects (``ar-TR``) and that has no curated default
+    #    reads as MSA, not as whichever lect the match below ties on. For
+    #    another language subtag an answer of MSA is left to the match below,
+    #    which reads ``ary-MA`` as Moroccan where an orthography2ipa without
+    #    ISO 639-3 keys gives MSA.
+    nearest = resolve(normalized)
+    if nearest in codes and (nearest != DEFAULT_LANG
+                             or normalized.split("-")[0].lower() == "ar"):
+        return nearest
+
+    # 6. Closest region-bearing spec via subtag-aware BCP-47 matching. Codes
     #    with a subtag langcodes cannot parse (a private-use token over eight
     #    characters) are dropped from the pool — they are only ever reached by
     #    the exact-code path above, and one of them would abort the whole match.
@@ -270,6 +399,7 @@ _SPEC_LANGUAGE_CODES = {
     "ar-SA-x-najd": "ars",   # Najdi Arabic
     "ar-x-gulf": "afb",      # Gulf Arabic
 }
+_LANGUAGE_CODE_SPECS = {code: spec for spec, code in _SPEC_LANGUAGE_CODES.items()}
 
 
 @functools.lru_cache(maxsize=None)
@@ -287,12 +417,13 @@ def lect_code(lang: str) -> Optional[str]:
     differently under it is the answer of whoever holds the data — the number parser
     speaks a lect's cardinals only for the lects it has read a source for.
     """
-    from orthography2ipa import get
+    from orthography2ipa import get, resolve
 
+    languages = {resolve(spec): code for spec, code in _SPEC_LANGUAGE_CODES.items()}
     code, seen = spec_for_lang(lang), set()
     while code and code not in seen:
-        if code in _SPEC_LANGUAGE_CODES:
-            return _SPEC_LANGUAGE_CODES[code]
+        if code in languages:
+            return languages[code]
         seen.add(code)
         code = get(code).parent
     return None
@@ -312,33 +443,54 @@ class Lect(NamedTuple):
     tier: str
 
 
+@functools.lru_cache(maxsize=None)
 def _is_arabic_code(code: str) -> bool:
-    """Whether *code* names an Arabic-macrolanguage spec.
+    """Whether the registry key *code* names an Arabic spec.
 
-    ``ar`` (MSA) and ``arb`` (Classical) plus every ``ar-…`` leaf and grouping
-    node. The lookalikes ``arc`` (Aramaic) and ``arn`` (Mapudungun) sort next to
-    them in the registry but are unrelated languages, so they are excluded.
+    The answer comes from the language the spec declares, not from the shape of
+    its key, so a lect keyed by its ISO 639-3 code (``arz-EG``, ``ars-SA``,
+    ``afb``) counts as one keyed ``ar-…`` does. The spec's ``iso639_3`` must be
+    ``ara``, a member of the macrolanguage, or Hassaniya ``mey``: the codes
+    :func:`arbtok.textnorm.is_arabic_lang` accepts. A spec that declares no code
+    is the language of its ``parent``, so a dialect child with no code of its own
+    and the Buckwalter romanization of ``ar`` count. When no spec in the lineage
+    declares a code, the primary language subtag of the key decides: Babalia
+    Creole Arabic, ``ar-TD-x-babalia``, declares none under a clade parent, and
+    its tag names it Arabic.
 
-    Assumes the registry names Arabic varieties in BCP-47 form only: an ISO
-    639-3 dialect code (``arz``, ``ary``, ``apc``, …) would be silently missed
-    here and must be added explicitly if o2i ever registers one.
+    The lookalikes ``arc`` (Aramaic) and ``arn`` (Mapudungun) sort next to the
+    Arabic keys and declare their own languages. So does Maltese (``mlt``),
+    although orthography2ipa files it under ``ar``. A tag that is not itself a
+    registry key (``arz``, an alias of ``arz-EG``) is not a registry code, and is
+    ``False`` here.
     """
-    return code == "ar" or code == "arb" or code.startswith("ar-")
+    from orthography2ipa import get, resolve
+
+    if resolve(code) != code:
+        return False
+    language, seen = None, set()
+    node: Optional[str] = code
+    while node and node not in seen and language is None:
+        seen.add(node)
+        spec = get(node)
+        language, node = spec.iso639_3, spec.parent
+    if language is None:
+        return is_arabic_lang(code)
+    return language == "ara" or is_arabic_lang(language)
 
 
 def supported_lects() -> List[Lect]:
     """Every Arabic variety arbtok can phonemize, with its o2i quality tier.
 
     Enumerated from the orthography2ipa registry, so it tracks the data set
-    rather than a table here: whatever ``ar*`` specs are installed are what
-    ``lang=`` resolves to. Sorted by code.
+    rather than a table here: whatever Arabic specs are installed are what
+    ``lang=`` resolves to, under their ``ar-…`` or ISO 639-3 keys. Sorted by
+    code.
 
-    >>> from orthography2ipa import available_codes
+    >>> from orthography2ipa import resolve
     >>> lects = supported_lects()
-    >>> [l.code for l in lects if l.code in ("ar", "ar-EG", "ar-SA-x-najd")]
-    ['ar', 'ar-EG', 'ar-SA-x-najd']
-    >>> len(lects) == sum(1 for c in available_codes() if c in {"ar", "arb"}
-    ...                   or c.startswith("ar-"))
+    >>> wanted = {resolve(c) for c in ("ar", "ar-EG", "ar-SA-x-najd")}
+    >>> sorted(l.code for l in lects if l.code in wanted) == sorted(wanted)
     True
     >>> next(l.tier for l in lects if l.code == "ar")
     'research'

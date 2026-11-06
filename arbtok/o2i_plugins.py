@@ -21,10 +21,12 @@ Arabic — which it cannot do alone, and by design: its input contract is
 diacritized text and it ships no weights::
 
     from orthography2ipa import G2P
+    from arbtok.o2i_plugins import pipeline
     G2P("ar").transcribe("كتب")                                     # 'ˈktb' — no vowels to read
-    G2P("ar", plugins={"normalize": "arbtok"}).transcribe("كتب")    # 'ˈkataba'
+    G2P("ar", pipeline=pipeline("ar")).transcribe("كتب")            # 'ˈkatab'
 
-Note the second line. The plugin is **named**, not merely installed. Installing
+Note the second line. The steps are **passed**, not merely installed. The named
+entry points (``plugins={"normalize": "arbtok"}``) still work. Installing
 arbtok must not silently change what orthography2ipa says about Arabic — the
 caller asks for it, in code, where anyone reading the call site can see that a
 model is putting the vowels in.
@@ -32,15 +34,21 @@ model is putting the vowels in.
 
 from __future__ import annotations
 
-from typing import List, Sequence
+import functools
+import unicodedata
+from typing import TYPE_CHECKING, List, Sequence
 
 from orthography2ipa.plugins import NormalizePlugin, SandhiPlugin
 from orthography2ipa.rescorer_plugin import RescorerPlugin
+
+if TYPE_CHECKING:
+    from orthography2ipa import Pipeline
 
 __all__ = [
     "ArbtokDiacritizer",
     "ArbtokRescorers",
     "ArbtokSandhi",
+    "pipeline",
 ]
 
 
@@ -82,35 +90,29 @@ class ArbtokDiacritizer(NormalizePlugin):
     #: the simpler path — about one standard error before within-sentence correlation
     #: widens it — so that gold cannot separate them, and the cheaper path wins a tie.
     #:
-    #: Set ``ARBTOK_DIACRITIZER=fusion`` to select the other one. It exists so the
-    #: comparison can be re-run on a gold that might separate them; it is not dead
-    #: code and it is not the default.
+    #: Pass ``path="fusion"`` to select the other one. It exists so the comparison
+    #: can be re-run on a gold that might separate them; it is not dead code and it
+    #: is not the default.
     PATHS = ("lattice", "fusion")
 
-    def __init__(self) -> None:
+    def __init__(self, path: str = "lattice") -> None:
+        if path not in self.PATHS:
+            raise ValueError(
+                f"path={path!r} is not one of {self.PATHS}. Refusing rather than "
+                "falling back: a typo that silently kept the default would read "
+                "exactly like the setting working."
+            )
+        self.path = path
         self._by_lang: dict = {}
 
-    @staticmethod
-    def _path() -> str:
-        import os
-        want = os.environ.get("ARBTOK_DIACRITIZER", "lattice").strip().lower()
-        if want not in ArbtokDiacritizer.PATHS:
-            raise ValueError(
-                f"ARBTOK_DIACRITIZER={want!r} is not one of {ArbtokDiacritizer.PATHS}. "
-                "Refusing rather than falling back: a typo that silently kept the "
-                "default would read exactly like the setting working."
-            )
-        return want
-
     def normalize(self, text: str, lang: str) -> str:
-        key = (lang, self._path())
-        if key not in self._by_lang:
-            if key[1] == "fusion":
+        if lang not in self._by_lang:
+            if self.path == "fusion":
                 from arbtok.fusion import FusionDiacritizer as _D
             else:
                 from arbtok.diacritize import LatticeDiacritizer as _D
-            self._by_lang[key] = _D(lang=lang)
-        return self._by_lang[key].diacritize(text)
+            self._by_lang[lang] = _D(lang=lang)
+        return self._by_lang[lang].diacritize(text)
 
     @property
     def language_codes(self) -> List[str]:
@@ -182,11 +184,7 @@ class ArbtokSandhi(SandhiPlugin):
             if at_pause:
                 rows.append(("", "", True))   # the pause itself
 
-        out = apply_cross_word(rows, lang=lang)
-
-        rewritten = [
-            out[i] for i, (_, _, is_pause) in enumerate(rows) if not is_pause
-        ]
+        rewritten = apply_cross_word(rows, lang=lang)
 
         restored = []
         for word, mark in zip(rewritten, marks):
@@ -200,3 +198,67 @@ class ArbtokSandhi(SandhiPlugin):
     @property
     def language_codes(self) -> List[str]:
         return _arabic_codes()
+
+
+def _base(text: str) -> str:
+    """*text* in NFD, without its combining marks: what orthography2ipa compares."""
+    return "".join(ch for ch in unicodedata.normalize("NFD", text)
+                   if unicodedata.category(ch) != "Mn")
+
+
+def _keep_letters(original: str, proposed: str) -> str:
+    """*proposed* with the letters of *original*, so only marks are added.
+
+    A model letter stays when its NFD base is the written letter: ⟨أ⟩ for a bare
+    ⟨ا⟩ is a hamza mark on the same letter. Any other swap, ⟨ة⟩ for ⟨ه⟩ or ⟨ى⟩ for
+    ⟨ي⟩, gets the written letter back, as :func:`arbtok.diacritize.repair_skeleton`
+    does. A word whose letters do not align keeps its written form.
+    """
+    from arbtok.diacritize import _MARKS, strip_marks
+
+    if _base(original) == _base(proposed):
+        return proposed
+    letters = strip_marks(original)
+    if len(letters) != len(strip_marks(proposed)):
+        return original
+    out, i = [], 0
+    for ch in proposed:
+        if ch in _MARKS:
+            out.append(ch)
+            continue
+        out.append(ch if _base(ch) == _base(letters[i]) else letters[i])
+        i += 1
+    kept = "".join(out)
+    return kept if _base(kept) == _base(original) else original
+
+
+def pipeline(lang: str = "ar", path: str = "lattice") -> "Pipeline":
+    """The orthography2ipa :class:`~orthography2ipa.Pipeline` arbtok builds for *lang*.
+
+    ``expand`` is :func:`arbtok.textnorm.normalize_for_tts`. ``mark`` restores the
+    tashkeel through :class:`ArbtokDiacritizer` and keeps the written letters, as
+    the ``mark`` contract requires. ``rescore`` and ``sandhi`` carry arbtok's
+    morpho-phonology and its cross-word rules::
+
+        G2P("ar", pipeline=pipeline("ar")).transcribe("كتب")
+    """
+    from orthography2ipa import Pipeline
+
+    from arbtok.lattice import DEFAULT_RESCORERS
+    from arbtok.textnorm import normalize_for_tts
+
+    diacritizer = ArbtokDiacritizer(path)
+
+    def mark(text: str) -> str:
+        proposed = diacritizer.normalize(text, lang)
+        written, marked = text.split(" "), proposed.split(" ")
+        if len(written) != len(marked):
+            marked = [diacritizer.normalize(w, lang) if w else w for w in written]
+        return " ".join(_keep_letters(w, m) for w, m in zip(written, marked))
+
+    return Pipeline(
+        expand=functools.partial(normalize_for_tts, lang=lang),
+        mark=mark,
+        rescore=tuple(DEFAULT_RESCORERS),
+        sandhi=ArbtokSandhi(),
+    )
