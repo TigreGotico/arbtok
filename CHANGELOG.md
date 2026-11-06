@@ -1,11 +1,12 @@
 # Changelog
 
-## [0.0.2a71](https://github.com/TigreGotico/arbtok/tree/0.0.2a71) (2026-11-04)
+## [0.0.2a72](https://github.com/TigreGotico/arbtok/tree/0.0.2a72) (2026-11-06)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a70...0.0.2a71)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a70...0.0.2a72)
 
 **Merged pull requests:**
 
+- fix: read a pause inside a sentence in ArbtokSandhi [\#311](https://github.com/TigreGotico/arbtok/pull/311) ([JarbasAl](https://github.com/JarbasAl))
 - fix: read a bare ar-TR as orthography2ipa reads it [\#309](https://github.com/TigreGotico/arbtok/pull/309) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a70](https://github.com/TigreGotico/arbtok/tree/0.0.2a70) (2026-11-04)
@@ -395,10 +396,6 @@
 ## [0.0.2a22](https://github.com/TigreGotico/arbtok/tree/0.0.2a22) (2026-09-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a21...0.0.2a22)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): fix\_asr\_errors reads through the parser's public API and repairs a recogniser's ماية and ميه [\#204](https://github.com/TigreGotico/arbtok/pull/204) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a21](https://github.com/TigreGotico/arbtok/tree/0.0.2a21) (2026-09-21)
 
