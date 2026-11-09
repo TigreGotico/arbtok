@@ -1,17 +1,26 @@
-"""The bundled English donor lexicon and its registration."""
+"""The bundled English donor lexicon and the engine that holds it."""
+import warnings
+
 import pytest
 
 import orthography2ipa as o2i
+from orthography2ipa import G2P, load_lexicon
 
-from arbtok.donor_lexicon import BUNDLED_DONOR, bundled_path, ensure_registered
+from arbtok import donor_lexicon as dl
+from arbtok.donor_lexicon import BUNDLED_DONOR, bundled_path, donor_engine
 from arbtok.translit import transliterate
 
 
-@pytest.fixture(autouse=True)
-def _clean_registry():
-    o2i.clear_lexicons()
+@pytest.fixture
+def process_lexicons():
+    """Clear the deprecated process-wide registry before and after a test that sets it."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        o2i.clear_lexicons()
     yield
-    o2i.clear_lexicons()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        o2i.clear_lexicons()
 
 
 def test_the_lexicon_ships_with_the_package():
@@ -25,18 +34,32 @@ def test_the_bundled_file_is_a_valid_lexicon():
     assert validate_lexicon_text(bundled_path().read_text(encoding="utf-8")) == []
 
 
-def test_registration_is_idempotent():
-    assert ensure_registered() is True
-    assert ensure_registered() is False
+def test_the_donor_engine_holds_the_bundled_lexicon():
+    engine = donor_engine()
+    assert engine is donor_engine()
+    assert engine.pipeline.lexicon == load_lexicon(bundled_path())
 
 
-def test_a_callers_own_lexicon_is_never_overwritten(tmp_path):
-    """Registration is global to the orthography2ipa process registry, so an
-    application that brought its own English lexicon must keep it."""
+def test_no_other_engine_reads_the_bundled_lexicon():
+    """The donor engine holds the lexicon. An engine the caller builds for the
+    same code reads the rules, as the orthography2ipa contract requires."""
+    assert transliterate("engine", "ar") == "indʒin"
+    assert G2P(BUNDLED_DONOR).transcribe_word("engine") != donor_engine().transcribe_word("engine")
+    assert G2P(BUNDLED_DONOR).pipeline.lexicon is None
+
+
+def test_a_donor_with_no_bundled_lexicon_reads_the_rules():
+    assert bundled_path("de-DE") is None
+    assert donor_engine("de-DE").pipeline.lexicon is None
+
+
+def test_a_callers_own_lexicon_wins(tmp_path, process_lexicons):
+    """A caller who set a process-wide English lexicon keeps it."""
     mine = tmp_path / "en-GB.tsv"
     mine.write_text("engine\tˈtɛst\n", encoding="utf-8")
-    o2i.register_lexicon(BUNDLED_DONOR, str(mine))
-    assert ensure_registered() is False
+    with pytest.warns(DeprecationWarning):
+        o2i.register_lexicon(BUNDLED_DONOR, str(mine))
+    assert donor_engine().pipeline.lexicon is None
     assert transliterate("engine", "ar") is not None
     assert "dʒ" not in transliterate("engine", "ar")
 
@@ -57,14 +80,8 @@ def test_a_loanword_takes_its_documented_reading(word, reading):
     assert transliterate(word, "ar") == reading
 
 
-def test_without_the_lexicon_those_readings_are_not_reached():
+def test_without_the_lexicon_those_readings_are_not_reached(monkeypatch):
     """The guard that keeps the test above from passing vacuously: it must be
     the lexicon producing these, not the rules."""
-    o2i.clear_lexicons()
-    import arbtok.donor_lexicon as dl
-    original = dl.bundled_path
-    dl.bundled_path = lambda code=BUNDLED_DONOR: None       # ship nothing
-    try:
-        assert transliterate("engine", "ar") != "indʒin"
-    finally:
-        dl.bundled_path = original
+    monkeypatch.setattr(dl, "bundled_path", lambda code=BUNDLED_DONOR: None)   # ship nothing
+    assert transliterate("engine", "ar") != "indʒin"

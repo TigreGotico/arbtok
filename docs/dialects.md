@@ -178,7 +178,7 @@ transliterate("chauffeur", "ar-MA", donor="fr-FR")  # 'ʃofur'
 
 French spelling does not say which final consonants are silent, and the words that
 recur in every switched sentence are the ones it gets wrong. A closed-class French
-lexicon ships with the package and is registered when `fr-FR` is the donor, so
+lexicon ships with the package and is read when `fr-FR` is the donor, so
 these are read from a dictionary rather than from their letters:
 
 ```python
