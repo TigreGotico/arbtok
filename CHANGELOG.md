@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a74](https://github.com/TigreGotico/arbtok/tree/0.0.2a74) (2026-11-09)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a73...0.0.2a74)
+
+**Merged pull requests:**
+
+- fix: hold the donor lexicons in the donor engine, not the process registry [\#315](https://github.com/TigreGotico/arbtok/pull/315) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a73](https://github.com/TigreGotico/arbtok/tree/0.0.2a73) (2026-11-06)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a72...0.0.2a73)
@@ -388,10 +396,6 @@
 ## [0.0.2a24](https://github.com/TigreGotico/arbtok/tree/0.0.2a24) (2026-09-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a23...0.0.2a24)
-
-**Merged pull requests:**
-
-- fix\(deps\): the parser floor leaves a homograph as written [\#208](https://github.com/TigreGotico/arbtok/pull/208) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a23](https://github.com/TigreGotico/arbtok/tree/0.0.2a23) (2026-09-21)
 
