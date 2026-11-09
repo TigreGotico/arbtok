@@ -296,15 +296,13 @@ class ArbtokG2PPlugin:
                 buffer.clear()
 
         def _donor_knows(tok):
-            from orthography2ipa import G2P
             from arbtok.translit import DONOR_LANG
-            from arbtok.donor_lexicon import ensure_registered
+            from arbtok.donor_lexicon import donor_engine
             try:
-                ensure_registered(DONOR_LANG)
                 # The donor has no lexicon-membership call, so ask it to read the
                 # word and see whether it gave a reading or handed the letters back:
                 # `ok` comes out ˌəʊkˈeɪ and `bmw` comes out ˈbmw, which is the input.
-                got = G2P(DONOR_LANG).transcribe_word(tok.lower()) or ""
+                got = donor_engine(DONOR_LANG).transcribe_word(tok.lower()) or ""
                 # Strip stress, then fold the IPA symbols that merely LOOK like their
                 # ASCII letters: the donor hands `gps` back as ɡps with a script g
                 # (U+0261), which compares unequal to the input and made a passthrough

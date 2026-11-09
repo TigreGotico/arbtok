@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from arbtok import translit
-from arbtok.donor_lexicon import bundled_path, ensure_registered
+from arbtok.donor_lexicon import bundled_path, donor_engine
 
 DATA = Path(translit.__file__).parent / "data" / "donor_lexicons"
 FRENCH_PHONES = set("abdefijklmnopstuvwyzøœɑɔəɛɡɥɲʁʃʒ") | {"̃"}
@@ -61,9 +61,7 @@ def test_a_word_with_sandhi_forms_is_read_as_it_is_said_before_a_pause(word, don
 
 
 def test_the_readme_names_exactly_the_entries_the_spec_outranks():
-    from orthography2ipa import G2P
-    ensure_registered("fr-FR")
-    g2p = G2P("fr-FR")
+    g2p = donor_engine("fr-FR")
     outranked = {word for word, ipa in _rows("fr-FR.tsv") if g2p.transcribe_word(word) != ipa}
     assert outranked
     readme = (DATA / "README.md").read_text(encoding="utf-8")
