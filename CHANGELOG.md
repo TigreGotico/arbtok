@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a75](https://github.com/TigreGotico/arbtok/tree/0.0.2a75) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a74...0.0.2a75)
+
+**Merged pull requests:**
+
+- fix: find the bundled donor lexicon by the spec the donor code names [\#317](https://github.com/TigreGotico/arbtok/pull/317) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a74](https://github.com/TigreGotico/arbtok/tree/0.0.2a74) (2026-11-09)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a73...0.0.2a74)
@@ -372,10 +380,6 @@
 ## [0.0.2a27](https://github.com/TigreGotico/arbtok/tree/0.0.2a27) (2026-09-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a26...0.0.2a27)
-
-**Merged pull requests:**
-
-- feat\(lexicon\): in a sentence, an ambiguous spelling is read by the sentence [\#210](https://github.com/TigreGotico/arbtok/pull/210) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a26](https://github.com/TigreGotico/arbtok/tree/0.0.2a26) (2026-09-22)
 
