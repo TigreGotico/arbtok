@@ -46,7 +46,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from orthography2ipa import G2P, Pipeline, load_lexicon
+from orthography2ipa import G2P, Pipeline, load_lexicon, resolve, resolves_exactly
 from orthography2ipa.lexicon import lexicon_path
 
 #: The donor whose lexicon is bundled. Kept in step with
@@ -55,8 +55,16 @@ BUNDLED_DONOR = "en-GB"
 
 
 def bundled_path(code: str = BUNDLED_DONOR) -> Optional[Path]:
-    """The shipped ``{code}.tsv``, or None when this package ships none."""
-    path = Path(__file__).parent / "data" / "donor_lexicons" / f"{code}.tsv"
+    """The lexicon shipped for the donor *code*, or None when this package ships none.
+
+    A lexicon belongs to the spec that orthography2ipa reads *code* with, and its
+    file is named for that spec: ``en``, ``EN-gb`` and ``en_GB`` all find
+    ``en-GB.tsv``, and ``fr`` finds ``fr-FR.tsv``. A code that names a spec only
+    by nearest-language guessing, such as ``fr-FR.sources``, finds none.
+    """
+    if not resolves_exactly(code):
+        return None
+    path = Path(__file__).parent / "data" / "donor_lexicons" / f"{resolve(code)}.tsv"
     return path if path.is_file() else None
 
 
@@ -71,7 +79,7 @@ def donor_engine(code: str = BUNDLED_DONOR) -> G2P:
     path = bundled_path(code)
     if path is None or lexicon_path(code) is not None:
         return G2P(code)
-    return _bundled_engine(code, path)
+    return _bundled_engine(resolve(code), path)
 
 
 @lru_cache(maxsize=None)

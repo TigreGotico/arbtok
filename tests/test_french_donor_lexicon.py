@@ -60,6 +60,15 @@ def test_a_word_with_sandhi_forms_is_read_as_it_is_said_before_a_pause(word, don
     assert translit.transliterate(word, "ar-MA", donor="fr-FR") == translit.nativize(donor, "ar-MA", donor="fr-FR")
 
 
+@pytest.mark.parametrize("donor", ["fr", "FR", "fr_FR", "fr-fr"])
+@pytest.mark.parametrize("word, adapted", [("c'est", "si"), ("qu'il", "kil"), ("jusqu'à", "ʒiska")])
+def test_a_french_donor_tag_reads_the_french_lexicon(donor, word, adapted):
+    """A bare fr names fr-FR, the variety of the language's motherland."""
+    assert bundled_path(donor) == DATA / "fr-FR.tsv"
+    assert donor_engine(donor).transcribe_word(word) == dict(_rows("fr-FR.tsv"))[word]
+    assert translit.transliterate(word, "ar-MA", donor=donor) == adapted
+
+
 def test_the_readme_names_exactly_the_entries_the_spec_outranks():
     g2p = donor_engine("fr-FR")
     outranked = {word for word, ipa in _rows("fr-FR.tsv") if g2p.transcribe_word(word) != ipa}
