@@ -453,10 +453,17 @@ ESTABLISHED_LOANS: Dict[str, Dict[str, str]] = {
 
 
 def _established(word: str, donor: str) -> Optional[str]:
-    """The settled reading for *word*, or None. Accent- and case-insensitive."""
-    table = ESTABLISHED_LOANS.get(donor)
-    if table is None and "-" in donor:
-        table = ESTABLISHED_LOANS.get(donor.split("-", 1)[0])
+    """The settled reading for *word*, or None. Accent- and case-insensitive.
+
+    The table belongs to the spec that orthography2ipa reads *donor* with, so ``en``
+    and ``en_GB`` read the ``en-GB`` table. A code that names a spec only by
+    nearest-language guessing reads none.
+    """
+    from orthography2ipa import resolve, resolves_exactly
+
+    if not resolves_exactly(donor):
+        return None
+    table = ESTABLISHED_LOANS.get(resolve(donor))
     if not table:
         return None
     key = unicodedata.normalize("NFD", word.strip().lower())
