@@ -8,10 +8,11 @@ from typing import Tuple
 import numpy as np
 import onnxruntime
 import requests
+from linguatag import closest_lang
 from quebra_frases import sentence_tokenize
 
 from arbtok.tashkeel import TashkeelDiacritizer
-from arbtok.util import normalize, match_lang
+from arbtok.util import normalize
 
 # list of (substring, terminator, end_of_sentence) tuples.
 TextChunks = List[Tuple[str, str, bool]]
@@ -185,9 +186,8 @@ class EspeakPhonemizer:
         Raises:
             ValueError: If the language code is unsupported.
         """
-        lang, score = match_lang(target_lang, valid_langs)
-        if score > 10:
-            # raise an error for unsupported language
+        lang = closest_lang(target_lang, valid_langs)
+        if lang is None:
             raise ValueError(f"unsupported language code: {target_lang}")
         return lang
 

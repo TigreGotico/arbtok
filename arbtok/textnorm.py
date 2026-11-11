@@ -2329,43 +2329,22 @@ _PHONE_CANDIDATE = re.compile(rf"(?<![{_PHONE_DIGIT}A-Za-z+])(?<![{_PHONE_DIGIT}
                               + rf"(?![{_PHONE_DIGIT}A-Za-z])(?![{_PHONE_JOINER}][{_PHONE_DIGIT}])")
 _PHONE_GROUP = re.compile(f"[{_PHONE_DIGIT}]+")
 _HELD_DIGITS = 0xE000  # private-use characters stand in for digits a rule must not read
-#: ISO 639-3 codes for the individual Arabic languages. They are listed because they
-#: cannot be recognized by shape: they sort beside ``arc`` (Aramaic) and ``arn``
-#: (Mapudungun), which are unrelated languages. Source: ISO 639-3 code table,
-#: https://iso639-3.sil.org/code_tables/639/data, read for the macrolanguage ``ara``.
-ARABIC_LANGUAGE_CODES = frozenset({
-    "arb",  # Standard Arabic
-    "aao", "abh", "abv", "acm", "acq", "acw", "acx", "acy", "adf", "aeb",
-    "aec", "afb", "ajp", "apc", "apd", "arq", "ars", "ary", "arz", "auz",
-    "avl", "ayh", "ayl", "ayn", "ayp", "bbz", "pga", "shu", "ssh",
-})
-
-
-#: Arabic varieties that ISO 639-3 lists outside the macrolanguage ``ara``. Hassaniya
-#: (``mey``) is one; orthography2ipa files its spec under Maghrebi Arabic, and it is
-#: written in Arabic script.
-_ARABIC_LANGUAGES_OUTSIDE_ARA = frozenset({"mey"})
 
 
 def is_arabic_lang(lang: str) -> bool:
-    """Whether ``lang`` names an Arabic variety: ``ar`` and every ``ar-…`` tag, plus every
-    tag led by the ISO 639-3 code of an individual Arabic language (``arb``, ``arz``,
-    ``arz-EG``, ``ary-MA``, ``ars-SA``, Hassaniya ``mey-MR``). Case does not matter, as
-    it does not in BCP-47, and neither does an underscore written where a hyphen belongs
-    (``ar_SA``), the same normalization :func:`arbtok.spec_for_lang` applies before it
-    resolves a tag.
+    """Whether ``lang`` names an Arabic variety: ``ar`` (``ara``), every ``ar-…`` tag,
+    every tag led by an individual Arabic language (``arb``, ``arz-EG``, ``ary-MA``,
+    ``ars-SA``), and Hassaniya (``mey-MR``), in any script. Case and an underscore
+    written for a hyphen (``ar_SA``) do not matter.
 
-    ``ara``, the ISO 639-3 code of the Arabic macrolanguage, is deliberately not in
-    :data:`ARABIC_LANGUAGE_CODES`: that set holds individual-language codes, and the
-    macrolanguage is already named by ``ar``.
+    linguatag decides it: this is :func:`linguatag.is_arabic_variety`.
 
     This asks what the caller wrote. :func:`arbtok.spec_for_lang` cannot answer it: it
     resolves an unknown tag to MSA, so it calls every language on earth Arabic.
     """
-    lang = lang.lower().replace("_", "-")
-    language = lang.split("-")[0]
-    return (language == "ar" or language in ARABIC_LANGUAGE_CODES
-            or language in _ARABIC_LANGUAGES_OUTSIDE_ARA)
+    from linguatag import is_arabic_variety
+
+    return is_arabic_variety(lang)
 
 
 # What ``plain_orthography`` drops and folds. The harakat and tatweel go, and the Quranic

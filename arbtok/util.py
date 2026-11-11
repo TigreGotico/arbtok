@@ -5,9 +5,8 @@ import datetime
 import re
 import string
 from datetime import date
-from typing import Optional, Union, List, Tuple
+from typing import Optional
 
-from langcodes import tag_distance
 from ovos_date_parser import nice_time, nice_date
 from ovos_number_parser import pronounce_number, pronounce_fraction
 from ovos_number_parser.util import is_numeric
@@ -17,46 +16,6 @@ from unicode_rbnf import RbnfEngine, FormatPurpose
 import logging
 
 LOG = logging.getLogger("phoonnx")
-
-
-def match_lang(target_lang: str, valid_langs: Union[str, List[str]]) -> Tuple[str, int]:
-    """
-    Validates and returns the closest supported language code.
-
-    Args:
-        target_lang (str): The language code to validate.
-
-    Returns:
-        str: The validated language code.
-
-    Raises:
-        ValueError: If the language code is unsupported.
-    """
-    if isinstance(valid_langs, str):
-        valid_langs = [valid_langs]
-    if target_lang in valid_langs:
-        return target_lang, 0
-    best_lang = "und"
-    best_distance = 10000000
-    for l in valid_langs:
-        try:
-            distance: int = tag_distance(l, target_lang)
-        except:
-            try:
-                l = f"{l.split('-')[0]}-{l.split('-')[1]}"
-                distance: int = tag_distance(l, target_lang)
-            except:
-                try:
-                    distance: int = tag_distance(l.split('-')[0], target_lang)
-                except:
-                    continue
-        if distance < best_distance:
-            best_lang, best_distance = l, distance
-
-    # If the score is low (meaning a good match), return the language
-    if best_distance <= 10:
-        return best_lang, best_distance
-    return "und", 10000
 
 
 # A dictionary of common contractions and their expanded forms.

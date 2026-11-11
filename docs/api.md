@@ -198,10 +198,10 @@ for a `lang` that is not Arabic.
 
 ### `is_arabic_lang(lang) -> bool`
 
-Whether `lang` names an Arabic variety: `ar`, every `ar-…` tag, and the ISO 639-3
-code of an individual Arabic language (`arb`, `arz`, `ary`, `ars`, …), which
-`ARABIC_LANGUAGE_CODES` holds. Case and an underscore written for a hyphen
-(`ar_SA`) do not matter. It asks what the caller wrote, which `spec_for_lang`
+Whether `lang` names an Arabic variety: `ar` (`ara`), every `ar-…` tag, the ISO
+639-3 code of an individual Arabic language (`arb`, `arz`, `ary`, `ars`, …) and
+Hassaniya (`mey`), in any script. It is `linguatag.is_arabic_variety`. Case and an
+underscore written for a hyphen (`ar_SA`) do not matter. It asks what the caller wrote, which `spec_for_lang`
 cannot: that resolves an unknown tag to MSA, so it would call every language
 Arabic.
 
@@ -237,17 +237,6 @@ from arbtok.util import normalize
 
 normalize("عندي 3 كتب", "ar")          # "عندي ثلاثة كتب"
 normalize("I'm Dr. 3/3", "en")          # "I am Doctor three thirds"
-```
-
-### `match_lang(target_lang, valid_langs) -> Tuple[str, int]`
-
-Find the closest supported language tag. Returns `(lang, distance)`. Returns
-`("und", 10000)` when nothing matches well.
-
-```python
-from arbtok.util import match_lang
-
-match_lang("ar-EG", ["ar", "en"])      # ("ar", <distance>)
 ```
 
 Public helper: `is_fraction(word: str) -> bool` (e.g. `"3/4"` → `True`).

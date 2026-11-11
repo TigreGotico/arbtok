@@ -14,11 +14,39 @@ def test_an_arabic_variety_is_arabic_however_it_is_named(tag):
     assert is_arabic_lang(tag)
 
 
-@pytest.mark.parametrize("tag", ["en", "en-GB", "fr-FR", "arc", "arn", "ara-x-made-up", "", "a", "arcadian"])
+@pytest.mark.parametrize("tag", ["en", "en-GB", "fr-FR", "arc", "arn", "", "a", "arcadian",
+                                 "fa", "ur", "und-Arab", "mt", "mlt"])
 def test_a_language_that_is_not_arabic_is_not(tag):
     """``arc`` is Aramaic and ``arn`` is Mapudungun: they sort beside the Arabic codes
-    and are unrelated languages."""
+    and are unrelated languages. Persian, Urdu and an undetermined language are written
+    in Arabic script and are not Arabic. Maltese descends from Arabic and is its own
+    language."""
     assert not is_arabic_lang(tag)
+
+
+@pytest.mark.parametrize("tag", ["ara", "ARA", "ara-SA", "ara_EG", "ara-x-made-up"])
+def test_the_iso_639_2_code_of_arabic_is_arabic(tag):
+    """``ara`` is the ISO 639-2 code of Arabic, and CLDR aliases it to ``ar``. Ruling:
+    linguatag is the authority on which tags are Arabic, and it counts ``ara``."""
+    assert is_arabic_lang(tag)
+
+
+@pytest.mark.parametrize("tag", ["mey", "mey-MR", "mey-Arab-MR", "acy", "acy-CY", "pga", "pga-SS",
+                                 "ar-Latn", "ar-Latn-x-buckwalt", "arz-Latn"])
+def test_an_arabic_variety_is_arabic_in_any_script(tag):
+    """Hassaniya and the Arabic varieties written in Latin script are Arabic. The
+    language subtag decides, not the script."""
+    assert is_arabic_lang(tag)
+
+
+@pytest.mark.parametrize("tag", ["ar", "ara", "arb", "arz-EG", "mey-MR", "acy", "pga", "ar-Latn",
+                                 "ar_SA", "AR-eg", "ary-x-made-up", "arc", "arn", "mt", "fa", "und-Arab",
+                                 "en", "", "a", "x-ar"])
+def test_linguatag_decides_which_tags_are_arabic(tag):
+    """Ruling: linguatag is the authority on which tags are Arabic. arbtok asks it and
+    keeps no list of its own."""
+    from linguatag import is_arabic_variety
+    assert is_arabic_lang(tag) is is_arabic_variety(tag)
 
 
 def test_the_predicate_answers_what_the_caller_wrote_where_resolution_cannot():

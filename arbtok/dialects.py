@@ -19,6 +19,8 @@ import warnings
 from enum import Enum
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
+from linguatag import closest_lang, lang_distance
+
 from arbtok.textnorm import is_arabic_lang
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
                               FATHA, DAMMA, KASRA, DAGGER_ALIF, MADD,
@@ -143,6 +145,13 @@ def consonant_ipa(grapheme: str, lang: str, default: str) -> str:
 #: The spec code used when a caller names no variety.
 DEFAULT_LANG = "ar"
 
+# The farthest an Arabic variety stands from its nearest spec once its script is
+# dropped: 4 for a region mismatch, 5 for a member of the ``ar`` macrolanguage,
+# whose nearest spec is ``ar``. Every other language stands 30 or more from a
+# spec (``ckb`` is 30 from ``ar-IQ-x-qeltu``), so this bound takes every Arabic
+# variety and no other language.
+_MAX_SPEC_DISTANCE = 5
+
 #: When a region carries several sibling specs, the one a bare region tag
 #: resolves to. Saudi Arabia has six varieties in the data set; Najdi is the
 #: most widely spoken, so ``ar-SA`` (and ``ar-SA-najdi``, ``ar-x-najdi``, …)
@@ -156,7 +165,7 @@ DEFAULT_LANG = "ar"
 _REGION_DEFAULTS = ("ar-SA-x-najd",)
 
 #: Dialect names that a caller may write in a subtag, and the lect each one names.
-#: langcodes ignores private-use content when it measures tag distance, so
+#: BCP-47 tag distance ignores private-use content, so
 #: ``ar-x-najd`` would otherwise fall through to MSA. The private-use tokens of the
 #: installed spec keys are found without this table. It holds the spoken
 #: adjectives, and the tokens of the keys that orthography2ipa spells with an
@@ -187,9 +196,9 @@ _DIALECT_NAME_ALIASES = {
 
 @functools.lru_cache(maxsize=None)
 def _arabic_codes() -> Tuple[str, ...]:
-    """Available Arabic spec codes, ordered to steer ``closest_match`` ties.
+    """Available Arabic spec codes, ordered to steer ``closest_lang`` ties.
 
-    :func:`langcodes.closest_match` breaks equal-distance ties by list order, so
+    :func:`linguatag.closest_lang` breaks equal-distance ties by list order, so
     the order encodes two preferences: MSA (:data:`DEFAULT_LANG`) leads, so an
     unmatched region (``ar-ZZ`` — equidistant from MSA and every regional spec)
     settles on MSA rather than an arbitrary dialect; then the
@@ -262,6 +271,22 @@ def _exact_spec(tag: str, codes: Sequence[str]) -> Optional[str]:
     return DEFAULT_LANG
 
 
+def _reads_script(code: str, script: Optional[str]) -> bool:
+    """Whether the spec *code* reads text written in the ISO 15924 *script*.
+
+    A Latin-script spec (``pga``, ``acy``, ``ar-Latn-x-buckwalt``) reads Latin
+    only. Every other spec reads Arabic script, and Latin script as Arabizi.
+    No *script* means the tag names none, and any spec reads it.
+    """
+    if script is None:
+        return True
+    from orthography2ipa import get
+
+    if get(code).script == "Latin":
+        return script.title() == "Latn"
+    return script.title() in ("Arab", "Latn")
+
+
 def _core_subtags(tag: str) -> List[str]:
     """The language, extlang, script and region subtags that open *tag*.
 
@@ -302,6 +327,12 @@ def spec_for_lang(lang: Optional[str]) -> str:
     * a subtag that names no spec and no dialect is ignored, so a tag never
       resolves to something less specific than its parent tag does
       (``ar-EG-x-cairo`` → ``ar-EG``, ``ar-SA-x-riyadh`` → ``ar-SA-x-najd``);
+    * an Arabic variety with a script subtag resolves as it does without it
+      when that spec reads the script (``acm-Latn`` → ``acm-IQ``,
+      ``bbz-Arab-TD`` → ``ar-TD-x-babalia``); a Latin-script lect does not read
+      Arabic script, so ``pga-Arab-SA`` reads as MSA;
+    * a lect of the tag's own language outranks MSA at any region distance
+      (``mey-SN`` → ``mey-MR``);
     * anything with no Arabic match — an unknown region, a non-Arabic tag —
       falls back to the ``ar`` (MSA) leaf rather than raising.
     """
@@ -368,22 +399,31 @@ def spec_for_lang(lang: Optional[str]) -> str:
                              or normalized.split("-")[0].lower() == "ar"):
         return nearest
 
-    # 6. Closest region-bearing spec via subtag-aware BCP-47 matching. Codes
-    #    with a subtag langcodes cannot parse (a private-use token over eight
-    #    characters) are dropped from the pool — they are only ever reached by
-    #    the exact-code path above, and one of them would abort the whole match.
-    from langcodes import closest_match
+    # 6. A script subtag on an Arabic variety picks no spec of its own. The tag
+    #    resolves as it does without its script (``bbz-Arab-TD`` as ``bbz-TD``,
+    #    ``acm-Latn`` as ``acm``) when that spec reads the script, so a script
+    #    alone never sends a variety to ``ar-Latn-x-buckwalt``.
+    script = next((s for s in core[1:] if len(s) == 4 and s.isalpha()), None)
+    if script and is_arabic_lang(normalized):
+        subtags = lang.replace("_", "-").split("-")
+        subtags.remove(script)
+        spec = spec_for_lang("-".join(subtags))
+        if _reads_script(spec, script):
+            return spec
 
-    matchable = [c for c in codes
-                 if all(len(sub) <= 8 for sub in c.split("-"))]
-    try:
-        best, _ = closest_match(normalized, matchable)
-    except Exception:
-        best = "und"
-    if best in codes:
-        return best
-
-    return DEFAULT_LANG
+    # 7. Closest spec by BCP-47 tag distance, up to _MAX_SPEC_DISTANCE. A tie
+    #    goes to the first code in the order :func:`_arabic_codes` gives. When
+    #    that leaves MSA, a lect of the tag's own language that reads its
+    #    script is the closer reading at any region distance (``mey-SN`` is
+    #    Hassaniya, ``mey-MR``).
+    match = closest_lang(normalized, codes, max_distance=_MAX_SPEC_DISTANCE)
+    if match in (None, DEFAULT_LANG):
+        language = core[0].lower()
+        own = [code for code in codes
+               if code.split("-")[0].lower() == language and _reads_script(code, script)]
+        if own:
+            return min(own, key=lambda code: lang_distance(normalized, code))
+    return match or DEFAULT_LANG
 
 
 #: The ISO 639-3 code of the individual Arabic language a spec names, for the
@@ -474,9 +514,7 @@ def _is_arabic_code(code: str) -> bool:
         seen.add(node)
         spec = get(node)
         language, node = spec.iso639_3, spec.parent
-    if language is None:
-        return is_arabic_lang(code)
-    return language == "ara" or is_arabic_lang(language)
+    return is_arabic_lang(language or code)
 
 
 def supported_lects() -> List[Lect]:
