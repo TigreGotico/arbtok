@@ -19,6 +19,8 @@ import warnings
 from enum import Enum
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
+from linguatag import closest_lang
+
 from arbtok.textnorm import is_arabic_lang
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
                               FATHA, DAMMA, KASRA, DAGGER_ALIF, MADD,
@@ -156,7 +158,7 @@ DEFAULT_LANG = "ar"
 _REGION_DEFAULTS = ("ar-SA-x-najd",)
 
 #: Dialect names that a caller may write in a subtag, and the lect each one names.
-#: langcodes ignores private-use content when it measures tag distance, so
+#: BCP-47 tag distance ignores private-use content, so
 #: ``ar-x-najd`` would otherwise fall through to MSA. The private-use tokens of the
 #: installed spec keys are found without this table. It holds the spoken
 #: adjectives, and the tokens of the keys that orthography2ipa spells with an
@@ -187,9 +189,9 @@ _DIALECT_NAME_ALIASES = {
 
 @functools.lru_cache(maxsize=None)
 def _arabic_codes() -> Tuple[str, ...]:
-    """Available Arabic spec codes, ordered to steer ``closest_match`` ties.
+    """Available Arabic spec codes, ordered to steer ``closest_lang`` ties.
 
-    :func:`langcodes.closest_match` breaks equal-distance ties by list order, so
+    :func:`linguatag.closest_lang` breaks equal-distance ties by list order, so
     the order encodes two preferences: MSA (:data:`DEFAULT_LANG`) leads, so an
     unmatched region (``ar-ZZ`` — equidistant from MSA and every regional spec)
     settles on MSA rather than an arbitrary dialect; then the
@@ -368,22 +370,10 @@ def spec_for_lang(lang: Optional[str]) -> str:
                              or normalized.split("-")[0].lower() == "ar"):
         return nearest
 
-    # 6. Closest region-bearing spec via subtag-aware BCP-47 matching. Codes
-    #    with a subtag langcodes cannot parse (a private-use token over eight
-    #    characters) are dropped from the pool — they are only ever reached by
-    #    the exact-code path above, and one of them would abort the whole match.
-    from langcodes import closest_match
-
-    matchable = [c for c in codes
-                 if all(len(sub) <= 8 for sub in c.split("-"))]
-    try:
-        best, _ = closest_match(normalized, matchable)
-    except Exception:
-        best = "und"
-    if best in codes:
-        return best
-
-    return DEFAULT_LANG
+    # 6. Closest spec by BCP-47 tag distance, up to 25: a script or region
+    #    mismatch still reaches a spec, a different language does not. A tie
+    #    goes to the first code in the order :func:`_arabic_codes` gives.
+    return closest_lang(normalized, codes, max_distance=25) or DEFAULT_LANG
 
 
 #: The ISO 639-3 code of the individual Arabic language a spec names, for the
@@ -474,9 +464,7 @@ def _is_arabic_code(code: str) -> bool:
         seen.add(node)
         spec = get(node)
         language, node = spec.iso639_3, spec.parent
-    if language is None:
-        return is_arabic_lang(code)
-    return language == "ara" or is_arabic_lang(language)
+    return is_arabic_lang(language or code)
 
 
 def supported_lects() -> List[Lect]:

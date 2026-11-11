@@ -60,12 +60,14 @@ def test_the_lect_is_listed_and_spoken_for(tag):
 
 
 @pytest.mark.parametrize("tag", ["arz-EG", "ary-MA", "ars-SA", "apc-LB", "afb-KW",
-                                 "acw-SA", "mey-MR", "ARZ-eg", "ars_SA"])
+                                 "acw-SA", "mey-MR", "ARZ-eg", "ars_SA", "ara-x-made-up"])
 def test_an_iso_keyed_tag_is_arabic(tag):
+    """``ara`` is the ISO 639-2 code of Arabic. Ruling: linguatag is the authority on
+    which tags are Arabic, and it counts ``ara`` with any private-use subtag."""
     assert is_arabic_lang(tag)
 
 
-@pytest.mark.parametrize("tag", ["arc-SY", "arn-CL", "mlt-MT", "ara-x-made-up"])
+@pytest.mark.parametrize("tag", ["arc-SY", "arn-CL", "mlt-MT"])
 def test_a_lookalike_iso_keyed_tag_is_not(tag):
     assert not is_arabic_lang(tag)
 

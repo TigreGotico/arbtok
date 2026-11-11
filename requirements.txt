@@ -1,7 +1,10 @@
 numpy
 onnxruntime
 quebra-frases
-langcodes
+# Language tags go through linguatag. From 0.2.0a1 it has `is_arabic_variety`, which
+# `is_arabic_lang` is, and it reads Hassaniya in Arabic script as an Arabic variety.
+# The `langcodes` extra gives it full BCP-47 standardization and distance.
+linguatag[langcodes]>=0.2.0a1
 # Floored at the release that speaks a lect's cardinals: `dialect_numbers` asks it for the
 # Hijazi, Gulf and Egyptian number words by the lect's ISO 639-3 code, and an older parser
 # answers `lang="acw"` with the literary words and no error, so the flag would do nothing
