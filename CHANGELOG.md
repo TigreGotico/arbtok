@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a76](https://github.com/TigreGotico/arbtok/tree/0.0.2a76) (2026-11-11)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a75...0.0.2a76)
+
+**Merged pull requests:**
+
+- fix: read language tags through linguatag [\#319](https://github.com/TigreGotico/arbtok/pull/319) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a75](https://github.com/TigreGotico/arbtok/tree/0.0.2a75) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a74...0.0.2a75)
@@ -385,17 +393,9 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a25...0.0.2a26)
 
-**Merged pull requests:**
-
-- feat\(gold\): a span-level pronunciation gold with cited readings [\#211](https://github.com/TigreGotico/arbtok/pull/211) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a25](https://github.com/TigreGotico/arbtok/tree/0.0.2a25) (2026-09-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a24...0.0.2a25)
-
-**Merged pull requests:**
-
-- test\(textnorm\): a full-form unit before ميه is hundreds, as SADA writes it [\#212](https://github.com/TigreGotico/arbtok/pull/212) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a24](https://github.com/TigreGotico/arbtok/tree/0.0.2a24) (2026-09-22)
 
