@@ -32,3 +32,15 @@ def test_macrolanguage_tags_resolve_as_before(tag, spec):
 def test_a_sub_lect_in_a_subtag_outranks_the_lect_code(tag, spec):
     """The code names the lect; a subtag naming one of its varieties is more specific."""
     assert spec_for_lang(tag) == resolve(spec)
+
+
+
+@pytest.mark.parametrize("tag, spec", [
+    ("mey-Arab-MR", "mey-MR"), ("ayl-Arab-LY", "ayl"), ("ayp-Arab-IQ", "ayp"), ("ayp-Arab-TR", "ayp"),
+])
+def test_a_variety_in_its_own_script_names_its_lect(tag, spec):
+    """CLDR writes these varieties in Arabic script, so naming the script does not move
+    the tag off its own lect to Modern Standard Arabic. Without the script subtag the
+    tag reads the same."""
+    assert spec_for_lang(tag) == resolve(spec)
+    assert spec_for_lang(tag.replace("-Arab", "")) == resolve(spec)
