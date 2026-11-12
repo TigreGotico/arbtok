@@ -14,7 +14,8 @@ from orthography2ipa import resolve, resolves_exactly
 from arbtok import dialects, is_arabic_lang, translit
 from arbtok.dialect_lexicon import DialectLexicon, available_lects, lexicon_file
 from arbtok.dialects import lect_code, spec_for_lang, supported_lects
-from arbtok.o2i_plugins import ArbtokRescorers
+from arbtok.lattice import DEFAULT_RESCORERS
+from arbtok.o2i_plugins import pipeline
 
 PAIRS = [
     ("ar-EG", "ar-EG"), ("arz-EG", "ar-EG"),
@@ -53,10 +54,9 @@ def test_a_bare_region_reads_as_orthography2ipa_reads_it():
 
 @pytest.mark.parametrize("tag", ["ar-EG", "ar-MA", "ar-SA-x-najd", "ar-x-gulf", "ar-LB"])
 def test_the_lect_is_listed_and_spoken_for(tag):
-    """The plugins advertise exactly the listed lects, so a re-keyed lect keeps its
-    rescorers."""
+    """A re-keyed lect is listed, and arbtok's pipeline for it keeps its rescorers."""
     assert resolve(tag) in {lect.code for lect in supported_lects()}
-    assert resolve(tag) in ArbtokRescorers().language_codes
+    assert pipeline(resolve(tag)).rescore == tuple(DEFAULT_RESCORERS)
 
 
 @pytest.mark.parametrize("tag", ["arz-EG", "ary-MA", "ars-SA", "apc-LB", "afb-KW",
@@ -109,11 +109,12 @@ def test_a_spec_arbtok_has_no_lect_for_reads_as_msa_with_a_warning(monkeypatch):
     assert any(moroccan in m and "no lect" in m for m in messages), messages
 
 
-def test_a_language_that_is_not_arabic_reads_as_msa_without_a_warning():
+def test_a_language_that_is_not_arabic_raises_without_a_warning():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        assert spec_for_lang("en") == dialects.DEFAULT_LANG
-        assert spec_for_lang("fr-FR") == dialects.DEFAULT_LANG
+        for tag in ("en", "fr-FR"):
+            with pytest.raises(ValueError, match="not an Arabic variety"):
+                spec_for_lang(tag)
 
 
 @pytest.mark.parametrize("key, zone", [("ar-EG", "eg"), ("ar-SA-x-najd", "gulf"),

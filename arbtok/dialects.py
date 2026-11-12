@@ -19,7 +19,7 @@ import warnings
 from enum import Enum
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
-from linguatag import closest_lang, lang_distance
+from linguatag import closest_lang, lang_distance, standardize_lang
 
 from arbtok.textnorm import is_arabic_lang
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
@@ -145,6 +145,14 @@ def consonant_ipa(grapheme: str, lang: str, default: str) -> str:
 #: The spec code used when a caller names no variety.
 DEFAULT_LANG = "ar"
 
+#: Retired ISO 639-3 codes of Arabic varieties and the code each was merged into.
+#: Source: ISO 639-3 Registration Authority, code table of retirements
+#: (iso-639-3_Retirements.tab, https://iso639-3.sil.org/code_tables/download_tables):
+#: ``ajp`` South Levantine Arabic, reason M (merge), change to ``apc``, 2023-01-20.
+#: The IANA registry that langcodes ships predates the merge, so linguatag does not
+#: apply it.
+_MERGED_LANGUAGES = {"ajp": "apc"}
+
 # The farthest an Arabic variety stands from its nearest spec once its script is
 # dropped: 4 for a region mismatch, 5 for a member of the ``ar`` macrolanguage,
 # whose nearest spec is ``ar``. Every other language stands 30 or more from a
@@ -247,11 +255,11 @@ def _exact_spec(tag: str, codes: Sequence[str]) -> Optional[str]:
     spec key wins over orthography2ipa's answer, because BCP-47 standardization
     reads ``ARB`` as ``ar`` where the caller named the ``arb`` spec.
 
-    A tag that orthography2ipa names exactly but that is not an Arabic lect
-    arbtok carries is read as MSA (:data:`DEFAULT_LANG`). The heuristics below
-    never see such a tag: they would match it to some other dialect, which is
-    worse than MSA because nothing says it happened. An Arabic tag read this way
-    raises a warning.
+    An Arabic tag that orthography2ipa names exactly but that is not an Arabic
+    lect arbtok carries is read as MSA (:data:`DEFAULT_LANG`), with a warning.
+    The heuristics below never see such a tag: they would match it to some other
+    dialect, which is worse than MSA because nothing says it happened. A tag that
+    is not Arabic gives ``None``.
     """
     from orthography2ipa import resolve, resolves_exactly
 
@@ -263,11 +271,12 @@ def _exact_spec(tag: str, codes: Sequence[str]) -> Optional[str]:
     spec = resolve(tag)
     if spec in codes:
         return spec
-    if is_arabic_lang(tag):
-        warnings.warn(
-            f"{tag!r} names the orthography2ipa spec {spec!r}, which arbtok has no "
-            f"lect for; reading it as {DEFAULT_LANG!r} (Modern Standard Arabic)",
-            UserWarning, stacklevel=3)
+    if not is_arabic_lang(tag):
+        return None
+    warnings.warn(
+        f"{tag!r} names the orthography2ipa spec {spec!r}, which arbtok has no "
+        f"lect for; reading it as {DEFAULT_LANG!r} (Modern Standard Arabic)",
+        UserWarning, stacklevel=3)
     return DEFAULT_LANG
 
 
@@ -333,16 +342,34 @@ def spec_for_lang(lang: Optional[str]) -> str:
       Arabic script, so ``pga-Arab-SA`` reads as MSA;
     * a lect of the tag's own language outranks MSA at any region distance
       (``mey-SN`` → ``mey-MR``);
-    * anything with no Arabic match — an unknown region, a non-Arabic tag —
-      falls back to the ``ar`` (MSA) leaf rather than raising.
+    * an Arabic tag with no closer match — an unknown region — falls back to
+      the ``ar`` (MSA) leaf.
+
+    The tag is read as linguatag standardizes it, so the extlang form names
+    the same lect as the language it stands for (``ar-arz`` is ``arz``). A tag
+    with a retired ISO 639-3 code that reads as MSA is read again with the code
+    it was merged into (``ajp-JO`` as ``apc-JO``).
+
+    Raises:
+        ValueError: *lang* is not an Arabic variety (linguatag's
+            ``is_arabic_variety``) and names no Arabic spec or dialect.
     """
     if not lang:
         return DEFAULT_LANG
+    tag = standardize_lang(lang)
+    spec = _closest_spec(tag)
+    language, *rest = tag.split("-")
+    merged = _MERGED_LANGUAGES.get(language)
+    if merged and spec == DEFAULT_LANG:
+        return _closest_spec("-".join([merged, *rest]))
+    return spec
 
+
+def _closest_spec(normalized: str) -> str:
+    """:func:`spec_for_lang` for a standardized tag."""
     from orthography2ipa import resolve
 
     codes = _arabic_codes()
-    normalized = lang.replace("_", "-")
 
     # 1. A tag orthography2ipa resolves exactly — a caller naming a variety directly.
     exact = _exact_spec(normalized, codes)
@@ -358,6 +385,9 @@ def spec_for_lang(lang: Optional[str]) -> str:
         match = dialects.get(token)
         if match:
             return match
+
+    if not is_arabic_lang(normalized):
+        raise ValueError(f"{normalized!r} is not an Arabic variety, and arbtok reads Arabic only")
 
     # 3. Variants, extensions and private-use subtags that name no spec are
     #    invisible to tag distance, so left in they make the tag tie at zero
@@ -402,12 +432,12 @@ def spec_for_lang(lang: Optional[str]) -> str:
     # 6. A script subtag on an Arabic variety picks no spec of its own. The tag
     #    resolves as it does without its script (``bbz-Arab-TD`` as ``bbz-TD``,
     #    ``acm-Latn`` as ``acm``) when that spec reads the script, so a script
-    #    alone never sends a variety to ``ar-Latn-x-buckwalt``.
+    #    alone never sends a variety to ``ar-Latn-x-buckwalt``. Only the core
+    #    subtags go on: the rest were read in step 3, and a core holds one
+    #    script, so this recurses once.
     script = next((s for s in core[1:] if len(s) == 4 and s.isalpha()), None)
-    if script and is_arabic_lang(normalized):
-        subtags = lang.replace("_", "-").split("-")
-        subtags.remove(script)
-        spec = spec_for_lang("-".join(subtags))
+    if script:
+        spec = spec_for_lang("-".join(s for s in core if s != script))
         if _reads_script(spec, script):
             return spec
 
@@ -460,7 +490,10 @@ def lect_code(lang: str) -> Optional[str]:
     from orthography2ipa import get, resolve
 
     languages = {resolve(spec): code for spec, code in _SPEC_LANGUAGE_CODES.items()}
-    code, seen = spec_for_lang(lang), set()
+    try:
+        code, seen = spec_for_lang(lang), set()
+    except ValueError:
+        return None
     while code and code not in seen:
         if code in languages:
             return languages[code]

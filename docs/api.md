@@ -201,9 +201,8 @@ for a `lang` that is not Arabic.
 Whether `lang` names an Arabic variety: `ar` (`ara`), every `ar-…` tag, the ISO
 639-3 code of an individual Arabic language (`arb`, `arz`, `ary`, `ars`, …) and
 Hassaniya (`mey`), in any script. It is `linguatag.is_arabic_variety`. Case and an
-underscore written for a hyphen (`ar_SA`) do not matter. It asks what the caller wrote, which `spec_for_lang`
-cannot: that resolves an unknown tag to MSA, so it would call every language
-Arabic.
+underscore written for a hyphen (`ar_SA`) do not matter. `spec_for_lang` raises
+`ValueError` for a tag that this calls not Arabic.
 
 ### `spelled_codes(lang="ar") -> Dict[str, str]`
 
@@ -249,7 +248,7 @@ Variety resolution and the base phoneme maps.
 
 | Symbol | Type | Description |
 | --- | --- | --- |
-| `spec_for_lang(lang)` | `str` | The orthography2ipa spec code a tag resolves to, narrowing a subtag at a time and falling back to `ar`. |
+| `spec_for_lang(lang)` | `str` | The orthography2ipa spec code a tag resolves to, narrowing a subtag at a time and falling back to `ar`. Raises `ValueError` for a tag that is not Arabic. |
 | `lect_code(lang)` | `Optional[str]` | The ISO 639-3 code of the lect a tag names, for a consumer that keys its data by 639-3, or `None` when it names none. Read off the spec's parent chain, so a leaf takes its group's code. |
 | `supported_lects()` | `List[Lect]` | Every Arabic variety `lang=` resolves to, sorted by code, enumerated from the installed registry. |
 | `Lect` | `NamedTuple` | `code` and `tier`, the spec's orthography2ipa quality tier. |
@@ -278,21 +277,22 @@ A baseline phonemizer that shells out to the `espeak-ng` binary, for comparison
 against the rule-based path. See [advanced.md](advanced.md#espeak-baseline).
 Key symbols: `EspeakPhonemizer`, `EspeakError`.
 
-## `arbtok.o2i_plugins`, the orthography2ipa step plugins
+## `arbtok.o2i_plugins`, the orthography2ipa steps
 
 arbtok is an engine built *on* orthography2ipa, but the pieces it owns are exactly
-the steps orthography2ipa made pluggable. Installing arbtok registers three
-entry-point plugins so plain orthography2ipa can transcribe **undiacritized**
-Arabic, which it cannot do alone, since its input contract is diacritized text:
+the steps an orthography2ipa `Pipeline` takes. With them, plain orthography2ipa can
+transcribe **undiacritized** Arabic, which it cannot do alone, since its input
+contract is diacritized text:
 
-| entry-point group | class | contribution |
+| `Pipeline` field | from | contribution |
 | --- | --- | --- |
-| `orthography2ipa.normalize` | `ArbtokDiacritizer` | restore tashkeel, guarded by the lattice |
-| `orthography2ipa.rescore` | `ArbtokRescorers` | sun-letter assimilation, hamzat al-waṣl, hamza carrier, accusative alif |
-| `orthography2ipa.sandhi` | `ArbtokSandhi` | cross-word idghām/iqlāb, pausal case-ending drop, waṣl |
+| `expand` | `arbtok.textnorm.normalize_for_tts` | the text prepared to be spoken |
+| `mark` | `ArbtokDiacritizer` | restore tashkeel, guarded by the lattice, with the written letters kept |
+| `rescore` | `ArbtokRescorers` | sun-letter assimilation, hamzat al-waṣl, hamza carrier, accusative alif |
+| `sandhi` | `ArbtokSandhi` | cross-word idghām/iqlāb, pausal case-ending drop, waṣl |
 
-The plugin is **named**, not implicit, installing arbtok does not silently change
-what orthography2ipa says about Arabic. The caller opts in at the call site:
+Installing arbtok does not change what orthography2ipa says about Arabic. The
+caller passes the pipeline at the call site:
 
 ```python
 from orthography2ipa import G2P
@@ -303,6 +303,8 @@ G2P("ar", pipeline=pipeline("ar")).transcribe("كتب")    # 'ˈkatab' — arbto
 ```
 
 `pipeline(lang)` gives orthography2ipa every arbtok step: `normalize_for_tts` as `expand`, the diacritizer as `mark`, the rescorers and the cross-word sandhi. `pipeline(lang, path="fusion")` selects the fusion diacritizer.
+
+arbtok also registers the three classes as the entry points `orthography2ipa.normalize`, `orthography2ipa.rescore` and `orthography2ipa.sandhi`, under the name `arbtok`. They serve `G2P(lang, plugins={"normalize": "arbtok"})`, which orthography2ipa deprecates. The entry points go when orthography2ipa 8.0.0 removes `plugins=`.
 
 ## Where next
 

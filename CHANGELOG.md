@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a77](https://github.com/TigreGotico/arbtok/tree/0.0.2a77) (2026-11-12)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a76...0.0.2a77)
+
+**Merged pull requests:**
+
+- refactor: pass arbtok steps as Pipeline fields, not stage plugin bases [\#321](https://github.com/TigreGotico/arbtok/pull/321) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a76](https://github.com/TigreGotico/arbtok/tree/0.0.2a76) (2026-11-11)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a75...0.0.2a76)
@@ -380,10 +388,6 @@
 ## [0.0.2a28](https://github.com/TigreGotico/arbtok/tree/0.0.2a28) (2026-09-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a27...0.0.2a28)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): drop a tatweel false start before the word it restarts [\#213](https://github.com/TigreGotico/arbtok/pull/213) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a27](https://github.com/TigreGotico/arbtok/tree/0.0.2a27) (2026-09-22)
 
