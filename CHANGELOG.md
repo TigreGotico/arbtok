@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.2a79](https://github.com/TigreGotico/arbtok/tree/0.0.2a79) (2026-11-12)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a77...0.0.2a79)
+
+**Merged pull requests:**
+
+- fix: tag follow-ups of \#319: linear parse, non-Arabic tags, extlang and ajp [\#326](https://github.com/TigreGotico/arbtok/pull/326) ([JarbasAl](https://github.com/JarbasAl))
+- fix: normalize text in the plugin's lect, not in ar [\#324](https://github.com/TigreGotico/arbtok/pull/324) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a77](https://github.com/TigreGotico/arbtok/tree/0.0.2a77) (2026-11-12)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a76...0.0.2a77)
