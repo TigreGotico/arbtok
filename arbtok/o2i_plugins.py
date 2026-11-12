@@ -5,9 +5,11 @@ arbtok is an engine built ON orthography2ipa — it is not a plugin to it. But t
 is no reason to keep them locked inside one package:
 
 ===============  ========================================================
-stage            what arbtok contributes
+Pipeline field   what arbtok contributes
 ===============  ========================================================
-``normalize``    restore the tashkeel the writing omits, under the lattice's
+``expand``       prepare the text to be spoken: spoken forms and canonical
+                 Unicode (:func:`arbtok.textnorm.normalize_for_tts`)
+``mark``         restore the tashkeel the writing omits, under the lattice's
                  guard — the model proposes, the lattice disposes
 ``rescore``      the Arabic morpho-phonology no grapheme table can express:
                  sun-letter assimilation, hamzat al-waṣl, the hamza carrier,
@@ -16,20 +18,25 @@ stage            what arbtok contributes
                  removes a case ending, waṣl
 ===============  ========================================================
 
-Registered, these make plain orthography2ipa able to transcribe **undiacritized**
-Arabic — which it cannot do alone, and by design: its input contract is
-diacritized text and it ships no weights::
+Passed in a Pipeline, these make plain orthography2ipa able to transcribe
+**undiacritized** Arabic — which it cannot do alone, and by design: its input
+contract is diacritized text and it ships no weights::
 
     from orthography2ipa import G2P
     from arbtok.o2i_plugins import pipeline
     G2P("ar").transcribe("كتب")                                     # 'ˈktb' — no vowels to read
     G2P("ar", pipeline=pipeline("ar")).transcribe("كتب")            # 'ˈkatab'
 
-Note the second line. The steps are **passed**, not merely installed. The named
-entry points (``plugins={"normalize": "arbtok"}``) still work. Installing
+Note the second line. The steps are **passed**, not merely installed. Installing
 arbtok must not silently change what orthography2ipa says about Arabic — the
 caller asks for it, in code, where anyone reading the call site can see that a
 model is putting the vowels in.
+
+The classes are plain objects that :func:`pipeline` passes to the
+:class:`~orthography2ipa.Pipeline` fields. The named entry points
+(``plugins={"normalize": "arbtok"}``) still resolve to them until orthography2ipa
+8.0.0 removes ``plugins=``. That resolver reads ``normalize``, ``rescorers``,
+``apply``, ``language_codes`` and ``priority``, and checks no base class.
 """
 
 from __future__ import annotations
@@ -38,8 +45,7 @@ import functools
 import unicodedata
 from typing import TYPE_CHECKING, List, Sequence
 
-from orthography2ipa.plugins import NormalizePlugin, SandhiPlugin
-from orthography2ipa.rescorer_plugin import RescorerPlugin
+from orthography2ipa.plugins import SandhiPlugin
 
 if TYPE_CHECKING:
     from orthography2ipa import Pipeline
@@ -68,7 +74,7 @@ def _arabic_codes() -> List[str]:
     return [lect.code for lect in supported_lects()]
 
 
-class ArbtokDiacritizer(NormalizePlugin):
+class ArbtokDiacritizer:
     """Put back the vowels the writing leaves out — guarded by the lattice.
 
     Restoring tashkeel is a statistical problem, so it belongs to a model. But a
@@ -119,7 +125,7 @@ class ArbtokDiacritizer(NormalizePlugin):
         return _arabic_codes()
 
 
-class ArbtokRescorers(RescorerPlugin):
+class ArbtokRescorers:
     """The Arabic morpho-phonology the shared grapheme table cannot express.
 
     Sun-letter assimilation (the lām of ⟨ال⟩ into a following coronal), hamzat
@@ -127,6 +133,10 @@ class ArbtokRescorers(RescorerPlugin):
     al-fatḥ. These are rules about *words*, not about *letters*, which is why they
     are rescorers and not grapheme entries.
     """
+
+    #: orthography2ipa's ``who_answers`` and ``get_rescorers`` sort the entry-point
+    #: rescorers by this value. 50 is the default of its ``RescorerPlugin``.
+    priority = 50
 
     def rescorers(self, lang: str) -> Sequence:
         from arbtok.lattice import DEFAULT_RESCORERS
@@ -244,7 +254,6 @@ def pipeline(lang: str = "ar", path: str = "lattice") -> "Pipeline":
     """
     from orthography2ipa import Pipeline
 
-    from arbtok.lattice import DEFAULT_RESCORERS
     from arbtok.textnorm import normalize_for_tts
 
     diacritizer = ArbtokDiacritizer(path)
@@ -259,6 +268,6 @@ def pipeline(lang: str = "ar", path: str = "lattice") -> "Pipeline":
     return Pipeline(
         expand=functools.partial(normalize_for_tts, lang=lang),
         mark=mark,
-        rescore=tuple(DEFAULT_RESCORERS),
+        rescore=tuple(ArbtokRescorers().rescorers(lang)),
         sandhi=ArbtokSandhi(),
     )

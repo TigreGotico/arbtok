@@ -118,7 +118,7 @@ Emphatic (pharyngealization) spreading rides on the `ar` spec's own B8
 `allophone_rules`. Cross-word sandhi is orthogonal to the word lattice: clitic
 joining, cross-word waṣl elision, tanwīn pausal forms, tāʾ marbūṭa, and
 idgham/iqlab nasal assimilation all live in the sentence-level orchestration,
-exposed to plain orthography2ipa through its sandhi plugin hook
+exposed to plain orthography2ipa through the `sandhi` field of its `Pipeline`
 (`arbtok/o2i_plugins.py`). Bare (undiacritized) text is diacritized first by
 the bundled rawi ensemble (the dialect-aware fusion path above), entirely
 inside the wheel.
@@ -302,13 +302,14 @@ normalize_for_tts("أ ب ج ١٢٣٤", "ar", spell_out_plates=True)
 Every flag and the order the rules run in are in
 [docs/normalization.md](docs/normalization.md#numbers-a-voice-agent-reads-out).
 
-### As orthography2ipa plugins
+### As orthography2ipa pipeline steps
 
-Installing arbtok registers three **named** orthography2ipa step plugins
-(`normalize` / `rescore` / `sandhi`, see `arbtok/o2i_plugins.py`) so plain
-orthography2ipa can transcribe **undiacritized** Arabic, which it cannot do
-alone since its input contract is diacritized text. The plugin is opted into at
-the call site, never applied implicitly:
+`arbtok.o2i_plugins.pipeline(lang)` builds an orthography2ipa `Pipeline` from
+arbtok's steps (`expand` / `mark` / `rescore` / `sandhi`, see
+`arbtok/o2i_plugins.py`), so plain orthography2ipa can transcribe
+**undiacritized** Arabic, which it cannot do alone since its input contract is
+diacritized text. The caller passes the pipeline at the call site. Installing
+arbtok changes no output on its own:
 
 ```python
 from orthography2ipa import G2P

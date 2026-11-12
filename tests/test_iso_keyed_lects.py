@@ -14,7 +14,8 @@ from orthography2ipa import resolve, resolves_exactly
 from arbtok import dialects, is_arabic_lang, translit
 from arbtok.dialect_lexicon import DialectLexicon, available_lects, lexicon_file
 from arbtok.dialects import lect_code, spec_for_lang, supported_lects
-from arbtok.o2i_plugins import ArbtokRescorers
+from arbtok.lattice import DEFAULT_RESCORERS
+from arbtok.o2i_plugins import pipeline
 
 PAIRS = [
     ("ar-EG", "ar-EG"), ("arz-EG", "ar-EG"),
@@ -53,10 +54,9 @@ def test_a_bare_region_reads_as_orthography2ipa_reads_it():
 
 @pytest.mark.parametrize("tag", ["ar-EG", "ar-MA", "ar-SA-x-najd", "ar-x-gulf", "ar-LB"])
 def test_the_lect_is_listed_and_spoken_for(tag):
-    """The plugins advertise exactly the listed lects, so a re-keyed lect keeps its
-    rescorers."""
+    """A re-keyed lect is listed, and arbtok's pipeline for it keeps its rescorers."""
     assert resolve(tag) in {lect.code for lect in supported_lects()}
-    assert resolve(tag) in ArbtokRescorers().language_codes
+    assert pipeline(resolve(tag)).rescore == tuple(DEFAULT_RESCORERS)
 
 
 @pytest.mark.parametrize("tag", ["arz-EG", "ary-MA", "ars-SA", "apc-LB", "afb-KW",
