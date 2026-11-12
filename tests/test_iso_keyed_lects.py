@@ -109,11 +109,12 @@ def test_a_spec_arbtok_has_no_lect_for_reads_as_msa_with_a_warning(monkeypatch):
     assert any(moroccan in m and "no lect" in m for m in messages), messages
 
 
-def test_a_language_that_is_not_arabic_reads_as_msa_without_a_warning():
+def test_a_language_that_is_not_arabic_raises_without_a_warning():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        assert spec_for_lang("en") == dialects.DEFAULT_LANG
-        assert spec_for_lang("fr-FR") == dialects.DEFAULT_LANG
+        for tag in ("en", "fr-FR"):
+            with pytest.raises(ValueError, match="not an Arabic variety"):
+                spec_for_lang(tag)
 
 
 @pytest.mark.parametrize("key, zone", [("ar-EG", "eg"), ("ar-SA-x-najd", "gulf"),

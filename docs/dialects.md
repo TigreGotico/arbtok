@@ -15,9 +15,14 @@ ArbtokG2PPlugin().transcribe_word("قَهْوَة")                      # 'ˈqa
 ```
 
 The variety may also ride on `WordContext.lang` per call, which overrides the
-instance default. A tag that names no Arabic spec narrows a subtag at a time
-(`ar-SA-x-najd` → `ar-SA` → `ar`) and ultimately falls back to the `ar` leaf, so
-an unknown region is MSA rather than an error.
+instance default. An Arabic tag that names no Arabic spec narrows a subtag at a
+time (`ar-SA-x-najd` → `ar-SA` → `ar`) and ultimately falls back to the `ar` leaf,
+so an unknown region is MSA rather than an error.
+
+A tag that is not Arabic, `fi` or `en-US`, raises `ValueError`. On
+`WordContext.lang` such a tag keeps the instance default. The extlang form names
+its language (`ar-arz` is `arz`). The retired code `ajp`, merged into `apc` in
+ISO 639-3, reads as `apc` (`ajp-JO` is `apc-JO`).
 
 Any Arabic spec orthography2ipa carries can be named, `ar`, `arb` (Classical),
 the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,

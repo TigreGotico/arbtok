@@ -49,10 +49,10 @@ def test_linguatag_decides_which_tags_are_arabic(tag):
     assert is_arabic_lang(tag) is is_arabic_variety(tag)
 
 
-def test_the_predicate_answers_what_the_caller_wrote_where_resolution_cannot():
-    """``spec_for_lang`` resolves an unknown tag to MSA, so it says Arabic to everything."""
-    assert spec_for_lang("en") == "ar"
+def test_resolution_refuses_what_the_predicate_calls_not_arabic():
     assert not is_arabic_lang("en")
+    with pytest.raises(ValueError):
+        spec_for_lang("en")
 
 
 @pytest.mark.parametrize("tag", ["arb", "arz", "ary", "ars", "apc", "AR-eg"])
