@@ -203,7 +203,7 @@ class ArbtokG2PPlugin:
     # ─── lifecycle hooks ─────────────────────────────────────────────
 
     def normalize(self, text: str) -> str:
-        text = normalize_for_tts(text, "ar")
+        text = normalize_for_tts(text, self.lang)
         if self.diacritize:
             text = self._diacritize(text)
         return text
