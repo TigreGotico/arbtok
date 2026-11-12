@@ -1,8 +1,20 @@
 # Changelog
 
+## [0.0.2a80](https://github.com/TigreGotico/arbtok/tree/0.0.2a80) (2026-11-12)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a79...0.0.2a80)
+
+**Merged pull requests:**
+
+- refactor: deprecate the unused unicode\_symbol2label module [\#323](https://github.com/TigreGotico/arbtok/pull/323) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a79](https://github.com/TigreGotico/arbtok/tree/0.0.2a79) (2026-11-12)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a77...0.0.2a79)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a78...0.0.2a79)
+
+## [0.0.2a78](https://github.com/TigreGotico/arbtok/tree/0.0.2a78) (2026-11-12)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a77...0.0.2a78)
 
 **Merged pull requests:**
 
@@ -374,10 +386,6 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a30...0.0.2a31)
 
-**Merged pull requests:**
-
-- fix\(util\): a grouped number before a unit is read rather than refused [\#221](https://github.com/TigreGotico/arbtok/pull/221) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a30](https://github.com/TigreGotico/arbtok/tree/0.0.2a30) (2026-09-24)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a29...0.0.2a30)
@@ -389,10 +397,6 @@
 ## [0.0.2a29](https://github.com/TigreGotico/arbtok/tree/0.0.2a29) (2026-09-24)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a28...0.0.2a29)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): a code carries a digit or spells no word, and is never partly verbalised \(\#218\) [\#219](https://github.com/TigreGotico/arbtok/pull/219) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a28](https://github.com/TigreGotico/arbtok/tree/0.0.2a28) (2026-09-22)
 
