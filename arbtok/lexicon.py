@@ -43,11 +43,19 @@ from typing import Dict, Optional
 from arbtok.tokenizer import normalize_unicode
 
 __all__ = ["StemLexicon", "DEFAULT_LEXICON", "AMBIGUOUS_SHARE", "MIN_CONTEXT_WORDS",
-           "LexiconUnavailable", "resolve_source"]
+           "LexiconUnavailable", "ModelUnavailableError", "resolve_source"]
 
 
 class LexiconUnavailable(RuntimeError):
     """A lexicon was asked for and could not be read."""
+
+
+class ModelUnavailableError(LexiconUnavailable, ValueError):
+    """A file on the Hugging Face Hub is not in the local cache and cannot be fetched:
+    the Hub is offline (``HF_HUB_OFFLINE=1``) or cannot be reached.
+
+    The name and the ``ValueError`` base match scriptconv's error for the same case.
+    """
 
 #: The lexicon arbtok reaches for when the caller names none.
 DEFAULT_LEXICON = "hf://TigreGotico/arabic-stem-lexicon/ar-stems.tsv"
@@ -62,8 +70,17 @@ def resolve_source(source: str) -> Path:
     if source.startswith("hf://"):
         org, name, *path = source[len("hf://"):].split("/")
         from huggingface_hub import hf_hub_download
-        return Path(hf_hub_download(f"{org}/{name}", "/".join(path),
-                                    repo_type="dataset"))
+        from huggingface_hub.utils import LocalEntryNotFoundError
+        try:
+            return Path(hf_hub_download(f"{org}/{name}", "/".join(path),
+                                        repo_type="dataset"))
+        except LocalEntryNotFoundError as exc:
+            raise ModelUnavailableError(
+                f"{source!r}, the file {'/'.join(path)!r} of the Hugging Face dataset "
+                f"{org}/{name}, is not in the local cache and cannot be fetched: the Hub "
+                f"is offline or cannot be reached. Fetch it once with the network on, or "
+                f"pass lexicon=None to run the diacritizer without it."
+            ) from exc
     if source.startswith(("http://", "https://")):
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         target = CACHE_DIR / source.rsplit("/", 1)[-1]
@@ -152,6 +169,8 @@ class StemLexicon:
         try:
             path = resolve_source(self.source)
             text = path.read_text(encoding="utf-8")
+        except ModelUnavailableError:
+            raise
         except Exception as exc:
             # A lexicon that was ASKED for and cannot be reached is an error.
             # Falling back to the model quietly would leave the caller with a
