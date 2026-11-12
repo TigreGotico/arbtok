@@ -61,7 +61,6 @@ def test_cairo_reads_as_egypt():
     # An unknown region is not forced onto a region it does not name.
     ("ar-ZZ-x-cairo", "ar"),
     ("ar-ZZ-x-unknownplace", "ar"),
-    ("en-x-cairo", "ar"),
 ])
 def test_unrecognised_subtags_are_ignored(tag, expected):
     assert spec_for_lang(tag) == resolve(expected)
@@ -86,3 +85,8 @@ def test_a_more_specific_tag_is_never_less_specific_than_its_parent():
     wrong = [(p, c, spec_for_lang(p), spec_for_lang(c)) for p, c in PAIRS
              if spec_for_lang(c) in _ancestors(spec_for_lang(p))]
     assert not wrong, wrong[:20]
+
+
+def test_an_unrecognised_subtag_on_another_language_raises():
+    with pytest.raises(ValueError, match="not an Arabic variety"):
+        spec_for_lang("en-x-cairo")

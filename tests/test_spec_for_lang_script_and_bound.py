@@ -37,8 +37,9 @@ def test_a_lect_of_the_own_language_outranks_msa_at_any_region(tag, spec):
 
 
 @pytest.mark.parametrize("tag", ["ckb", "ckb-IQ", "ckb-Arab-IQ", "en", "en-US", "fa-IR"])
-def test_another_language_reads_as_msa(tag):
-    assert spec_for_lang(tag) == DEFAULT_LANG
+def test_another_language_raises(tag):
+    with pytest.raises(ValueError, match="not an Arabic variety"):
+        spec_for_lang(tag)
 
 
 def test_the_bound_admits_every_arabic_variety_and_no_other_language():

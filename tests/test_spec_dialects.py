@@ -111,12 +111,16 @@ def test_msa_orthography_is_read_correctly_in_every_variety(lang, word, expected
     ("ar-SA-najdi", "ar-SA-x-najd"),    # dialect as a plain subtag
     ("ar-x-gulfi", "ar-x-gulf"),        # aliased dialect name
     ("ar-ZZ", "ar"),                    # unknown region → MSA, never raises
-    ("en", "ar"),                       # not Arabic at all → MSA, never raises
     ("", "ar"),
     (None, "ar"),
 ])
 def test_spec_for_lang(tag, expected):
     assert spec_for_lang(tag) == resolve(expected)
+
+
+def test_a_tag_that_is_not_arabic_raises():
+    with pytest.raises(ValueError):
+        spec_for_lang("en")
 
 
 def test_ar_sa_yields_najdi_qaf_end_to_end():

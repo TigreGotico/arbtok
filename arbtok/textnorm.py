@@ -2339,8 +2339,8 @@ def is_arabic_lang(lang: str) -> bool:
 
     linguatag decides it: this is :func:`linguatag.is_arabic_variety`.
 
-    This asks what the caller wrote. :func:`arbtok.spec_for_lang` cannot answer it: it
-    resolves an unknown tag to MSA, so it calls every language on earth Arabic.
+    This asks what the caller wrote. :func:`arbtok.spec_for_lang` raises ``ValueError``
+    for a tag this calls not Arabic.
     """
     from linguatag import is_arabic_variety
 
