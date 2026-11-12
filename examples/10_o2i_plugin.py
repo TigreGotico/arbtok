@@ -1,4 +1,4 @@
-"""arbtok as orthography2ipa step plugins.
+"""arbtok as orthography2ipa pipeline steps.
 
 Plain orthography2ipa cannot vocalize undiacritized Arabic — its input contract
 is diacritized text. `arbtok.o2i_plugins.pipeline` builds an orthography2ipa
