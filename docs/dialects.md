@@ -15,9 +15,14 @@ ArbtokG2PPlugin().transcribe_word("قَهْوَة")                      # 'ˈqa
 ```
 
 The variety may also ride on `WordContext.lang` per call, which overrides the
-instance default. A tag that names no Arabic spec narrows a subtag at a time
-(`ar-SA-x-najd` → `ar-SA` → `ar`) and ultimately falls back to the `ar` leaf, so
-an unknown region is MSA rather than an error.
+instance default. An Arabic tag that names no Arabic spec narrows a subtag at a
+time (`ar-SA-x-najd` → `ar-SA` → `ar`) and ultimately falls back to the `ar` leaf,
+so an unknown region is MSA rather than an error.
+
+A tag that is not Arabic, `fi` or `en-US`, raises `ValueError`. On
+`WordContext.lang` such a tag keeps the instance default. The extlang form names
+its language (`ar-arz` is `arz`). The retired code `ajp`, merged into `apc` in
+ISO 639-3, reads as `apc` (`ajp-JO` is `apc-JO`).
 
 Any Arabic spec orthography2ipa carries can be named, `ar`, `arb` (Classical),
 the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
@@ -178,7 +183,7 @@ transliterate("chauffeur", "ar-MA", donor="fr-FR")  # 'ʃofur'
 
 French spelling does not say which final consonants are silent, and the words that
 recur in every switched sentence are the ones it gets wrong. A closed-class French
-lexicon ships with the package and is registered when `fr-FR` is the donor, so
+lexicon ships with the package and is read when `fr-FR` is the donor, so
 these are read from a dictionary rather than from their letters:
 
 ```python
@@ -374,8 +379,9 @@ So the lattice's advantage over the bare model on this gold is mostly **undoing 
 hamza restoration**, not correcting ḥarakāt. A mask that knew the variety could refuse
 the restoration where the orthography does not use it, and would not need the repair.
 
-```bash
-ARBTOK_DIACRITIZER=fusion   # the step plugin's generator; ArbtokG2PPlugin takes fusion=
+```python
+ArbtokDiacritizer(path="fusion")   # the step plugin's generator; ArbtokG2PPlugin takes fusion=
+pipeline("ar", path="fusion")      # the same choice for an orthography2ipa Pipeline
 ```
 
 A value that is neither raises rather than falling back: a typo that silently kept the

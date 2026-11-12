@@ -130,7 +130,7 @@ __all__ = ["nativize", "transliterate", "is_latin", "guest_script", "segment_ipa
 #: source of live code-switching in Gulf Arabic, and it is the donor the map is
 #: measured for — but it is a DEFAULT, not an assumption baked into the code:
 #: :func:`transliterate` takes any orthography2ipa language as its donor.
-from arbtok.donor_lexicon import ensure_registered  # noqa: E402
+from arbtok.donor_lexicon import donor_engine  # noqa: E402
 
 DONOR_LANG = "en-GB"
 
@@ -381,12 +381,15 @@ def nativization_table(lang: str) -> Dict[str, str]:
     the conservative :data:`_DEFAULT_MAP`. Cached; the returned dict is read-only.
     """
     from arbtok.dialects import spec_for_lang
-    from orthography2ipa import get
+    from orthography2ipa import get, resolve
 
+    # A table is keyed by the code it was cited for, and orthography2ipa may install
+    # that lect under its ISO 639-3 key, so the keys are resolved before the walk.
+    tables = {resolve(key): table for key, table in _TABLES.items()}
     code: Optional[str] = spec_for_lang(lang)
     seen = set()
     while code and code not in seen:
-        table = _TABLES.get(code)
+        table = tables.get(code)
         if table is not None:
             return table
         seen.add(code)
@@ -450,10 +453,17 @@ ESTABLISHED_LOANS: Dict[str, Dict[str, str]] = {
 
 
 def _established(word: str, donor: str) -> Optional[str]:
-    """The settled reading for *word*, or None. Accent- and case-insensitive."""
-    table = ESTABLISHED_LOANS.get(donor)
-    if table is None and "-" in donor:
-        table = ESTABLISHED_LOANS.get(donor.split("-", 1)[0])
+    """The settled reading for *word*, or None. Accent- and case-insensitive.
+
+    The table belongs to the spec that orthography2ipa reads *donor* with, so ``en``
+    and ``en_GB`` read the ``en-GB`` table. A code that names a spec only by
+    nearest-language guessing reads none.
+    """
+    from orthography2ipa import resolve, resolves_exactly
+
+    if not resolves_exactly(donor):
+        return None
+    table = ESTABLISHED_LOANS.get(resolve(donor))
     if not table:
         return None
     key = unicodedata.normalize("NFD", word.strip().lower())
@@ -718,10 +728,9 @@ def transliterate(
     if adapted is None:
         # The donor's own lexicon, if this package ships one for it. English rules
         # cannot reach the right reading from spelling alone, and a caller who has
-        # registered their own lexicon keeps it — see arbtok.donor_lexicon.
-        ensure_registered(donor)
+        # set their own lexicon keeps it — see arbtok.donor_lexicon.
         try:
-            donor_ipa = G2P(donor).transcribe_word(word)
+            donor_ipa = donor_engine(donor).transcribe_word(word)
         except Exception:
             return None
         if not donor_ipa:

@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
 
 from benchmark_stack import (  # noqa: E402
     _words,
-    gold_dir,
+    gold_file,
     load_lect_gold,
     run_lect_benchmark,
     score_pair,
@@ -40,7 +40,7 @@ def test_strip_harakat_reproduces_the_bare_column():
     sentence is exactly the everyday bare-abjad input, so the diacritized vs
     undiacritized delta prices only the missing harakat.
     """
-    path = os.path.join(gold_dir(), "ar-EG.tsv")
+    path = gold_file("ar-EG")
     for _id, sentence, raw, _ipa in load_lect_gold(path):
         assert strip_harakat(sentence) == raw
         # And stripping is a real reduction: the vocalized form carries marks.

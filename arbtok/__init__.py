@@ -20,6 +20,7 @@ its orthography2ipa quality tier.
 """
 
 from arbtok.dialects import Lect, lect_code, spec_for_lang, supported_lects
+from arbtok.lexicon import ModelUnavailableError
 from arbtok.textnorm import AsrNorm, TtsNorm, is_arabic_lang, normalize_asr, normalize_for_tts
 from arbtok.version import VERSION_STR as __version__
 
@@ -39,5 +40,5 @@ def vocalize(text, lect="ar", **kwargs):
     return _d(text, lect, **kwargs)
 
 
-__all__ = ["AsrNorm", "Lect", "TtsNorm", "__version__", "is_arabic_lang", "normalize_asr", "normalize_for_tts",
+__all__ = ["AsrNorm", "Lect", "ModelUnavailableError", "TtsNorm", "__version__", "is_arabic_lang", "normalize_asr", "normalize_for_tts",
            "spec_for_lang", "supported_lects", "vocalize"]

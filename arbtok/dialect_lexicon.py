@@ -57,10 +57,24 @@ def lexicon_dir() -> Path:
     return Path(__file__).parent / "data" / "lexicons"
 
 
+def _lexicon_files(base: Path) -> Dict[str, Path]:
+    """The TSVs in *base*, keyed by the spec key orthography2ipa installs each lect under.
+
+    A file is named for the code its lect was cited under (``ar-EG.tsv``).
+    orthography2ipa may key that lect by its ISO 639-3 code (``arz-EG``) and keep
+    the file's name as an alias, so the name is resolved and the file answers to
+    both.
+    """
+    from orthography2ipa import resolve
+
+    return {resolve(p.stem): p for p in sorted(base.glob("*.tsv"))}
+
+
 def lexicon_file(lect: str) -> Optional[Path]:
     """The TSV bundled for *lect*, or ``None`` when the lect carries none."""
-    path = lexicon_dir() / f"{lect}.tsv"
-    return path if path.exists() else None
+    from orthography2ipa import resolve
+
+    return _lexicon_files(lexicon_dir()).get(resolve(lect))
 
 
 def available_lects() -> List[str]:
@@ -68,7 +82,7 @@ def available_lects() -> List[str]:
     d = lexicon_dir()
     if not d.exists():
         return []
-    return sorted(p.stem for p in d.glob("*.tsv"))
+    return sorted(_lexicon_files(d))
 
 
 def parse(text: str) -> Dict[str, str]:
@@ -138,12 +152,15 @@ class DialectLexicon:
     @property
     def entries(self) -> Dict[str, str]:
         if self._entries is None:
+            from orthography2ipa import resolve
+
             base = self._data_dir or lexicon_dir()
+            files = _lexicon_files(base)
             merged: Dict[str, str] = {}
             # Least specific first, so the specific lect overwrites on collision.
             for lect in reversed(_parent_chain(self.lang)):
-                path = base / f"{lect}.tsv"
-                if path.exists():
+                path = files.get(resolve(lect))
+                if path is not None:
                     merged.update(parse(path.read_text(encoding="utf-8")))
             self._entries = merged
         return self._entries
