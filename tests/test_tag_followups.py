@@ -83,3 +83,10 @@ def test_a_retired_ajp_tag_reads_as_apc(region, script):
     effective 2023-01-20. Each apc-<region> is an orthography2ipa spec key."""
     assert f"apc-{region}" in available_codes()
     assert spec_for_lang(f"ajp-{script}{region}") == f"apc-{region}"
+
+
+def test_a_bare_ajp_tag_keeps_its_jordanian_lect():
+    """orthography2ipa keys bare ajp to apc-JO. That is not MSA, so the tag is
+    not read again as apc, whose bare form is the region-less apc lect."""
+    assert resolve("ajp") == "apc-JO"
+    assert spec_for_lang("ajp") == "apc-JO"
