@@ -193,9 +193,13 @@ class ArbtokG2PPlugin:
 
     def _resolve_lang(self, context: Optional[WordContext] = None) -> str:
         """Pick the variety for a call: ``context.lang`` wins when it names one,
-        otherwise the instance default."""
+        otherwise the instance default. A ``context.lang`` that is not Arabic
+        keeps the instance default."""
         if context is not None and context.lang:
-            code = spec_for_lang(context.lang)
+            try:
+                code = spec_for_lang(context.lang)
+            except ValueError:
+                return self.lang
             if code != DEFAULT_LANG:
                 return code
         return self.lang
