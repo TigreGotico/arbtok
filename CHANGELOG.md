@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a82](https://github.com/TigreGotico/arbtok/tree/0.0.2a82) (2026-11-12)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a81...0.0.2a82)
+
+**Merged pull requests:**
+
+- test: pin the bare ajp tag to apc-JO [\#329](https://github.com/TigreGotico/arbtok/pull/329) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.0.2a81](https://github.com/TigreGotico/arbtok/tree/0.0.2a81) (2026-11-12)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a80...0.0.2a81)
@@ -385,10 +393,6 @@
 ## [0.0.2a32](https://github.com/TigreGotico/arbtok/tree/0.0.2a32) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a31...0.0.2a32)
-
-**Merged pull requests:**
-
-- fix: floor ovos-utils at the alpha that allows rich 15 [\#226](https://github.com/TigreGotico/arbtok/pull/226) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a31](https://github.com/TigreGotico/arbtok/tree/0.0.2a31) (2026-09-24)
 
