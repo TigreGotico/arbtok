@@ -5,8 +5,8 @@ module-qualified (`from arbtok.plugin import ArbtokG2PPlugin`).
 
 `arbtok.__version__` is the installed version, as the PEP 440 string the
 distribution carries. The package root also re-exports `Lect`, `spec_for_lang`, `lect_code`, `supported_lects`,
-`vocalize`, `AsrNorm`, `TtsNorm`, `normalize_asr`, `normalize_for_tts` and
-`is_arabic_lang`.
+`vocalize`, `ModelUnavailableError`, `AsrNorm`, `TtsNorm`, `normalize_asr`,
+`normalize_for_tts` and `is_arabic_lang`.
 
 ## `arbtok.plugin`
 
@@ -49,8 +49,11 @@ p.transcribe_word("قَهْوَة")                      # single word
 p.transcribe("عِنْدِي meeting", arabizi=False)    # force the loanword reading
 ```
 
-Diacritization degrades gracefully: if the model cannot load, the engine
-transcribes whatever diacritics are already present rather than raising.
+Diacritization degrades with one exception. If the model cannot load or fails,
+the engine transcribes whatever diacritics are already present. If the stem
+lexicon is a Hugging Face file that is not in the local cache and cannot be
+fetched, the call raises `arbtok.ModelUnavailableError`, a `ValueError` that
+names the dataset and the file. Pass `lexicon=None` to run with no network.
 
 ## `arbtok.tokenizer`
 
@@ -58,9 +61,11 @@ The phonemization core. Three dataclasses form a three-level hierarchy:
 `Sentence` holds `WordToken`s, and each `WordToken` holds `CharToken`s, linked
 bidirectionally so phonology can read neighbors.
 
-### `Sentence(surface: str)`
+### `Sentence(surface: str, lang="ar", stress=True, pausal=True)`
 
-The main entry point. Build it from raw (diacritized) Arabic text.
+The main entry point. Build it from raw (diacritized) Arabic text. `lang` is the
+variety, `stress` marks the stressed syllable, and `pausal` applies the waqf
+reductions at a written pause.
 
 ```python
 from arbtok.tokenizer import Sentence
@@ -82,7 +87,7 @@ print(len(s.tokens))      # word + punctuation tokens
 
 `Sentence` compares equal to its surface string (`Sentence("x") == "x"`).
 
-### `WordToken(surface: str, word_idx: int, prev_word=None, next_word=None)`
+### `WordToken(surface: str, word_idx: int, prev_word=None, next_word=None, lang="ar")`
 
 One word (or one punctuation mark). You rarely construct these directly, read
 them off `Sentence.tokens`, but the properties are useful for inspection.
@@ -261,7 +266,7 @@ Variety resolution and the base phoneme maps.
 ```python
 from arbtok.dialects import ARABIC_TO_IPA_CONSONANTS, lect_code, spec_for_lang
 
-print(spec_for_lang("ar-SA"))          # "ar-SA-x-najd"
+print(spec_for_lang("ar-SA"))          # "ars-SA" — Najdi, keyed by its ISO 639-3 code
 print(lect_code("ar-KW"))              # "afb" — Gulf, off the parent chain
 print(ARABIC_TO_IPA_CONSONANTS["ب"])   # "b"
 ```
@@ -304,7 +309,21 @@ G2P("ar", pipeline=pipeline("ar")).transcribe("كتب")    # 'ˈkatab' — arbto
 
 `pipeline(lang)` gives orthography2ipa every arbtok step: `normalize_for_tts` as `expand`, the diacritizer as `mark`, the rescorers and the cross-word sandhi. `pipeline(lang, path="fusion")` selects the fusion diacritizer.
 
+### `ArbtokDiacritizer(path="lattice")`
+
+The `mark` step. `path` selects the generator: `"lattice"` (the default) or
+`"fusion"`. Any other value raises `ValueError`. The path is a constructor
+argument only, and no environment variable changes it. The measurement behind the
+default is in [dialects.md](dialects.md#which-generator-answers-a-word-nobody-has-written-down).
+`normalize(text, lang)` returns *text* with the tashkeel restored.
+
 arbtok also registers the three classes as the entry points `orthography2ipa.normalize`, `orthography2ipa.rescore` and `orthography2ipa.sandhi`, under the name `arbtok`. They serve `G2P(lang, plugins={"normalize": "arbtok"})`, which orthography2ipa deprecates. The entry points go when orthography2ipa 8.0.0 removes `plugins=`.
+
+## `arbtok.unicode_symbol2label` (deprecated)
+
+`UNICODE_SYMBOL_TO_LABEL` maps Unicode symbols to their Arabic names. No arbtok code
+reads it. Importing the module emits a `DeprecationWarning`, and the next major
+release removes it. Nothing replaces it.
 
 ## Where next
 

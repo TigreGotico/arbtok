@@ -82,10 +82,10 @@ An entry is held to the same guards as a model proposal: it must spell the word
 it was asked about, and the variety's grapheme table must license it. Data can be
 wrong too.
 
-Nothing is bundled. The lexicon is mined from a GPL-2.0 corpus and arbtok is
-Apache-2.0, so it ships as a Hugging Face dataset fetched on first use, exactly
-as the diacritizer's model weights are. `scripts/build_stem_lexicon.py` builds
-one from any diacritized corpus.
+The stem lexicon is not bundled. It is mined from a GPL-2.0 corpus and arbtok is
+Apache-2.0, so it ships as a Hugging Face dataset fetched on first use. The
+diacritizer's model weights are different: they ship inside the wheel.
+`scripts/build_stem_lexicon.py` builds a lexicon from any diacritized corpus.
 
 ## The per-lect closed-class lexicon
 
@@ -131,9 +131,13 @@ winning on a collision. See `arbtok/dialect_lexicon.py`.
 ### Errors
 
 Failures inside the model raise `TashkeelError` with the underlying cause
-attached. The G2P engine (`arbtok.plugin.ArbtokG2PPlugin`) degrades
-gracefully: when diacritization is unavailable it transcribes whatever
-diacritics are present in the input.
+attached.
+
+The G2P engine (`arbtok.plugin.ArbtokG2PPlugin`) raises one error and absorbs the
+rest. A stem lexicon on the Hugging Face Hub that is not in the local cache and
+cannot be fetched raises `arbtok.ModelUnavailableError`, a `ValueError`. Any other
+diacritization failure passes the text through: the engine transcribes whatever
+diacritics the input carries.
 
 ---
 [← Quickstart](quickstart.md) · [Home](../README.md) · [Rawi-lattice fusion →](rawi-fusion.md)

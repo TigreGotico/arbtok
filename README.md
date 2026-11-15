@@ -133,6 +133,13 @@ inside the wheel.
 pip install arbtok
 ```
 
+The diacritizer model ships inside the wheel. The default stem lexicon does not:
+the first call that diacritizes downloads `ar-stems.tsv` from the Hugging Face
+dataset `TigreGotico/arabic-stem-lexicon` into the Hugging Face cache. If the file
+is not cached and the Hub cannot be reached, that call raises
+`arbtok.ModelUnavailableError`. Pass `lexicon=None` to run with no network (see
+[`docs/tashkeel.md`](docs/tashkeel.md#the-stem-lexicon)).
+
 ## Usage
 
 arbtok is built **on** [orthography2ipa](https://github.com/TigreGotico/orthography2ipa)
@@ -169,6 +176,9 @@ plugin.transcribe("كتاب جميل")    # auto-tashkeel + IPA
 
 Pass a spec code as `lang=` to phonemize a variety. `arbtok.supported_lects()`
 lists every code it resolves to, with the orthography2ipa quality tier of each.
+The codes are the canonical ones orthography2ipa keys its specs by, ISO 639-3
+where a lect has its own code: `ar-EG` resolves to `arz-EG` and `ar-SA-x-najd` to
+`ars-SA`. The older tags stay valid as aliases.
 Bare (undiacritized) input is restored **before** dialect allophony applies. The
 model and stem lexicon are MSA artifacts, but the fusion scorer constrains the
 model's distribution to the readings the *target lect's* orthography licenses
@@ -180,7 +190,7 @@ supported list, and the pinned pipeline order.
 import arbtok
 from arbtok.plugin import ArbtokG2PPlugin
 
-arbtok.supported_lects()[:2]                                   # [Lect(code='ar', tier='research'), …]
+arbtok.supported_lects()[:2]                                   # [Lect(code='aao', tier='stub'), Lect(code='abh', tier='stub')]
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")  # 'ˈɡahawa'
 ```
 
@@ -232,7 +242,8 @@ to `[tink]`, while Najdi keeps the affricate `[manidʒar]` and the interdental
 `[θink]`. A symbol the matrix lect does not declare is projected onto the nearest
 sound it does, because a speaker says *something*. `strict=True` refuses the
 projection and returns `None` instead, for a caller for whom a nearest-sound guess
-is worse than no answer.
+is worse than no answer. `strict` is an argument of `arbtok.translit.transliterate`,
+not of the plugin.
 
 ```python
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")        # 'maniɡar'

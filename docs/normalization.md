@@ -232,7 +232,7 @@ parser by its version when numbers are read.
 ```python
 CER_NORM.with_lexicon(LEXICON).describe()
 # 'arbtok-asr-norm <rule set>: punctuation_before_marks,strip_harakat,strip_tatweel,
-#  unify_alef,unify_ta_marbuta,unify_alef_maqsura,unify_hamza_carriers,
+#  unify_spoken_variants,unify_alef,unify_ta_marbuta,unify_alef_maqsura,unify_hamza_carriers,
 #  blank_punctuation,drop_word_final_hamza,collapse_whitespace;
 #  lexicon 3 entries sha256:a44661c91a5bc932'
 ```
