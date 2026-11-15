@@ -4,7 +4,7 @@ ISO 639-3 tables or orthography2ipa, never from arbtok."""
 import langcodes
 import pytest
 from linguatag import standardize_lang
-from orthography2ipa import WordContext, available_codes, resolve
+from orthography2ipa import WordContext, available_codes, get, resolve
 
 from arbtok import dialects, lect_code, spec_for_lang
 from arbtok.plugin import ArbtokG2PPlugin
@@ -90,3 +90,19 @@ def test_a_bare_ajp_tag_keeps_its_jordanian_lect():
     not read again as apc, whose bare form is the region-less apc lect."""
     assert resolve("ajp") == "apc-JO"
     assert spec_for_lang("ajp") == "apc-JO"
+    assert spec_for_lang("ajp-x-cairo") == "apc-JO"
+
+
+def test_a_retired_code_that_keys_a_spec_names_that_spec():
+    """ISO 639-3 retirements: ajt (Judeo-Tunisian Arabic) merged into aeb, effective
+    2022-01-20. orthography2ipa keeps ``ajt`` as the key of its own spec, a child of
+    aeb-TN, so the tag names that spec and not the language it merged into, and a
+    subtag that names nothing keeps it. A region is not part of the key, so
+    ``ajt-TN`` reads as Tunisian Arabic."""
+    assert resolve("ajt") == "ajt"
+    assert get("ajt").parent == "aeb-TN"
+    assert spec_for_lang("ajt") == "ajt"
+    assert spec_for_lang("AJT") == "ajt"
+    assert spec_for_lang("ajt-x-cairo") == "ajt"
+    assert spec_for_lang("ajt_u_nu_latn") == "ajt"
+    assert spec_for_lang("ajt-TN") == "aeb-TN"

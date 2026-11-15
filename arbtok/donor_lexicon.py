@@ -60,7 +60,7 @@ def bundled_path(code: str = BUNDLED_DONOR) -> Optional[Path]:
     A lexicon belongs to the spec that orthography2ipa reads *code* with, and its
     file is named for that spec: ``en``, ``EN-gb`` and ``en_GB`` all find
     ``en-GB.tsv``, and ``fr`` finds ``fr-FR.tsv``. A code that names a spec only
-    by nearest-language guessing, such as ``fr-FR.sources``, finds none.
+    by nearest-language guessing, such as ``en-GB.sources``, finds none.
     """
     if not resolves_exactly(code):
         return None

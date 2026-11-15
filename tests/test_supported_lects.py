@@ -28,10 +28,19 @@ AR_KEYS = (
 )
 
 
+#: ISO 639-3 codes retired by merger into an Arabic language, from the ISO 639-3
+#: Registration Authority's table of retirements (iso-639-3_Retirements.tab, reason M):
+#: ``ajt`` Judeo-Tunisian Arabic into ``aeb`` from 2022-01-20, and ``ajp`` South
+#: Levantine Arabic into ``apc`` from 2023-01-20. The IANA registry copy langcodes
+#: ships predates both, and lists ``ajt`` under the Judeo-Arabic macrolanguage ``jrb``.
+MERGED_INTO = {"ajt": "aeb", "ajp": "apc"}
+
+
 def _registry_arabic_languages():
     """``ara`` and the languages the IANA subtag registry lists under the macrolanguage
     ``ar``, read from the copy langcodes ships, plus Hassaniya ``mey``, which the registry
-    lists outside it and orthography2ipa files under Maghrebi Arabic."""
+    lists outside it and orthography2ipa files under Maghrebi Arabic, plus each code
+    retired by merger into one of them."""
     path = Path(langcodes.__file__).parent / "data" / "language-subtag-registry.txt"
     members = {"ara", "mey"}
     for record in path.read_text(encoding="utf-8").split("%%"):
@@ -39,7 +48,7 @@ def _registry_arabic_languages():
                       if ": " in line)
         if fields.get("Macrolanguage") == "ar":
             members.add(fields["Subtag"])
-    return members
+    return members | {old for old, new in MERGED_INTO.items() if new in members}
 
 
 def _declared_language(code):
@@ -61,8 +70,8 @@ def _arabic_codes():
 def test_the_subtag_registry_lists_the_arabic_languages():
     """The oracle below reads real data, not an empty file."""
     languages = _registry_arabic_languages()
-    assert {"arb", "arz", "ary", "ars", "apc", "afb", "acw", "shu"} <= languages
-    assert not {"arc", "arn", "mlt", "jrb"} & languages
+    assert {"arb", "arz", "ary", "ars", "apc", "afb", "acw", "shu", "ajt"} <= languages
+    assert not {"arc", "arn", "mlt", "jrb", "aju"} & languages
 
 
 def test_supported_lects_matches_the_registry():

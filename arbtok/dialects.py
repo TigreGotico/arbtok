@@ -145,14 +145,6 @@ def consonant_ipa(grapheme: str, lang: str, default: str) -> str:
 #: The spec code used when a caller names no variety.
 DEFAULT_LANG = "ar"
 
-#: Retired ISO 639-3 codes of Arabic varieties and the code each was merged into.
-#: Source: ISO 639-3 Registration Authority, code table of retirements
-#: (iso-639-3_Retirements.tab, https://iso639-3.sil.org/code_tables/download_tables):
-#: ``ajp`` South Levantine Arabic, reason M (merge), change to ``apc``, 2023-01-20.
-#: The IANA registry that langcodes ships predates the merge, so linguatag does not
-#: apply it.
-_MERGED_LANGUAGES = {"ajp": "apc"}
-
 # The farthest an Arabic variety stands from its nearest spec once its script is
 # dropped: 4 for a region mismatch, 5 for a member of the ``ar`` macrolanguage,
 # whose nearest spec is ``ar``. Every other language stands 30 or more from a
@@ -346,9 +338,12 @@ def spec_for_lang(lang: Optional[str]) -> str:
       the ``ar`` (MSA) leaf.
 
     The tag is read as linguatag standardizes it, so the extlang form names
-    the same lect as the language it stands for (``ar-arz`` is ``arz``). A tag
-    with a retired ISO 639-3 code that reads as MSA is read again with the code
-    it was merged into (``ajp-JO`` as ``apc-JO``).
+    the same lect as the language it stands for (``ar-arz`` is ``arz``), and a
+    retired ISO 639-3 code names the language it was merged into (``ajp-JO`` is
+    ``apc-JO``). A retired code that orthography2ipa names exactly keeps its
+    lect when the tag adds no script or region: ``ajt`` and ``ajt-x-cairo`` are
+    the Judeo-Tunisian spec, not ``aeb-TN``, and bare ``ajp`` is ``apc-JO``, the
+    lect orthography2ipa keys it to.
 
     Raises:
         ValueError: *lang* is not an Arabic variety (linguatag's
@@ -356,13 +351,16 @@ def spec_for_lang(lang: Optional[str]) -> str:
     """
     if not lang:
         return DEFAULT_LANG
+    from orthography2ipa import resolve, resolves_exactly
+
     tag = standardize_lang(lang)
-    spec = _closest_spec(tag)
     language, *rest = tag.split("-")
-    merged = _MERGED_LANGUAGES.get(language)
-    if merged and spec == DEFAULT_LANG:
-        return _closest_spec("-".join([merged, *rest]))
-    return spec
+    requested = lang.replace("_", "-").split("-")[0].lower()
+    if (requested != language and _core_subtags(tag) == [language]
+            and standardize_lang(requested) == language
+            and resolves_exactly(requested) and resolve(requested) in _arabic_codes()):
+        tag = "-".join([requested, *rest])
+    return _closest_spec(tag)
 
 
 def _closest_spec(normalized: str) -> str:

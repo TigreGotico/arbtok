@@ -57,8 +57,10 @@ PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
 SKIP = {"ar-Latn-buckwalter"}
 
 # Arabic specs orthography2ipa keys by an ISO 639-3 code alone. No code-switched
-# gold is written for them; two (acy, pga) are written in Latin script.
-NO_GOLD = {"aao", "abh", "acq", "acy", "auz", "ayh", "ayl", "ayp", "bbz", "pga", "ssh"}
+# gold is written for them; two (acy, pga) are written in Latin script and one
+# (ajt) in Hebrew script.
+NO_GOLD = {"aao", "abh", "acq", "acy", "ajt", "auz", "ayh", "ayl", "ayp", "bbz", "pga",
+           "ssh"}
 
 # Which dialectal-particle set each lect frames its Arabic in. The English words
 # and their nativised reflexes (the point of this set) are identical across
