@@ -28,12 +28,16 @@ AR_KEYS = (
 )
 
 
-#: ISO 639-3 codes retired by merger into an Arabic language, from the ISO 639-3
-#: Registration Authority's table of retirements (iso-639-3_Retirements.tab, reason M):
-#: ``ajt`` Judeo-Tunisian Arabic into ``aeb`` from 2022-01-20, and ``ajp`` South
-#: Levantine Arabic into ``apc`` from 2023-01-20. The IANA registry copy langcodes
-#: ships predates both, and lists ``ajt`` under the Judeo-Arabic macrolanguage ``jrb``.
-MERGED_INTO = {"ajt": "aeb", "ajp": "apc"}
+#: ISO 639-3 codes retired by merger into an Arabic language that the IANA registry
+#: copy langcodes ships does not list under ``ar``, from the ISO 639-3 Registration
+#: Authority's table of retirements (iso-639-3_Retirements.tab, reason M): ``ajt``
+#: Judeo-Tunisian Arabic into ``aeb`` from 2022-01-20. That registry copy predates the
+#: merger and lists ``ajt`` under the Judeo-Arabic macrolanguage ``jrb``.
+MERGED_INTO = {"ajt": "aeb"}
+
+#: The scripts of the specs arbtok reads: Arabic, Latin for Arabizi and the Latin-script
+#: lects, and ``Zyyy`` (undetermined), which the registry stubs declare.
+READ_SCRIPTS = {"Arabic", "Latin", "Zyyy"}
 
 
 def _registry_arabic_languages():
@@ -60,11 +64,13 @@ def _declared_language(code):
 
 def _arabic_codes():
     """A spec whose lineage declares no language is the language its key's primary
-    subtag names; ``ar`` is the registry's two-letter subtag of the macrolanguage."""
+    subtag names; ``ar`` is the registry's two-letter subtag of the macrolanguage.
+    A spec written in a script arbtok does not read is not a lect."""
     languages = _registry_arabic_languages() | {"ar"}
     return {c for c in available_codes()
             if resolve(c) == c
-            and (_declared_language(c) or c.split("-")[0]) in languages}
+            and (_declared_language(c) or c.split("-")[0]) in languages
+            and get(c).script in READ_SCRIPTS}
 
 
 def test_the_subtag_registry_lists_the_arabic_languages():

@@ -276,16 +276,23 @@ def _reads_script(code: str, script: Optional[str]) -> bool:
     """Whether the spec *code* reads text written in the ISO 15924 *script*.
 
     A Latin-script spec (``pga``, ``acy``, ``ar-Latn-x-buckwalt``) reads Latin
-    only. Every other spec reads Arabic script, and Latin script as Arabizi.
-    No *script* means the tag names none, and any spec reads it.
+    only. An Arabic-script spec reads Arabic script, and Latin script as Arabizi.
+    So does a spec whose script is undetermined, ``Zyyy`` in ISO 15924: the
+    registry stubs (``aao``, ``acq``) declare it and read their parent's Arabic
+    table. A spec written in any other script reads neither: Judeo-Tunisian
+    ``ajt`` is written in Hebrew script. No *script* means the tag names none,
+    and any spec reads it.
     """
     if script is None:
         return True
     from orthography2ipa import get
 
-    if get(code).script == "Latin":
+    declared = get(code).script
+    if declared == "Latin":
         return script.title() == "Latn"
-    return script.title() in ("Arab", "Latn")
+    if declared in ("Arabic", "Zyyy"):
+        return script.title() in ("Arab", "Latn")
+    return False
 
 
 def _core_subtags(tag: str) -> List[str]:
@@ -340,10 +347,11 @@ def spec_for_lang(lang: Optional[str]) -> str:
     The tag is read as linguatag standardizes it, so the extlang form names
     the same lect as the language it stands for (``ar-arz`` is ``arz``), and a
     retired ISO 639-3 code names the language it was merged into (``ajp-JO`` is
-    ``apc-JO``). A retired code that orthography2ipa names exactly keeps its
-    lect when the tag adds no script or region: ``ajt`` and ``ajt-x-cairo`` are
-    the Judeo-Tunisian spec, not ``aeb-TN``, and bare ``ajp`` is ``apc-JO``, the
-    lect orthography2ipa keys it to.
+    ``apc-JO``, ``ajt`` is ``aeb-TN``). A retired code that orthography2ipa keys
+    to an Arabic lect other than its successor's keeps that lect when the tag
+    adds no region: ``ajp``, ``ar-ajp`` and ``ajp-Arab`` are ``apc-JO``, the lect
+    orthography2ipa keys ``ajp`` to, where bare ``apc`` is the region-less
+    ``apc`` lect. ``ara-Latn`` is ``ar-Latn``.
 
     Raises:
         ValueError: *lang* is not an Arabic variety (linguatag's
@@ -354,12 +362,19 @@ def spec_for_lang(lang: Optional[str]) -> str:
     from orthography2ipa import resolve, resolves_exactly
 
     tag = standardize_lang(lang)
-    language, *rest = tag.split("-")
-    requested = lang.replace("_", "-").split("-")[0].lower()
-    if (requested != language and _core_subtags(tag) == [language]
+    core = _core_subtags(tag)
+    script = next((s for s in core[1:] if len(s) == 4 and s.isalpha()), None)
+    language = core[0]
+    raw = _core_subtags(lang.replace("_", "-").lower())
+    extlang = len(raw) > 1 and len(raw[1]) == 3 and raw[1].isalpha()
+    requested = raw[1] if extlang else raw[0]
+    if (requested != language and [s for s in core if s != script] == [language]
             and standardize_lang(requested) == language
-            and resolves_exactly(requested) and resolve(requested) in _arabic_codes()):
-        tag = "-".join([requested, *rest])
+            and resolves_exactly(requested) and resolve(requested) in _arabic_codes()
+            and resolve(requested) != resolve(language)):
+        spec = _closest_spec("-".join([requested, *tag.split("-")[len(core):]]))
+        if _reads_script(spec, script):
+            return spec
     return _closest_spec(tag)
 
 
@@ -529,6 +544,11 @@ def _is_arabic_code(code: str) -> bool:
     Creole Arabic, ``ar-TD-x-babalia``, declares none under a clade parent, and
     its tag names it Arabic.
 
+    The spec must also read the script arbtok reads, Arabic or Latin
+    (:func:`_reads_script`). Judeo-Tunisian Arabic, ``ajt``, is an Arabic
+    language, and orthography2ipa writes its spec for Hebrew script, so it is
+    not a lect here.
+
     The lookalikes ``arc`` (Aramaic) and ``arn`` (Mapudungun) sort next to the
     Arabic keys and declare their own languages. So does Maltese (``mlt``),
     although orthography2ipa files it under ``ar``. A tag that is not itself a
@@ -545,7 +565,8 @@ def _is_arabic_code(code: str) -> bool:
         seen.add(node)
         spec = get(node)
         language, node = spec.iso639_3, spec.parent
-    return is_arabic_lang(language or code)
+    return (is_arabic_lang(language or code)
+            and (_reads_script(code, "Arab") or _reads_script(code, "Latn")))
 
 
 def supported_lects() -> List[Lect]:
