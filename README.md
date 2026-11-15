@@ -178,7 +178,7 @@ Pass a spec code as `lang=` to phonemize a variety. `arbtok.supported_lects()`
 lists every code it resolves to, with the orthography2ipa quality tier of each.
 The codes are the canonical ones orthography2ipa keys its specs by, ISO 639-3
 where a lect has its own code: `ar-EG` resolves to `arz-EG` and `ar-SA-x-najd` to
-`ars-SA`. The older tags stay valid as aliases.
+`ars-SA`. The regional tags resolve as aliases.
 Bare (undiacritized) input is restored **before** dialect allophony applies. The
 model and stem lexicon are MSA artifacts, but the fusion scorer constrains the
 model's distribution to the readings the *target lect's* orthography licenses

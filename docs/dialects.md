@@ -47,7 +47,7 @@ for lect in arbtok.supported_lects():
 The roster lists each variety by its canonical code. orthography2ipa keys a lect
 that has its own ISO 639-3 code by that code, so `supported_lects()` gives `arz-EG`
 for `ar-EG`, `ars-SA` for `ar-SA-x-najd`, `acw-SA` for `ar-SA-x-hejaz` and `afb`
-for `ar-x-gulf`. The older tags stay valid as aliases: `lang="ar-EG"` and
+for `ar-x-gulf`. The regional tags resolve as aliases: `lang="ar-EG"` and
 `lang="arz-EG"` select the same spec, and `spec_for_lang` returns the canonical
 code. The roster runs from MSA `ar` and Classical `arb` through the grouping nodes
 (`afb`, `ar-x-maghrebi`, `ar-x-mashriqi`, `ar-x-peninsul`, …) to the national leaves

@@ -51,8 +51,8 @@ p.transcribe("عِنْدِي meeting", arabizi=False)    # force the loanword re
 
 Diacritization degrades with one exception. If the model cannot load or fails,
 the engine transcribes whatever diacritics are already present. If the stem
-lexicon is a Hugging Face file that is not in the local cache and cannot be
-fetched, the call raises `arbtok.ModelUnavailableError`, a `ValueError` that
+lexicon is a Hugging Face file that is not in the local cache and the Hub is
+offline or cannot be reached, the call raises `arbtok.ModelUnavailableError`, a `ValueError` that
 names the dataset and the file. Pass `lexicon=None` to run with no network.
 
 ## `arbtok.tokenizer`

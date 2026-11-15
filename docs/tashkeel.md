@@ -134,8 +134,8 @@ Failures inside the model raise `TashkeelError` with the underlying cause
 attached.
 
 The G2P engine (`arbtok.plugin.ArbtokG2PPlugin`) raises one error and absorbs the
-rest. A stem lexicon on the Hugging Face Hub that is not in the local cache and
-cannot be fetched raises `arbtok.ModelUnavailableError`, a `ValueError`. Any other
+rest. A stem lexicon on the Hugging Face Hub that is not in the local cache, when
+the Hub is offline or cannot be reached, raises `arbtok.ModelUnavailableError`, a `ValueError`. Any other
 diacritization failure passes the text through: the engine transcribes whatever
 diacritics the input carries.
 
