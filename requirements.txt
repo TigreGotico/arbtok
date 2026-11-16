@@ -5,8 +5,11 @@ quebra-frases
 # `is_arabic_lang` is. From 0.2.1a1 it measures the Arabic varieties in their CLDR likely
 # script, so `ayl-Arab-LY`, `ayp-Arab-IQ` and `mey-Arab-MR` reach their own lects; below
 # it they read as MSA. The `langcodes` extra gives it full BCP-47 standardization and
-# distance.
-linguatag[langcodes]>=0.2.1a1
+# distance. From 0.2.2a1 it replaces a retired ISO 639-3 code with the code it was merged
+# into, from the IANA registry's Preferred-Value: `ajp-JO` names `apc-JO`, and Judeo-Tunisian
+# `ajt`, merged into Tunisian `aeb`, is an Arabic variety. Below it, `ajt` reads as
+# Judeo-Arabic, not Arabic, and `ajp-JO` as MSA.
+linguatag[langcodes]>=0.2.2a1
 # Floored at the release that speaks a lect's cardinals: `dialect_numbers` asks it for the
 # Hijazi, Gulf and Egyptian number words by the lect's ISO 639-3 code, and an older parser
 # answers `lang="acw"` with the literary words and no error, so the flag would do nothing
