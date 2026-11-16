@@ -86,11 +86,21 @@ def test_a_bare_english_donor_tag_gives_the_documented_reading(word, reading):
     assert transliterate(word, "ar", donor="en") == reading
 
 
-def test_a_name_that_is_not_a_language_tag_finds_no_lexicon():
-    """The French source table sits beside the lexicons. Its file name names no
-    spec, so no donor code reaches it, and the engine reads the rules."""
-    assert bundled_path("fr-FR.sources") is None
-    assert donor_engine("fr-FR.sources").pipeline.lexicon is None
+@pytest.mark.parametrize("code", ["fr-FR.sources", "FR-fr.SOURCES", "fr-FR.sources.tsv"])
+def test_no_donor_code_finds_the_french_source_table(code):
+    """The French source table sits beside the lexicons and is not one. A lexicon
+    file is named for a spec, so no donor code finds the source table, whatever
+    spec orthography2ipa reads the code with."""
+    assert bundled_path(code) != DATA / "fr-FR.sources.tsv"
+
+
+def test_a_code_that_names_a_spec_only_by_guessing_finds_no_lexicon():
+    """orthography2ipa reads ``en-GB.sources`` as ``en-GB`` by nearest-language
+    guessing only, so the code finds no lexicon, and the engine reads the rules."""
+    assert not o2i.resolves_exactly("en-GB.sources")
+    assert (DATA / "en-GB.tsv").is_file()
+    assert bundled_path("en-GB.sources") is None
+    assert donor_engine("en-GB.sources").pipeline.lexicon is None
 
 
 def test_a_callers_own_lexicon_wins(tmp_path, process_lexicons):
