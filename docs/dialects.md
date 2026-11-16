@@ -21,8 +21,10 @@ so an unknown region is MSA rather than an error.
 
 A tag that is not Arabic, `fi` or `en-US`, raises `ValueError`. On
 `WordContext.lang` such a tag keeps the instance default. The extlang form names
-its language (`ar-arz` is `arz`). The retired code `ajp`, merged into `apc` in
-ISO 639-3, reads as `apc` (`ajp-JO` is `apc-JO`).
+its language (`ar-arz` is `arz`). A retired ISO 639-3 code names the code it
+was merged into: `ajp-JO` is `apc-JO`, and Judeo-Tunisian `ajt` is Tunisian
+`aeb-TN`. Bare `ajp`, `ar-ajp` and `ajp-Arab` read as `apc-JO`, the lect
+orthography2ipa keys `ajp` to. Bare `apc` is the region-less `apc` lect.
 
 Any Arabic spec orthography2ipa carries can be named, `ar`, `arb` (Classical),
 the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
@@ -35,7 +37,9 @@ the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
 the orthography2ipa `quality` tier of its spec, so the list tracks the installed
 data set rather than a table in arbtok. Ask the code rather than a page: a spec
 shipped upstream joins the roster without arbtok changing, which is what makes a
-written-out list here wrong within a release or two.
+written-out list here wrong within a release or two. The roster holds only specs
+that declare Arabic, Latin or undetermined (`Zyyy`) script. A spec written for
+another script, such as Judeo-Tunisian `ajt` in Hebrew script, stays off it.
 
 ```python
 import arbtok
