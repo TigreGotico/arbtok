@@ -43,6 +43,7 @@ the digits echo the mirrored Arabic letters.
 | `3'`  | غ      | ʿayn + prime = ġayn |
 | `7'`  | خ      | ḥāʾ + prime = ḫāʾ |
 | `6'`  | ظ      | ṭāʾ + prime = ẓāʾ |
+| `9'`  | ق      | qāf + prime = qāf |
 
 Consonant digraphs (`kh gh sh ch th dh`) and emphatic capitals (`S D T Z` → ص ض ط ظ)
 round out the consonants. Long vowels, doubled `aa ee oo` and the diphthong digraphs
@@ -62,7 +63,7 @@ Arabizi form spells several skeletons, and the vowels are the ambiguous part).
 
 1. an **explicit hint**, a caller that has language-tagged its input passes
    `arabizi=True`/`False`, and that always wins.
-2. a **digit-guttural** (`2 3 5 6 7 9` and the primed forms). No English word
+2. a **digit-guttural** (`2 3 5 6 7 8 9` and the primed forms). No English word
    contains one, so their presence is strong, low-false-positive evidence of
    Arabic-in-Latin.
 

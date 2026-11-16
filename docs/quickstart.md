@@ -1,9 +1,11 @@
 # Quickstart, Arabic text to IPA
 
 `arbtok` turns Arabic script into IPA phonemes for TTS front-ends, across Modern
-Standard Arabic, Classical, and 30+ regional varieties. It is **self-contained**:
-the diacritizer model ships inside the wheel, so there is no external model to
-download and no network call at runtime.
+Standard Arabic, Classical, and 30+ regional varieties. The diacritizer model
+ships inside the wheel, so there is no external model to download. The default
+stem lexicon is a Hugging Face dataset: the first call that diacritizes downloads
+it to the Hugging Face cache. Pass `lexicon=None` to run with no network call (see
+[tashkeel.md](tashkeel.md#the-stem-lexicon)).
 
 ## 1. Install
 
@@ -52,7 +54,7 @@ print(tunis.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab al
 
 Najdi reads qāf as /ɡ/ and inserts the *gahawa* epenthetic vowel. Tunisian keeps
 /q/ and monophthongizes *bayt* to /biːt/. `arbtok.supported_lects()` lists every
-code you can pass. See [dialects.md](dialects.md) for the full list and the
+variety you can pass, by its canonical code. See [dialects.md](dialects.md) for the full list and the
 resolution rules.
 
 ## 4. Normalize numbers, dates and units first
@@ -91,8 +93,8 @@ plugin diacritizes first.
 ## Accuracy note
 
 The rule set and the IPA reference test set are LLM-generated and have not been
-validated by a native speaker. The Arabic specs are `research` tier, not
-`production`. Treat the output as a strong starting point, not gospel. If you
+validated by a native speaker. The Arabic specs are `research` or `stub` tier,
+none `production`. Treat the output as a strong starting point, not gospel. If you
 speak MSA or a covered dialect, pull requests are very welcome.
 
 ## Where next

@@ -21,8 +21,10 @@ so an unknown region is MSA rather than an error.
 
 A tag that is not Arabic, `fi` or `en-US`, raises `ValueError`. On
 `WordContext.lang` such a tag keeps the instance default. The extlang form names
-its language (`ar-arz` is `arz`). The retired code `ajp`, merged into `apc` in
-ISO 639-3, reads as `apc` (`ajp-JO` is `apc-JO`).
+its language (`ar-arz` is `arz`). A retired ISO 639-3 code names the code it
+was merged into: `ajp-JO` is `apc-JO`, and Judeo-Tunisian `ajt` is Tunisian
+`aeb-TN`. Bare `ajp`, `ar-ajp` and `ajp-Arab` read as `apc-JO`, the lect
+orthography2ipa keys `ajp` to. Bare `apc` is the region-less `apc` lect.
 
 Any Arabic spec orthography2ipa carries can be named, `ar`, `arb` (Classical),
 the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
@@ -35,7 +37,9 @@ the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
 the orthography2ipa `quality` tier of its spec, so the list tracks the installed
 data set rather than a table in arbtok. Ask the code rather than a page: a spec
 shipped upstream joins the roster without arbtok changing, which is what makes a
-written-out list here wrong within a release or two.
+written-out list here wrong within a release or two. The roster holds only specs
+that declare Arabic, Latin or undetermined (`Zyyy`) script. A spec written for
+another script, such as Judeo-Tunisian `ajt` in Hebrew script, stays off it.
 
 ```python
 import arbtok
@@ -44,14 +48,18 @@ for lect in arbtok.supported_lects():
     print(lect.code, lect.tier)
 ```
 
-The roster runs from MSA `ar` and Classical `arb` through the grouping nodes
-(`ar-x-gulf`, `ar-x-levantine`, `ar-x-maghrebi`, `ar-x-mashriqi`,
-`ar-x-peninsular`) to the national leaves (`ar-EG`, `ar-IQ`, `ar-MA`, …) and the
-sub-lects below them (`ar-SA-x-najd`, `ar-IQ-x-qeltu`, `ar-BH-x-baharna`, …),
-with the Buckwalter romanization `ar-Latn-buckwalter` among them as a
-machine-readable anchor. Most sit at `research` tier and a handful at `stub`,
-where the grapheme layer resolves but the allophone rule set has not been taken
-as far. The tier is a property of the installed orthography2ipa spec, not of
+The roster lists each variety by its canonical code. orthography2ipa keys a lect
+that has its own ISO 639-3 code by that code, so `supported_lects()` gives `arz-EG`
+for `ar-EG`, `ars-SA` for `ar-SA-x-najd`, `acw-SA` for `ar-SA-x-hejaz` and `afb`
+for `ar-x-gulf`. The regional tags resolve as aliases: `lang="ar-EG"` and
+`lang="arz-EG"` select the same spec, and `spec_for_lang` returns the canonical
+code. The roster runs from MSA `ar` and Classical `arb` through the grouping nodes
+(`afb`, `ar-x-maghrebi`, `ar-x-mashriqi`, `ar-x-peninsul`, …) to the national leaves
+(`arz-EG`, `acm-IQ`, `ary-MA`, …) and the sub-lects below them (`ars-SA-x-qassim`,
+`ar-IQ-x-qeltu`, `abv-BH`, …), with the Buckwalter romanization
+`ar-Latn-x-buckwalt` among them as a machine-readable anchor. Most sit at
+`research` tier and a handful at `stub`, where the grapheme layer resolves but the
+allophone rule set has not been taken as far. The tier is a property of the installed orthography2ipa spec, not of
 arbtok's cascade.
 
 ## The ISO 639-3 code a tag names
@@ -75,7 +83,9 @@ lect_code("ar")              # None  — the macrolanguage names no lect
 
 Whether anything is said differently under the code is the answer of whoever
 holds the data: the parser speaks a lect's cardinals only for the lects it has
-read a source for, and `ars` is not among them.
+read a source for. It has words for Hijazi `acw`, Gulf `afb`, Najdi `ars` and
+Cairene Egyptian `arz` (see
+[normalization.md](normalization.md#numbers-in-the-words-a-lect-actually-uses)).
 
 ## Pipeline order: MSA restoration before dialect allophony
 
@@ -149,9 +159,7 @@ lang→zone map, and the first ancestor carrying a table wins:
 
 Which leaves inherit which table is not listed here, and deliberately. The answer
 comes from orthography2ipa's genealogy, so it changes whenever that package ships
-a spec — `ar-SA-x-shamali` and three `ar-EG-x-*` lects exist on newer releases than
-this repository's floor pin and would already have made a written-out list wrong.
-Ask the code:
+a spec, and a written-out list would go wrong. Ask the code:
 
 ```python
 from arbtok.translit import nativization_table, SEGMENT_MAP
@@ -254,11 +262,8 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meetin
 - The **sentence cascade has no allophone pass**, it reads the grapheme layer
   only. Word-level transcription (`transcribe_word`, `arbtok.lattice.word_ipa`)
   is where a variety's rules fire.
-- Spec `quality` is `research`, not `production`, for the Arabic varieties, and
-  their gold has not been validated by a native speaker.
-
----
-[← Rawi-lattice fusion](rawi-fusion.md) · [Home](../README.md) · [Arabizi →](arabizi.md)
+- Spec `quality` is `research` or `stub`, never `production`, for the Arabic
+  varieties, and their gold has not been validated by a native speaker.
 
 ## Diacritizing without phonemizing, and knowing who decided
 
@@ -286,8 +291,9 @@ untouched, whatever variety was asked for. Measured: six MSA vocalizations again
 
 So `provenance == "model"` means the model's MSA prior decided that word with nothing
 from the lect opposing it. That is not a bug report; it is the shape of the cascade, and
-the field is what lets a caller see it. `w.lect_constrained` excludes `model` and
-`model-repaired` for exactly this reason.
+the field is what lets a caller see it. `w.lect_constrained` is true only for
+`closed-class`, `author` and `proclitic`, so it excludes `model` and `model-repaired`
+for exactly this reason.
 
 The veto is not inert, and the distinction matters. Over the 636 model-path words of the
 shipped gold, **5 carry a reading at least one lect in the roster would reject** — the
@@ -387,3 +393,6 @@ pipeline("ar", path="fusion")      # the same choice for an orthography2ipa Pipe
 A value that is neither raises rather than falling back: a typo that silently kept the
 default reads exactly like the setting working, and a comparison run that way would
 compare one path with itself.
+
+---
+[← Rawi-lattice fusion](rawi-fusion.md) · [Home](../README.md) · [Arabizi →](arabizi.md)
