@@ -344,7 +344,9 @@ def main() -> int:
     args = ap.parse_args()
 
     from arbtok.dialects import supported_lects
-    known = {l.code for l in supported_lects()} - EXCLUDE
+    from orthography2ipa import resolve
+    excluded = {resolve(code) for code in EXCLUDE}
+    known = {l.code for l in supported_lects()} - excluded
 
     if args.lects:
         codes = [c.strip() for c in args.lects.split(",")]
@@ -356,7 +358,7 @@ def main() -> int:
 
     report = []
     for code in codes:
-        if code in EXCLUDE:
+        if resolve(code) in excluded:
             continue
         print(f"scoring {code} …", file=sys.stderr)
         report.append(run_lect(code, with_epitran=not args.no_epitran,

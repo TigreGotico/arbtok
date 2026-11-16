@@ -29,6 +29,27 @@ def test_the_settled_reading_is_the_same_on_every_lect(lect, word, expected):
     assert transliterate(word, lect) == expected
 
 
+@pytest.mark.parametrize("donor", ["en", "EN-gb", "en_GB"])
+@pytest.mark.parametrize("lect", ["ar", "ar-EG"])
+@pytest.mark.parametrize("word, expected", [
+    ("model", "muːdiːl"),
+    ("video", "fiːdjo"),
+    ("automatic", "ʔotomatik"),
+])
+def test_a_donor_tag_for_en_gb_reads_the_settled_reading(donor, lect, word, expected):
+    """Each of these donor codes names en-GB, so each reads the en-GB table that the
+    test above pins."""
+    from arbtok.translit import transliterate
+    assert transliterate(word, lect, donor=donor) == expected
+
+
+@pytest.mark.parametrize("name", ["fr-FR.sources", "en-GB.sources"])
+def test_a_name_that_is_not_a_language_tag_reads_no_settled_reading(name):
+    """en-GB.sources names en-GB only by nearest-language guessing."""
+    from arbtok.translit import _established
+    assert _established("model", name) is None
+
+
 @pytest.mark.parametrize("lect", ["ar-JO", "ar-LB"])
 def test_automatic_is_not_lengthened_by_the_donor_projection(lect):
     """The defect this fixed. Those 22 lects declare /oː/ and no short /o/, so the

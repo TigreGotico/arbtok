@@ -69,7 +69,7 @@ from arbtok.diacritize import (
     _skeleton_is_preserved,
 )
 from arbtok.dialect_lexicon import DialectLexicon
-from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
+from arbtok.lexicon import AMBIGUOUS_SHARE, DEFAULT_LEXICON, StemLexicon
 from arbtok.lattice import word_lattice
 from arbtok.nisba import restore_nisba
 from arbtok.tokenizer import normalize_unicode
@@ -80,6 +80,11 @@ from arbtok.tokenizer import normalize_unicode
 _HAMZA_SEATS = frozenset("\u0627")
 
 __all__ = ["FusionDiacritizer", "Hypothesis", "logprobs"]
+
+def _has_arabic_letter(word: str) -> bool:
+    return any(unicodedata.category(c).startswith("L") and unicodedata.name(c, "").startswith("ARABIC")
+               for c in word)
+
 
 def logprobs(row: np.ndarray) -> np.ndarray:
     """Numerically-stable log-softmax of one logit row."""
@@ -126,6 +131,7 @@ class FusionDiacritizer:
         lang: str = DEFAULT_LANG,
         waqf: bool = True,
         lexicon: Optional[str] = DEFAULT_LEXICON,
+        ambiguous_share: Optional[float] = AMBIGUOUS_SHARE,
         dialect_lexicon: bool = True,
         beam: int = 8,
         topk: int = 4,
@@ -139,8 +145,13 @@ class FusionDiacritizer:
         self._diacritizer = None
         self._spec = get(lang)
         self._tokenizer = PhonetokTokenizer(self._spec)
-        self.lexicon = StemLexicon(lexicon) if lexicon else None
+        self.lexicon = StemLexicon(lexicon, ambiguous_share) if lexicon else None
         self._dialect_lexicon_on = dialect_lexicon
+        #: The length of the sentence being read, in words that carry an Arabic letter,
+        #: as the homograph measurement counted them; None outside :meth:`diacritize`,
+        #: where a word has no sentence and the lexicon answers every spelling. It is
+        #: instance state: one diacritizer shared across threads reads another call's length.
+        self._context_words: Optional[int] = None
         #: The lect's closed-class lexicon, a hard prior consulted before the
         #: stem lexicon and before scoring (see :mod:`arbtok.dialect_lexicon`).
         self.dialect_lexicon = DialectLexicon(lang) if dialect_lexicon else None
@@ -200,7 +211,7 @@ class FusionDiacritizer:
     def _lookup(self, word: str) -> Optional[str]:
         if self.lexicon is None or not self.waqf:
             return None
-        stem = self.lexicon.get(word)
+        stem = self.lexicon.get(word, self._context_words)
         if stem is None:
             return None
         stem = restore_nisba(stem)
@@ -439,14 +450,18 @@ class FusionDiacritizer:
             return guard.diacritize(text)
 
         out, bi = [], 0
-        for w in orig_words:
-            if not w.strip():
-                out.append(w)
-                continue
-            bare_word, start = bare_words[bi]
-            bi += 1
-            wl = logits[start:start + len(bare_word)]
-            out.append(self._fuse_word(w, bare_word, wl))
+        self._context_words = sum(map(_has_arabic_letter, orig_nonempty))
+        try:
+            for w in orig_words:
+                if not w.strip():
+                    out.append(w)
+                    continue
+                bare_word, start = bare_words[bi]
+                bi += 1
+                wl = logits[start:start + len(bare_word)]
+                out.append(self._fuse_word(w, bare_word, wl))
+        finally:
+            self._context_words = None
         return " ".join(out)
 
     __call__ = diacritize

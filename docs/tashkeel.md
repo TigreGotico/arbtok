@@ -59,6 +59,13 @@ ArbtokG2PPlugin(lexicon="/data/mine.tsv")  # a local file, a URL, or an hf:// id
 ArbtokG2PPlugin(lexicon=None)              # the model, unassisted
 ```
 
+The default lexicon is the Hugging Face dataset
+`TigreGotico/arabic-stem-lexicon`, file `ar-stems.tsv`. The first call that
+diacritizes downloads it to the Hugging Face cache. When the file is not in the
+cache and the Hub is offline (`HF_HUB_OFFLINE=1`) or cannot be reached, that call
+raises `arbtok.ModelUnavailableError`, a `ValueError` that names the dataset and
+the file. To run with no network, fetch the file once, or pass `lexicon=None`.
+
 The lexicon maps an **undiacritized surface form** to the most frequent
 **diacritized stem** for it in a large diacritized corpus, not to IPA. The stem
 is fed back through arbtok's own engine, so a looked-up word still gets emphasis

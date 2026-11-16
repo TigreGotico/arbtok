@@ -4,7 +4,8 @@ import re
 import pytest
 
 from arbtok.dialects import lect_code
-from arbtok.textnorm import KSA_VOICE_AGENT, TtsNorm, normalize_for_tts
+from arbtok.textnorm import TtsNorm, normalize_for_tts
+from tests.voice_agent import VOICE_AGENT
 
 DIALECT = TtsNorm(cardinal_numbers=True, oblique_numbers=True,
                   space_fused_hundreds=True, dialect_numbers=True,
@@ -27,11 +28,22 @@ def test_a_tag_naming_no_lect_carries_no_code(tag):
     assert lect_code(tag) is None
 
 
-@pytest.mark.parametrize("tag", ["ar", "ar-SA", "ar-SA-x-najd", "ar-MA", "ar-IQ", "ar-x-levantine"])
+@pytest.mark.parametrize("tag", ["ar", "ar-MA", "ar-IQ", "ar-x-levantine"])
 def test_a_lect_with_no_cited_words_keeps_the_literary_ones(tag):
-    """Najdi is the product's target lect and the parser has no words for it: no source
-    has been read for it, and a form no source gives is not written."""
+    """A form no source gives is not written."""
     assert normalize_for_tts("عندك 15 رسالة", tag, DIALECT) == "عندك خمسة عشر رسالة"
+
+
+@pytest.mark.parametrize("tag", ["ar-SA", "ar-SA-x-najd"])
+@pytest.mark.parametrize("written, spoken", [
+    ("عندك 15 رسالة", "عندك خمسطعش رسالة"),
+    ("عندك 12 رسالة", "عندك ثنعش رسالة"),
+    ("عندي 100 ريال", "عندي مية ريال"),
+])
+def test_najdi_takes_the_parsers_cited_najdi_words(tag, written, spoken):
+    """The parser's Najdi table, under ``ars``, cites Ingham, Najdi Arabic (1994), and
+    Van Wagoner, Spoken Arabic (Saudi) (1977); ``ar-SA`` resolves to Najdi."""
+    assert normalize_for_tts(written, tag, DIALECT) == spoken
 
 
 def test_the_classical_code_is_accepted_by_a_rule_that_speaks_arabic():
@@ -74,8 +86,10 @@ def test_the_three_lects_do_not_say_a_teen_alike():
 
 def test_the_egyptian_words_are_read_for_egypt_and_not_for_its_neighbours():
     assert normalize_for_tts("عندي 100 ريال", "ar-EG", DIALECT) == "عندي مية ريال"
-    for tag in ("ar-SA-x-najd", "ar-LY", "ar-x-levantine"):
+    for tag in ("ar-LY", "ar-x-levantine"):
         assert normalize_for_tts("عندي 100 ريال", tag, DIALECT) == "عندي مئة ريال"
+    assert normalize_for_tts("عندك 12 رسالة", "ar-SA-x-najd", DIALECT) \
+        != normalize_for_tts("عندك 12 رسالة", "ar-EG", DIALECT)
 
 
 def test_a_teen_inside_a_year_is_replaced_and_the_rest_is_not():
@@ -83,19 +97,19 @@ def test_a_teen_inside_a_year_is_replaced_and_the_rest_is_not():
 
 
 def test_digit_by_digit_readings_take_the_lects_words_too():
-    assert normalize_for_tts("رقمك 0553179", "ar-SA-x-hejaz", KSA_VOICE_AGENT, dialect_numbers=True) \
+    assert normalize_for_tts("رقمك 0553179", "ar-SA-x-hejaz", VOICE_AGENT, dialect_numbers=True) \
         == "رقمك صفر خمسة خمسة تلاتة واحد سبعة تسعة"
-    assert normalize_for_tts("رقمك 0553179", "ar", KSA_VOICE_AGENT) \
+    assert normalize_for_tts("رقمك 0553179", "ar", VOICE_AGENT) \
         == "رقمك صفر خمسة خمسة ثلاثة واحد سبعة تسعة"
 
 
 def test_the_flag_is_off_by_default_so_every_number_on_record_is_reproduced():
     for tag in ("ar", "ar-SA-x-hejaz", "ar-AE"):
-        assert normalize_for_tts("عندك 15 رسالة", tag, KSA_VOICE_AGENT) == "عندك خمسة عشر رسالة"
+        assert normalize_for_tts("عندك 15 رسالة", tag, VOICE_AGENT) == "عندك خمسة عشر رسالة"
 
 
 def test_a_callers_own_forms_are_used_with_no_lect_and_win_over_one():
-    assert normalize_for_tts("عندي 100 ريال", "ar", KSA_VOICE_AGENT.with_number_forms({100: "مية"})) \
+    assert normalize_for_tts("عندي 100 ريال", "ar", VOICE_AGENT.with_number_forms({100: "مية"})) \
         == "عندي مية ريال"
     both = TtsNorm(cardinal_numbers=True, oblique_numbers=True, dialect_numbers=True, spoken_forms=False,
                    canonical_unicode=False).with_number_forms({15: "خمستاشر"})

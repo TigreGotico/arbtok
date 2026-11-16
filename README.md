@@ -118,7 +118,7 @@ Emphatic (pharyngealization) spreading rides on the `ar` spec's own B8
 `allophone_rules`. Cross-word sandhi is orthogonal to the word lattice: clitic
 joining, cross-word waṣl elision, tanwīn pausal forms, tāʾ marbūṭa, and
 idgham/iqlab nasal assimilation all live in the sentence-level orchestration,
-exposed to plain orthography2ipa through its sandhi plugin hook
+exposed to plain orthography2ipa through the `sandhi` field of its `Pipeline`
 (`arbtok/o2i_plugins.py`). Bare (undiacritized) text is diacritized first by
 the bundled rawi ensemble (the dialect-aware fusion path above), entirely
 inside the wheel.
@@ -262,20 +262,64 @@ from arbtok.tashkeel import TashkeelDiacritizer   # the bundled rawi ensemble
 TashkeelDiacritizer().diacritize("كتاب جميل")
 ```
 
-### As orthography2ipa plugins
+### Numbers a voice agent reads out
 
-Installing arbtok registers three **named** orthography2ipa step plugins
-(`normalize` / `rescore` / `sandhi`, see `arbtok/o2i_plugins.py`) so plain
-orthography2ipa can transcribe **undiacritized** Arabic, which it cannot do
-alone since its input contract is diacritized text. The plugin is opted into at
-the call site, never applied implicitly:
+A spoken reply holds prices, phone numbers and booking references, and each is read
+differently: a price as a cardinal, a phone number or a reference digit by digit.
+`TtsNorm` holds one flag per rule; a voice agent turns these on:
+
+```python
+from arbtok.textnorm import ARAB_PHONE_REGIONS, IDENTIFIER_WORDS, TtsNorm, normalize_for_tts
+
+VOICE_AGENT = TtsNorm(
+    speak_percent=True,                   # 4.5% is spoken as a percentage
+    keep_code_digits=True,                # the 5 of "MG 5" stays with the name
+    phone_regions=ARAB_PHONE_REGIONS,     # numbering plans of every Arab League member
+    long_digit_runs=True,                 # eleven digits or more are a reference
+    identifier_words=IDENTIFIER_WORDS,    # a number after رقم or كود is read digit by digit
+    cardinal_numbers=True,                # every other number is a cardinal; الطابق 3 is الطابق الثالث
+    leave_unspeakable_numbers=True,       # a number it cannot speak does not cost the sentence
+    oblique_numbers=True,                 # the case connected speech uses
+    space_fused_hundreds=True,            # ثلاثمئة becomes ثلاث مئة
+    spoken_forms=False,                   # the cardinals already speak the numbers
+    canonical_unicode=False,
+)
+normalize_for_tts("خلني أسجل رقمك 0551234567", "ar", VOICE_AGENT)
+# 'خلني أسجل رقمك صفر خمسة خمسة واحد اثنين ثلاثة أربعة خمسة ستة سبعة'
+```
+
+A licence plate written in Arabic script is read by the letters' names and digit by
+digit under `spell_out_plates`, which is off by default and which a voice agent turns
+on. The plate format is the one
+the [Saudi registration plate](https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Saudi_Arabia)
+uses, three letters from a set of seventeen, followed here by three or four digits:
+
+```python
+normalize_for_tts("أ ب ج ١٢٣٤", "ar", spell_out_plates=True)
+# 'ألف باء جيم واحد اثنين ثلاثة أربعة'
+```
+
+Every flag and the order the rules run in are in
+[docs/normalization.md](docs/normalization.md#numbers-a-voice-agent-reads-out).
+
+### As orthography2ipa pipeline steps
+
+`arbtok.o2i_plugins.pipeline(lang)` builds an orthography2ipa `Pipeline` from
+arbtok's steps (`expand` / `mark` / `rescore` / `sandhi`, see
+`arbtok/o2i_plugins.py`), so plain orthography2ipa can transcribe
+**undiacritized** Arabic, which it cannot do alone since its input contract is
+diacritized text. The caller passes the pipeline at the call site. Installing
+arbtok changes no output on its own:
 
 ```python
 from orthography2ipa import G2P
+from arbtok.o2i_plugins import pipeline
 
-G2P("ar").transcribe("كتب")                                   # 'ˈktb' — no vowels to read
-G2P("ar", plugins={"normalize": "arbtok"}).transcribe("كتب")  # 'ˈkatab' — arbtok restores them
+G2P("ar").transcribe("كتب")                              # 'ˈktb' — no vowels to read
+G2P("ar", pipeline=pipeline("ar")).transcribe("كتب")    # 'ˈkatab' — arbtok restores them
 ```
+
+`pipeline(lang)` gives orthography2ipa every arbtok step: `normalize_for_tts` as `expand`, the diacritizer as `mark`, the rescorers and the cross-word sandhi. `pipeline(lang, path="fusion")` selects the fusion diacritizer.
 
 ## Quality benchmarks
 

@@ -49,12 +49,16 @@ HARAKAT = "ًٌٍَُِّْٰ"
 _LATIN = re.compile(r"[A-Za-z]")
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
 
-# Every ar* spec arbtok resolves is covered EXCEPT ar-Latn-buckwalter: that code
+# Every ar* spec arbtok resolves is covered EXCEPT Buckwalter: that spec
 # is a Latin romanisation of Arabic, so a mixed Arabic/Latin sentence has no
 # stable Arabic run for the pipeline to phonemise — the whole line would look
 # Latin. It is a machine-readable regression anchor, not a spoken lect, and is
 # deliberately excluded from the code-switching set.
 SKIP = {"ar-Latn-buckwalter"}
+
+# Arabic specs orthography2ipa keys by an ISO 639-3 code alone. No code-switched
+# gold is written for them; two (acy, pga) are written in Latin script.
+NO_GOLD = {"aao", "abh", "acq", "acy", "auz", "ayh", "ayl", "ayp", "bbz", "pga", "ssh"}
 
 # Which dialectal-particle set each lect frames its Arabic in. The English words
 # and their nativised reflexes (the point of this set) are identical across
@@ -73,6 +77,24 @@ ZONES = {
     "msa":  ["ar", "arb"],
 }
 _LECT_ZONE = {code: z for z, codes in ZONES.items() for code in codes}
+
+
+def _zone(lect: str) -> str:
+    """The particle zone of a lect, whichever key orthography2ipa gives it."""
+    from orthography2ipa import resolve
+    zones = {resolve(code): zone for code, zone in _LECT_ZONE.items()}
+    return zones.get(resolve(lect), "msa")
+
+
+def _gold_path(lect: str) -> Path:
+    """The gold file of a lect. Files are named by the ``ar-…`` key, which
+    orthography2ipa keeps as an exact alias where it keys the lect by ISO 639-3."""
+    from orthography2ipa import resolve
+    target = resolve(lect)
+    for path in sorted(GOLD_DIR.glob("*.tsv")):
+        if resolve(path.stem) == target:
+            return path
+    return GOLD_DIR / f"{lect}.tsv"
 
 # Vocalised dialectal fillers. Colloquial, literature-attested function words;
 # the set is editor-authored (see docs/gold-code-switched.md) — pipeline-verified,
@@ -218,13 +240,17 @@ def _notes(sentence: str, lect: str, cs_words) -> str:
 
 
 def _roster():
+    """The lects with code-switched gold. SKIP and NO_GOLD name each spec by a key
+    orthography2ipa resolves; it keeps a renamed spec's old key as an exact alias."""
     import arbtok
-    return [l.code for l in arbtok.supported_lects() if l.code not in SKIP]
+    from orthography2ipa import resolve
+    excluded = {resolve(code) for code in SKIP | NO_GOLD}
+    return [l.code for l in arbtok.supported_lects() if l.code not in excluded]
 
 
 def _build_rows(lect):
     from arbtok.plugin import ArbtokG2PPlugin
-    zone = _LECT_ZONE.get(lect, "msa")
+    zone = _zone(lect)
     plugin = ArbtokG2PPlugin(lang=lect, diacritize=True, nativize=True, pausal=True)
     rows = []
     for i, (domain, template, gloss, en) in enumerate(FRAMES, 1):
@@ -354,14 +380,14 @@ def cmd_build(args):
         # Hand-authored (migrated) lects carry a pipeline_status column and are no
         # longer template-generated; never clobber them from FRAMES. Pass the lect
         # explicitly only when you really mean to regenerate a template file.
-        existing = GOLD_DIR / f"{lect}.tsv"
+        existing = _gold_path(lect)
         if not args.lects and existing.is_file():
             with open(existing, encoding="utf-8") as fh:
                 if "pipeline_status" in (fh.readline()):
                     print(f"{lect}: hand-authored — {_refresh_pinned(lect, existing)}")
                     continue
         rows = _build_rows(lect)
-        with open(GOLD_DIR / f"{lect}.tsv", "w", encoding="utf-8", newline="") as f:
+        with open(existing, "w", encoding="utf-8", newline="") as f:
             w = csv.DictWriter(f, fieldnames=FIELDS, delimiter="\t",
                                lineterminator="\n")
             w.writeheader()
@@ -407,7 +433,7 @@ def _leakage_failures(rid, row, lect):
 
 
 def _load(lect):
-    p = GOLD_DIR / f"{lect}.tsv"
+    p = _gold_path(lect)
     if not p.is_file():
         return None
     with open(p, encoding="utf-8") as f:
@@ -429,7 +455,7 @@ def cmd_refresh(args):
     lects = args.lects or _roster()
     changed = 0
     for lect in lects:
-        p = GOLD_DIR / f"{lect}.tsv"
+        p = _gold_path(lect)
         rows = _load(lect)
         if rows is None:
             print(f"skip {lect}: missing gold file")

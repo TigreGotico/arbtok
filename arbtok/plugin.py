@@ -45,7 +45,7 @@ from arbtok.constants import (
 )
 from arbtok.dialects import DEFAULT_LANG, WORD_EXCEPTIONS, spec_for_lang
 from arbtok.lattice import defers_to_cascade, word_ipa
-from arbtok.lexicon import DEFAULT_LEXICON
+from arbtok.lexicon import DEFAULT_LEXICON, ModelUnavailableError
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.translit import is_latin, transliterate
 import re as _re
@@ -193,9 +193,13 @@ class ArbtokG2PPlugin:
 
     def _resolve_lang(self, context: Optional[WordContext] = None) -> str:
         """Pick the variety for a call: ``context.lang`` wins when it names one,
-        otherwise the instance default."""
+        otherwise the instance default. A ``context.lang`` that is not Arabic
+        keeps the instance default."""
         if context is not None and context.lang:
-            code = spec_for_lang(context.lang)
+            try:
+                code = spec_for_lang(context.lang)
+            except ValueError:
+                return self.lang
             if code != DEFAULT_LANG:
                 return code
         return self.lang
@@ -203,7 +207,7 @@ class ArbtokG2PPlugin:
     # ─── lifecycle hooks ─────────────────────────────────────────────
 
     def normalize(self, text: str) -> str:
-        text = normalize_for_tts(text, "ar")
+        text = normalize_for_tts(text, self.lang)
         if self.diacritize:
             text = self._diacritize(text)
         return text
@@ -220,7 +224,8 @@ class ArbtokG2PPlugin:
 
         Diacritization is a model, and a model can be absent (no onnxruntime, no
         weights). That is a degraded mode, not an error: the text passes through
-        and the reading is a guess.
+        and the reading is a guess. A lexicon on the Hugging Face Hub that is not
+        cached and cannot be fetched is an error: :class:`ModelUnavailableError`.
         """
         if self._diacritizer_failed:
             return text
@@ -243,6 +248,8 @@ class ArbtokG2PPlugin:
                 return text
         try:
             return self._diacritizer.diacritize(text)
+        except ModelUnavailableError:
+            raise
         except Exception:
             return text
 
@@ -296,15 +303,13 @@ class ArbtokG2PPlugin:
                 buffer.clear()
 
         def _donor_knows(tok):
-            from orthography2ipa import G2P
             from arbtok.translit import DONOR_LANG
-            from arbtok.donor_lexicon import ensure_registered
+            from arbtok.donor_lexicon import donor_engine
             try:
-                ensure_registered(DONOR_LANG)
                 # The donor has no lexicon-membership call, so ask it to read the
                 # word and see whether it gave a reading or handed the letters back:
                 # `ok` comes out ˌəʊkˈeɪ and `bmw` comes out ˈbmw, which is the input.
-                got = G2P(DONOR_LANG).transcribe_word(tok.lower()) or ""
+                got = donor_engine(DONOR_LANG).transcribe_word(tok.lower()) or ""
                 # Strip stress, then fold the IPA symbols that merely LOOK like their
                 # ASCII letters: the donor hands `gps` back as ɡps with a script g
                 # (U+0261), which compares unequal to the input and made a passthrough

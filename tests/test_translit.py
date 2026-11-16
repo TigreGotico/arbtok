@@ -102,7 +102,11 @@ class TestTableSelection:
         assert nativization_table("ar-QA") is nativization_table("ar")
 
     def test_unknown_lect_falls_back_to_the_default(self):
-        assert nativization_table("xx-YY") is nativization_table("ar")
+        assert nativization_table("ar-ZZ") is nativization_table("ar")
+
+    def test_a_matrix_that_is_not_arabic_raises(self):
+        with pytest.raises(ValueError):
+            nativization_table("xx-YY")
 
 
 class TestEgyptianTable:

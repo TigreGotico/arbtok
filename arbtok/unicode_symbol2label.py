@@ -1,3 +1,15 @@
+"""Arabic names of Unicode symbols. Deprecated: no arbtok code reads this table."""
+import warnings
+
+from arbtok.version import VERSION_MAJOR
+
+warnings.warn(
+    "arbtok.unicode_symbol2label is deprecated and will be removed in arbtok "
+    f"{VERSION_MAJOR + 1}.0.0. Nothing replaces it: no arbtok code reads the table.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 UNICODE_SYMBOL_TO_LABEL = {
     "{": "قوس فتح متعرج",
     "🏻": "بشرة بلون فاتح",
