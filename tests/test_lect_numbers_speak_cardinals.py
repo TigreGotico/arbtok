@@ -17,3 +17,11 @@ def test_number_forms_alone_speaks_your_words():
 
 def test_without_either_numbers_are_the_literary_spoken_forms():
     assert "اثنا عشر" in normalize_for_tts("عندي 12 سيارة", "ar-EG", TtsNorm())
+
+
+def test_a_lect_the_parser_does_not_serve_reads_the_literary_numbers():
+    """The number parser has no words for Hassaniya, ``mey``, and refuses the code. A lect
+    with no words of its own keeps the literary ones, as ``dialect_numbers`` documents."""
+    config = TtsNorm(dialect_numbers=True, spoken_forms=False, canonical_unicode=False)
+    for lang in ("mey-MR", "mey"):
+        assert normalize_for_tts("عندي 4 كتب و 13 قلم", lang, config) == "عندي أربعة كتب و ثلاثة عشر قلم"
