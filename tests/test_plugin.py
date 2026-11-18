@@ -12,6 +12,7 @@ import pytest
 import orthography2ipa
 from orthography2ipa import WordContext
 
+from arbtok.lexicon import LexiconUnavailable
 from arbtok.plugin import ArbtokG2PPlugin
 from tests.test_msa_pausal import ALL_TEST_CASES
 from arbtok.tokenizer import Sentence
@@ -64,6 +65,15 @@ class TestNormalize:
 
     def test_bare_text_gets_diacritics_or_passes_through(self, plugin):
         assert plugin.normalize("كتاب جميل")
+
+    @pytest.mark.parametrize("call", ["normalize", "transcribe"])
+    def test_a_lexicon_that_cannot_be_read_is_an_error(self, call):
+        """A lexicon the caller asked for and that cannot be read raises, as
+        StemLexicon documents. Returning the bare text instead reads كتاب as ˈktaːb,
+        worse than the model alone gives, and the caller is not told."""
+        lost = ArbtokG2PPlugin(lexicon="/nonexistent/ar-stems.tsv")
+        with pytest.raises(LexiconUnavailable, match="/nonexistent/ar-stems.tsv"):
+            getattr(lost, call)("كتاب")
 
     def test_transcribe_bare_text(self, plugin):
         ipa = plugin.transcribe("كتاب جميل")
