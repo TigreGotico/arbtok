@@ -112,11 +112,18 @@ def _author_complete(word: str, positions) -> bool:
     author chose not to write. The proclitic position therefore counts as
     already answered *when the rest of the word is*; a bare word stays the
     model's to vocalize.
+
+    The article clause needs a mark somewhere in the word, because an author who
+    wrote no mark pointed nothing. A word-final letter is never silent, so bare
+    ال with one letter after it has no silent position outside the article.
+    Without the mark test, bare الى passes as written and reads /ˈalaː/. The
+    preposition is إِلَى /ˈʔilaː/ (Wright, *A Grammar of the Arabic Language*,
+    3rd ed., I §358 (a)), and the model restores it.
     """
     if not positions:
         return True
     m = _ARTICLE_RE.match(word)
-    if not m:
+    if not m or not _MARKS.intersection(word):
         return False
     # The alif and the lām are the two characters the match ends on.
     article = {m.end() - 2, m.end() - 1}

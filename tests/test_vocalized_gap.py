@@ -130,6 +130,29 @@ def test_fully_bare_word_is_not_complete():
     assert not _proclitic_complete("وكان", [0, 2, 3])
 
 
+def test_marked_article_word_is_complete():
+    """An author who pointed the stem and left only the article's alif and lām
+    bare wrote a complete word."""
+    assert _author_complete("الْكِتَاب", [0, 1])
+
+
+def test_bare_article_word_is_not_complete():
+    """A bare ال with one letter after it leaves only the article positions
+    silent, since a word-final letter never is. No mark was written, so the word
+    is still the model's to vocalize."""
+    assert not _author_complete("الى", [0, 1])
+
+
+def test_bare_ila_reads_as_the_preposition():
+    """Bare الى is the preposition إِلَى "to" (Wright, A Grammar of the Arabic
+    Language, 3rd ed., I §358 (a)): /ʔilaː/, with the hamza and the kasra,
+    stressed on its first syllable as the written إِلَى is."""
+    plug = ArbtokG2PPlugin(lang="ar")
+    assert plug.normalize("الى") == "إِلَى"
+    assert plug.transcribe("الى") == "ˈʔilaː"
+    assert plug.transcribe("ذهب الرجل الى السوق").split()[2] == "ˈʔilaː"
+
+
 def test_e2e_bare_waw_reads_as_cluster():
     """End to end: vocalized dialect text with a bare conjunction و keeps the
     cluster reading — /wkaːn/, not /wakaːn/ (matches raw orthography2ipa)."""
