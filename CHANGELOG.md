@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.3a3](https://github.com/TigreGotico/arbtok/tree/0.0.3a3) (2026-11-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a2...0.0.3a3)
+
+**Merged pull requests:**
+
+- fix: declare unicode-rbnf, which arbtok.util imports [\#340](https://github.com/TigreGotico/arbtok/pull/340) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+- fix: the plugin raises a lexicon it cannot read [\#339](https://github.com/TigreGotico/arbtok/pull/339) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+- fix: a digit-only lexicon term does not match inside a grouped figure [\#338](https://github.com/TigreGotico/arbtok/pull/338) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+- fix: ask the number parser only for a code it serves [\#337](https://github.com/TigreGotico/arbtok/pull/337) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a2](https://github.com/TigreGotico/arbtok/tree/0.0.3a2) (2026-11-16)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a1...0.0.3a2)
