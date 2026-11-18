@@ -106,6 +106,23 @@ def test_a_digit_only_lexicon_term_does_not_take_a_plates_digits():
     assert normalize_for_tts("BMW 530", "ar", config, **ON) == "بِي إِمْ دَبَلْيُو فايف ثيرتي"
 
 
+@pytest.mark.parametrize("written", ["السعر 530,000 ريال", "السعر 1,530 ريال", "المسافة 530.5 كم",
+                                     "السعر ٥٣٠٬٠٠٠ ريال", "المسافة 530٫5 كم"])
+@pytest.mark.parametrize("config", [TtsNorm(), VOICE_AGENT], ids=["default", "voice agent"])
+def test_a_digit_only_lexicon_term_is_not_a_group_of_a_larger_figure(written, config):
+    """A separator between two digits joins them into one figure, so 530 in 530,000 is
+    not the term 530: the figure reads as it does with no lexicon."""
+    with_term = config.with_lexicon({"530": "فايف ثيرتي"})
+    assert normalize_for_tts(written, "ar", with_term) == normalize_for_tts(written, "ar", config)
+    assert "فايف ثيرتي" not in normalize_for_tts(written, "ar", with_term)
+
+
+@pytest.mark.parametrize("written, said", [("BMW 530.", "بِي إِمْ دَبَلْيُو فايف ثيرتي."),
+                                           ("BMW 530، جديدة", "بِي إِمْ دَبَلْيُو فايف ثيرتي، جديدة")])
+def test_a_digit_only_term_before_punctuation_still_reads(written, said):
+    assert normalize_for_tts(written, "ar", VOICE_AGENT.with_lexicon({"530": "فايف ثيرتي"})) == said
+
+
 @pytest.mark.parametrize("term, said", [("G70", "جي سيفنتي"), ("GV80", "جي في إيتي"), ("X5", "اكس فايف")])
 def test_a_digit_bearing_model_code_still_reads_through_the_lexicon(term, said):
     config = VOICE_AGENT.with_lexicon({term: said})

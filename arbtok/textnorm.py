@@ -2127,10 +2127,14 @@ CER_CANONICAL = dataclasses.replace(
 def _term_pattern(lexicon: Tuple[Tuple[str, str], ...]):
     said = {term.lower(): spoken for term, spoken in lexicon}
     longest_first = sorted(said, key=len, reverse=True)
+    # A term made only of digits is not a group of a larger figure: 530 does not match in
+    # 530,000, 1,530 or 530.5, where a group or decimal separator joins it to a digit.
+    def alternative(term: str) -> str:
+        return rf"(?<!\d[.,٫٬]){re.escape(term)}(?![.,٫٬]\d)" if term.isdigit() else re.escape(term)
     # A tatweel between an Arabic proclitic and the term only kept the Latin letters apart
     # from it; once the term is read in Arabic it joins the proclitic, so the tatweel goes.
     return re.compile(f"(?:{_TATWEEL_BEFORE_LATIN})?" + _LATIN_RUN_EDGE[0] + "("
-                      + "|".join(re.escape(t) for t in longest_first) + ")"
+                      + "|".join(alternative(t) for t in longest_first) + ")"
                       + _LATIN_RUN_EDGE[1], re.IGNORECASE), said
 
 
