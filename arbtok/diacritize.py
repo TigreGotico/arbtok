@@ -371,9 +371,10 @@ class LatticeDiacritizer:
         """The lect's closed-class vocalization for *word*, if it has one the
         orthography licenses.
 
-        Held to the same guards as a model proposal and a stem entry: the
-        vocalization must spell the word we were given (marks added, letters
-        untouched) and it must tokenize against the variety's grapheme table.
+        Held to the same guards as a model proposal: the vocalization must
+        spell the word we were given (marks added, letters untouched but for a
+        hamza seat or tāʾ marbūṭa the model may also restore) and it must
+        tokenize against the variety's grapheme table.
         These are register-invariant function words with no iʿrāb, so — unlike
         the pausal stem lexicon — the entry answers in both waqf modes.
         """
@@ -382,7 +383,7 @@ class LatticeDiacritizer:
         voc = self.dialect_lexicon.get(word)
         if voc is None:
             return None
-        if strip_marks(voc) != strip_marks(word) or not self._is_licensed(voc):
+        if not _skeleton_is_preserved(word, voc) or not self._is_licensed(voc):
             return None
         return voc
 

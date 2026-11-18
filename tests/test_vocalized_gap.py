@@ -23,6 +23,7 @@ import pytest
 from arbtok.diacritize import _author_complete, _proclitic_complete
 from arbtok.lattice import defers_to_cascade, spec_word_exception, word_ipa
 from arbtok.plugin import ArbtokG2PPlugin
+from arbtok.tokenizer import normalize_unicode
 from arbtok.tokenizer import Sentence
 from arbtok.waqf import pausal
 
@@ -151,6 +152,27 @@ def test_bare_ila_reads_as_the_preposition():
     assert plug.normalize("الى") == "إِلَى"
     assert plug.transcribe("الى") == "ˈʔilaː"
     assert plug.transcribe("ذهب الرجل الى السوق").split()[2] == "ˈʔilaː"
+
+
+@pytest.mark.parametrize("lang", ["ar", "ar-EG", "ar-SA-x-najd", "ar-LB"])
+def test_bare_ilayya_reads_as_the_preposition_with_the_suffix(lang):
+    """Bare الي is إِلَى with the 1sg suffix: "The suffix of the 1st pers.
+    sing., ـِي (orig. ـِيَ), combines with إِلَى, عَلَى, and لَدَى into إِلَيَّ"
+    (Wright, A Grammar of the Arabic Language, 3rd ed., I §358 Rem. a, p. 281).
+    It is not the nisba أَلِيّ /ʔalijj/, which nisba.NOT_NISBA rules out for it."""
+    assert ArbtokG2PPlugin(lang=lang).normalize("الي") == normalize_unicode("إِلَيَّ")
+
+
+@pytest.mark.parametrize("lang", ["ar", "ar-EG", "ar-SA-x-najd"])
+def test_bare_ilayya_matches_the_gold_reading(lang):
+    """/ʔilajja/ is the first reading tests/ar_test.txt gives for الي."""
+    assert ArbtokG2PPlugin(lang=lang).transcribe("الي").replace("ˈ", "") == "ʔilajja"
+
+
+def test_bare_alli_stays_the_maghrebi_relative_pronoun():
+    """The Maghrebi lexicon's more specific row wins: الي is the relative الِّي
+    there (Heath 2002), not the preposition."""
+    assert ArbtokG2PPlugin(lang="ar-MA").normalize("الي") == normalize_unicode("الِّي")
 
 
 def test_e2e_bare_waw_reads_as_cluster():

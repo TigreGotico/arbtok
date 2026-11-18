@@ -27,7 +27,8 @@ The shape mirrors the stem lexicon deliberately:
   correctly under every spec that shares the word. Freezing IPA into the data
   would bypass everything the engine knows and pin one leaf's pronunciation.
 - The entry is held to **every guard a model proposal is**: it must spell the
-  word it keys (marks added, letters untouched) and it must tokenize against the
+  word it keys (marks added, letters untouched but for a hamza seat or tāʾ
+  marbūṭa the model may also restore) and it must tokenize against the
   variety's grapheme table. The lexicon is data, and data can be wrong.
 
 Unlike the stem lexicon, this data is **hand-authored from the dialect grammars**
@@ -36,6 +37,12 @@ mined from a corpus, so it is small, Apache-2.0-clean, and **bundled** in the
 wheel beside the code (``arbtok/data/lexicons/<lect>.tsv``) rather than fetched.
 Each row carries its source in a third column, for a human auditing the data;
 lookup does not read it.
+
+``ar.tsv`` (Modern Standard) and ``arb.tsv`` (Classical, the ancestor every
+dialect lect inherits from) hold the few function words whose bare spelling the
+model misreads and whose reading the classical grammar records: bare ⟨الي⟩ is
+⟨إِلَيَّ⟩, the preposition with the 1sg suffix (Wright I §358 Rem. a), which
+the model reads as a nisba.
 
 A lect inherits its ancestors' entries: ``ar-MA`` sees the pan-Maghrebi function
 words in ``ar-x-maghrebi.tsv`` *and* its own Moroccan-specific ones, with the
