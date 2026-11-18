@@ -45,7 +45,7 @@ from arbtok.constants import (
 )
 from arbtok.dialects import DEFAULT_LANG, WORD_EXCEPTIONS, spec_for_lang
 from arbtok.lattice import defers_to_cascade, word_ipa
-from arbtok.lexicon import DEFAULT_LEXICON, ModelUnavailableError
+from arbtok.lexicon import DEFAULT_LEXICON, LexiconUnavailable
 from arbtok.tokenizer import Sentence, normalize_unicode
 from arbtok.translit import is_latin, transliterate
 import re as _re
@@ -224,8 +224,10 @@ class ArbtokG2PPlugin:
 
         Diacritization is a model, and a model can be absent (no onnxruntime, no
         weights). That is a degraded mode, not an error: the text passes through
-        and the reading is a guess. A lexicon on the Hugging Face Hub that is not
-        cached and cannot be fetched is an error: :class:`ModelUnavailableError`.
+        and the reading is a guess. A lexicon that was asked for and cannot be read
+        is an error: :class:`LexiconUnavailable`, and :class:`ModelUnavailableError`
+        for one on the Hugging Face Hub that is not cached and cannot be fetched. A
+        caller who wants the model alone passes ``lexicon=None``.
         """
         if self._diacritizer_failed:
             return text
@@ -248,7 +250,7 @@ class ArbtokG2PPlugin:
                 return text
         try:
             return self._diacritizer.diacritize(text)
-        except ModelUnavailableError:
+        except LexiconUnavailable:
             raise
         except Exception:
             return text
