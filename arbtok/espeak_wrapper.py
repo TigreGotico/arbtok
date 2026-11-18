@@ -7,7 +7,6 @@ from typing import Tuple
 
 import numpy as np
 import onnxruntime
-import requests
 from linguatag import closest_lang
 from quebra_frases import sentence_tokenize
 
