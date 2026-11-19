@@ -114,3 +114,16 @@ def test_dialect_numbers_asks_for_the_colloquial_register(monkeypatch, config, r
 def test_a_lect_text2spoken_reads_no_number_of_still_has_its_numbers_read():
     # text2spoken reads no number in Hassaniya, mey; the default path still reads them.
     assert not re.search("[0-9]", normalize_for_tts("عندي 13 كتاب", "mey-MR"))
+
+
+# What text2spoken leaves of a unit or a percent sign is read as before it read them.
+@pytest.mark.parametrize("text, said", [
+    # ² belongs to the symbol: square metres are not metres. m² is UNIT_DECLINED.
+    ("المساحة 100 m²", "المساحة مئة m²"),
+    # text2spoken reads km alone, not the km of km/h.
+    ("سرعة 100 km/h", "سرعة مئة كيلومتر/h"),
+    # A percent sign with no number left after it is read too.
+    ("الرقم 5% و % فقط", "الرقم خمسة في المئة و بالمئة فقط"),
+])
+def test_a_unit_or_percent_sign_text2spoken_leaves(text, said):
+    assert normalize_for_tts(text, "ar") == said

@@ -3240,6 +3240,8 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
 
 
 _ANY_DIGIT = re.compile("[0-9٠-٩۰-۹]")
+#: What arbtok.util reads after text2spoken: a digit, or a percent sign with no number.
+_LEFT_FOR_UTIL = re.compile("[0-9٠-٩۰-۹%٪]")
 
 
 @functools.lru_cache(maxsize=64)
@@ -3274,14 +3276,15 @@ def _text2spoken(text: str, tag: str, config: TtsNorm) -> str:
 @functools.lru_cache(maxsize=1)
 def _unit_symbol_after_number():
     """The pattern of a CLDR unit symbol after a number, in any case. "am" and "pm" after
-    an hour are clock marks, which the clock pass reads first."""
+    an hour are clock marks, which the clock pass reads first. ``m²`` is not ``m``."""
     symbols = "|".join(re.escape(symbol) for symbol in sorted(cldr_units("ar"), key=len, reverse=True))
-    return re.compile(rf"(?<=[0-9٠-٩])(\s*)({symbols})(?![A-Za-z0-9])", re.IGNORECASE)
+    return re.compile(rf"(?<=[0-9٠-٩])(\s*)({symbols})(?![A-Za-z0-9²³])", re.IGNORECASE)
 
 
 def _unit_symbols_as_names(text: str) -> str:
     """Each unit symbol after a number but ``km`` written as its CLDR name, for text2spoken
-    to read with the number: it reads ``km`` and leaves the other symbols as written. A
+    to read with the number: it reads ``km``, not the ``km`` of ``km/h``, and leaves the
+    other symbols as written. A
     symbol in capitals the table does not write it in is a code, ``3 MG`` the make, unless
     people write that unit in capitals, ``100 KM``.
 
@@ -3292,7 +3295,7 @@ def _unit_symbols_as_names(text: str) -> str:
 
     def name(m):
         space, symbol = m.groups()
-        if symbol == "km":
+        if symbol == "km" and not m.string.startswith("/", m.end()):
             return m.group(0)
         if symbol in units:
             return space + units[symbol]
@@ -3581,10 +3584,11 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         text = normalize(text, lang)
     elif config.spoken_forms and (tag := _text2spoken_tag(lang)):
         text = _text2spoken(_unit_symbols_as_names(text), tag, config)
-        if _ANY_DIGIT.search(text):
+        if _LEFT_FOR_UTIL.search(text):
             # arbtok.util reads the digits text2spoken leaves as written: telephone numbers
             # and codes, which text2spoken leaves by design, and the forms below, until
-            # text2spoken reads them.
+            # text2spoken reads them. Where text2spoken reads part of a span, this pass
+            # completes it wrong; tests/test_text2spoken_fallbacks.py holds those as xfails.
             # TODO(text2spoken issue: SPACE_GROUPED) https://github.com/TigreGotico/text2spoken/issues/148
             # TODO(text2spoken issue: DATE_RANGE)
             # TODO(text2spoken issue: DATE_TWO_DIGIT_YEAR)
