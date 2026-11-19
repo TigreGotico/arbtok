@@ -104,8 +104,9 @@ def test_a_latin_script_lect_has_its_digits_read_by_arbtok_util(lang):
 
 
 @pytest.mark.parametrize("lang", LATIN_SCRIPT_LECTS)
-def test_a_latin_script_lect_takes_no_clock_pass(lang):
-    assert normalize_for_tts("Eftu 3 kitapya 7:30", lang) == normalize("Eftu 3 kitapya 7:30", "ar")
+def test_a_latin_script_lect_reads_the_clock_as_before(lang):
+    # The clock pass reads a time for these lects as dev did, not digit by digit.
+    assert normalize_for_tts("Eftu 3 kitapya 7:30 pm", lang) == "Eftu ثلاثة kitapya الساعة السابعة والنصف مساءً"
 
 
 @pytest.mark.parametrize("config, register", [(TtsNorm(), "formal"), (TtsNorm(dialect_numbers=True), "colloquial")])

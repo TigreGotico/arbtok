@@ -3494,12 +3494,11 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         text = _PO_BOX.sub(po_box, text)
     if config.drop_false_starts and is_arabic_lang(lang):
         text = _FALSE_START.sub("", text)
-    if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang) and _text2spoken_tag(lang):
+    if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang):
         # Clock times are spoken before any rule reads their digits as a number, a
         # phone number or a code, and before "pm" can be read as the picometre. A
         # config that speaks numbers as cardinals speaks times too: a time left to the
-        # cardinals comes out "سبعة:30 pm". A lect written in Latin script has no
-        # text2spoken tag, and no clock pass, which writes Arabic script.
+        # cardinals comes out "سبعة:30 pm".
         def clock(m):
             spoken = _spoken_clock(m, lang, config)
             if spoken is None:
