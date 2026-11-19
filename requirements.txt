@@ -61,6 +61,8 @@ ovos-utils>=0.15.4a1
 ovos-config>=3.5.1a1
 # From 7.124.2a2 the shu-TD inventory declares the long mid vowel /eː/ as a phoneme, so a
 # guest /eɪ/ lands on it: Chadian "email" reads iːmeːl, where 7.123 gives iːmiːl. The
-# code-switched gold pins the newer reading.
-orthography2ipa>=7.124.2a2
+# code-switched gold pins the newer reading. From 7.124.15a2 a likely script subtag no
+# longer ties a region with the bare language under linguatag 0.3.1a1, so ajp-Arab-SY
+# names apc-SY and not apc.
+orthography2ipa>=7.124.15a2
 huggingface_hub
