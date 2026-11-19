@@ -2722,6 +2722,11 @@ class TtsNorm:
                 + (_describe_parser() if speaks else ""))
 
 
+_ANY_DIGIT = re.compile("[0-9٠-٩۰-۹]")
+#: What arbtok.util reads after text2spoken: a digit, or a percent sign with no number.
+_LEFT_FOR_UTIL = re.compile("[0-9٠-٩۰-۹%٪]")
+
+
 #: Names the rule set of :func:`normalize_for_tts`, computed the way
 #: :data:`ASR_NORM_VERSION` is. It covers the rules and their patterns. What a config
 #: carries as values is configuration and is outside it: :data:`ARAB_PHONE_REGIONS`,
@@ -2744,6 +2749,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _AMOUNT_AFTER, _IDENTIFIER_GAP,
                              _WRITTEN_MONTH, _MARCH_BEFORE, _MARCH_AFTER,
                              _TATWEEL_BEFORE_LATIN, _SMALL_LETTER_CODE, _SMALL_SUFFIX_CODE, _READING_DIGITS,
+                             _ANY_DIGIT, _LEFT_FOR_UTIL,
                              tuple(sorted(_not_code_letters("ar"))),
                              tuple(sorted(spelled_codes("ar").items())))
 _PLUGIN_DEFAULT = TtsNorm()
@@ -3237,11 +3243,6 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     text = _RANK_NUMBER.sub(lambda m: _rank_ordinal(m, config), text)
     text = _EASTERN_NUMBER.sub(eastern, text)
     return _WESTERN_NUMBER.sub(western, text)
-
-
-_ANY_DIGIT = re.compile("[0-9٠-٩۰-۹]")
-#: What arbtok.util reads after text2spoken: a digit, or a percent sign with no number.
-_LEFT_FOR_UTIL = re.compile("[0-9٠-٩۰-۹%٪]")
 
 
 @functools.lru_cache(maxsize=64)
