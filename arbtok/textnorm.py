@@ -3489,11 +3489,12 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         text = _PO_BOX.sub(po_box, text)
     if config.drop_false_starts and is_arabic_lang(lang):
         text = _FALSE_START.sub("", text)
-    if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang):
+    if (config.spoken_forms or config.cardinal_numbers) and is_arabic_lang(lang) and _text2spoken_tag(lang):
         # Clock times are spoken before any rule reads their digits as a number, a
         # phone number or a code, and before "pm" can be read as the picometre. A
         # config that speaks numbers as cardinals speaks times too: a time left to the
-        # cardinals comes out "سبعة:30 pm".
+        # cardinals comes out "سبعة:30 pm". A lect written in Latin script has no
+        # text2spoken tag, and no clock pass, which writes Arabic script.
         def clock(m):
             spoken = _spoken_clock(m, lang, config)
             if spoken is None:
@@ -3579,10 +3580,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.cardinal_numbers or config.dialect_numbers or config.number_forms:
         text = _RIYAL_SIGN.sub(" ريال", text)
         text = _speak_numbers(text, lang, config)
-    if config.spoken_forms and not is_arabic_lang(lang):
-        from arbtok.util import normalize
-        text = normalize(text, lang)
-    elif config.spoken_forms and (tag := _text2spoken_tag(lang)):
+    if config.spoken_forms and is_arabic_lang(lang) and (tag := _text2spoken_tag(lang)):
         text = _text2spoken(_unit_symbols_as_names(text), tag, config)
         if _LEFT_FOR_UTIL.search(text):
             # arbtok.util reads the digits text2spoken leaves as written: telephone numbers
@@ -3601,6 +3599,11 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             # TODO(text2spoken issue: T2S_DECLINES_OTHER)
             from arbtok.util import normalize
             text = normalize(text, "ar")
+    elif config.spoken_forms:
+        # A tag that is not Arabic, or a lect written in Latin script, which text2spoken
+        # does not read.
+        from arbtok.util import normalize
+        text = normalize(text, "ar" if is_arabic_lang(lang) else lang)
     for placeholder, digits in held.items():
         text = text.replace(placeholder, digits)
     if config.canonical_unicode:

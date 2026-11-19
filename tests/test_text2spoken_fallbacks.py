@@ -18,6 +18,7 @@ import pytest
 import text2spoken
 
 from arbtok import textnorm
+from arbtok.util import normalize
 from arbtok.textnorm import TtsNorm, normalize_for_tts
 
 ROOT = Path(__file__).parent.parent
@@ -93,8 +94,18 @@ def test_a_lect_maps_to_its_text2spoken_tag(lang, tag):
     assert textnorm._text2spoken_tag(lang) == tag
 
 
-def test_a_latin_script_lect_takes_no_text2spoken_step():
-    assert normalize_for_tts("Eftu 3 kitapya", "acy") == "Eftu 3 kitapya"
+LATIN_SCRIPT_LECTS = ["acy", "pga", "ar-Latn-x-buckwalt"]
+
+
+@pytest.mark.parametrize("lang", LATIN_SCRIPT_LECTS)
+def test_a_latin_script_lect_has_its_digits_read_by_arbtok_util(lang):
+    # text2spoken reads Arabic script only.
+    assert normalize_for_tts("Eftu 3 kitapya", lang) == "Eftu ثلاثة kitapya"
+
+
+@pytest.mark.parametrize("lang", LATIN_SCRIPT_LECTS)
+def test_a_latin_script_lect_takes_no_clock_pass(lang):
+    assert normalize_for_tts("Eftu 3 kitapya 7:30", lang) == normalize("Eftu 3 kitapya 7:30", "ar")
 
 
 @pytest.mark.parametrize("config, register", [(TtsNorm(), "formal"), (TtsNorm(dialect_numbers=True), "colloquial")])
