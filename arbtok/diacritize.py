@@ -112,11 +112,18 @@ def _author_complete(word: str, positions) -> bool:
     author chose not to write. The proclitic position therefore counts as
     already answered *when the rest of the word is*; a bare word stays the
     model's to vocalize.
+
+    The article clause needs a mark somewhere in the word, because an author who
+    wrote no mark pointed nothing. A word-final letter is never silent, so bare
+    ال with one letter after it has no silent position outside the article.
+    Without the mark test, bare الى passes as written and reads /ˈalaː/. The
+    preposition is إِلَى /ˈʔilaː/ (Wright, *A Grammar of the Arabic Language*,
+    3rd ed., I §358 (a)), and the model restores it.
     """
     if not positions:
         return True
     m = _ARTICLE_RE.match(word)
-    if not m:
+    if not m or not _MARKS.intersection(word):
         return False
     # The alif and the lām are the two characters the match ends on.
     article = {m.end() - 2, m.end() - 1}
@@ -364,9 +371,10 @@ class LatticeDiacritizer:
         """The lect's closed-class vocalization for *word*, if it has one the
         orthography licenses.
 
-        Held to the same guards as a model proposal and a stem entry: the
-        vocalization must spell the word we were given (marks added, letters
-        untouched) and it must tokenize against the variety's grapheme table.
+        Held to the same guards as a model proposal: the vocalization must
+        spell the word we were given (marks added, letters untouched but for a
+        hamza seat or tāʾ marbūṭa the model may also restore) and it must
+        tokenize against the variety's grapheme table.
         These are register-invariant function words with no iʿrāb, so — unlike
         the pausal stem lexicon — the entry answers in both waqf modes.
         """
@@ -375,7 +383,7 @@ class LatticeDiacritizer:
         voc = self.dialect_lexicon.get(word)
         if voc is None:
             return None
-        if strip_marks(voc) != strip_marks(word) or not self._is_licensed(voc):
+        if not _skeleton_is_preserved(word, voc) or not self._is_licensed(voc):
             return None
         return voc
 
