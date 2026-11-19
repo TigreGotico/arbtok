@@ -304,7 +304,18 @@ The rules are booleans on a `TtsNorm`, the way `normalize_asr`'s are on an
 no config it runs `spoken_forms` and `canonical_unicode`, which is what the G2P
 plugin runs.
 
-`spoken_forms` writes dates, times, numbers and units as words in `lang`.
+`spoken_forms` writes dates, times, numbers and units as words in `lang`. In Arabic,
+text2spoken reads them. The tag it gets is the ISO 639-3 code of the lect that `lang`
+names, with the region: `arz-EG` for Egyptian, `ayl-LY` for `ar-LY`. The macrolanguage,
+Standard Arabic and a clade such as `ar-x-mashriqi` read as `ar`. A lect written in Latin
+script, such as `acy`, gets no reading. The register is formal, and colloquial when
+`dialect_numbers` is on.
+
+text2spoken leaves some forms as written, such as a telephone number, a code such as
+`520i`, a decimal comma or a date with an era mark. arbtok reads those digits with
+`arbtok.util.normalize`, so no digit reaches the phonemizer. Each
+such form is marked in `arbtok/textnorm.py` with the text2spoken issue that covers it.
+
 `canonical_unicode` drops tatweel, applies NFC, orders shadda before its vowel
 and settles the spellings of مائة, which is the form the tokenizer reads.
 `strip_controls`, off by default, drops zero-width and bidirectional characters
@@ -586,9 +597,10 @@ cardinals speak numbers it is said `ريال` after a number, written with a spa
 or against the digits: `1,200 ر.س` is `ألف ومئتين ريال`.
 
 A unit symbol is read only where it follows a number, because `in` and `m` in running
-text are not units. `spoken_forms` does that for Arabic from the same CLDR table
-(`cldr_units()`): `المسافة 5 km` becomes `المسافة خمسة كيلومتر`. The unit takes its
-CLDR display name; it is not inflected for the number before it.
+text are not units. `spoken_forms` does that for Arabic: text2spoken reads `km`, and
+arbtok writes every other symbol as its name from the same CLDR table (`cldr_units()`)
+before text2spoken reads the number. `المسافة 5 km` becomes `المسافة خمسة كيلومترات`:
+from 3 to 10 the counted noun is plural (Ryding 2005, p. 334).
 
 A voice agent that speaks its numbers through the cardinals, with `spoken_forms` off,
 reads no unit symbol this way. For the kilometre, the unit its replies carry most,
@@ -709,8 +721,8 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `space_fused_hundreds` | in those cardinals `ثلاثمئة` becomes `ثلاث مئة`; a synthesizer keeps the spaced form and garbles the fused one |
 | `dialect_numbers` | the cardinals and the digit-by-digit readings take the words the lect `lang` names uses, asked of the number parser under that lect's ISO 639-3 code |
 | `number_forms` | your own words for values, `{100: "مية"}`, over the lect's or instead of them; set with `with_number_forms` |
-| `month_names` | your own words for the twelve months, January first, said wherever a month name is written and for a date in digits the cardinals read: with `جون` for June, `15 يونيو` is `15 جون`; a date `spoken_forms` alone reads keeps the date parser's month; Arabic only |
-| `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default. A time written with a dot after `الساعة`, `الساعة 9.30`, is a time, as it is under `cardinal_numbers`, unless a currency or a unit follows it: `سعر الساعة 12.50 ريال` is a decimal |
+| `month_names` | your own words for the twelve months, January first, said wherever a month name is written and for a date in digits the cardinals read: with `جون` for June, `15 يونيو` is `15 جون`; a date `spoken_forms` alone reads keeps text2spoken's month; Arabic only |
+| `spoken_forms` | dates, times, numbers and units as words in `lang`, read by text2spoken in Arabic; on by default. A time written with a dot after `الساعة`, `الساعة 9.30`, is a time, as it is under `cardinal_numbers`, unless a currency or a unit follows it: `سعر الساعة 12.50 ريال` is a decimal |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
 | `drop_false_starts` | a two- or three-letter word ending in tatweel is dropped with the whitespace after it where the next word begins the same way: `الـ السيارة` becomes `السيارة`; a one-letter fragment is kept, since it is also how a detached clitic is written; Arabic only, on by default |
 | `plain_orthography` | the output in the orthography speech-recognition transcripts use: no harakat, tatweel or Quranic marks, alef without hamza, a dagger alef written ا where the standard spelling has it, ڤ as ف, and ة, ى, ؤ and ئ kept, so `بِي إِمْ دَبَلْيُو` is `بي ام دبليو` and `ألف` is `الف`; the last rule, over the whole text |
@@ -740,8 +752,11 @@ source gives is not written. `ar-SA` resolves to Najdi and takes its words.
 
 **The noun is the author's.** Arabic makes the counted noun agree with the number,
 and the dialects covered agree in the same direction: two to ten take a plural noun
-and eleven upwards a singular. The noun is left as written, because the text around
-the number is the author's; write it the way the number you passed in requires.
+and eleven upwards a singular. The cardinals leave the noun as written, because the
+text around the number is the author's; write it the way the number you passed in
+requires. `spoken_forms` reads through text2spoken, which gives the noun after 11 to 99
+in the accusative singular (Ryding 2005, pp. 339-345): `الثمن 12 ريال` is `الثمن اثنا
+عشر ريالا`.
 
 The number agrees with the noun where the noun after it shows how. A number from 3 to
 10 written right before a plural whose singular is feminine takes its short form, as

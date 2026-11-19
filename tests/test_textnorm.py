@@ -951,7 +951,8 @@ def test_a_cldr_table_is_not_read_backwards():
 
 
 def test_a_unit_after_a_number_is_read_in_arabic_and_a_bare_symbol_is_left():
-    assert normalize_for_tts("المسافة 5 km") == "المسافة خمسة كيلومتر"
+    # From 3 to 10 the counted noun is plural (Ryding 2005, p. 334).
+    assert normalize_for_tts("المسافة 5 km") == "المسافة خمسة كيلومترات"
     assert "كيلوغرام" in normalize_for_tts("الوزن 3 kg")
     assert normalize_for_tts("in km", spoken_forms=True) == "in km"
     units = textnorm.cldr_units("ar")

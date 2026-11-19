@@ -218,7 +218,9 @@ voice hears the pointed `إِفْ` as `في`. Raises `ValueError` for a language
 ### `cldr_units(lang="ar") -> Dict[str, str]`
 
 English unit symbols (`km`, `kg`, `hp`) mapped to the unit's Arabic name from Unicode
-CLDR. `arbtok.util.normalize` reads a symbol that follows a number from it.
+CLDR. `normalize_for_tts` writes a symbol after a number that text2spoken leaves as
+written as its name from it, and `arbtok.util.normalize` reads a symbol after a number
+from it.
 
 ### `bundled_asr_lexicon(name="cars-sa")`, `bundled_tts_lexicon(name="cars-sa", pointed=True) -> Dict[str, str]`
 
