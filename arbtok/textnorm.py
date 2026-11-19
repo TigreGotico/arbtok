@@ -3250,6 +3250,9 @@ def _text2spoken_tag(lang: str) -> Optional[str]:
     lect's spec chain with the region of the spec or of ``lang``, ``arz-EG`` or ``ayl-LY``.
     The macrolanguage, Standard Arabic and a clade with no code of its own give ``ar``. A
     lect written in Latin script gives None: text2spoken reads Arabic script only."""
+    if lang in ("ar", "arb"):
+        # spec_for_lang loads every orthography2ipa spec on its first call.
+        return "ar"
     from orthography2ipa import get
     from arbtok.dialects import spec_for_lang
     spec = spec_for_lang(lang)
