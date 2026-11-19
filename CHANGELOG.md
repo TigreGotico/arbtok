@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a8](https://github.com/TigreGotico/arbtok/tree/0.0.3a8) (2026-11-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a7...0.0.3a8)
+
+**Merged pull requests:**
+
+- fix: send bare article-shaped words like الى to the diacritizer [\#345](https://github.com/TigreGotico/arbtok/pull/345) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a7](https://github.com/TigreGotico/arbtok/tree/0.0.3a7) (2026-11-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a6...0.0.3a7)
