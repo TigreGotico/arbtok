@@ -2659,7 +2659,7 @@ class TtsNorm:
     month_names: Tuple[str, ...] = ()
     #: Dates, times, numbers and units as words in ``lang``. Arabic reads through
     #: text2spoken, in the lect of ``lang`` and, under ``dialect_numbers``, in the
-    #: colloquial register; a lect written in Latin script is left as written.
+    #: colloquial register; arbtok.util reads the digits of a lect written in Latin script.
     spoken_forms: bool = True
     #: Tatweel dropped, NFC, shadda ordered before its vowel, the spellings of مائة settled.
     canonical_unicode: bool = True
@@ -3364,8 +3364,9 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     Arabic, text2spoken reads them, under the tag of the lect ``lang`` names and in the
     colloquial register when ``dialect_numbers`` is on. A unit symbol it leaves as written
     after a number is given its CLDR name first, and :func:`arbtok.util.normalize` reads
-    the digits it leaves: telephone numbers, codes and the like.
-    In Arabic, a clock time written in digits is read first, before any rule reads its
+    the digits it leaves: telephone numbers, codes and the like. It also reads the digits
+    of a lect written in Latin script, which text2spoken does not read.
+    In an Arabic-script lect, a clock time written in digits is read first, before any rule reads its
     digits: ``19:30`` becomes ``الساعة السابعة والنصف مساء``, in text2spoken's words, and
     ``7:30 pm`` becomes ``الساعة السابعة والنصف مساءً``, in the words of the date parser's
     ``nice_time``, which reads a time with a period mark and a time text2spoken leaves as

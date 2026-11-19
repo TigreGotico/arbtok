@@ -307,14 +307,18 @@ plugin runs.
 `spoken_forms` writes dates, times, numbers and units as words in `lang`. In Arabic,
 text2spoken reads them. The tag it gets is the ISO 639-3 code of the lect that `lang`
 names, with the region: `arz-EG` for Egyptian, `ayl-LY` for `ar-LY`. The macrolanguage,
-Standard Arabic and a clade such as `ar-x-mashriqi` read as `ar`. A lect written in Latin
-script, such as `acy`, gets no reading. The register is formal, and colloquial when
-`dialect_numbers` is on.
+Standard Arabic and a clade such as `ar-x-mashriqi` read as `ar`. The register is formal,
+and colloquial when `dialect_numbers` is on. text2spoken reads Arabic script only, so a
+lect written in Latin script, such as `acy`, has its digits and clock times read by
+`arbtok.util.normalize`, in Arabic script: `7:30` becomes `سبعة:ثلاثون`.
 
 text2spoken leaves some forms as written, such as a telephone number, a code such as
-`520i` or a decimal comma. arbtok reads those digits with
-`arbtok.util.normalize`, so no digit reaches the phonemizer. Each
-such form is marked in `arbtok/textnorm.py` with the text2spoken issue that covers it.
+`520i` or a decimal comma. arbtok reads those digits with `arbtok.util.normalize`, so no
+digit reaches the phonemizer. Each such form is marked in `arbtok/textnorm.py` with the
+text2spoken issue that covers it. Where text2spoken reads part of a span, this pass
+completes the span, and some of those readings are wrong:
+`1 500 000` becomes `واحد خمسمئة صفر`. `tests/test_text2spoken_fallbacks.py` lists those
+forms as expected failures, with the right reading.
 
 `canonical_unicode` drops tatweel, applies NFC, orders shadda before its vowel
 and settles the spellings of مائة, which is the form the tokenizer reads.
@@ -597,10 +601,13 @@ cardinals speak numbers it is said `ريال` after a number, written with a spa
 or against the digits: `1,200 ر.س` is `ألف ومئتين ريال`.
 
 A unit symbol is read only where it follows a number, because `in` and `m` in running
-text are not units. `spoken_forms` does that for Arabic: text2spoken reads `km`, and
-arbtok writes every other symbol as its name from the same CLDR table (`cldr_units()`)
-before text2spoken reads the number. `المسافة 5 km` becomes `المسافة خمسة كيلومترات`:
-from 3 to 10 the counted noun is plural (Ryding 2005, p. 334).
+text are not units. `spoken_forms` does that for Arabic. text2spoken reads `km`, and
+the noun agrees with the number: `المسافة 5 km` becomes `المسافة خمسة كيلومترات`, because
+from 3 to 10 the counted noun is plural (Ryding 2005, p. 334). For every other symbol,
+arbtok writes the CLDR name from the same table (`cldr_units()`), and text2spoken reads
+the number before it. That name does not agree with the number:
+`3 kg` becomes `ثلاثة كيلوغرام`. TigreGotico/text2spoken#336 asks text2spoken to read the
+other symbols.
 
 A voice agent that speaks its numbers through the cardinals, with `spoken_forms` off,
 reads no unit symbol this way. For the kilometre, the unit its replies carry most,
