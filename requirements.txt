@@ -59,7 +59,7 @@ unicode-rbnf>=2.0.0
 # solution space rather than leaving that to what else happens to be installed.
 ovos-utils>=0.15.4a1
 ovos-config>=3.5.1a1
-# From 7.124.2a1 the shu-TD inventory declares the long mid vowel /eː/ as a phoneme, so a
+# From 7.124.2a2 the shu-TD inventory declares the long mid vowel /eː/ as a phoneme, so a
 # guest /eɪ/ lands on it: Chadian "email" reads iːmeːl, where 7.123 gives iːmiːl. The
 # code-switched gold pins the newer reading.
 orthography2ipa>=7.124.2a2
