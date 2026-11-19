@@ -125,9 +125,10 @@ class TestGuards(unittest.TestCase):
         self.assertIsNone(d._dialect_lookup("كي"))
 
     def test_an_entry_may_restore_a_hamza_seat_as_the_model_may(self):
-        # bare الي is إِلَيَّ (Wright I §358 Rem. a): the alif's hamza is restored
-        d = self._with_entry("ar", "الي", "إِلَيَّ")
-        self.assertEqual(d._dialect_lookup("الي"), normalize_unicode("إِلَيَّ"))
+        # bare الي is إِلَى (Wright I §358 (a)): the alif's hamza and the
+        # final ى are restored
+        d = self._with_entry("ar", "الي", "إِلَى")
+        self.assertEqual(d._dialect_lookup("الي"), normalize_unicode("إِلَى"))
 
     def test_an_unlicensed_entry_is_refused(self):
         # a Perso-Arabic گ the Maghrebi grapheme table does not declare

@@ -40,9 +40,13 @@ lookup does not read it.
 
 ``ar.tsv`` (Modern Standard) and ``arb.tsv`` (Classical, the ancestor every
 dialect lect inherits from) hold the few function words whose bare spelling the
-model misreads and whose reading the classical grammar records: bare ⟨الي⟩ is
-⟨إِلَيَّ⟩, the preposition with the 1sg suffix (Wright I §358 Rem. a), which
-the model reads as a nisba.
+model misreads and whose reading the classical grammar records. Bare ⟨الي⟩ is
+⟨إِلَى⟩ "to" written with ي for ى (Wright I §358 (a)), which the model reads
+as a nisba. The row answers in every context, so it holds the frequent sense:
+the stem lexicon counts إلى 65,793 times and إلي (إِلَيّ "to me") 1,242 times.
+Written with the hamza (إلي) or pointed (إِلَيَّ), the word keeps the
+reading إِلَيّ. The Maghrebi file reads bare ⟨الي⟩ as the relative ⟨الِّي⟩
+and wins there.
 
 A lect inherits its ancestors' entries: ``ar-MA`` sees the pan-Maghrebi function
 words in ``ar-x-maghrebi.tsv`` *and* its own Moroccan-specific ones, with the
