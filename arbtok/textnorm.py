@@ -3585,9 +3585,7 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             # arbtok.util reads the digits text2spoken leaves as written: telephone numbers
             # and codes, which text2spoken leaves by design, and the forms below, until
             # text2spoken reads them.
-            # TODO(text2spoken issue: DATE_ERA_MARK) https://github.com/TigreGotico/text2spoken/issues/323
             # TODO(text2spoken issue: SPACE_GROUPED) https://github.com/TigreGotico/text2spoken/issues/148
-            # TODO(text2spoken issue: PERCENT_SIGN_FIRST)
             # TODO(text2spoken issue: DATE_RANGE)
             # TODO(text2spoken issue: DATE_TWO_DIGIT_YEAR)
             # TODO(text2spoken issue: DECIMAL_COMMA)

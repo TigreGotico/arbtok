@@ -25,12 +25,10 @@ MARKER = re.compile(r"TODO\(text2spoken issue: (\w+)\)(?: " + re.escape(ISSUE_UR
 FALLBACKS = {
     "UNIT_DECLINED": (336, "الطول 300 pm", "pm"),
     "CLOCK_PERIOD_MARK": (333, "الساعة 10:30 ص اليوم", " ص "),
-    "DATE_ERA_MARK": (323, "موعدك 15/9/1447هـ", "15/9/1447"),
     "SPACE_GROUPED": (148, "السعر 1 500 000 ريال", "000"),
     "CLOCK_NEEDS_WORD": (None, "الموعد 7:40", "7:40"),
     "CLOCK_SPELLING_OR_DOT": (None, "الساعه 3:30", "3:30"),
     "CLOCK_DOCUMENTED_GAP": (None, "الساعة 13:15", "13:15"),
-    "PERCENT_SIGN_FIRST": (None, "%10 خصم على الكاش", "%10"),
     "DATE_RANGE": (None, "العرض من 1 إلى 7 مارس", "من 1 "),
     "DATE_TWO_DIGIT_YEAR": (None, "ينتهي التسجيل 31/12/30", "31/12/30"),
     "DECIMAL_COMMA": (None, "الوزن 12,5", "12,5"),

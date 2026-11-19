@@ -312,7 +312,7 @@ script, such as `acy`, gets no reading. The register is formal, and colloquial w
 `dialect_numbers` is on.
 
 text2spoken leaves some forms as written, such as a telephone number, a code such as
-`520i`, a decimal comma or a date with an era mark. arbtok reads those digits with
+`520i` or a decimal comma. arbtok reads those digits with
 `arbtok.util.normalize`, so no digit reaches the phonemizer. Each
 such form is marked in `arbtok/textnorm.py` with the text2spoken issue that covers it.
 
