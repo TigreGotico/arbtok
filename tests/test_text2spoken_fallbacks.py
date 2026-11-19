@@ -6,6 +6,10 @@ written. Each one carries a ``TODO(text2spoken issue: <CLASS>)`` marker with the
 text2spoken issue for its class, or no URL while no issue is filed. The guard test turns
 red on the day text2spoken reads a fallback form: the fallback then comes out, with its
 marker.
+
+Where text2spoken reads part of a span and leaves the rest, the fallback completes the
+span into a wrong reading. Those classes, and the forms the fallback itself misreads, are
+strict xfails that hold the right reading.
 """
 import re
 from pathlib import Path
@@ -21,46 +25,60 @@ ISSUE_URL = "https://github.com/TigreGotico/text2spoken/issues/"
 MARKER = re.compile(r"TODO\(text2spoken issue: (\w+)\)(?: " + re.escape(ISSUE_URL) + r"(\d+))?")
 
 # Each class a fallback reads: its text2spoken issue, or None while none is filed, a text
-# with the form, and the written part that text2spoken keeps.
+# with the form, the written part that text2spoken keeps, and the reading of the text.
 FALLBACKS = {
-    "UNIT_DECLINED": (336, "الطول 300 pm", "pm"),
-    "CLOCK_PERIOD_MARK": (333, "الساعة 10:30 ص اليوم", " ص "),
-    "SPACE_GROUPED": (148, "السعر 1 500 000 ريال", "000"),
-    "CLOCK_NEEDS_WORD": (None, "الموعد 7:40", "7:40"),
-    "CLOCK_SPELLING_OR_DOT": (None, "الساعه 3:30", "3:30"),
-    "CLOCK_DOCUMENTED_GAP": (None, "الساعة 13:15", "13:15"),
-    "DATE_RANGE": (None, "العرض من 1 إلى 7 مارس", "من 1 "),
-    "DATE_TWO_DIGIT_YEAR": (None, "ينتهي التسجيل 31/12/30", "31/12/30"),
-    "DECIMAL_COMMA": (None, "الوزن 12,5", "12,5"),
-    "DECIMAL_DECLINED": (None, "سعر المدة 12.50 ريال", "12.50"),
-    "CODE_DIGIT_SUFFIX": (None, "السيارة 520i", "520i"),
-    "LEADING_ZERO": (None, "رقمي 77 83 10 01", "01"),
-    "FRACTION_OTHER": (None, "موديل 2099/2100", "2099/2100"),
-    "NUMBER_AGAINST_WORD": (None, "كمية 100كمية", "100كمية"),
-    "T2S_DECLINES_OTHER": (None, "اختار 2 أ و ب", " 2 "),
+    "UNIT_DECLINED": (336, "الطول 300 pm", "pm", "الطول ثلاثمئة بيكومتر"),
+    "CLOCK_PERIOD_MARK": (333, "الساعة 10:30 ص اليوم", " ص ", "الساعة العاشرة والنصف صباحاً اليوم"),
+    "SPACE_GROUPED": (148, "السعر 1 500 000 ريال", "000", "السعر مليون وخمسمئة ألف ريال"),
+    "CLOCK_NEEDS_WORD": (None, "الموعد 7:40", "7:40", "الموعد الساعة الثامنة إلا ثلثا"),
+    "CLOCK_SPELLING_OR_DOT": (None, "الساعه 3:30", "3:30", "الساعه الثالثة والنصف"),
+    "CLOCK_DOCUMENTED_GAP": (None, "الساعة 13:15", "13:15", "الساعة الواحدة والربع مساءً"),
+    "DATE_RANGE": (None, "العرض من 1 إلى 7 مارس", "من 1 ", "العرض من الأول إلى السابع من مارس"),
+    "DATE_TWO_DIGIT_YEAR": (None, "ينتهي التسجيل 31/12/30", "31/12/30",
+                            "ينتهي التسجيل الحادي والثلاثون من ديسمبر ألفين وثلاثين"),
+    "DECIMAL_COMMA": (None, "الوزن 12,5", "12,5", "الوزن اثنا عشر فاصلة خمسة"),
+    "DECIMAL_DECLINED": (None, "سعر المدة 12.50 ريال", "12.50", "سعر المدة اثنا عشر فاصلة خمسة ريال"),
+    "CODE_DIGIT_SUFFIX": (None, "السيارة 520i", "520i", "السيارة خمسمئة وعشرون آيْ"),
+    "LEADING_ZERO": (None, "رقمي 77 83 10 01", "01", "رقمي سبعة وسبعون ثلاثة وثمانون عشرة صفر واحد"),
+    "FRACTION_OTHER": (None, "موديل 2099/2100", "2099/2100", "موديل ألفان وتسعة وتسعون/ألفان ومئة"),
+    "NUMBER_AGAINST_WORD": (None, "كمية 100كمية", "100كمية", "كمية مئة كمية"),
+    "T2S_DECLINES_OTHER": (None, "اختار 2 أ و ب", " 2 ", "اختار اثنان أ و ب"),
+}
+
+# The classes read wrong. text2spoken reads part of the span and the fallback completes
+# it: 1 500 as two numbers, the first day of a range as a cardinal, 77 83 10 as numbers
+# with the zero of 01 lost. Or the fallback misreads the whole form: the century and a
+# weekday for a two-digit year, a slash as a fraction, a number joined to its noun.
+MISREAD = {
+    "SPACE_GROUPED": "TODO(text2spoken issue: SPACE_GROUPED) https://github.com/TigreGotico/text2spoken/issues/148",
+    "DATE_RANGE": "TODO(text2spoken issue: DATE_RANGE), fixed by https://github.com/TigreGotico/text2spoken/pull/344, not released",
+    "LEADING_ZERO": "TODO(text2spoken issue: LEADING_ZERO)",
+    "DATE_TWO_DIGIT_YEAR": "TODO(text2spoken issue: DATE_TWO_DIGIT_YEAR)",
+    "FRACTION_OTHER": "TODO(text2spoken issue: FRACTION_OTHER)",
+    "NUMBER_AGAINST_WORD": "TODO(text2spoken issue: NUMBER_AGAINST_WORD)",
 }
 
 
 @pytest.mark.parametrize("cls", FALLBACKS)
 def test_text2spoken_still_leaves_the_fallback_form(cls):
     # Red here means text2spoken reads the form: remove its fallback and its marker.
-    _, text, kept = FALLBACKS[cls]
+    _, text, kept, _ = FALLBACKS[cls]
     assert kept in text2spoken.normalize(text, "ar")
 
 
-@pytest.mark.parametrize("cls", FALLBACKS)
+@pytest.mark.parametrize("cls", [
+    pytest.param(cls, marks=pytest.mark.xfail(strict=True, reason=MISREAD[cls])) if cls in MISREAD else cls
+    for cls in FALLBACKS])
 def test_the_fallback_reads_the_form(cls):
-    _, text, kept = FALLBACKS[cls]
-    said = normalize_for_tts(text, "ar")
-    assert kept not in said
-    assert not re.search("[0-9٠-٩]", said)
+    _, text, _, reading = FALLBACKS[cls]
+    assert normalize_for_tts(text, "ar") == reading
 
 
 def test_every_fallback_marker_names_its_class_and_issue():
     found = sorted((m.group(1), int(m.group(2)) if m.group(2) else None)
                    for path in sorted((ROOT / "arbtok").glob("*.py"))
                    for m in MARKER.finditer(path.read_text(encoding="utf-8")))
-    assert found == sorted((cls, issue) for cls, (issue, _, _) in FALLBACKS.items())
+    assert found == sorted((cls, issue) for cls, (issue, _, _, _) in FALLBACKS.items())
 
 
 # The ISO 639-3 code of the lect's spec chain, with its region. The macrolanguage,
