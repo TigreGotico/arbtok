@@ -1,8 +1,28 @@
 # Changelog
 
+## [0.0.3a7](https://github.com/TigreGotico/arbtok/tree/0.0.3a7) (2026-11-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a6...0.0.3a7)
+
+**Merged pull requests:**
+
+- fix\(gold\): pin Chadian "email" as iːmeːl under orthography2ipa 7.124 [\#347](https://github.com/TigreGotico/arbtok/pull/347) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a6](https://github.com/TigreGotico/arbtok/tree/0.0.3a6) (2026-11-18)
 
-[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a2...0.0.3a6)
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a5...0.0.3a6)
+
+## [0.0.3a5](https://github.com/TigreGotico/arbtok/tree/0.0.3a5) (2026-11-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a4...0.0.3a5)
+
+## [0.0.3a4](https://github.com/TigreGotico/arbtok/tree/0.0.3a4) (2026-11-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a3...0.0.3a4)
+
+## [0.0.3a3](https://github.com/TigreGotico/arbtok/tree/0.0.3a3) (2026-11-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a2...0.0.3a3)
 
 **Merged pull requests:**
 

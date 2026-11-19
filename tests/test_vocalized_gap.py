@@ -23,6 +23,7 @@ import pytest
 from arbtok.diacritize import _author_complete, _proclitic_complete
 from arbtok.lattice import defers_to_cascade, spec_word_exception, word_ipa
 from arbtok.plugin import ArbtokG2PPlugin
+from arbtok.tokenizer import normalize_unicode
 from arbtok.tokenizer import Sentence
 from arbtok.waqf import pausal
 
@@ -128,6 +129,76 @@ def test_fully_bare_word_is_not_complete():
     """A word with several silent positions is the model's to vocalize."""
     assert not _author_complete("وكان", [0, 2, 3])
     assert not _proclitic_complete("وكان", [0, 2, 3])
+
+
+def test_marked_article_word_is_complete():
+    """An author who pointed the stem and left only the article's alif and lām
+    bare wrote a complete word."""
+    assert _author_complete("الْكِتَاب", [0, 1])
+
+
+def test_bare_article_word_is_not_complete():
+    """A bare ال with one letter after it leaves only the article positions
+    silent, since a word-final letter never is. No mark was written, so the word
+    is still the model's to vocalize."""
+    assert not _author_complete("الى", [0, 1])
+
+
+def test_bare_ila_reads_as_the_preposition():
+    """Bare الى is the preposition إِلَى "to" (Wright, A Grammar of the Arabic
+    Language, 3rd ed., I §358 (a)): /ʔilaː/, with the hamza and the kasra,
+    stressed on its first syllable as the written إِلَى is."""
+    plug = ArbtokG2PPlugin(lang="ar")
+    assert plug.normalize("الى") == "إِلَى"
+    assert plug.transcribe("الى") == "ˈʔilaː"
+    assert plug.transcribe("ذهب الرجل الى السوق").split()[2] == "ˈʔilaː"
+
+
+@pytest.mark.parametrize("lang", ["ar", "arb", "ar-EG", "ar-SA-x-najd", "ar-LB"])
+def test_bare_ili_reads_as_the_preposition(lang):
+    """Bare الي is إِلَى "to" with ي written for ى (Wright, A Grammar of the
+    Arabic Language, 3rd ed., I §358 (a), p. 280), as diacritize._RESTORABLE
+    allows. The row answers in every context, so it holds the frequent sense:
+    the stem lexicon (TigreGotico/arabic-stem-lexicon) counts إلى 65,793 times
+    and إلي 1,242 times. It is not the nisba أَلِيّ /ʔalijj/."""
+    plug = ArbtokG2PPlugin(lang=lang)
+    assert plug.normalize("الي") == normalize_unicode("إِلَى")
+    assert plug.transcribe("الي") == plug.transcribe("إِلَى")
+
+
+@pytest.mark.parametrize("lang", ["ar", "ar-EG", "ar-SA-x-najd"])
+def test_bare_ili_before_a_noun_reads_as_the_preposition(lang):
+    """الي البيت is إِلَى الْبَيْت "to the house", not إِلَيَّ "to me"."""
+    plug = ArbtokG2PPlugin(lang=lang)
+    assert plug.transcribe("الي البيت") == plug.transcribe("إِلَى البيت")
+
+
+@pytest.mark.parametrize("lang", ["ar", "ar-EG", "ar-SA-x-najd"])
+def test_bare_ili_matches_a_gold_reading(lang):
+    """/ʔilaː/ is one of the readings tests/ar_test.txt gives for الي."""
+    assert ArbtokG2PPlugin(lang=lang).transcribe("الي").replace("ˈ", "") == "ʔilaː"
+
+
+@pytest.mark.parametrize("lang", ["ar", "ar-EG"])
+def test_pointed_ilayya_keeps_the_suffix_reading(lang):
+    """A writer who points إِلَيَّ "to me" (Wright I §358 Rem. a, p. 281) gives
+    the clear signal the bare row lacks: /ʔilajja/, the gold's first reading."""
+    assert ArbtokG2PPlugin(lang=lang).transcribe("إِلَيَّ").replace("ˈ", "") == "ʔilajja"
+
+
+@pytest.mark.parametrize("lang", ["ar-MA", "ar-TN", "ar-DZ"])
+def test_bare_alli_stays_the_maghrebi_relative_pronoun(lang):
+    """The Maghrebi lexicon's more specific row wins: الي is the relative الِّي
+    there (Heath 2002), not the preposition."""
+    assert ArbtokG2PPlugin(lang=lang).normalize("الي") == normalize_unicode("الِّي")
+
+
+def test_bare_alah_reads_the_question_particle_with_lahu():
+    """Bare أله is أَلَهُ "has he?", in pause /ʔalah/: the interrogative أَ
+    (Wright I §361 (a), p. 282) before لَهُ "to him" (I §356 Rem. b, p. 279).
+    The stem lexicon counts أَلَه 60 times against 4 for its runner-up."""
+    plug = ArbtokG2PPlugin(lang="ar")
+    assert plug.transcribe("أله") == plug.transcribe("أَلَهْ")
 
 
 def test_e2e_bare_waw_reads_as_cluster():
