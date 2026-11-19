@@ -2127,10 +2127,14 @@ CER_CANONICAL = dataclasses.replace(
 def _term_pattern(lexicon: Tuple[Tuple[str, str], ...]):
     said = {term.lower(): spoken for term, spoken in lexicon}
     longest_first = sorted(said, key=len, reverse=True)
+    # A term made only of digits is not a group of a larger figure: 530 does not match in
+    # 530,000, 1,530 or 530.5, where a group or decimal separator joins it to a digit.
+    def alternative(term: str) -> str:
+        return rf"(?<!\d[.,٫٬]){re.escape(term)}(?![.,٫٬]\d)" if term.isdigit() else re.escape(term)
     # A tatweel between an Arabic proclitic and the term only kept the Latin letters apart
     # from it; once the term is read in Arabic it joins the proclitic, so the tatweel goes.
     return re.compile(f"(?:{_TATWEEL_BEFORE_LATIN})?" + _LATIN_RUN_EDGE[0] + "("
-                      + "|".join(re.escape(t) for t in longest_first) + ")"
+                      + "|".join(alternative(t) for t in longest_first) + ")"
                       + _LATIN_RUN_EDGE[1], re.IGNORECASE), said
 
 
@@ -2933,12 +2937,15 @@ def _number_case(config: TtsNorm) -> str:
 @functools.lru_cache(maxsize=64)
 def _number_lang(lang: str, config: TtsNorm) -> str:
     """The code the parser is asked to speak a number under: the ISO 639-3 code of the
-    lect ``lang`` names, when a lect's own words are wanted, and ``lang`` otherwise. A
-    lect the parser has no cited words for keeps the literary ones, Najdi among them."""
+    lect ``lang`` names, when a lect's own words are wanted, and ``ar``, the literary
+    words, for any other Arabic tag. A lect the parser has no cited words for keeps the
+    literary ones, Najdi among them, and so does one it does not serve, Hassaniya."""
     if not config.dialect_numbers:
-        return lang
+        return "ar" if is_arabic_lang(lang) else lang
     from arbtok.dialects import lect_code
-    return lect_code(lang) or lang
+    from ovos_number_parser.numbers_ar import resolve_ar_lang
+    code = lect_code(lang) or lang
+    return code if resolve_ar_lang(code) else "ar"
 
 
 @functools.lru_cache(maxsize=64)

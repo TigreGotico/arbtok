@@ -5,8 +5,11 @@ quebra-frases
 # `is_arabic_lang` is. From 0.2.1a1 it measures the Arabic varieties in their CLDR likely
 # script, so `ayl-Arab-LY`, `ayp-Arab-IQ` and `mey-Arab-MR` reach their own lects; below
 # it they read as MSA. The `langcodes` extra gives it full BCP-47 standardization and
-# distance.
-linguatag[langcodes]>=0.2.1a1
+# distance. From 0.2.2a1 it replaces a retired ISO 639-3 code with the code it was merged
+# into, from the IANA registry's Preferred-Value: `ajp-JO` names `apc-JO`, and Judeo-Tunisian
+# `ajt`, merged into Tunisian `aeb`, is an Arabic variety. Below it, `ajt` reads as
+# Judeo-Arabic, not Arabic, and `ajp-JO` as MSA.
+linguatag[langcodes]>=0.2.2a1
 # Floored at the release that speaks a lect's cardinals: `dialect_numbers` asks it for the
 # Hijazi, Gulf and Egyptian number words by the lect's ISO 639-3 code, and an older parser
 # answers `lang="acw"` with the literary words and no error, so the flag would do nothing
@@ -34,6 +37,10 @@ ovos-number-parser>=0.24.0a1
 # words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour
 # and noon are not read the way the cited sources give them.
 ovos-date-parser>=0.31.5a1
+# arbtok.util speaks a number the parsers leave as digits through RbnfEngine and
+# FormatPurpose, which unicode-rbnf has from 2.0.0. It is imported directly, so it is
+# declared here and does not wait on ovos-number-parser to bring it.
+unicode-rbnf>=2.0.0
 # Transitive, floored here because the combination is otherwise installable and breaks
 # on import rather than on resolve. ovos-config below 3.5.1a1 imports
 # `ovos_utils.xdg_utils`, which ovos-utils 0.0.14a5 does not ship, so `arbtok.plugin`
@@ -52,5 +59,10 @@ ovos-date-parser>=0.31.5a1
 # solution space rather than leaving that to what else happens to be installed.
 ovos-utils>=0.15.4a1
 ovos-config>=3.5.1a1
-orthography2ipa>=7.122.0a2
+# From 7.124.2a2 the shu-TD inventory declares the long mid vowel /eː/ as a phoneme, so a
+# guest /eɪ/ lands on it: Chadian "email" reads iːmeːl, where 7.123 gives iːmiːl. The
+# code-switched gold pins the newer reading. From 7.124.15a2 a likely script subtag no
+# longer ties a region with the bare language under linguatag 0.3.1a1, so ajp-Arab-SY
+# names apc-SY and not apc.
+orthography2ipa>=7.124.15a2
 huggingface_hub

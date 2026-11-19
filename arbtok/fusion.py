@@ -196,15 +196,15 @@ class FusionDiacritizer:
             return 0.0
 
     def _dialect_lookup(self, word: str) -> Optional[str]:
-        """The lect's closed-class vocalization for *word*, guarded like a stem
-        entry (spells the word, licensed by the variety). Register-invariant, so
-        it answers in both waqf modes. See :mod:`arbtok.dialect_lexicon`."""
+        """The lect's closed-class vocalization for *word*, guarded like a model
+        proposal (spells the word, licensed by the variety). Register-invariant,
+        so it answers in both waqf modes. See :mod:`arbtok.dialect_lexicon`."""
         if self.dialect_lexicon is None:
             return None
         voc = self.dialect_lexicon.get(word)
         if voc is None:
             return None
-        if strip_marks(voc) != strip_marks(word) or not self._is_licensed(voc):
+        if not _skeleton_is_preserved(word, voc) or not self._is_licensed(voc):
             return None
         return voc
 

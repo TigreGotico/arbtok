@@ -94,6 +94,30 @@ def test_the_floors_that_carry_a_reason_are_still_declared(package):
     assert package in _floors(), f"{package} lost its floor"
 
 
+def test_every_package_the_code_imports_is_declared():
+    """A package the code imports and does not declare arrives only while another
+    dependency happens to bring it, and the import breaks when that one stops."""
+    import ast
+    import importlib.metadata
+    import sys
+
+    package = REQUIREMENTS.parent / "arbtok"
+    imported = set()
+    for source in package.rglob("*.py"):
+        for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Import):
+                imported |= {alias.name.split(".")[0] for alias in node.names}
+            elif isinstance(node, ast.ImportFrom) and node.level == 0:
+                imported.add(node.module.split(".")[0])
+    third_party = imported - set(sys.stdlib_module_names) - {"arbtok"}
+    declared = {re.split(r"[<>=!~\[ ;]", line.split("#")[0].strip())[0].lower().replace("_", "-")
+                for line in REQUIREMENTS.read_text(encoding="utf-8").splitlines() if line.split("#")[0].strip()}
+    distributions = importlib.metadata.packages_distributions()
+    undeclared = {module: distributions.get(module) for module in third_party
+                  if not {name.lower().replace("_", "-") for name in distributions.get(module, [module])} & declared}
+    assert not undeclared, undeclared
+
+
 def test_the_version_comparison_orders_alphas_before_their_release():
     assert _as_tuple("0.20.4a1") < _as_tuple("0.20.4")
     assert _as_tuple("0.18.5a1") < _as_tuple("0.20.4a1")
