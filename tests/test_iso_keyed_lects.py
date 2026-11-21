@@ -23,7 +23,7 @@ PAIRS = [
     ("ar-SA-x-najd", "ar-SA-x-najd"), ("ars-SA", "ar-SA-x-najd"),
     ("ar-x-gulf", "ar-x-gulf"), ("afb", "ar-x-gulf"),
     ("ar-JO", "ar-JO"), ("ar-EG-x-saidi", "ar-EG-x-saidi"),
-    ("ar-EH", "ar-DZ"), ("ar-TR", "ar-TR"),
+    ("ar-EH", "ar"), ("ar-TR", "ar-TR"),
     ("ar-x-najd", "ar-SA-x-najd"),
 ]
 
