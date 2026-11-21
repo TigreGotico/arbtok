@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a9](https://github.com/TigreGotico/arbtok/tree/0.0.3a9) (2026-11-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a8...0.0.3a9)
+
+**Merged pull requests:**
+
+- fix: floor orthography2ipa at 7.124.27a2 and declare dependencies in pyproject.toml [\#351](https://github.com/TigreGotico/arbtok/pull/351) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a8](https://github.com/TigreGotico/arbtok/tree/0.0.3a8) (2026-11-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a7...0.0.3a8)
