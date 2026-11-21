@@ -83,8 +83,10 @@ lect_code("ar")              # None  — the macrolanguage names no lect
 
 Whether anything is said differently under the code is the answer of whoever
 holds the data: the parser speaks a lect's cardinals only for the lects it has
-read a source for. It has words for Hijazi `acw`, Gulf `afb`, Najdi `ars` and
-Cairene Egyptian `arz` (see
+read a source for. It has words for Hijazi `acw`, Gulf `afb`, Najdi `ars`,
+Cairene Egyptian `arz`, Levantine `apc`, Moroccan `ary` and Tunisian `aeb`.
+`lect_code` gives only the first four, so a tag reaches the other three only when
+it is the ISO 639-3 code itself, such as `ary-MA` (see
 [normalization.md](normalization.md#numbers-in-the-words-a-lect-actually-uses)).
 
 ## Pipeline order: MSA restoration before dialect allophony

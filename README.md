@@ -65,10 +65,10 @@ So the same bare sentence receives variety-appropriate marks and IPA:
 from arbtok.plugin import ArbtokG2PPlugin
 
 bare = "ذهب الولد الى المدرسة"                    # undiacritized input
-ArbtokG2PPlugin(lang="ar").transcribe(bare)           # ˈðahab ˈalwalad ˈalaː lˈmudrasa
-ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)        # ˈðahab ˈalwalad ˈalɛː lˈmudrasa
+ArbtokG2PPlugin(lang="ar").transcribe(bare)           # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
+ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)        # ˈðahab ˈalwalad ˈʔilɛː lˈmudrasa
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("يشرب القهوة في البيت")
-# ˈjaʃrab alˈɡahawa fiː lˈbajt   — Najdi /g/ for qāf, epenthetic gahawa vowel
+# ˈjaʃrab alˈɡahawa fiː lˈbeːt   — Najdi /g/ for qāf, epenthetic gahawa vowel, /eː/ in bayt
 ArbtokG2PPlugin(lang="ar-TN").transcribe("يشرب القهوة في البيت")
 # ˈjaʃrab alˈqahwa fiː lˈbiːt    — Tunisian monophthong /iː/ in bayt
 ```
@@ -130,14 +130,19 @@ inside the wheel.
 ## Installation
 
 ```bash
-pip install arbtok
+pip install --pre arbtok
 ```
+
+This page describes the alpha releases. `pip install arbtok` without `--pre` gives
+the older stable release, 0.0.2.
 
 The diacritizer model ships inside the wheel. The default stem lexicon does not:
 the first call that diacritizes downloads `ar-stems.tsv` from the Hugging Face
 dataset `TigreGotico/arabic-stem-lexicon` into the Hugging Face cache. If the file
 is not cached and the Hub cannot be reached, that call raises
-`arbtok.ModelUnavailableError`. Pass `lexicon=None` to run with no network (see
+`arbtok.ModelUnavailableError`. A lexicon that cannot be read for any other reason
+raises its base class, `arbtok.lexicon.LexiconUnavailable`. Pass `lexicon=None` to
+run with no network (see
 [`docs/tashkeel.md`](docs/tashkeel.md#the-stem-lexicon)).
 
 ## Usage

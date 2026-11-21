@@ -330,7 +330,10 @@ attached, and a tatweel written between the two, `للـNissan`, is dropped once
 term is read in Arabic: `للنيسان`. A spelled code drops it the same way. A digit
 written against the letters of a reading, the bundled `أتش1` for `H1`, is read apart
 from them by its English name, as a spelled code's digit is: `أتش وَنْ`, where the
-cardinals would otherwise fuse it to the letters as `أتشواحد`.
+cardinals would otherwise fuse it to the letters as `أتشواحد`. A term made only of
+digits, such as a model number `530`, matches a whole figure only. It does not
+match inside `530,000`, `1,530` or `530.5`, where a group or decimal separator
+joins it to another digit.
 
 `spell_out_codes=True` reads what the lexicon did not claim and is a code, one
 character at a time. A code is a run of capitals and digits with at least one of
@@ -729,14 +732,18 @@ normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", VOICE_AGENT, diale
 # 'السعر تلت مية وخمسين ريال'
 ```
 
-The words are the parser's, quoted there from a published grammar with its page,
-and it composes the number the same way whichever lect it speaks: a lect differs
-in its words and not in its arithmetic. It has words for Hijazi `acw`, Gulf `afb`,
-Najdi `ars` and Cairene Egyptian `arz`. What arbtok adds is the translation from the tag you
-passed to that code, `arbtok.lect_code`, which walks the orthography2ipa parent
-chain, so Kuwaiti and Qatari take the Gulf code from the node they descend from.
+The words are the parser's, each quoted there with its source, and it composes
+the number the same way whichever lect it speaks: a lect differs in its words and
+not in its arithmetic. It has words for Hijazi `acw`, Gulf `afb`, Najdi `ars`,
+Cairene Egyptian `arz`, Levantine `apc`, Moroccan `ary` and Tunisian `aeb`. What
+arbtok adds is the translation from the tag you passed to that code,
+`arbtok.lect_code`, which walks the orthography2ipa parent chain, so Kuwaiti and
+Qatari take the Gulf code from the node they descend from. `lect_code` knows the
+first four codes. For the other three, pass the ISO 639-3 tag, such as `ary-MA`:
+`ar-MA` keeps the literary words.
 **A lect the parser has no cited words for keeps the literary ones**: a form no
-source gives is not written. `ar-SA` resolves to Najdi and takes its words.
+source gives is not written, and a code the parser does not serve, such as
+Hassaniya `mey`, keeps them too. `ar-SA` resolves to Najdi and takes its words.
 
 **The noun is the author's.** Arabic makes the counted noun agree with the number,
 and the dialects covered agree in the same direction: two to ten take a plural noun
