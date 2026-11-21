@@ -63,6 +63,8 @@ ovos-config>=3.5.1a1
 # guest /eɪ/ lands on it: Chadian "email" reads iːmeːl, where 7.123 gives iːmiːl. The
 # code-switched gold pins the newer reading. From 7.124.15a2 a likely script subtag no
 # longer ties a region with the bare language under linguatag 0.3.1a1, so ajp-Arab-SY
-# names apc-SY and not apc.
-orthography2ipa>=7.124.15a2
+# names apc-SY and not apc. From 7.124.27a2 an Arabic tag whose region no Arabic spec names
+# resolves to `ar`, where 7.124.25a2 gives `arz-EG` for `ar-ZZ`. The Najdi spec reads /aj aw/
+# as [eː oː], which the code-switched gold pins.
+orthography2ipa>=7.124.27a2
 huggingface_hub

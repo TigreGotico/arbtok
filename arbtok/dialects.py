@@ -429,11 +429,11 @@ def _closest_spec(normalized: str) -> str:
 
     # 5. The spec orthography2ipa resolves the tag to. It carries curated region
     #    defaults (``ar-SA`` is Najdi), and its nearest-language match compares
-    #    regions whatever language subtag the spec keys carry, where BCP-47
-    #    distance from ``ar-EH`` to ``arq-DZ`` is that of two languages. For an
+    #    regions whatever language subtag the spec keys carry. For an
     #    ``ar`` tag its answer stands, MSA included: a region whose only specs
-    #    are private-use lects (``ar-TR``) and that has no curated default
-    #    reads as MSA, not as whichever lect the match below ties on. For
+    #    are private-use lects (``ar-TR``) and that has no curated default, or
+    #    that no spec names (``ar-EH``), reads as MSA, not as whichever lect the
+    #    match below ties on. For
     #    another language subtag an answer of MSA is left to the match below,
     #    which reads ``ary-MA`` as Moroccan where an orthography2ipa without
     #    ISO 639-3 keys gives MSA.
