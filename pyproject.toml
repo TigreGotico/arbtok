@@ -99,7 +99,7 @@ dependencies = [
 version = {attr = "arbtok.version.VERSION_STR"}
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-timeout", "jiwer"]
+test = ["pytest", "pytest-timeout", "jiwer", "pandas", "pyarrow"]
 
 [project.entry-points."orthography2ipa.normalize"]
 arbtok = "arbtok.o2i_plugins:ArbtokDiacritizer"
