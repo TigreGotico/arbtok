@@ -56,7 +56,8 @@ dataset that does not exist, raises `arbtok.lexicon.LexiconUnavailable`, a
 `RuntimeError`. A Hugging Face file that is not in the local cache while the Hub is
 offline or cannot be reached raises its subclass `arbtok.ModelUnavailableError`,
 which is also a `ValueError` and names the dataset and the file. Pass
-`lexicon=None` to run with no lexicon and no network.
+`lexicon=None` to run with no stem lexicon and no network. The bundled `ar.tsv`
+and `arb.tsv` lexicons still apply; `dialect_lexicon=False` turns them off.
 
 ## `arbtok.tokenizer`
 

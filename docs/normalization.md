@@ -734,13 +734,14 @@ normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", VOICE_AGENT, diale
 
 The words are the parser's, each quoted there with its source, and it composes
 the number the same way whichever lect it speaks: a lect differs in its words and
-not in its arithmetic. It has words for Hijazi `acw`, Gulf `afb`, Najdi `ars`,
-Cairene Egyptian `arz`, Levantine `apc`, Moroccan `ary` and Tunisian `aeb`. What
+not in its arithmetic. Its lects include Hijazi `acw`, Gulf `afb`, Najdi `ars`,
+Cairene Egyptian `arz`, Levantine `apc`, Moroccan `ary`, Tunisian `aeb` and
+Algerian `arq`. What
 arbtok adds is the translation from the tag you passed to that code,
 `arbtok.lect_code`, which walks the orthography2ipa parent chain, so Kuwaiti and
-Qatari take the Gulf code from the node they descend from. `lect_code` knows the
-first four codes. For the other three, pass the ISO 639-3 tag, such as `ary-MA`:
-`ar-MA` keeps the literary words.
+Qatari take the Gulf code from the node they descend from. `lect_code` knows `acw`,
+`afb`, `ars` and `arz`. For any other lect, pass the ISO 639-3 tag, such as
+`ary-MA`: `ar-MA` keeps the literary words.
 **A lect the parser has no cited words for keeps the literary ones**: a form no
 source gives is not written, and a code the parser does not serve, such as
 Hassaniya `mey`, keeps them too. `ar-SA` resolves to Najdi and takes its words.

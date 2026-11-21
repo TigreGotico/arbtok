@@ -133,8 +133,8 @@ inside the wheel.
 pip install --pre arbtok
 ```
 
-This page describes the alpha releases. `pip install arbtok` without `--pre` gives
-the older stable release, 0.0.2.
+`pip install arbtok` without `--pre` gives the latest stable release, which can
+lag behind the features this page describes.
 
 The diacritizer model ships inside the wheel. The default stem lexicon does not:
 the first call that diacritizes downloads `ar-stems.tsv` from the Hugging Face
