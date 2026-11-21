@@ -67,8 +67,10 @@ def test_what_is_no_date_is_not_read_as_one(written):
                    for month in ("يناير", "فبراير", "مارس", "يونيو", "يوليو", "أكتوبر", "ديسمبر", "رمضان", "محرم"))
 
 
-def test_spoken_forms_alone_reads_dates_as_before():
-    assert normalize_for_tts("موعدك يوم 10/6/2026", "ar") == "موعدك يوم الأربعاء، العاشر من يونيو ألفان وستة وعشرون"
+def test_spoken_forms_alone_reads_the_day_as_an_ordinal_and_no_weekday():
+    # A date reads the day as a masculine ordinal, then من and the month (Ryding 2005,
+    # pp. 357-358). The text names no weekday, so none is said.
+    assert normalize_for_tts("موعدك يوم 10/6/2026", "ar") == "موعدك يوم العاشر من يونيو ألفين وستة وعشرين"
 
 
 def test_a_date_after_an_identifier_word_is_read_as_a_date():

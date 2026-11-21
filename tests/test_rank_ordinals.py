@@ -68,7 +68,8 @@ def test_without_the_cardinal_pass_nothing_changes(text):
     assert normalize_for_tts(text, "ar", off) == text
 
 
-@pytest.mark.parametrize("text, spoken", [("الفئة 5", "الفئة خمسة"), ("الطابق 3", "الطابق ثلاثة"),
-                                          ("القرن 21", "القرن واحد وعشرون")])
-def test_the_default_spoken_forms_are_unchanged(text, spoken):
+# An ordinal follows the noun that it ranks and agrees with it (Ryding 2005, pp. 354-359).
+@pytest.mark.parametrize("text, spoken", [("الفئة 5", "الفئة الخامسة"), ("الطابق 3", "الطابق الثالث"),
+                                          ("القرن 21", "القرن الحادي والعشرون")])
+def test_the_default_spoken_forms_read_the_ordinal(text, spoken):
     assert normalize_for_tts(text, "ar", TtsNorm()) == spoken

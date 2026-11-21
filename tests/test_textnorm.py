@@ -326,6 +326,14 @@ def test_the_tts_rule_set_name_covers_the_code_reading():
         assert textnorm._rule_set(flags, rule) != textnorm._rule_set(flags)
 
 
+def test_the_tts_rule_set_name_covers_the_text2spoken_step():
+    """c26368bec639 named the set that read ``spoken_forms`` through arbtok.util alone."""
+    assert textnorm.TTS_NORM_VERSION != "c26368bec639"
+    flags = [f.name for f in dataclasses.fields(TtsNorm)]
+    for rule in (textnorm._ANY_DIGIT, textnorm._LEFT_FOR_UTIL):
+        assert textnorm._rule_set(flags, rule) != textnorm._rule_set(flags)
+
+
 def test_the_rule_set_name_is_the_same_in_every_process():
     """A rule kept in a set would name a different rule set in each process, because a
     set's repr follows the hash seed. Two runs of the same code must agree on it."""
@@ -951,7 +959,8 @@ def test_a_cldr_table_is_not_read_backwards():
 
 
 def test_a_unit_after_a_number_is_read_in_arabic_and_a_bare_symbol_is_left():
-    assert normalize_for_tts("المسافة 5 km") == "المسافة خمسة كيلومتر"
+    # From 3 to 10 the counted noun is plural (Ryding 2005, p. 334).
+    assert normalize_for_tts("المسافة 5 km") == "المسافة خمسة كيلومترات"
     assert "كيلوغرام" in normalize_for_tts("الوزن 3 kg")
     assert normalize_for_tts("in km", spoken_forms=True) == "in km"
     units = textnorm.cldr_units("ar")

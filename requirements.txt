@@ -34,9 +34,15 @@ linguatag[langcodes]>=0.2.2a1
 ovos-number-parser>=0.24.0a1
 # Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
 # with the fractions of the hour and the period words: `normalize_for_tts` takes the
-# words of a clock time written in digits from it. Below 0.31.5a1, twenty to the hour
-# and noon are not read the way the cited sources give them.
+# words of a clock time with a period mark, and of a time text2spoken leaves as written,
+# from it. Below 0.31.5a1, twenty to the hour and noon are not read the way the cited
+# sources give them.
 ovos-date-parser>=0.31.5a1
+# `spoken_forms` reads Arabic dates, clock times, numbers and units through text2spoken,
+# under the tag of the lect and in the register `dialect_numbers` asks for. Floored at the
+# newest alpha, the release whose Arabic readings the fallbacks in `arbtok.textnorm` and
+# their guard test in tests/test_text2spoken_fallbacks.py were measured against.
+text2spoken[ar]>=0.0.2a84
 # arbtok.util speaks a number the parsers leave as digits through RbnfEngine and
 # FormatPurpose, which unicode-rbnf has from 2.0.0. It is imported directly, so it is
 # declared here and does not wait on ovos-number-parser to bring it.

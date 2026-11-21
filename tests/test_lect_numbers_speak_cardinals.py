@@ -16,7 +16,9 @@ def test_number_forms_alone_speaks_your_words():
 
 
 def test_without_either_numbers_are_the_literary_spoken_forms():
-    assert "اثنا عشر" in normalize_for_tts("عندي 12 سيارة", "ar-EG", TtsNorm())
+    # سيارة ends in taa' marbuuTa and is feminine (Ryding 2005, p. 121), and twelve before a
+    # feminine noun is اثنتا عشرة (Ryding 2005, pp. 339-345).
+    assert "اثنتا عشرة" in normalize_for_tts("عندي 12 سيارة", "ar-EG", TtsNorm())
 
 
 def test_a_lect_the_parser_does_not_serve_reads_the_literary_numbers():
