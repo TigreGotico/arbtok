@@ -120,14 +120,15 @@ target count:
 - **Rich-inventory lects realise the whole common loan set unaltered.** The Gulf
   group (`ar-KW`, `ar-AE`, `ar-BH`, `ar-QA`, `ar-OM`, `ar-x-gulf`,
   `ar-SA-x-hejaz`, `ar-SA-x-qassim`, `ar-SA-x-sharqiyya`, `ar-YE`), Egyptian
-  (`ar-EG`), the Iraqi lects (`ar-IQ`, `ar-IQ-x-qeltu`) and the whole Levantine
-  branch declare /ɡ/, the mid long vowels /eː oː/, and /ʒ/ or /dʒ/, so *meeting*
+  (`ar-EG`), the Iraqi lects (`ar-IQ`, `ar-IQ-x-qeltu`), Najdi (`ar-SA-x-najd`),
+  Chadian (`ar-TD`) and the whole Levantine branch declare /ɡ/, the mid long
+  vowels /eː oː/, and /ʒ/ or /dʒ/, so *meeting*
   `miːtinɡ`, *email* `iːmeːl` and *garage* `ɡaraːdʒ`/`ɡaraːɡ` all come out whole.
 - **Three-vowel / no-/ɡ/ lects show the projection instead.** MSA (`ar`) and
   Classical (`arb`) have neither /ɡ/ nor /eː/, so *meeting* reads `miːtink`,
   *garage* `karaːdʒ` and *email* `iːmiːl`, while *manager* needs nothing they lack
-  and surfaces as `manidʒar`. Najdi (`ar-SA-x-najd`), Mauritanian (`ar-MR`), the
-  Sudanic lects (`ar-TD`, `ar-NG`) and Rijāl Almaʿ (`ar-SA-x-rijal-alma`, the
+  and surfaces as `manidʒar`. Mauritanian (`ar-MR`), Nigerian (`ar-NG`) and Rijāl
+  Almaʿ (`ar-SA-x-rijal-alma`, the
   conservative /q/-retaining ʿAsīr variety) raise *email* to `iːmiːl` for want of
   [eː]; the Maghrebi leaves (`ar-MA`, `ar-TN`, `ar-DZ`) read it `iːmel` on their
   own short mid vowel.

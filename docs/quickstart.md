@@ -10,12 +10,12 @@ it to the Hugging Face cache. Pass `lexicon=None` to run with no network call (s
 ## 1. Install
 
 ```bash
-pip install arbtok
+pip install --pre arbtok
 ```
 
 That pulls the runtime deps (`numpy`, `onnxruntime`, `orthography2ipa`,
 `quebra-frases`, `linguatag`, `ovos-number-parser`, `ovos-date-parser`,
-`ovos-utils`, `ovos-config`, `huggingface_hub`) and the bundled rawi diacritizer
+`unicode-rbnf`, `ovos-utils`, `ovos-config`, `huggingface_hub`) and the bundled rawi diacritizer
 ensemble. `arbtok.__version__` is the installed version.
 
 ## 2. The one call to know
@@ -27,7 +27,7 @@ short vowels for you, so **you do not have to diacritize the input first**:
 from arbtok.plugin import ArbtokG2PPlugin
 
 p = ArbtokG2PPlugin()                       # Modern Standard Arabic
-print(p.transcribe("ذهب الولد الى المدرسة"))   # ˈðahab ˈalwalad ˈalaː lˈmudrasa
+print(p.transcribe("ذهب الولد الى المدرسة"))   # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
 ```
 
 The input here is **bare**, no ḥarakāt, the way Arabic is normally typed. arbtok
@@ -48,7 +48,7 @@ from arbtok.plugin import ArbtokG2PPlugin
 najdi = ArbtokG2PPlugin(lang="ar-SA-x-najd")
 tunis = ArbtokG2PPlugin(lang="ar-TN")
 
-print(najdi.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈɡahawa fiː lˈbajt
+print(najdi.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈɡahawa fiː lˈbeːt
 print(tunis.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈqahwa fiː lˈbiːt
 ```
 

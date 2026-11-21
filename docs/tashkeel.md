@@ -64,7 +64,10 @@ The default lexicon is the Hugging Face dataset
 diacritizes downloads it to the Hugging Face cache. When the file is not in the
 cache and the Hub is offline (`HF_HUB_OFFLINE=1`) or cannot be reached, that call
 raises `arbtok.ModelUnavailableError`, a `ValueError` that names the dataset and
-the file. To run with no network, fetch the file once, or pass `lexicon=None`.
+the file. A lexicon you name that cannot be read for another reason, such as a
+missing local file, raises its base class `arbtok.lexicon.LexiconUnavailable`. The
+engine does not fall back to the model. To run with no network, fetch the file
+once, or pass `lexicon=None`.
 
 The lexicon maps an **undiacritized surface form** to the most frequent
 **diacritized stem** for it in a large diacritized corpus, not to IPA. The stem
@@ -128,14 +131,22 @@ its ancestors' entries, `ar-MA` sees the pan-Maghrebi function words in
 `ar-x-maghrebi.tsv` *and* its own Moroccan-specific ones, the more specific file
 winning on a collision. See `arbtok/dialect_lexicon.py`.
 
+`ar.tsv` (Modern Standard) and `arb.tsv` (Classical, which every dialect lect
+inherits) hold function words whose bare spelling the model misreads. Bare `الي`
+is `إِلَى` "to", written with ي for ى (Wright I §358 (a)), so
+`ArbtokG2PPlugin().transcribe("ذهب الي البيت")` gives `ˈðahab ˈʔilaː lˈbajt`. The
+Maghrebi file reads bare `الي` as the relative `الِّي` and wins there.
+
 ### Errors
 
 Failures inside the model raise `TashkeelError` with the underlying cause
 attached.
 
-The G2P engine (`arbtok.plugin.ArbtokG2PPlugin`) raises one error and absorbs the
-rest. A stem lexicon on the Hugging Face Hub that is not in the local cache, when
-the Hub is offline or cannot be reached, raises `arbtok.ModelUnavailableError`, a `ValueError`. Any other
+The G2P engine (`arbtok.plugin.ArbtokG2PPlugin`) raises one kind of error and
+absorbs the rest. A stem lexicon that cannot be read raises
+`arbtok.lexicon.LexiconUnavailable`. Its subclass `arbtok.ModelUnavailableError`,
+also a `ValueError`, is raised for a file on the Hugging Face Hub that is not in
+the local cache when the Hub is offline or cannot be reached. Any other
 diacritization failure passes the text through: the engine transcribes whatever
 diacritics the input carries.
 
