@@ -5,19 +5,18 @@ because the claim is invisible at import time: a resolver that satisfies an old 
 gives a package that imports cleanly, reports a healthy version, and quietly does less.
 """
 import re
+import tomllib
 from pathlib import Path
 
 import pytest
 
-REQUIREMENTS = Path(__file__).resolve().parents[1] / "requirements.txt"
+ROOT = Path(__file__).resolve().parents[1]
+DEPENDENCIES = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["dependencies"]
 
 
 def _floors():
     floors = {}
-    for line in REQUIREMENTS.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
+    for line in DEPENDENCIES:
         match = re.fullmatch(r"([A-Za-z0-9._-]+)>=([0-9a-zA-Z.]+)", line)
         if match:
             floors[match.group(1).lower()] = match.group(2)
@@ -81,10 +80,7 @@ def test_the_ovos_utils_floor_does_not_cap_rich():
 
 def test_every_floor_is_a_floor_and_not_a_pin_or_a_ceiling():
     """Floor pins only: a ceiling here becomes an unsatisfiable install downstream."""
-    for line in REQUIREMENTS.read_text(encoding="utf-8").splitlines():
-        line = line.split("#")[0].strip()
-        if not line:
-            continue
+    for line in DEPENDENCIES:
         assert "==" not in line and "<" not in line, line
 
 
@@ -101,7 +97,7 @@ def test_every_package_the_code_imports_is_declared():
     import importlib.metadata
     import sys
 
-    package = REQUIREMENTS.parent / "arbtok"
+    package = ROOT / "arbtok"
     imported = set()
     for source in package.rglob("*.py"):
         for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
@@ -110,8 +106,7 @@ def test_every_package_the_code_imports_is_declared():
             elif isinstance(node, ast.ImportFrom) and node.level == 0:
                 imported.add(node.module.split(".")[0])
     third_party = imported - set(sys.stdlib_module_names) - {"arbtok"}
-    declared = {re.split(r"[<>=!~\[ ;]", line.split("#")[0].strip())[0].lower().replace("_", "-")
-                for line in REQUIREMENTS.read_text(encoding="utf-8").splitlines() if line.split("#")[0].strip()}
+    declared = {re.split(r"[<>=!~\[ ;]", line)[0].lower().replace("_", "-") for line in DEPENDENCIES}
     distributions = importlib.metadata.packages_distributions()
     undeclared = {module: distributions.get(module) for module in third_party
                   if not {name.lower().replace("_", "-") for name in distributions.get(module, [module])} & declared}
