@@ -85,6 +85,8 @@ def test_live_dev_rows_score_with_both_arbtok_arms():
     try:
         from benchmark_iqraeval import load_gold
         rows = load_gold("dev", limit=5)
+    except ImportError:
+        raise
     except Exception as exc:  # network/HF unavailable — skip, don't fail
         pytest.skip(f"IqraEval/Iqra_train unreachable: {exc}")
 
