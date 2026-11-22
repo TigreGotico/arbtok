@@ -1,5 +1,13 @@
 # Code-switched Arabic gold set
 
+<!-- agent-hint
+covers: the schema, the pipeline status and the provenance of the code-switched gold set
+source: data/gold_code_switched/, scripts/gold_code_switched.py
+generated: no
+verify: .venv/bin/python scripts/gold_code_switched.py validate && diff <(grep -oP '^\| \x60\K[a-z_]+(?=\x60 \|)' docs/gold-code-switched.md | head -8 | sort) <(.venv/bin/python -I -c "import ast,re;print(*sorted(ast.literal_eval(re.search(r'FIELDS = (\[.*?\])',open('scripts/gold_code_switched.py').read()).group(1))+['pipeline_status']),sep='\n')")
+see: dialects.md, arabizi.md, benchmarks.md
+-->
+
 `data/gold_code_switched/<lect>.tsv`, twenty or so realistic Arabic/English
 code-switched sentences per lect, pinning arbtok's **loanword-nativization**
 pipeline: a Latin-script word embedded in dialectal Arabic is read as a loan and
@@ -151,4 +159,4 @@ python scripts/gold_code_switched.py validate [lect ...]  # CI gate (also in pyt
 `tests/test_gold_code_switched.py` runs the gate in CI, parameterized per lect.
 
 ---
-[← Arabizi](arabizi.md) · [Home](../README.md) · [API reference →](api.md)
+[← Text normalization](normalization.md) · [Index](index.md) · [API reference →](api.md)

@@ -1,5 +1,13 @@
 # Quickstart, Arabic text to IPA
 
+<!-- agent-hint
+covers: how to install arbtok and phonemize a bare Arabic sentence, in a dialect and after normalization
+source: pyproject.toml, arbtok/plugin.py, arbtok/textnorm.py:normalize_for_tts, arbtok/tokenizer.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/quickstart.md
+see: tashkeel.md, dialects.md, normalization.md, api.md
+-->
+
 `arbtok` turns Arabic script into IPA phonemes for TTS front-ends, across Modern
 Standard Arabic, Classical, and 30+ regional varieties. The diacritizer model
 ships inside the wheel, so there is no external model to download. The default
@@ -107,4 +115,4 @@ speak MSA or a covered dialect, pull requests are very welcome.
 - [advanced.md](advanced.md), token internals, espeak baseline, recipes, gotchas
 
 ---
-[Home](../README.md) · [Diacritization →](tashkeel.md)
+[Index](index.md) · [Diacritization →](tashkeel.md)

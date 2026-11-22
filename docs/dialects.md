@@ -1,5 +1,13 @@
 # Varieties
 
+<!-- agent-hint
+covers: how a tag resolves to a variety, the ISO 639-3 codes, loanword nativization per variety and the diacritization provenance
+source: arbtok/dialects.py, arbtok/translit.py, arbtok/donor_lexicon.py, arbtok/diacritize.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/dialects.md
+see: tashkeel.md, arabizi.md, gold-code-switched.md, api.md
+-->
+
 A variety is an **orthography2ipa spec**, named by its code, and each variety's
 spec does more than allophony: its grapheme table is the **licensing filter**
 that makes arbtok's tashkeel dialect-aware (the fusion scorer picks the model's
@@ -75,10 +83,10 @@ than a list of countries.
 ```python
 from arbtok import lect_code
 
-lect_code("ar-SA-x-hejaz")   # 'acw' — Hijazi
-lect_code("ar-KW")           # 'afb' — Gulf, from the ar-x-gulf node it descends from
-lect_code("ar-SA")           # 'ars' — Najdi, which ar-SA resolves to
-lect_code("ar")              # None  — the macrolanguage names no lect
+lect_code("ar-SA-x-hejaz")   # 'acw'  (Hijazi)
+lect_code("ar-KW")           # 'afb'  (Gulf, from the ar-x-gulf node it descends from)
+lect_code("ar-SA")           # 'ars'  (Najdi, which ar-SA resolves to)
+lect_code("ar")              # None  (the macrolanguage names no lect)
 ```
 
 Whether anything is said differently under the code is the answer of whoever
@@ -165,7 +173,7 @@ a spec, and a written-out list would go wrong. Ask the code:
 
 ```python
 from arbtok.translit import nativization_table, SEGMENT_MAP
-nativization_table("ar-SA-x-qassim") is SEGMENT_MAP   # True — inherits Najdi
+nativization_table("ar-SA-x-qassim") is SEGMENT_MAP   # True  (inherits Najdi)
 ```
 
 Two leaves are held out of their group's table by naming the default ahead of
@@ -175,7 +183,7 @@ it.
 
 ```python
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'maniɡar'  (Cairene stop ǧīm)
-ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar' (Najdi affricate)
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar'  (Najdi affricate)
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("think")           # 'tink'     (interdental merger)
 ```
 
@@ -242,9 +250,9 @@ which has no /θ/.
 caller for whom a nearest-sound guess is worse than no answer:
 
 ```python
-transliterate("meeting", "ar")                # 'miːtink'  — /ɡ/ projected onto /k/
-transliterate("meeting", "ar", strict=True)   # None       — MSA declares no /ɡ/
-transliterate("meeting", "ar-SA-x-najd")      # 'miːtinɡ'  — Najdi declares it
+transliterate("meeting", "ar")                # 'miːtink'  (/ɡ/ projected onto /k/)
+transliterate("meeting", "ar", strict=True)   # None  (MSA declares no /ɡ/)
+transliterate("meeting", "ar-SA-x-najd")      # 'miːtinɡ'  (Najdi declares it)
 ```
 
 `strict` governs that one decision and nothing else. `None` also comes back,
@@ -275,8 +283,8 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meetin
 import arbtok
 
 out = arbtok.vocalize("عندي meeting مهم", "ar-EG")
-str(out)                                        # the vocalized string
-[(w.surface, w.provenance) for w in out.words]  # who decided each word
+str(out)                                        # 'عِنْدِي meeting مُهِمّ'  (the vocalized string)
+[(w.surface, w.provenance) for w in out.words]  # [('عندي', 'stem-lexicon'), ('meeting', 'not-arabic'), ('مهم', 'stem-lexicon')]  (who decided each word)
 ```
 
 Each `DiacritizedWord` carries `surface`, `output` and `provenance` — one of
@@ -387,9 +395,13 @@ So the lattice's advantage over the bare model on this gold is mostly **undoing 
 hamza restoration**, not correcting ḥarakāt. A mask that knew the variety could refuse
 the restoration where the orthography does not use it, and would not need the repair.
 
+The first line below builds the step plugin's generator, and `ArbtokG2PPlugin` takes `fusion=` instead. The second line makes the same choice for an orthography2ipa `Pipeline`:
+
 ```python
-ArbtokDiacritizer(path="fusion")   # the step plugin's generator; ArbtokG2PPlugin takes fusion=
-pipeline("ar", path="fusion")      # the same choice for an orthography2ipa Pipeline
+from arbtok.o2i_plugins import ArbtokDiacritizer, pipeline
+
+ArbtokDiacritizer(path="fusion")
+pipeline("ar", path="fusion")
 ```
 
 A value that is neither raises rather than falling back: a typo that silently kept the
@@ -397,4 +409,4 @@ default reads exactly like the setting working, and a comparison run that way wo
 compare one path with itself.
 
 ---
-[← Rawi-lattice fusion](rawi-fusion.md) · [Home](../README.md) · [Arabizi →](arabizi.md)
+[← Rawi-lattice fusion](rawi-fusion.md) · [Index](index.md) · [Arabizi input →](arabizi.md)

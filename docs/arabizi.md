@@ -1,5 +1,13 @@
 # Arabizi input
 
+<!-- agent-hint
+covers: how arbtok detects Latin-script Arabic and which digit map it reads
+source: arbtok/arabizi.py, arbtok/plugin.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/arabizi.md
+see: dialects.md, gold-code-switched.md
+-->
+
 *Arabizi*, also **3arabi**, **Franco-Arabic**, **chat Arabic**, is Arabic written
 in the Latin letters and digits a keyboard offers, with numerals standing in for the
 consonants Latin has no glyph for: `7abibi` is حبيبي, `3ala` is على, `5alid` is خالد.
@@ -81,10 +89,10 @@ default: `g` → ق (the Gulf/Bedouin qāf reflex, not the Egyptian ǧīm) and `
 from arbtok.plugin import ArbtokG2PPlugin
 
 p = ArbtokG2PPlugin(lang="ar-EG")           # arabizi=True by default
-p.transcribe("3andi maw3ed el sa3a sab3a")  # digit-guttural → read as Arabic
-p.transcribe("عِنْدِي meeting مَعَ manager") # digit-free English → nativized loans
-p.transcribe("habibi", arabizi=True)         # force the Arabizi reading of a run
-p.transcribe("3ala", arabizi=False)          # force the loanword reading
+p.transcribe("3andi maw3ed el sa3a sab3a")  # 'ˈʕaːnid moːˈʕiːd ˈʔal ˈsaːʕaː ˈsaːbiʕaː' — digit-guttural, read as Arabic
+p.transcribe("عِنْدِي meeting مَعَ manager") # 'ˈʕindiː miːtinɡ ˈmaʕa maniɡar' — digit-free English, nativized loans
+p.transcribe("habibi", arabizi=True)         # 'haːˈbiːb' — force the Arabizi reading of a run
+p.transcribe("3ala", arabizi=False)          # 'ala' — force the loanword reading
 ArbtokG2PPlugin(lang="ar-EG", arabizi=False) # disable the path entirely
 ```
 
@@ -115,4 +123,4 @@ The ceiling is the diacritizer and the dialect phonologies, not the input path. 
 rows stand as the acceptance test the pipeline has to earn.
 
 ---
-[← Varieties](dialects.md) · [Home](../README.md) · [Code-switched gold →](gold-code-switched.md)
+[← Varieties](dialects.md) · [Index](index.md) · [Text normalization →](normalization.md)

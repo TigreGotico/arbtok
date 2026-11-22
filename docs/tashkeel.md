@@ -1,5 +1,13 @@
 # Diacritization (tashkeel)
 
+<!-- agent-hint
+covers: how arbtok restores diacritics: the bundled model, the stem lexicon and the closed-class lexicon
+source: arbtok/diacritize.py, arbtok/tashkeel.py, arbtok/lexicon.py, arbtok/dialect_lexicon.py, arbtok/_ensemble.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/tashkeel.md
+see: rawi-fusion.md, dialects.md, api.md
+-->
+
 Arabic in the wild is written without short vowels. The phonemizer needs them, no diacritics means no vowels to emit. arbtok restores diacritics with a model it
 **bundles**: the rawi stitched ensemble, one 4.9 MB int8 ONNX inside the wheel
 (`arbtok/_ensemble.py`, onnxruntime + numpy, no PyTorch, no network, no external
@@ -21,7 +29,7 @@ the exposed distribution's argmax equals the graph's own decision.
 from arbtok.tashkeel import TashkeelDiacritizer
 
 diac = TashkeelDiacritizer()
-print(diac.diacritize("قال الملك"))
+print(diac.diacritize("قال الملك"))   # قَالَ المَلَكَ
 ```
 
 ### `diacritize(text, pausal=False) -> str`
@@ -29,7 +37,7 @@ print(diac.diacritize("قال الملك"))
 Returns the input text with diacritics inserted.
 
 ```python
-diac.diacritize("ذهب الطالب")
+diac.diacritize("ذهب الطالب")   # 'ذَهَبَ الطَّالِبُ'
 ```
 
 `pausal=True` drops the word-final case and mood endings (iʿrāb), leaving the
@@ -37,7 +45,7 @@ pausal (waqf) form that is spoken, the transform is deterministic and
 rule-cited (`arbtok/waqf.py`. Wright I §372, Ryding §2.4):
 
 ```python
-diac.diacritize("كتب", pausal=True)
+diac.diacritize("كتب", pausal=True)   # 'كَتَب'
 ```
 
 `TashkeelDiacritizer` is also callable. `diac(text)` is equivalent to
@@ -110,8 +118,8 @@ lexicon and the model:
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-ArbtokG2PPlugin(lang="ar-x-maghrebi").transcribe("كيفاش راك اليوم")
-ArbtokG2PPlugin(lang="ar-x-maghrebi", dialect_lexicon=False)  # off
+ArbtokG2PPlugin(lang="ar-x-maghrebi").transcribe("كيفاش راك اليوم")   # 'kiːˈfaːʃ ˈraːk alˈjuːm'
+ArbtokG2PPlugin(lang="ar-x-maghrebi", dialect_lexicon=False).transcribe("كيفاش راك اليوم")   # 'kajˈfaːʃ ˈraːk alˈjawm'
 ```
 
 The value is a **diacritized surface form**, not IPA, fed back through the
@@ -151,4 +159,4 @@ diacritization failure passes the text through: the engine transcribes whatever
 diacritics the input carries.
 
 ---
-[← Quickstart](quickstart.md) · [Home](../README.md) · [Rawi-lattice fusion →](rawi-fusion.md)
+[← Quickstart](quickstart.md) · [Index](index.md) · [Rawi-lattice fusion →](rawi-fusion.md)

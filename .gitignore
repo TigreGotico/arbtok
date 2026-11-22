@@ -7,7 +7,6 @@ dist/
 .coverage
 TODO.md
 ROADMAP.md
-AGENTS.md
 CLAUDE.md
 .venv/
 scripts/.cache_ara_arab_broad.tsv

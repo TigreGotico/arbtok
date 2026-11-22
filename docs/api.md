@@ -1,5 +1,13 @@
 # API reference
 
+<!-- agent-hint
+covers: every public name of arbtok with its signature and default
+source: arbtok/__init__.py, arbtok/plugin.py, arbtok/tokenizer.py, arbtok/textnorm.py, arbtok/dialects.py, arbtok/o2i_plugins.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/api.md
+see: quickstart.md, advanced.md
+-->
+
 Every public symbol, with real signatures and return shapes. Import paths are
 module-qualified (`from arbtok.plugin import ArbtokG2PPlugin`).
 
@@ -44,9 +52,9 @@ p = ArbtokG2PPlugin(lang="ar-EG")
 | `language_codes` | `List[str]` | `["ar", "arb"]`. |
 
 ```python
-p.transcribe("ذهب الولد الى المدرسة")            # bare input, auto-diacritized
-p.transcribe_word("قَهْوَة")                      # single word
-p.transcribe("عِنْدِي meeting", arabizi=False)    # force the loanword reading
+p.transcribe("ذهب الولد الى المدرسة")            # 'ˈdahab ˈalwalad ˈʔilaː lˈmudrasa' — bare input, auto-diacritized
+p.transcribe_word("قَهْوَة")                      # 'ˈʔahwa' — single word
+p.transcribe("عِنْدِي meeting", arabizi=False)    # 'ˈʕindiː miːtinɡ' — force the loanword reading
 ```
 
 Diacritization degrades, with one exception. If the model cannot load or fails,
@@ -86,7 +94,7 @@ s = Sentence("قَالَ ٱلْمَلِكُ")
 
 ```python
 print(s.ipa)              # "ˈqaːla lˈmaliku"
-print(len(s.tokens))      # word + punctuation tokens
+print(len(s.tokens))      # 2 — word and punctuation tokens
 ```
 
 `Sentence` compares equal to its surface string (`Sentence("x") == "x"`).
@@ -114,7 +122,7 @@ them off `Sentence.tokens`, but the properties are useful for inspection.
 ```python
 word = Sentence("الْمَدْرَسَةِ").tokens[0]
 print(word.has_definite_article)   # True
-print(word.ipa)                    # IPA for the word
+print(word.ipa)                    # almadrasati — IPA for the word
 ```
 
 ### `CharToken(surface, char_idx, prev_token=None, next_token=None, word=None)`
@@ -142,7 +150,7 @@ print(chars[-1].is_last_char)                      # True
 
 ### Module-level normalization helpers
 
-```python
+```text
 from arbtok.tokenizer import normalize_unicode
 
 normalize_unicode(text: str) -> str
@@ -341,4 +349,4 @@ release removes it. Nothing replaces it.
 - [advanced.md](advanced.md), internals, espeak baseline, recipes, gotchas
 
 ---
-[← Code-switched gold](gold-code-switched.md) · [Home](../README.md) · [Advanced →](advanced.md)
+[← Code-switched gold](gold-code-switched.md) · [Index](index.md) · [Advanced →](advanced.md)

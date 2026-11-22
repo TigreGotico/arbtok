@@ -1,5 +1,13 @@
 # Text normalization
 
+<!-- agent-hint
+covers: the two normalizers: normalize_asr for recognizer output and normalize_for_tts for written text
+source: arbtok/textnorm.py, arbtok/util.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/normalization.md
+see: quickstart.md, api.md, advanced.md
+-->
+
 Speech work needs text cleaned in two opposite directions, and arbtok has one
 function for each.
 
@@ -151,6 +159,8 @@ from arbtok.textnorm import CER_NORM, TRUTH_CHECK
 normalize_asr("مَرْحَبًا بِكُمْ، يا أَحْمَد!", TRUTH_CHECK)
 # 'مرحبا بكم، يا احمد!'
 
+reference = "مَرْحَبًا بِكُمْ"
+hypothesis = "مرحبا بكم"
 ref_tokens = normalize_asr(reference, CER_NORM).split()
 hyp_tokens = normalize_asr(hypothesis, CER_NORM).split()
 ```
@@ -199,6 +209,8 @@ mark is not a word character, so in that order each mark becomes a space and a
 pointed word breaks into letters:
 
 ```python
+from arbtok.textnorm import CER_MARKS_FIRST, CER_STRIP
+
 normalize_asr("مَرْحَبا", CER_STRIP)        # 'م ر ح با'
 normalize_asr("مَرْحَبا", CER_MARKS_FIRST)  # 'مرحبا'
 ```
@@ -217,7 +229,7 @@ normalize_asr("قال [noise] نعم [french: au moins] شيء", CER_MARKS_FIRST
 
 A bundle takes overrides and a lexicon:
 
-```python
+```text
 normalize_asr(text, TRUTH_CHECK, fold_digits=True)
 normalize_asr(text, CER_NORM.with_lexicon(LEXICON))
 ```
@@ -229,7 +241,7 @@ Two error rates are comparable only when the same rules produced both.
 named in it by its entry count and a digest of its entries, and the number
 parser by its version when numbers are read.
 
-```python
+```text
 CER_NORM.with_lexicon(LEXICON).describe()
 # 'arbtok-asr-norm <rule set>: punctuation_before_marks,strip_harakat,strip_tatweel,
 #  unify_spoken_variants,unify_alef,unify_ta_marbuta,unify_alef_maqsura,unify_hamza_carriers,
@@ -443,6 +455,8 @@ sentences. A pointed word it leaves alone, so the reading is the one the entry
 gives.
 
 ```python
+from arbtok.tokenizer import Sentence
+
 Sentence("اكس فايف", stress=False).ipa        # 'ʔiks faːjf'
 Sentence("إِكْسْ فَيْفْ", stress=False).ipa   # 'ʔiks fajf'
 ```
@@ -859,7 +873,7 @@ phones for words that were said. Phonemize the spoken form, never the written
 one: the tokenizer passes a `3` through as the character `3`, which is not a
 phone, and the syllables the speaker produced are left with nothing to align to.
 
-```python
+```text
 from arbtok.tokenizer import Sentence
 
 text = normalize_for_tts(transcript_of_record)
@@ -872,4 +886,4 @@ phones = Sentence(text).ipa
 - [advanced.md](advanced.md), internals and recipes
 
 ---
-[← Advanced](advanced.md) · [Home](../README.md) · [API →](api.md)
+[← Arabizi input](arabizi.md) · [Index](index.md) · [Code-switched gold →](gold-code-switched.md)

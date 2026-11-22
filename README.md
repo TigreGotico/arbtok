@@ -1,9 +1,14 @@
 # arbtok
 
-**Arabic text→IPA** with **dialect-aware tashkeel** diacritization, a
-self-contained Arabic engine built on
-[orthography2ipa](https://github.com/TigreGotico/orthography2ipa), covering MSA,
-Classical, and 30+ regional varieties.
+<!-- agent-hint
+covers: what arbtok does, how to install it, a first transcription in a dialect and where each topic is documented
+source: pyproject.toml, arbtok/__init__.py, arbtok/plugin.py, arbtok/diacritize.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py README.md
+see: docs/index.md, docs/quickstart.md, AGENTS.md
+-->
+
+arbtok turns Arabic text into IPA for Modern Standard Arabic, Classical Arabic and 30 or more regional varieties. It restores the missing short vowels with a dialect-aware diacritizer that ships in the wheel, and it builds on [orthography2ipa](https://github.com/TigreGotico/orthography2ipa). The documentation starts at [docs/index.md](docs/index.md).
 
 ## What arbtok adds over orthography2ipa
 
@@ -174,7 +179,7 @@ Bare text is handled by diacritizing first:
 from arbtok.plugin import ArbtokG2PPlugin
 
 plugin = ArbtokG2PPlugin()
-plugin.transcribe("كتاب جميل")    # auto-tashkeel + IPA
+plugin.transcribe("كتاب جميل")    # 'kiˈtaːb dʒaˈmiːl' — auto-tashkeel + IPA
 ```
 
 ### Varieties
@@ -217,8 +222,8 @@ that should be read exactly as its author pointed it, including scoring
 against iʿrāb-keeping gold:
 
 ```python
-ArbtokG2PPlugin(register="pausal").transcribe("رَأَيْتُ كِتَابًا.")  # …kitaːbaː
-ArbtokG2PPlugin(register="full").transcribe("رَأَيْتُ كِتَابًا.")    # …kitaːban
+ArbtokG2PPlugin(register="pausal").transcribe("رَأَيْتُ كِتَابًا.")  # 'raˈʔajtu kiˈtaːbaː'
+ArbtokG2PPlugin(register="full").transcribe("رَأَيْتُ كِتَابًا.")    # 'raˈʔajtu kiˈtaːban'
 ```
 
 Under `register="pausal"`, a pause has to be **written** (a punctuation
