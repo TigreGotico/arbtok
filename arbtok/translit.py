@@ -624,6 +624,11 @@ def _map_segments(segments: Sequence[str], lang: str) -> List[str]:
     seg_map = nativization_table(lang)
     out: List[str] = []
     for i, seg in enumerate(segments):
+        if seg in _COMBINING:
+            # A mark the donor segmentation left on its own (əː is cut ə | ː) is a
+            # modifier of the segment before it, not a sound to project.
+            out.append(seg)
+            continue
         if seg == _NG:
             nxt = segments[i + 1] if i + 1 < len(segments) else ""
             # [n] before /k/, [nɡ] elsewhere — meeting → -inɡ, pancreas → ban.k…
@@ -739,7 +744,7 @@ def transliterate(
         adapted = nativize(donor_ipa, lang, donor=donor)
 
     spec = G2P(lang).spec
-    declared = phoneme_inventory(spec)
+    declared = phoneme_inventory(spec) | set(_COMBINING)
     outside = [t for t in ipa_tokenize(adapted, spec) if t not in declared]
     if outside:
         if strict:
