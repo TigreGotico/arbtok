@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a13](https://github.com/TigreGotico/arbtok/tree/0.0.3a13) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a12...0.0.3a13)
+
+**Merged pull requests:**
+
+- build: require numtag 0.19.21a1, which reads the spoken teens [\#358](https://github.com/TigreGotico/arbtok/pull/358) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a12](https://github.com/TigreGotico/arbtok/tree/0.0.3a12) (2026-11-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a11...0.0.3a12)
