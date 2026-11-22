@@ -48,16 +48,7 @@ DIFFERENT = [
 ]
 
 
-#: Rows numtag does not read yet. Each is strict, so it turns red the day numtag reads it.
-NUMTAG_GAPS = {
-    "دور الساعة سبعة المغرب ودقيقة خمستاشر اذا يناسبك":
-        "numtag #213: spoken teens and tens (اطناش, احدعش, خمستاشر) read no number",
-}
-
-
-@pytest.mark.parametrize("written, heard", [
-    pytest.param(w, h, id=h, marks=[pytest.mark.xfail(strict=True, reason=NUMTAG_GAPS[h])] if h in NUMTAG_GAPS else [])
-    for w, h in SAME])
+@pytest.mark.parametrize("written, heard", [pytest.param(w, h, id=h) for w, h in SAME])
 def test_a_period_word_with_its_tanween_heard_reads_as_the_period(written, heard):
     assert cost(written, heard) == 0
 

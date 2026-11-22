@@ -200,7 +200,7 @@ DIFFERENT = [
 #: Rows numtag does not read yet. Each is strict, so it turns red the day numtag reads it.
 NUMTAG_GAPS = dict.fromkeys(
     ["الساعة 11:00 ص", "الساعة 11:00 م", "موعدك الساعة 11:00"],
-    "numtag #213: spoken teens and tens (اطناش, احدعش, خمستاشر) read no number")
+    "numtag #274: the spoken teens احداشر, اطناش, اثناش, ثنعش, ثلطعش and ثمنطعش read no number")
 
 
 @pytest.mark.parametrize("written, heard", [
