@@ -484,6 +484,7 @@ _LIGATURES = tuple(sorted(
 ))
 
 _COMBINING = "ːʰʲˤ̃"
+_LENGTH = "ː"
 
 
 def segment_ipa(ipa: str) -> List[str]:
@@ -624,9 +625,9 @@ def _map_segments(segments: Sequence[str], lang: str) -> List[str]:
     seg_map = nativization_table(lang)
     out: List[str] = []
     for i, seg in enumerate(segments):
-        if seg in _COMBINING:
-            # A mark the donor segmentation left on its own (əː is cut ə | ː) is a
-            # modifier of the segment before it, not a sound to project.
+        if seg == _LENGTH:
+            # A length mark the donor segmentation left on its own (əː is cut ə | ː)
+            # lengthens the segment before it; it is not a sound to project.
             out.append(seg)
             continue
         if seg == _NG:
@@ -744,7 +745,7 @@ def transliterate(
         adapted = nativize(donor_ipa, lang, donor=donor)
 
     spec = G2P(lang).spec
-    declared = phoneme_inventory(spec) | set(_COMBINING)
+    declared = phoneme_inventory(spec) | {_LENGTH}
     outside = [t for t in ipa_tokenize(adapted, spec) if t not in declared]
     if outside:
         if strict:
