@@ -5,13 +5,12 @@ A comment run directly under a ``print(...)`` call or a bare expression states
 the output: the printed text, or the ``repr`` of the value, with or without
 quotes. A trailing comment on the same line does the same. It may carry a note
 after the output, set off by a dash with spaces around it or by two spaces and
-an opening parenthesis. A trailing comment on any other statement, or on an
-expression that gives an object with no readable repr, is a note. Blocks of
-one page share a namespace. Blocks fenced ``python`` or ``py`` run. Fence code
-that must not run as ``text``.
+an opening parenthesis. Blocks of one page share a namespace. Blocks fenced
+``python`` or ``py`` run. Fence code that must not run as ``text``.
 
-A page fails when a block does not parse, when a statement raises, or when the
-comment of an output statement differs from its output.
+A page fails when a block does not parse, when a statement raises, or when a
+comment states an output under a statement the script cannot compare (only
+``print`` calls, bare expressions and ``for`` loops show output).
 
     python scripts/check_docs_examples.py README.md docs/quickstart.md
 """
@@ -65,7 +64,12 @@ def check(path: str) -> tuple[int, int]:
                 and isinstance(stmt.value, ast.Call)
                 and getattr(stmt.value.func, "id", "") == "print"
             )
-            claim = stated(lines, stmt) if isinstance(stmt, (ast.Expr, ast.For)) else None
+            claim = stated(lines, stmt)
+            if claim is not None and not isinstance(stmt, (ast.Expr, ast.For)):
+                checked += 1
+                failed += 1
+                print(f"{path}:{stmt.lineno}: comment under a statement that shows no output")
+                continue
             buf = io.StringIO()
             accepted: set[str] = set()
             try:
@@ -73,8 +77,6 @@ def check(path: str) -> tuple[int, int]:
                     if claim is not None and isinstance(stmt, ast.Expr) and not is_print:
                         value = eval(compile(ast.Expression(stmt.value), path, "eval"), scope)
                         accepted = {repr(value)}
-                        if re.fullmatch(r"<.* object at 0x[0-9a-f]+>", repr(value)):
-                            continue
                         if isinstance(value, str):
                             accepted |= {value, f'"{value}"'}
                     else:
@@ -95,7 +97,7 @@ def check(path: str) -> tuple[int, int]:
                 accepted |= {repr(got), f'"{got}"'}
             if claim not in accepted:
                 failed += 1
-                print(f"{path}: {ast.unparse(stmt)[:70]!r} stated {claim!r}, got {got or sorted(accepted)[0]!r}")
+                print(f"{path}:{stmt.lineno}: {ast.unparse(stmt)[:70]!r} stated {claim!r}, got {got or sorted(accepted)[0]!r}")
     return checked, failed
 
 

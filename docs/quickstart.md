@@ -34,11 +34,11 @@ short vowels for you, so **you do not have to diacritize the input first**:
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-p = ArbtokG2PPlugin()                       # Modern Standard Arabic
-print(p.transcribe("ذهب الولد الى المدرسة"))   # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
+p = ArbtokG2PPlugin()
+print(p.transcribe("ذهب الولد الى المدرسة"))  # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
 ```
 
-The input here is **bare**, no ḥarakāt, the way Arabic is normally typed. arbtok
+`ArbtokG2PPlugin()` with no argument transcribes Modern Standard Arabic. The input here is **bare**, no ḥarakāt, the way Arabic is normally typed. arbtok
 diacritizes it internally (the flagship dialect-aware tashkeel, see
 [tashkeel.md](tashkeel.md) and [rawi-fusion.md](rawi-fusion.md)) and then
 phonemizes the result. If your text already carries diacritics, they are honored
@@ -75,8 +75,9 @@ plugin runs on the way in:
 from arbtok import normalize_for_tts
 from arbtok.plugin import ArbtokG2PPlugin
 
-spoken = normalize_for_tts("عندي 3 كتب")     # عندي ثلاثة كتب
-print(ArbtokG2PPlugin().transcribe(spoken))
+spoken = normalize_for_tts("عندي 3 كتب")
+print(spoken)  # عندي ثلاثة كتب
+print(ArbtokG2PPlugin().transcribe(spoken))  # ˈʕindiː θaˈlaːθa ˈkatab
 ```
 
 A reply that reads out prices, phone numbers and booking references needs those

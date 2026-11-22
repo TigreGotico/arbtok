@@ -64,14 +64,16 @@ reading *that the dialect's orthography actually admits*, for every supported
 lect, from Najdi and Hejazi to Tunisian, Egyptian, and the qeltu Iraqi of
 Mosul (`docs/dialects.md`).
 
-So the same bare sentence receives variety-appropriate marks and IPA:
+The variable `bare` holds undiacritized input. The same bare sentence receives variety-appropriate marks and IPA:
 
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-bare = "ذهب الولد الى المدرسة"                    # undiacritized input
-ArbtokG2PPlugin(lang="ar").transcribe(bare)           # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
-ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)        # ˈðahab ˈalwalad ˈʔilɛː lˈmudrasa
+bare = "ذهب الولد الى المدرسة"
+ArbtokG2PPlugin(lang="ar").transcribe(bare)
+# 'ˈðahab ˈalwalad ˈʔilaː lˈmudrasa'
+ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)
+# 'ˈðahab ˈalwalad ˈʔilɛː lˈmudrasa'
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("يشرب القهوة في البيت")
 # ˈjaʃrab alˈɡahawa fiː lˈbeːt   — Najdi /g/ for qāf, epenthetic gahawa vowel, /eː/ in bayt
 ArbtokG2PPlugin(lang="ar-TN").transcribe("يشرب القهوة في البيت")
@@ -256,8 +258,8 @@ is worse than no answer. `strict` is an argument of `arbtok.translit.translitera
 not of the plugin.
 
 ```python
-ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")        # 'maniɡar'
-ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager") # 'manidʒar'
+ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")  # 'maniɡar'
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar'
 ```
 
 `nativize=True` is the default (a TTS voice needs a pronounceable reading). Pass
@@ -278,10 +280,13 @@ back to a conservative pan-Arabic default.
 ### Diacritization only
 
 ```python
-from arbtok.tashkeel import TashkeelDiacritizer   # the bundled rawi ensemble
+from arbtok.tashkeel import TashkeelDiacritizer
 
 TashkeelDiacritizer().diacritize("كتاب جميل")
+# 'كِتَابٌ جَمِيلَ'
 ```
+
+`TashkeelDiacritizer` is the bundled rawi ensemble.
 
 ### Numbers a voice agent reads out
 

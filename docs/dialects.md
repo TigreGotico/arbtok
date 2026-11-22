@@ -115,9 +115,9 @@ The order is observable. Bare `قلم`:
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-ArbtokG2PPlugin(lang="ar", diacritize=True).transcribe("قلم")          # 'ˈqalam'
-ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=True).transcribe("قلم") # 'ˈɡalam'
-ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=False).transcribe("قلم") # 'ɡlm'
+ArbtokG2PPlugin(lang="ar", diacritize=True).transcribe("قلم")  # 'ˈqalam'
+ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=True).transcribe("قلم")  # 'ˈɡalam'
+ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=False).transcribe("قلم")  # 'ɡlm'
 ```
 
 `ˈɡalam` carries both the restored MSA vowels *and* the Najdi qāf → /ɡ/ reflex:

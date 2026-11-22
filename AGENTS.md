@@ -38,7 +38,7 @@ Use uv, never pip. The suite drives the `espeak-ng` binary as a baseline, so ins
 4. Every dependency floor in `pyproject.toml` carries its reason in a comment, and `tests/test_dependency_floors.py` checks the floors.
 5. A pinned row of the code-switched gold keeps the `ipa` that the pipeline wrote. Never edit it by hand. `scripts/gold_code_switched.py validate` re-runs the pipeline ([gold-code-switched.md](docs/gold-code-switched.md#pipeline_status-pinned-vs-authentic-but-unpinned-rows)).
 6. The benchmark figures are measurements of agreement with cited-rule reference output, not native-validated truth ([benchmarks.md](docs/benchmarks.md)).
-7. A page example carries its output in the comment next to it, and `scripts/check_docs_examples.py` compares the two.
+7. A page example carries its output in a comment after two spaces on the same line or on the comment lines directly under it. `scripts/check_docs_examples.py` compares the two and fails a comment on a statement that shows no output.
 8. The release workflow writes `arbtok/version.py` and `CHANGELOG.md`. Do not edit either.
 
 ## Before you push

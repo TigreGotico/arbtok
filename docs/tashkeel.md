@@ -62,10 +62,13 @@ lexicon** before they ever call the model:
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-ArbtokG2PPlugin()                          # the default lexicon
-ArbtokG2PPlugin(lexicon="/data/mine.tsv")  # a local file, a URL, or an hf:// id
-ArbtokG2PPlugin(lexicon=None)              # the model, unassisted
+ArbtokG2PPlugin()
+ArbtokG2PPlugin(lexicon="/data/mine.tsv")
+ArbtokG2PPlugin(lexicon=None)
 ```
+
+The first line uses the default lexicon. The second names a local file, a URL, or
+an `hf://` id. The third runs the model unassisted.
 
 The default lexicon is the Hugging Face dataset
 `TigreGotico/arabic-stem-lexicon`, file `ar-stems.tsv`. The first call that

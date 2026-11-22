@@ -88,13 +88,16 @@ default: `g` → ق (the Gulf/Bedouin qāf reflex, not the Egyptian ǧīm) and `
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-p = ArbtokG2PPlugin(lang="ar-EG")           # arabizi=True by default
+p = ArbtokG2PPlugin(lang="ar-EG")
 p.transcribe("3andi maw3ed el sa3a sab3a")  # 'ˈʕaːnid moːˈʕiːd ˈʔal ˈsaːʕaː ˈsaːbiʕaː' — digit-guttural, read as Arabic
-p.transcribe("عِنْدِي meeting مَعَ manager") # 'ˈʕindiː miːtinɡ ˈmaʕa maniɡar' — digit-free English, nativized loans
-p.transcribe("habibi", arabizi=True)         # 'haːˈbiːb' — force the Arabizi reading of a run
-p.transcribe("3ala", arabizi=False)          # 'ala' — force the loanword reading
-ArbtokG2PPlugin(lang="ar-EG", arabizi=False) # disable the path entirely
+p.transcribe("عِنْدِي meeting مَعَ manager")  # 'ˈʕindiː miːtinɡ ˈmaʕa maniɡar' — digit-free English, nativized loans
+p.transcribe("habibi", arabizi=True)  # 'haːˈbiːb' — force the Arabizi reading of a run
+p.transcribe("3ala", arabizi=False)  # 'ala' — force the loanword reading
+ArbtokG2PPlugin(lang="ar-EG", arabizi=False).arabizi
+# False
 ```
+
+The Arabizi path is on by default. The constructor argument `arabizi=False` disables it for every call.
 
 ## What the path does and does not achieve
 
