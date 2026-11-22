@@ -167,7 +167,7 @@ def test_a_full_form_unit_before_ميه_is_hundreds():
     assert said == "اشتريت 500", said
 
 
-@pytest.mark.xfail(strict=True, reason="numtag: clitic ب inside a number span (issue pending)")
+@pytest.mark.xfail(strict=True, reason="numtag #267: clitic ب or بال read inside the number span")
 def test_a_proclitic_on_a_fused_hundred_is_repaired_with_it():
     assert normalize_asr("بخمسميه الف", fix_asr_errors=True) == "بخمسمية الف"
     assert normalize_asr("بخمسميه الف", fix_asr_errors=True, spoken_numbers_to_digits=True) == "ب500000"

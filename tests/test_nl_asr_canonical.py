@@ -39,8 +39,9 @@ def gap(reason):
 #: Rows that fail because numtag does not read the number yet. Each row is strict, so it
 #: turns red the day numtag reads it.
 TEENS = "numtag #213: spoken teens and tens (اطناش, احدعش, خمستاشر) read no number"
-CLITIC = "numtag: clitic ب inside a number span (issue pending)"
-MISSING_WAW = "numtag: missing و between الف and ميتين (issue pending)"
+CLITIC = "numtag #267: clitic ب or بال read inside the number span"
+MISSING_WAW = "numtag #268: الف ميتين without و reads as two numbers"
+DEFINITE_FIVE = "numtag #269: الخمسة reads as 5 before digits but not before a spoken number"
 NUMTAG_GAPS = {
     **dict.fromkeys(
         ["price-same-11", "price-same-14",
@@ -52,6 +53,7 @@ NUMTAG_GAPS = {
          "percent-same-01", "percent-same-07", "percent-same-14",
          "mixed-same-01", "punct-same-03", "punct-same-10"], TEENS),
     "plate-same-01": MISSING_WAW,
+    "price-same-38": DEFINITE_FIVE,
     "percent-differ-10": CLITIC,
 }
 
