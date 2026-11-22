@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a12](https://github.com/TigreGotico/arbtok/tree/0.0.3a12) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a11...0.0.3a12)
+
+**Merged pull requests:**
+
+- test: strict xfail the Arabic spoken-number gaps numtag holds [\#356](https://github.com/TigreGotico/arbtok/pull/356) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a11](https://github.com/TigreGotico/arbtok/tree/0.0.3a11) (2026-11-22)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a10...0.0.3a11)
