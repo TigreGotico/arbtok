@@ -1,5 +1,13 @@
 # Text normalization
 
+<!-- agent-hint
+covers: the two normalizers: normalize_asr for recognizer output and normalize_for_tts for written text
+source: arbtok/textnorm.py, arbtok/util.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/normalization.md
+see: quickstart.md, api.md, advanced.md
+-->
+
 Speech work needs text cleaned in two opposite directions, and arbtok has one
 function for each.
 
@@ -151,6 +159,8 @@ from arbtok.textnorm import CER_NORM, TRUTH_CHECK
 normalize_asr("مَرْحَبًا بِكُمْ، يا أَحْمَد!", TRUTH_CHECK)
 # 'مرحبا بكم، يا احمد!'
 
+reference = "مَرْحَبًا بِكُمْ"
+hypothesis = "مرحبا بكم"
 ref_tokens = normalize_asr(reference, CER_NORM).split()
 hyp_tokens = normalize_asr(hypothesis, CER_NORM).split()
 ```
@@ -199,6 +209,8 @@ mark is not a word character, so in that order each mark becomes a space and a
 pointed word breaks into letters:
 
 ```python
+from arbtok.textnorm import CER_MARKS_FIRST, CER_STRIP
+
 normalize_asr("مَرْحَبا", CER_STRIP)        # 'م ر ح با'
 normalize_asr("مَرْحَبا", CER_MARKS_FIRST)  # 'مرحبا'
 ```
@@ -217,7 +229,7 @@ normalize_asr("قال [noise] نعم [french: au moins] شيء", CER_MARKS_FIRST
 
 A bundle takes overrides and a lexicon:
 
-```python
+```text
 normalize_asr(text, TRUTH_CHECK, fold_digits=True)
 normalize_asr(text, CER_NORM.with_lexicon(LEXICON))
 ```
@@ -229,7 +241,7 @@ Two error rates are comparable only when the same rules produced both.
 named in it by its entry count and a digest of its entries, and the number
 parser by its version when numbers are read.
 
-```python
+```text
 CER_NORM.with_lexicon(LEXICON).describe()
 # 'arbtok-asr-norm <rule set>: punctuation_before_marks,strip_harakat,strip_tatweel,
 #  unify_spoken_variants,unify_alef,unify_ta_marbuta,unify_alef_maqsura,unify_hamza_carriers,
@@ -330,7 +342,10 @@ attached, and a tatweel written between the two, `للـNissan`, is dropped once
 term is read in Arabic: `للنيسان`. A spelled code drops it the same way. A digit
 written against the letters of a reading, the bundled `أتش1` for `H1`, is read apart
 from them by its English name, as a spelled code's digit is: `أتش وَنْ`, where the
-cardinals would otherwise fuse it to the letters as `أتشواحد`.
+cardinals would otherwise fuse it to the letters as `أتشواحد`. A term made only of
+digits, such as a model number `530`, matches a whole figure only. It does not
+match inside `530,000`, `1,530` or `530.5`, where a group or decimal separator
+joins it to another digit.
 
 `spell_out_codes=True` reads what the lexicon did not claim and is a code, one
 character at a time. A code is a run of capitals and digits with at least one of
@@ -440,6 +455,8 @@ sentences. A pointed word it leaves alone, so the reading is the one the entry
 gives.
 
 ```python
+from arbtok.tokenizer import Sentence
+
 Sentence("اكس فايف", stress=False).ipa        # 'ʔiks faːjf'
 Sentence("إِكْسْ فَيْفْ", stress=False).ipa   # 'ʔiks fajf'
 ```
@@ -729,14 +746,19 @@ normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", VOICE_AGENT, diale
 # 'السعر تلت مية وخمسين ريال'
 ```
 
-The words are the parser's, quoted there from a published grammar with its page,
-and it composes the number the same way whichever lect it speaks: a lect differs
-in its words and not in its arithmetic. It has words for Hijazi `acw`, Gulf `afb`,
-Najdi `ars` and Cairene Egyptian `arz`. What arbtok adds is the translation from the tag you
-passed to that code, `arbtok.lect_code`, which walks the orthography2ipa parent
-chain, so Kuwaiti and Qatari take the Gulf code from the node they descend from.
+The words are the parser's, each quoted there with its source, and it composes
+the number the same way whichever lect it speaks: a lect differs in its words and
+not in its arithmetic. Its lects include Hijazi `acw`, Gulf `afb`, Najdi `ars`,
+Cairene Egyptian `arz`, Levantine `apc`, Moroccan `ary`, Tunisian `aeb` and
+Algerian `arq`. What
+arbtok adds is the translation from the tag you passed to that code,
+`arbtok.lect_code`, which walks the orthography2ipa parent chain, so Kuwaiti and
+Qatari take the Gulf code from the node they descend from. `lect_code` knows `acw`,
+`afb`, `ars` and `arz`. For any other lect, pass the ISO 639-3 tag, such as
+`ary-MA`: `ar-MA` keeps the literary words.
 **A lect the parser has no cited words for keeps the literary ones**: a form no
-source gives is not written. `ar-SA` resolves to Najdi and takes its words.
+source gives is not written, and a code the parser does not serve, such as
+Hassaniya `mey`, keeps them too. `ar-SA` resolves to Najdi and takes its words.
 
 **The noun is the author's.** Arabic makes the counted noun agree with the number,
 and the dialects covered agree in the same direction: two to ten take a plural noun
@@ -851,7 +873,7 @@ phones for words that were said. Phonemize the spoken form, never the written
 one: the tokenizer passes a `3` through as the character `3`, which is not a
 phone, and the syllables the speaker produced are left with nothing to align to.
 
-```python
+```text
 from arbtok.tokenizer import Sentence
 
 text = normalize_for_tts(transcript_of_record)
@@ -864,4 +886,4 @@ phones = Sentence(text).ipa
 - [advanced.md](advanced.md), internals and recipes
 
 ---
-[← Advanced](advanced.md) · [Home](../README.md) · [API →](api.md)
+[← Arabizi input](arabizi.md) · [Index](index.md) · [Code-switched gold →](gold-code-switched.md)

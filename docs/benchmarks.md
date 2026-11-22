@@ -1,5 +1,13 @@
 # Per-lect benchmarks
 
+<!-- agent-hint
+covers: how the per-lect benchmark scores arbtok, the figures it reaches and what they can claim
+source: scripts/benchmark_stack.py, scripts/benchmark_gold20.py, scripts/benchmark_iqraeval.py
+generated: no
+verify: for f in $(grep -oP 'scripts/\w+\.py' docs/benchmarks.md | sort -u); do test -f $f || exit 1; done && .venv/bin/python -m pytest -q tests/test_lect_benchmark.py
+see: rawi-fusion.md, gold-code-switched.md
+-->
+
 Two benchmarks live in `scripts/benchmark_stack.py`.
 
 - **default mode**, the MSA stack question: is arbtok better than its parts and
@@ -283,4 +291,4 @@ above), nothing is bundled or redistributed, and this doc states the gap
 rather than assuming a license.
 
 ---
-[← Advanced](advanced.md) · [Home](../README.md)
+[← Advanced](advanced.md) · [Index](index.md)

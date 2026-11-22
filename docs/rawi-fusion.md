@@ -1,5 +1,13 @@
 # Rawi-lattice fusion: the diacritizer as a scorer, not a generator
 
+<!-- agent-hint
+covers: how fusion scores the licensed readings of a word with the model distribution, and what it measured
+source: arbtok/fusion.py, arbtok/_ensemble.py, tools/build_ensemble_logits_onnx.py, scripts/benchmark_fusion.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/rawi-fusion.md
+see: tashkeel.md, dialects.md, benchmarks.md
+-->
+
 This is the mechanism behind arbtok's flagship capability, **dialect-aware
 tashkeel** for every supported variety ([dialects.md](dialects.md) lists them).
 It runs entirely on the model arbtok bundles (`arbtok/_ensemble.py`): arbtok is
@@ -111,6 +119,20 @@ This is the point of doing it in arbtok. rawi is one voice. The pick is
 
 A free generator hears neither of these until it is too late to change its mind.
 
+The two arms read one Tunisian sentence differently. The generator and fusion pick different vowels for the verb, so the outputs differ:
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+text = "ما نحبش قهوة، نحب تاي سخون برشة."
+ArbtokG2PPlugin(lang="ar-TN", fusion=False).transcribe(text)
+# 'ˈmɛː ˈnaħbaʃ ˈqahwa nuˈħibb ˈtɛːijj saˈxuːn ˈbarʃa'
+ArbtokG2PPlugin(lang="ar-TN", fusion=True).transcribe(text)
+# 'ˈmɛː ˈnaħbiʃ ˈqahwa nuˈħibb ˈtɛːijj saˈxuːn ˈbarʃa'
+```
+
+The table below says which arm scores better over the whole gold.
+
 ## The measured result
 
 `scripts/benchmark_fusion.py` scores two arms on the bare (`raw`) column of the
@@ -165,4 +187,4 @@ the candidate set be the dialect's admissible vowels directly, rather than rawi'
 top-`k` filtered after the fact.
 
 ---
-[← Diacritization](tashkeel.md) · [Home](../README.md) · [Varieties →](dialects.md)
+[← Diacritization](tashkeel.md) · [Index](index.md) · [Varieties →](dialects.md)

@@ -1,9 +1,14 @@
 # arbtok
 
-**Arabic text→IPA** with **dialect-aware tashkeel** diacritization, a
-self-contained Arabic engine built on
-[orthography2ipa](https://github.com/TigreGotico/orthography2ipa), covering MSA,
-Classical, and 30+ regional varieties.
+<!-- agent-hint
+covers: what arbtok does, how to install it, a first transcription in a dialect and where each topic is documented
+source: pyproject.toml, arbtok/__init__.py, arbtok/plugin.py, arbtok/diacritize.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py README.md
+see: docs/index.md, docs/quickstart.md, AGENTS.md
+-->
+
+arbtok turns Arabic text into IPA for Modern Standard Arabic, Classical Arabic and 30 or more regional varieties. It restores the missing short vowels with a dialect-aware diacritizer that ships in the wheel, and it builds on [orthography2ipa](https://github.com/TigreGotico/orthography2ipa). The documentation starts at [docs/index.md](docs/index.md).
 
 ## What arbtok adds over orthography2ipa
 
@@ -59,16 +64,18 @@ reading *that the dialect's orthography actually admits*, for every supported
 lect, from Najdi and Hejazi to Tunisian, Egyptian, and the qeltu Iraqi of
 Mosul (`docs/dialects.md`).
 
-So the same bare sentence receives variety-appropriate marks and IPA:
+The variable `bare` holds undiacritized input. The same bare sentence receives variety-appropriate marks and IPA:
 
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-bare = "ذهب الولد الى المدرسة"                    # undiacritized input
-ArbtokG2PPlugin(lang="ar").transcribe(bare)           # ˈðahab ˈalwalad ˈalaː lˈmudrasa
-ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)        # ˈðahab ˈalwalad ˈalɛː lˈmudrasa
+bare = "ذهب الولد الى المدرسة"
+ArbtokG2PPlugin(lang="ar").transcribe(bare)
+# 'ˈðahab ˈalwalad ˈʔilaː lˈmudrasa'
+ArbtokG2PPlugin(lang="ar-TN").transcribe(bare)
+# 'ˈðahab ˈalwalad ˈʔilɛː lˈmudrasa'
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("يشرب القهوة في البيت")
-# ˈjaʃrab alˈɡahawa fiː lˈbajt   — Najdi /g/ for qāf, epenthetic gahawa vowel
+# ˈjaʃrab alˈɡahawa fiː lˈbeːt   — Najdi /g/ for qāf, epenthetic gahawa vowel, /eː/ in bayt
 ArbtokG2PPlugin(lang="ar-TN").transcribe("يشرب القهوة في البيت")
 # ˈjaʃrab alˈqahwa fiː lˈbiːt    — Tunisian monophthong /iː/ in bayt
 ```
@@ -130,14 +137,19 @@ inside the wheel.
 ## Installation
 
 ```bash
-pip install arbtok
+pip install --pre arbtok
 ```
+
+`pip install arbtok` without `--pre` gives the latest stable release, which can
+lag behind the features this page describes.
 
 The diacritizer model ships inside the wheel. The default stem lexicon does not:
 the first call that diacritizes downloads `ar-stems.tsv` from the Hugging Face
 dataset `TigreGotico/arabic-stem-lexicon` into the Hugging Face cache. If the file
 is not cached and the Hub cannot be reached, that call raises
-`arbtok.ModelUnavailableError`. Pass `lexicon=None` to run with no network (see
+`arbtok.ModelUnavailableError`. A lexicon that cannot be read for any other reason
+raises its base class, `arbtok.lexicon.LexiconUnavailable`. Pass `lexicon=None` to
+run with no network (see
 [`docs/tashkeel.md`](docs/tashkeel.md#the-stem-lexicon)).
 
 ## Usage
@@ -169,7 +181,7 @@ Bare text is handled by diacritizing first:
 from arbtok.plugin import ArbtokG2PPlugin
 
 plugin = ArbtokG2PPlugin()
-plugin.transcribe("كتاب جميل")    # auto-tashkeel + IPA
+plugin.transcribe("كتاب جميل")    # 'kiˈtaːb dʒaˈmiːl' — auto-tashkeel + IPA
 ```
 
 ### Varieties
@@ -212,8 +224,8 @@ that should be read exactly as its author pointed it, including scoring
 against iʿrāb-keeping gold:
 
 ```python
-ArbtokG2PPlugin(register="pausal").transcribe("رَأَيْتُ كِتَابًا.")  # …kitaːbaː
-ArbtokG2PPlugin(register="full").transcribe("رَأَيْتُ كِتَابًا.")    # …kitaːban
+ArbtokG2PPlugin(register="pausal").transcribe("رَأَيْتُ كِتَابًا.")  # 'raˈʔajtu kiˈtaːbaː'
+ArbtokG2PPlugin(register="full").transcribe("رَأَيْتُ كِتَابًا.")    # 'raˈʔajtu kiˈtaːban'
 ```
 
 Under `register="pausal"`, a pause has to be **written** (a punctuation
@@ -246,8 +258,8 @@ is worse than no answer. `strict` is an argument of `arbtok.translit.translitera
 not of the plugin.
 
 ```python
-ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")        # 'maniɡar'
-ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager") # 'manidʒar'
+ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")  # 'maniɡar'
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar'
 ```
 
 `nativize=True` is the default (a TTS voice needs a pronounceable reading). Pass
@@ -268,10 +280,13 @@ back to a conservative pan-Arabic default.
 ### Diacritization only
 
 ```python
-from arbtok.tashkeel import TashkeelDiacritizer   # the bundled rawi ensemble
+from arbtok.tashkeel import TashkeelDiacritizer
 
 TashkeelDiacritizer().diacritize("كتاب جميل")
+# 'كِتَابٌ جَمِيلَ'
 ```
+
+`TashkeelDiacritizer` is the bundled rawi ensemble.
 
 ### Numbers a voice agent reads out
 
