@@ -38,20 +38,15 @@ def gap(reason):
 
 #: Rows that fail because numtag does not read the number yet. Each row is strict, so it
 #: turns red the day numtag reads it.
-TEENS = "numtag #213: spoken teens and tens (اطناش, احدعش, خمستاشر) read no number"
+TEENS = "numtag #274: the spoken teens احداشر, اطناش, اثناش, ثنعش, ثلطعش and ثمنطعش read no number"
 CLITIC = "numtag #267: clitic ب or بال read inside the number span"
 MISSING_WAW = "numtag #268: الف ميتين without و reads as two numbers"
 DEFINITE_FIVE = "numtag #269: الخمسة reads as 5 before digits but not before a spoken number"
 NUMTAG_GAPS = {
     **dict.fromkeys(
-        ["price-same-11", "price-same-14",
-         "date-same-01", "date-same-02", "date-same-11", "date-same-15", "date-same-25", "date-same-28",
-         "date-same-29",
-         "clock-same-22", "clock-same-23", "clock-same-24", "clock-same-36", "clock-same-38",
-         "year-same-10", "year-same-11",
-         "unit-same-10", "unit-same-13", "unit-same-18", "unit-same-21",
-         "percent-same-01", "percent-same-07", "percent-same-14",
-         "mixed-same-01", "punct-same-03", "punct-same-10"], TEENS),
+        ["price-same-14", "date-same-15", "clock-same-23", "clock-same-24", "clock-same-36",
+         "clock-same-38", "unit-same-10", "unit-same-13", "unit-same-18", "unit-same-21",
+         "percent-same-14"], TEENS),
     "plate-same-01": MISSING_WAW,
     "price-same-38": DEFINITE_FIVE,
     "percent-differ-10": CLITIC,
