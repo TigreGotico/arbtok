@@ -255,14 +255,17 @@ transliterate("meeting", "ar", strict=True)   # None  (MSA declares no /ɡ/)
 transliterate("meeting", "ar-SA-x-najd")      # 'miːtinɡ'  (Najdi declares it)
 ```
 
-The length mark `ː` is not a sound, so projection does not move it. The donor
-segmentation can cut a long vowel into the vowel and a separate `ː`. That `ː`
-stays after the vowel and lengthens it, and `strict=True` accepts it, although
-no inventory lists a bare `ː`:
+The donor segmentation can cut a long vowel into the vowel and a separate `ː`.
+The `ː` joins the vowel before it again, and the long vowel is then checked like
+any other segment. MSA declares /aː/, so both calls keep it. Juba Arabic (`pga`)
+declares only short vowels, so projection shortens the vowel and `strict=True`
+refuses the word:
 
 ```python
-transliterate("password", "ar")               # 'baːswaːrd'
-transliterate("password", "ar", strict=True)  # 'baːswaːrd'
+transliterate("password", "ar")                # 'baːswaːrd'
+transliterate("password", "ar", strict=True)   # 'baːswaːrd'
+transliterate("password", "pga")               # 'basward'
+transliterate("password", "pga", strict=True)  # None
 ```
 
 `strict` governs that one decision and nothing else. `None` also comes back,
