@@ -100,6 +100,37 @@ normalize_asr("الف او خمسمية", fix_asr_errors=True, spoken_numbers_to
 # '1000 او 500'
 ```
 
+Some spoken numbers read wrong or read no number. numtag reads the number words
+through ovos-number-parser, and each of these gaps is an open numtag issue:
+
+- The spoken teens احداشر and احداش (11), اطناش, اثناش and ثنعش (12), ثلطعش (13),
+  ثمنطعش and ثمنتاشر (18) read no number
+  ([numtag #274](https://github.com/TigreGotico/numtag/issues/274)).
+- A proclitic ب or بال goes into the number span and is lost
+  ([numtag #267](https://github.com/TigreGotico/numtag/issues/267)).
+- `الف ميتين` without و reads as two numbers
+  ([numtag #268](https://github.com/TigreGotico/numtag/issues/268)).
+- The definite numeral الخمسة reads as 5 before digits and as no number before a
+  spoken number ([numtag #269](https://github.com/TigreGotico/numtag/issues/269)).
+- مية and ميه, "water", read as 100 outside a number
+  ([numtag #160](https://github.com/TigreGotico/numtag/issues/160)).
+
+```python
+normalize_asr("المسافة اطناش كيلو", spoken_numbers_to_digits=True)
+# 'المسافة اطناش كيلو'
+normalize_asr("بخمسميه الف", fix_asr_errors=True, spoken_numbers_to_digits=True)
+# '500000'
+normalize_asr("الف ميتين واربعة وثلاثين", spoken_numbers_to_digits=True)
+# '1000 234'
+normalize_asr("الكفرات الخمسة الفين", spoken_numbers_to_digits=True)
+# 'الكفرات الخمسة 2000'
+normalize_asr("كباية ميه", fix_asr_errors=True, spoken_numbers_to_digits=True)
+# 'كباية 100'
+```
+
+The tests mark each gap as a strict expected failure, so the test turns red when
+a numtag release reads the number.
+
 Text the number rule finds nothing in comes back exactly as it went in. Text it
 changes keeps the whitespace at its ends, and its words come back single-spaced
 with any Arabic-Indic digits written in ASCII.

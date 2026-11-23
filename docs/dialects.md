@@ -255,6 +255,16 @@ transliterate("meeting", "ar", strict=True)   # None  (MSA declares no /ɡ/)
 transliterate("meeting", "ar-SA-x-najd")      # 'miːtinɡ'  (Najdi declares it)
 ```
 
+The length mark `ː` is not a sound, so projection does not move it. The donor
+segmentation can cut a long vowel into the vowel and a separate `ː`. That `ː`
+stays after the vowel and lengthens it, and `strict=True` accepts it, although
+no inventory lists a bare `ː`:
+
+```python
+transliterate("password", "ar")               # 'baːswaːrd'
+transliterate("password", "ar", strict=True)  # 'baːswaːrd'
+```
+
 `strict` governs that one decision and nothing else. `None` also comes back,
 whatever `strict` says, when the donor produces no reading at all — an empty
 string, digits, punctuation.

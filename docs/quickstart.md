@@ -22,7 +22,7 @@ pip install --pre arbtok
 ```
 
 That pulls the runtime deps (`numpy`, `onnxruntime`, `orthography2ipa`,
-`quebra-frases`, `linguatag`, `ovos-number-parser`, `ovos-date-parser`,
+`quebra-frases`, `linguatag`, `ovos-number-parser`, `numtag`, `ovos-date-parser`,
 `unicode-rbnf`, `ovos-utils`, `ovos-config`, `huggingface_hub`) and the bundled rawi diacritizer
 ensemble. `arbtok.__version__` is the installed version.
 
