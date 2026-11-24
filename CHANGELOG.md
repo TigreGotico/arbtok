@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.0.3a14](https://github.com/TigreGotico/arbtok/tree/0.0.3a14) (2026-11-23)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a13...0.0.3a14)
+
+**Merged pull requests:**
+
+- docs: sync the docs with dev [\#360](https://github.com/TigreGotico/arbtok/pull/360) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a13](https://github.com/TigreGotico/arbtok/tree/0.0.3a13) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a12...0.0.3a13)
+
+**Merged pull requests:**
+
+- build: require numtag 0.19.21a1, which reads the spoken teens [\#358](https://github.com/TigreGotico/arbtok/pull/358) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a12](https://github.com/TigreGotico/arbtok/tree/0.0.3a12) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a11...0.0.3a12)
+
+**Merged pull requests:**
+
+- test: strict xfail the Arabic spoken-number gaps numtag holds [\#356](https://github.com/TigreGotico/arbtok/pull/356) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a11](https://github.com/TigreGotico/arbtok/tree/0.0.3a11) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a10...0.0.3a11)
+
+**Merged pull requests:**
+
+- fix: keep the length mark when projecting onto the declared inventory [\#354](https://github.com/TigreGotico/arbtok/pull/354) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a10](https://github.com/TigreGotico/arbtok/tree/0.0.3a10) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a9...0.0.3a10)
+
+**Merged pull requests:**
+
+- docs: README, docs index, navigation and agent hints [\#350](https://github.com/TigreGotico/arbtok/pull/350) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a9](https://github.com/TigreGotico/arbtok/tree/0.0.3a9) (2026-11-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a8...0.0.3a9)
+
+**Merged pull requests:**
+
+- fix: floor orthography2ipa at 7.124.27a2 and declare dependencies in pyproject.toml [\#351](https://github.com/TigreGotico/arbtok/pull/351) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a8](https://github.com/TigreGotico/arbtok/tree/0.0.3a8) (2026-11-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a7...0.0.3a8)
+
+**Merged pull requests:**
+
+- fix: send bare article-shaped words like الى to the diacritizer [\#345](https://github.com/TigreGotico/arbtok/pull/345) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a7](https://github.com/TigreGotico/arbtok/tree/0.0.3a7) (2026-11-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a6...0.0.3a7)

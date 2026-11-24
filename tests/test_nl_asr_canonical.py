@@ -36,12 +36,31 @@ def gap(reason):
     return {"gap": reason}
 
 
+#: Rows that fail because numtag does not read the number yet. Each row is strict, so it
+#: turns red the day numtag reads it.
+TEENS = "numtag #274: the spoken teens احداشر, اطناش, اثناش, ثنعش, ثلطعش and ثمنطعش read no number"
+CLITIC = "numtag #267: clitic ب or بال read inside the number span"
+MISSING_WAW = "numtag #268: الف ميتين without و reads as two numbers"
+DEFINITE_FIVE = "numtag #269: الخمسة reads as 5 before digits but not before a spoken number"
+NUMTAG_GAPS = {
+    **dict.fromkeys(
+        ["price-same-14", "date-same-15", "clock-same-23", "clock-same-24", "clock-same-36",
+         "clock-same-38", "unit-same-10", "unit-same-13", "unit-same-18", "unit-same-21",
+         "percent-same-14"], TEENS),
+    "plate-same-01": MISSING_WAW,
+    "price-same-38": DEFINITE_FIVE,
+    "percent-differ-10": CLITIC,
+}
+
+
 def pairs(topic, kind, rows):
     out = []
     for n, (written, heard, *extra) in enumerate(rows, 1):
         opts = extra[0] if extra else {}
-        marks = [pytest.mark.xfail(strict=True, reason=opts["gap"])] if "gap" in opts else []
-        out.append(pytest.param(written, heard, id=f"{topic}-{kind}-{n:02d}", marks=marks))
+        row_id = f"{topic}-{kind}-{n:02d}"
+        reason = opts.get("gap") or NUMTAG_GAPS.get(row_id)
+        marks = [pytest.mark.xfail(strict=True, reason=reason)] if reason else []
+        out.append(pytest.param(written, heard, id=row_id, marks=marks))
     return out
 
 
@@ -612,7 +631,7 @@ def test_a_reading_that_says_something_else_scores_above_zero(written, heard):
     assert score(written, heard) > 0, normalize_asr(written, CER_CANONICAL)
 
 
-@pytest.mark.parametrize("written, heard", [p for group in SAME.values() for p in group if not p.marks])
+@pytest.mark.parametrize("written, heard", [p for group in SAME.values() for p in group])
 def test_the_score_is_symmetric(written, heard):
     """Two readings of one recording are compared either way round: swapping the sides of a
     pair that scores 0 still scores 0."""

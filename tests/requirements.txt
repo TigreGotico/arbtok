@@ -1,4 +1,0 @@
-jiwer
-phonnx
-pandas
-pyarrow

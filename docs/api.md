@@ -1,5 +1,13 @@
 # API reference
 
+<!-- agent-hint
+covers: every public name of arbtok with its signature and default
+source: arbtok/__init__.py, arbtok/plugin.py, arbtok/tokenizer.py, arbtok/textnorm.py, arbtok/dialects.py, arbtok/o2i_plugins.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/api.md
+see: quickstart.md, advanced.md
+-->
+
 Every public symbol, with real signatures and return shapes. Import paths are
 module-qualified (`from arbtok.plugin import ArbtokG2PPlugin`).
 
@@ -44,16 +52,20 @@ p = ArbtokG2PPlugin(lang="ar-EG")
 | `language_codes` | `List[str]` | `["ar", "arb"]`. |
 
 ```python
-p.transcribe("ذهب الولد الى المدرسة")            # bare input, auto-diacritized
-p.transcribe_word("قَهْوَة")                      # single word
-p.transcribe("عِنْدِي meeting", arabizi=False)    # force the loanword reading
+p.transcribe("ذهب الولد الى المدرسة")            # 'ˈdahab ˈalwalad ˈʔilaː lˈmudrasa' — bare input, auto-diacritized
+p.transcribe_word("قَهْوَة")                      # 'ˈʔahwa' — single word
+p.transcribe("عِنْدِي meeting", arabizi=False)    # 'ˈʕindiː miːtinɡ' — force the loanword reading
 ```
 
-Diacritization degrades with one exception. If the model cannot load or fails,
-the engine transcribes whatever diacritics are already present. If the stem
-lexicon is a Hugging Face file that is not in the local cache and the Hub is
-offline or cannot be reached, the call raises `arbtok.ModelUnavailableError`, a `ValueError` that
-names the dataset and the file. Pass `lexicon=None` to run with no network.
+Diacritization degrades, with one exception. If the model cannot load or fails,
+the engine transcribes whatever diacritics are already present. The exception is a
+stem lexicon that cannot be read: a missing or unreadable file, or a Hugging Face
+dataset that does not exist, raises `arbtok.lexicon.LexiconUnavailable`, a
+`RuntimeError`. A Hugging Face file that is not in the local cache while the Hub is
+offline or cannot be reached raises its subclass `arbtok.ModelUnavailableError`,
+which is also a `ValueError` and names the dataset and the file. Pass
+`lexicon=None` to run with no stem lexicon and no network. The bundled `ar.tsv`
+and `arb.tsv` lexicons still apply; `dialect_lexicon=False` turns them off.
 
 ## `arbtok.tokenizer`
 
@@ -82,7 +94,7 @@ s = Sentence("قَالَ ٱلْمَلِكُ")
 
 ```python
 print(s.ipa)              # "ˈqaːla lˈmaliku"
-print(len(s.tokens))      # word + punctuation tokens
+print(len(s.tokens))      # 2 — word and punctuation tokens
 ```
 
 `Sentence` compares equal to its surface string (`Sentence("x") == "x"`).
@@ -110,7 +122,7 @@ them off `Sentence.tokens`, but the properties are useful for inspection.
 ```python
 word = Sentence("الْمَدْرَسَةِ").tokens[0]
 print(word.has_definite_article)   # True
-print(word.ipa)                    # IPA for the word
+print(word.ipa)                    # almadrasati — IPA for the word
 ```
 
 ### `CharToken(surface, char_idx, prev_token=None, next_token=None, word=None)`
@@ -138,7 +150,7 @@ print(chars[-1].is_last_char)                      # True
 
 ### Module-level normalization helpers
 
-```python
+```text
 from arbtok.tokenizer import normalize_unicode
 
 normalize_unicode(text: str) -> str
@@ -198,7 +210,9 @@ metadata by `scripts/build_phone_plans.py`.
 `TTS_NORM_VERSION` names the rule set. `with_number_forms(mapping)` sets your own
 word for a value, `{100: "مية"}`, which `number_forms` then uses; `dialect_numbers`
 takes the lect's own words from the number parser instead, under the ISO 639-3 code
-`lect_code` gives for `lang`. Both write Arabic words, so they raise `ValueError`
+`lect_code` gives for `lang`. A code the parser does not serve, such as Hassaniya
+`mey`, keeps the literary words, and so does every Arabic tag when
+`dialect_numbers` is off. Both write Arabic words, so they raise `ValueError`
 for a `lang` that is not Arabic.
 
 ### `is_arabic_lang(lang) -> bool`
@@ -337,4 +351,4 @@ release removes it. Nothing replaces it.
 - [advanced.md](advanced.md), internals, espeak baseline, recipes, gotchas
 
 ---
-[← Code-switched gold](gold-code-switched.md) · [Home](../README.md) · [Advanced →](advanced.md)
+[← Code-switched gold](gold-code-switched.md) · [Index](index.md) · [Advanced →](advanced.md)

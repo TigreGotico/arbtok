@@ -197,7 +197,15 @@ DIFFERENT = [
 ]
 
 
-@pytest.mark.parametrize("written, heard", SAME, ids=[w for w, _ in SAME])
+#: Rows numtag does not read yet. Each is strict, so it turns red the day numtag reads it.
+NUMTAG_GAPS = dict.fromkeys(
+    ["الساعة 11:00 ص", "الساعة 11:00 م", "موعدك الساعة 11:00"],
+    "numtag #274: the spoken teens احداشر, اطناش, اثناش, ثنعش, ثلطعش and ثمنطعش read no number")
+
+
+@pytest.mark.parametrize("written, heard", [
+    pytest.param(w, h, id=w, marks=[pytest.mark.xfail(strict=True, reason=NUMTAG_GAPS[w])] if w in NUMTAG_GAPS else [])
+    for w, h in SAME])
 def test_the_same_speech_written_two_ways_scores_zero(written, heard):
     assert normalize_asr(written, CER_CANONICAL) == normalize_asr(heard, CER_CANONICAL)
 
