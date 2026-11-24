@@ -146,8 +146,24 @@ def test_a_unit_or_percent_sign_text2spoken_leaves(text, said):
 
 # A number that names a thing is said in its citation form, whatever word follows it
 # (Ryding 2005, p. 335).
-def test_a_number_after_raqm_keeps_its_citation_form():
-    assert "اثنان وأربعون" in normalize_for_tts("الحافلة رقم 42 متأخرة", "ar")
+# A hyphen between a code and a number is not a minus sign.
+@pytest.mark.parametrize("text, said", [
+    ("رقم الهيكل JTD-KB20U-793456789", "رقم الهيكل JTD-KB20U-سبعمئة وثلاثة وتسعون مليون "
+     "وأربعمئة وستة وخمسون ألف وسبعمئة وتسعة وثمانون"),
+    ("KB20U-793", "KB20U-سبعمئة وثلاثة وتسعون"),
+])
+def test_a_hyphen_after_a_code_is_not_a_minus(text, said):
+    assert normalize_for_tts(text, "ar") == said
+
+
+# text2spoken reads the citation form after رقم, after a Latin model code and after موديل.
+@pytest.mark.parametrize("text, number", [
+    ("الحافلة رقم 42 متأخرة", "اثنان وأربعون"),
+    ("السيارة MG 5 متوفرة", "خمسة"),
+    ("السيارة موديل 2026 متوفرة", "ألفان وستة وعشرون"),
+])
+def test_a_number_after_a_label_word_keeps_its_citation_form(text, number):
+    assert number in normalize_for_tts(text, "ar")
 
 
 @pytest.mark.xfail(strict=True, reason="text2spoken takes the gender of the next word: "
@@ -155,8 +171,6 @@ def test_a_number_after_raqm_keeps_its_citation_form():
 @pytest.mark.parametrize("text, number", [
     ("الغرفة 205 مشغولة", "مئتان وخمسة"),
     ("الحلقة 7 كاملة", "سبعة"),
-    ("السيارة MG 5 متوفرة", "خمسة"),
-    ("السيارة موديل 2026 متوفرة", "ألفان وستة وعشرون"),
 ])
 def test_a_number_that_names_a_thing_keeps_its_citation_form(text, number):
     assert number in normalize_for_tts(text, "ar")
