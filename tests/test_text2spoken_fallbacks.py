@@ -144,13 +144,19 @@ def test_a_unit_or_percent_sign_text2spoken_leaves(text, said):
     assert normalize_for_tts(text, "ar") == said
 
 
-# A number that names a thing is said in its citation form, whatever word follows it.
+# A number that names a thing is said in its citation form, whatever word follows it
+# (Ryding 2005, p. 335).
+def test_a_number_after_raqm_keeps_its_citation_form():
+    assert "اثنان وأربعون" in normalize_for_tts("الحافلة رقم 42 متأخرة", "ar")
+
+
 @pytest.mark.xfail(strict=True, reason="text2spoken takes the gender of the next word: "
                    "https://github.com/TigreGotico/text2spoken/issues/535")
 @pytest.mark.parametrize("text, number", [
-    ("الحافلة رقم 42 متأخرة", "اثنان وأربعون"),
     ("الغرفة 205 مشغولة", "مئتان وخمسة"),
     ("الحلقة 7 كاملة", "سبعة"),
+    ("السيارة MG 5 متوفرة", "خمسة"),
+    ("السيارة موديل 2026 متوفرة", "ألفان وستة وعشرون"),
 ])
 def test_a_number_that_names_a_thing_keeps_its_citation_form(text, number):
     assert number in normalize_for_tts(text, "ar")
