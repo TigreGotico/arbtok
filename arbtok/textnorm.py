@@ -3104,11 +3104,11 @@ def _spoken_clock(m: re.Match, lang: str, config: TtsNorm) -> Optional[str]:
         spoken = _text2spoken(f"الساعة {hour}:{minute:02d}", _text2spoken_tag(lang) or "ar", config)
         if not _ANY_DIGIT.search(spoken):
             return spoken
-    # text2spoken reads a time only after الساعة, so the time is read with it. It leaves a
-    # period mark after a time as written, and one o'clock, 13:00 to 13:59, 0:00 to 0:59 and
-    # 12:45, a limit its Arabic page lists; nice_time reads those.
+    # text2spoken reads a time only after الساعة, so the time is read with it. It leaves am
+    # and pm after a time as written, and one o'clock, 13:00 to 13:59, 0:00 to 0:59 and
+    # 12:45, a limit its Arabic page lists; nice_time reads those, and every period mark.
     # TODO(text2spoken issue: CLOCK_NEEDS_WORD)
-    # TODO(text2spoken issue: CLOCK_SPELLING_OR_DOT)
+    # TODO(text2spoken issue: CLOCK_SPELLING_OR_DOT) https://github.com/TigreGotico/text2spoken/issues/368
     # TODO(text2spoken issue: CLOCK_PERIOD_MARK) https://github.com/TigreGotico/text2spoken/issues/333
     # TODO(text2spoken issue: CLOCK_DOCUMENTED_GAP)
     from ovos_date_parser import nice_time
@@ -3592,14 +3592,13 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
             # text2spoken reads them. Where text2spoken reads part of a span, this pass
             # completes it wrong; tests/test_text2spoken_fallbacks.py holds those as xfails.
             # TODO(text2spoken issue: SPACE_GROUPED) https://github.com/TigreGotico/text2spoken/issues/148
-            # TODO(text2spoken issue: DATE_RANGE)
             # TODO(text2spoken issue: DATE_TWO_DIGIT_YEAR)
-            # TODO(text2spoken issue: DECIMAL_COMMA)
-            # TODO(text2spoken issue: DECIMAL_DECLINED)
+            # TODO(text2spoken issue: DECIMAL_COMMA) https://github.com/TigreGotico/text2spoken/issues/370
+            # TODO(text2spoken issue: DECIMAL_DECLINED) https://github.com/TigreGotico/text2spoken/issues/371
             # TODO(text2spoken issue: CODE_DIGIT_SUFFIX)
-            # TODO(text2spoken issue: LEADING_ZERO)
+            # TODO(text2spoken issue: LEADING_ZERO) https://github.com/TigreGotico/text2spoken/issues/366
             # TODO(text2spoken issue: FRACTION_OTHER)
-            # TODO(text2spoken issue: NUMBER_AGAINST_WORD)
+            # TODO(text2spoken issue: NUMBER_AGAINST_WORD) https://github.com/TigreGotico/text2spoken/issues/367
             # TODO(text2spoken issue: T2S_DECLINES_OTHER)
             from arbtok.util import normalize
             text = normalize(text, "ar")

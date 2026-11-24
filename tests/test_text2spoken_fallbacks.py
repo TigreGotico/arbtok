@@ -29,34 +29,32 @@ MARKER = re.compile(r"TODO\(text2spoken issue: (\w+)\)(?: " + re.escape(ISSUE_UR
 # with the form, the written part that text2spoken keeps, and the reading of the text.
 FALLBACKS = {
     "UNIT_DECLINED": (336, "الطول 300 pm", "pm", "الطول ثلاثمئة بيكومتر"),
-    "CLOCK_PERIOD_MARK": (333, "الساعة 10:30 ص اليوم", " ص ", "الساعة العاشرة والنصف صباحاً اليوم"),
+    "CLOCK_PERIOD_MARK": (333, "الساعة 10:30 am اليوم", " am ", "الساعة العاشرة والنصف صباحاً اليوم"),
     "SPACE_GROUPED": (148, "السعر 1 500 000 ريال", "000", "السعر مليون وخمسمئة ألف ريال"),
     "CLOCK_NEEDS_WORD": (None, "الموعد 7:40", "7:40", "الموعد الساعة الثامنة إلا ثلثا"),
-    "CLOCK_SPELLING_OR_DOT": (None, "الساعه 3:30", "3:30", "الساعه الثالثة والنصف"),
+    "CLOCK_SPELLING_OR_DOT": (368, "الساعه 3:30", "3:30", "الساعه الثالثة والنصف"),
     "CLOCK_DOCUMENTED_GAP": (None, "الساعة 13:15", "13:15", "الساعة الواحدة والربع مساءً"),
-    "DATE_RANGE": (None, "العرض من 1 إلى 7 مارس", "من 1 ", "العرض من الأول إلى السابع من مارس"),
     "DATE_TWO_DIGIT_YEAR": (None, "ينتهي التسجيل 31/12/30", "31/12/30",
                             "ينتهي التسجيل الحادي والثلاثون من ديسمبر ألفين وثلاثين"),
-    "DECIMAL_COMMA": (None, "الوزن 12,5", "12,5", "الوزن اثنا عشر فاصلة خمسة"),
-    "DECIMAL_DECLINED": (None, "سعر المدة 12.50 ريال", "12.50", "سعر المدة اثنا عشر فاصلة خمسة ريال"),
+    "DECIMAL_COMMA": (370, "الوزن 12,5", "12,5", "الوزن اثنا عشر فاصلة خمسة"),
+    "DECIMAL_DECLINED": (371, "سعر المدة 12.50 ريال", "12.50", "سعر المدة اثنا عشر فاصلة خمسة ريال"),
     "CODE_DIGIT_SUFFIX": (None, "السيارة 520i", "520i", "السيارة خمسمئة وعشرون آيْ"),
-    "LEADING_ZERO": (None, "رقمي 77 83 10 01", "01", "رقمي سبعة وسبعون ثلاثة وثمانون عشرة صفر واحد"),
+    "LEADING_ZERO": (366, "رقمي 77 83 10 01", "01", "رقمي سبعة وسبعون ثلاثة وثمانون عشرة صفر واحد"),
     "FRACTION_OTHER": (None, "موديل 2099/2100", "2099/2100", "موديل ألفان وتسعة وتسعون/ألفان ومئة"),
-    "NUMBER_AGAINST_WORD": (None, "كمية 100كمية", "100كمية", "كمية مئة كمية"),
+    "NUMBER_AGAINST_WORD": (367, "كمية 100كمية", "100كمية", "كمية مئة كمية"),
     "T2S_DECLINES_OTHER": (None, "اختار 2 أ و ب", " 2 ", "اختار اثنان أ و ب"),
 }
 
 # The classes read wrong. text2spoken reads part of the span and the fallback completes
-# it: 1 500 as two numbers, the first day of a range as a cardinal, 77 83 10 as numbers
-# with the zero of 01 lost. Or the fallback misreads the whole form: the century and a
-# weekday for a two-digit year, a slash as a fraction, a number joined to its noun.
+# it: 77 83 10 as numbers with the zero of 01 lost. Or the fallback misreads the whole
+# form: the groups of 1 500 000 as three numbers, the century and a weekday for a
+# two-digit year, a slash as a fraction, a number joined to its noun.
 MISREAD = {
     "SPACE_GROUPED": "TODO(text2spoken issue: SPACE_GROUPED) https://github.com/TigreGotico/text2spoken/issues/148",
-    "DATE_RANGE": "TODO(text2spoken issue: DATE_RANGE), fixed by https://github.com/TigreGotico/text2spoken/pull/344, not released",
-    "LEADING_ZERO": "TODO(text2spoken issue: LEADING_ZERO)",
+    "LEADING_ZERO": "TODO(text2spoken issue: LEADING_ZERO) https://github.com/TigreGotico/text2spoken/issues/366",
     "DATE_TWO_DIGIT_YEAR": "TODO(text2spoken issue: DATE_TWO_DIGIT_YEAR)",
     "FRACTION_OTHER": "TODO(text2spoken issue: FRACTION_OTHER)",
-    "NUMBER_AGAINST_WORD": "TODO(text2spoken issue: NUMBER_AGAINST_WORD)",
+    "NUMBER_AGAINST_WORD": "TODO(text2spoken issue: NUMBER_AGAINST_WORD) https://github.com/TigreGotico/text2spoken/issues/367",
 }
 
 
@@ -73,6 +71,11 @@ def test_text2spoken_still_leaves_the_fallback_form(cls):
 def test_the_fallback_reads_the_form(cls):
     _, text, _, reading = FALLBACKS[cls]
     assert normalize_for_tts(text, "ar") == reading
+
+
+def test_a_date_range_reads_through_text2spoken():
+    # The first day of a range is an ordinal, as the last is.
+    assert normalize_for_tts("العرض من 1 إلى 7 مارس", "ar") == "العرض من الأول إلى السابع من مارس"
 
 
 def test_every_fallback_marker_names_its_class_and_issue():
