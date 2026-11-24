@@ -1918,7 +1918,8 @@ _GLUED_UNIT = re.compile(r"(?<![0-9٠-٩A-Za-z.,٫٬])([0-9]+(?:[.,][0-9]+)*|[٠
 _CODE_CHARS = "A-Za-z0-9٠-٩۰-۹"
 _MIXED_CODE = re.compile(f"(?<![{_CODE_CHARS}])(?<!\\d[.٫])(?=[{_CODE_CHARS}]*[A-Z])"
                          f"(?=[{_CODE_CHARS}]*[0-9٠-٩۰-۹])[{_CODE_CHARS}]+(?![{_CODE_CHARS}])")
-_MIXED_CODE_AND_HYPHEN = re.compile(_MIXED_CODE.pattern + "(?:-(?=[0-9٠-٩۰-۹]))?")
+_MIXED_CODE_AND_NUMBER = re.compile(f"(?P<code>{_MIXED_CODE.pattern})"
+                                    f"(?:-(?P<number>[0-9٠-٩۰-۹]+)(?![{_CODE_CHARS}.,٫٬-])|-(?=[0-9٠-٩۰-۹]))?")
 #: Abbreviations of a currency written in capitals that are not its ISO 4217 code. English
 #: Wikipedia's "Saudi riyal" gives the riyal's symbol as "SAR, SR, ر.س"
 #: (https://en.wikipedia.org/w/index.php?oldid=1252604873).
@@ -3296,7 +3297,8 @@ def _unit_symbols_as_names(text: str) -> str:
     TODO(text2spoken issue: UNIT_DECLINED) https://github.com/TigreGotico/text2spoken/issues/336
     """
     units = cldr_units("ar")
-    lowered = {symbol.lower(): name for symbol, name in units.items()}
+    # casefold, as the pattern matches: the micro sign µ folds to the Greek μ.
+    folded = {symbol.casefold(): name for symbol, name in units.items()}
 
     def name(m):
         space, symbol = m.groups()
@@ -3306,7 +3308,7 @@ def _unit_symbols_as_names(text: str) -> str:
             return (space or " ") + units[symbol]
         if symbol.isupper() and symbol.lower() not in _CAPITALISED_UNITS:
             return m.group(0)
-        return (space or " ") + lowered[symbol.lower()]
+        return (space or " ") + folded[symbol.casefold()]
     return _unit_symbol_after_number().sub(name, text)
 
 
@@ -3545,9 +3547,15 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         amounts = _not_code_letters("ar")
         text = _HYPHENATED_CODE.sub(lambda m: m.group(0) if m.group(1) in amounts else hold(m.group(0)), text)
     # What the code reading did not take is an identifier all the same, and no rule
-    # below reads a digit out of the middle of one. A hyphen joining it to a number goes
-    # with it, or text2spoken reads the hyphen as a minus sign: JTD-KB20U-793456789.
-    text = _MIXED_CODE_AND_HYPHEN.sub(lambda m: hold(m.group(0)), text)
+    # below reads a digit out of the middle of one. A number joined to it by a hyphen is
+    # part of the label: it is read here in its citation form, or text2spoken reads the
+    # hyphen as a minus sign (JTD-KB20U-793456789) and gives the number the gender of the
+    # next word (BMW X5-3 جديدة).
+    def code_and_number(m):
+        if m.group("number") and config.spoken_forms and is_arabic_lang(lang):
+            return hold(f"{m.group('code')}-{_cardinal(m.group('number'), lang, config)}")
+        return hold(m.group(0))
+    text = _MIXED_CODE_AND_NUMBER.sub(code_and_number, text)
     if (config.cardinal_numbers or config.dialect_numbers or config.number_forms) and is_arabic_lang(lang):
         # Before any rule reads a digit of it: the cardinals would read each part on its
         # own and leave the separators between them, and a day after an identifier word

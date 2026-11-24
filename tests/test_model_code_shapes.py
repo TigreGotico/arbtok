@@ -104,12 +104,10 @@ def test_the_default_config_is_unchanged_for_these_shapes():
     assert normalize_for_tts("BMW iX3") == "BMW iX3"
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "CODE_HYPHEN_DIGITS: text2spoken counts the adjective after a model code as the noun of its "
-    "digit and reads CX-5 متوفرة as CX-خمس متوفرة: "
-    "https://github.com/TigreGotico/text2spoken/issues/365"))
 def test_the_default_config_reads_the_digit_of_a_hyphenated_code_as_a_cardinal():
-    assert normalize_for_tts("مازدا CX-5 متوفرة") == "مازدا CX خمسة متوفرة"
+    # text2spoken keeps the hyphen of CX-5, where the cardinal path dropped it; the
+    # phonemizer reads both the same.
+    assert normalize_for_tts("مازدا CX-5 متوفرة").replace("-", " ") == "مازدا CX خمسة متوفرة"
 
 
 @pytest.mark.parametrize("written, said", [

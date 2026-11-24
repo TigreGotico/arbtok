@@ -139,20 +139,32 @@ def test_a_lect_text2spoken_reads_no_number_of_still_has_its_numbers_read():
     ("سرعة 100 km/h", "سرعة مئة كيلومتر/h"),
     # A percent sign with no number left after it is read too.
     ("الرقم 5% و % فقط", "الرقم خمسة في المئة و بالمئة فقط"),
+    # The micro sign U+00B5 reads as the Greek mu U+03BC does.
+    ("الحجم 40\u00b5m", "الحجم أربعون ميكرومتر"),
 ])
 def test_a_unit_or_percent_sign_text2spoken_leaves(text, said):
     assert normalize_for_tts(text, "ar") == said
 
 
-# A number that names a thing is said in its citation form, whatever word follows it
-# (Ryding 2005, p. 335).
 # A hyphen between a code and a number is not a minus sign.
 @pytest.mark.parametrize("text, said", [
     ("رقم الهيكل JTD-KB20U-793456789", "رقم الهيكل JTD-KB20U-سبعمئة وثلاثة وتسعون مليون "
      "وأربعمئة وستة وخمسون ألف وسبعمئة وتسعة وثمانون"),
     ("KB20U-793", "KB20U-سبعمئة وثلاثة وتسعون"),
+    ("رقم X5-۳", "رقم X5-ثلاثة"),
+    ("X5-3.5 لتر", "X5-ثلاثة فاصلة خمسة لتر"),
 ])
 def test_a_hyphen_after_a_code_is_not_a_minus(text, said):
+    assert normalize_for_tts(text, "ar") == said
+
+
+# A number joined to a code by a hyphen is part of the label and keeps its citation
+# form, whatever word follows (Ryding 2005, p. 335).
+@pytest.mark.parametrize("text, said", [
+    ("BMW X5-3 جديدة", "BMW X5-ثلاثة جديدة"),
+    ("الطائرة A320-200 هبطت", "الطائرة A320-مئتان هبطت"),
+])
+def test_a_number_joined_to_a_code_keeps_its_citation_form(text, said):
     assert normalize_for_tts(text, "ar") == said
 
 
@@ -166,6 +178,8 @@ def test_a_number_after_a_label_word_keeps_its_citation_form(text, number):
     assert number in normalize_for_tts(text, "ar")
 
 
+# A number that names a thing is said in its citation form, whatever word follows it
+# (Ryding 2005, p. 335).
 @pytest.mark.xfail(strict=True, reason="text2spoken takes the gender of the next word: "
                    "https://github.com/TigreGotico/text2spoken/issues/535")
 @pytest.mark.parametrize("text, number", [
