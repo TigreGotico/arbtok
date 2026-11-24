@@ -1,74 +1,86 @@
-"""arbtok's Arabic G2P engine.
-
-arbtok *consumes* orthography2ipa — its spec data, its lattice and its
-``WordContext`` type — and owns the Arabic pipeline. It is not a plugin TO
-orthography2ipa: nothing there discovers or calls it. It is an engine built ON
-it, which is the opposite direction, and the ``G2PPlugin`` base class that once
-suggested otherwise is gone. Use it directly:
+"""arbtok's Arabic G2P engine, built on orthography2ipa's spec data and lattice.
 
     >>> from arbtok.plugin import ArbtokG2PPlugin
     >>> ArbtokG2PPlugin().transcribe("كتاب جميل")
-    'kitaːb dʒamiːl'
+    'kiˈtaːb dʒaˈmiːl'
 
-The engine maps arbtok's machinery onto the shared interface:
-
-- ``normalize`` — Unicode/diacritic reordering, number and date
-  expansion, and automatic tashkeel diacritization of bare text via
-  the bundled rawi ensemble (failure degrades gracefully to the undiacritized
-  input).
-- ``transcribe_word`` — for an isolated word (no context), the
-  orthography2ipa shared lattice: the variety's grapheme table, arbtok's
-  structural rescorers (sun-letter assimilation, hamzat al-waṣl, hamza
-  carriers, accusative alif; see :mod:`arbtok.lattice`), then the rescorer
-  compiled from the variety's own ``allophone_rules``. Cross-word effects
-  use the orthographic neighbours carried by ``WordContext``: the word is
-  tokenized together with its neighbours so the prev/next-token cross-word
-  rules fire.
-- ``transcribe`` — full-sentence path with clitic joining, identical to
-  ``Sentence(text).ipa``.
+- ``normalize``: Unicode and diacritic order, numbers and dates as words, and
+  tashkeel restored on bare text by the bundled rawi ensemble (on failure the
+  text passes through undiacritized).
+- ``transcribe_word``: an isolated word goes through the shared lattice, arbtok's
+  rescorers (:mod:`arbtok.lattice`) and the variety's ``allophone_rules``. A word
+  with ``WordContext`` neighbours is read in a sentence with them, so the
+  cross-word rules fire.
+- ``transcribe``: the full-sentence path, ``Sentence(text).ipa``, with Latin-script
+  words read as Arabizi or as loanwords.
 """
+import re
 from typing import List, Optional
 
 from orthography2ipa import WordContext
 
-from arbtok.constants import (
-    DAGGER_ALIF,
-    DAMMA,
-    FATHA,
-    KASRA,
-    MADD,
-    SHADDA,
-    SUKUN,
-    TANWIN_DAMM,
-    TANWIN_FATH,
-    TANWIN_KASR,
-)
+from arbtok.arabizi import arabizi_covers, is_arabizi, to_arabic_skeleton
 from arbtok.dialects import DEFAULT_LANG, WORD_EXCEPTIONS, spec_for_lang
+from arbtok.donor_lexicon import donor_engine
 from arbtok.lattice import defers_to_cascade, word_ipa
 from arbtok.lexicon import DEFAULT_LEXICON, LexiconUnavailable
+from arbtok.textnorm import normalize_for_tts
 from arbtok.tokenizer import Sentence, normalize_unicode
-from arbtok.translit import is_latin, transliterate
-import re as _re
+from arbtok.translit import DONOR_LANG, is_latin, transliterate
 
-#: Script runs inside one whitespace token. Tatweel is stripped before this by
-#: `normalize_unicode`, but a token is split here before normalisation runs, so the
-#: connector is named explicitly: الـcharger carries one between the article and the
-#: guest word and it belongs with the Arabic run.
-_ARABIC_RUN = _re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
-_LATIN_RUN = _re.compile(r"[A-Za-z]")
+#: Script runs inside one whitespace token. The Arabic range holds tatweel, so the
+#: connector in الـcharger stays with the Arabic run.
+_ARABIC_RUN = re.compile(r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
 #: IPA symbols that are their ASCII letter wearing a different codepoint.
 _LOOKALIKE = {"\u0261": "g", "\u0279": "r", "\u026a": "i", "\u028a": "u"}
-_SCRIPT_RUN = _re.compile(
+_SCRIPT_RUN = re.compile(
     r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+"
     r"|[^\s\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+")
-_MIXED_RUN = _re.compile(
+_MIXED_RUN = re.compile(
     r"[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+"
     r"|[A-Za-z][A-Za-z'\u2019-]*"
     r"|[^\s\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFFA-Za-z]+")
-from arbtok.arabizi import arabizi_covers, is_arabizi, to_arabic_skeleton
 
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
-from arbtok.textnorm import normalize_for_tts
+
+
+def _donor_knows(tok: str) -> bool:
+    """Whether the donor lexicon reads *tok*, rather than handing its letters back:
+    `ok` comes out ˌəʊkˈeɪ and `bmw` comes out ˈbmw."""
+    try:
+        got = donor_engine(DONOR_LANG).transcribe_word(tok.lower()) or ""
+        # Fold the IPA symbols that only look like their ASCII letter: `gps` comes
+        # back as ɡps with a script g (U+0261).
+        bare = "".join(_LOOKALIKE.get(c, c) for c in got if c not in "ˈˌ")
+        return bool(got) and bare != tok.lower()
+    except Exception:
+        return False
+
+
+def _spelled_out(tok: str) -> bool:
+    """An all-caps Latin run the donor does not know is a spelling, BMW."""
+    return (tok.isascii() and tok.isalpha() and tok.isupper() and len(tok) > 1
+            and not _donor_knows(tok))
+
+
+def _runs(tok: str) -> list[str]:
+    """*tok* split into the parts that take different paths.
+
+    First at the script boundary: a mixed token such as الـcharger must not reach
+    `transliterate` whole. Then each non-Arabic run splits at the letter/digit
+    boundary, except Arabizi the mapper can write whole: `7abibi` carries its
+    guttural as a digit, and splitting it reads the seven as a number.
+    """
+    out = []
+    for run in (m.group(0) for m in _SCRIPT_RUN.finditer(tok)):
+        if _ARABIC_RUN.search(run) or (is_arabizi(run) and arabizi_covers(run)):
+            out.append(run)
+        else:
+            pieces = [m.group(0) for m in _MIXED_RUN.finditer(run)] or [run]
+            for piece in pieces:
+                out.extend(list(piece) if _spelled_out(piece) else [piece])
+    return out or [tok]
+
 
 class ArbtokG2PPlugin:
     """Arabic G2P via the orthography2ipa shared lattice.
@@ -78,9 +90,9 @@ class ArbtokG2PPlugin:
     the variety's own grapheme table *and* its declared ``allophone_rules``::
 
         >>> ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("قَهْوَة")
-        'ɡahawa'
+        'ˈɡahawa'
         >>> ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت")
-        'beːt'
+        'ˈbeːt'
 
     The variety may also be carried per call on ``WordContext.lang``, which
     overrides the instance default. A tag naming no Arabic spec narrows a
@@ -98,88 +110,40 @@ class ArbtokG2PPlugin:
                  fusion: bool = True) -> None:
         self._diacritizer = None
         self._diacritizer_failed = False
-        #: Restore tashkeel by *scoring* the flagship ensemble's licensed readings
-        #: (:mod:`arbtok.fusion`) instead of tokenizing one model guess. On by
-        #: default: scoring the bundled ensemble distribution under the variety's
-        #: own licensing beats the plain generator's mean bare-input PER
-        #: (0.189 vs 0.193), with the margin on the dialect-divergent lects. Set
-        #: ``False`` to opt out. The empirical gate is documented in
-        #: docs/rawi-fusion.md.
+        #: Restore tashkeel by scoring the ensemble's licensed readings
+        #: (:mod:`arbtok.fusion`) rather than taking one model guess. Mean bare-input
+        #: PER 0.189 against 0.193; see docs/rawi-fusion.md.
         self.fusion = fusion
         #: The variety: any orthography2ipa Arabic spec code.
         self.lang = spec_for_lang(lang)
-        #: Restore the marks the writing omits before transcribing. The engine's
-        #: input contract is diacritized text; without this, an unmarked word is
-        #: transcribed from a default reading, which is a guess.
+        #: Restore the marks the writing omits before transcribing; an unmarked word
+        #: is otherwise read from a default reading.
         self.diacritize = diacritize
-        #: Mark the stressed syllable. Arabic stress is quantity-sensitive, so it
-        #: is read off the transcription rather than the spelling — and it drives
-        #: vowel duration and prominence, which a TTS voice needs. Turn it off to
-        #: score against stress-free gold.
+        #: Mark the stressed syllable. Turn it off to score against stress-free gold.
         self.stress = stress
-        #: The diacritized-stem lexicon consulted before the diacritizer model —
-        #: a path, a URL, an ``hf://`` id, or ``None`` to ask the model about
-        #: every word. See :mod:`arbtok.lexicon`.
+        #: The diacritized-stem lexicon consulted before the model: a path, a URL, an
+        #: ``hf://`` id, or ``None`` (see :mod:`arbtok.lexicon`).
         self.lexicon = lexicon
-        #: Consult the lect's closed-class lexicon — the function words a dialect
-        #: writes in MSA orthography but vocalizes its own way — as a hard prior
-        #: ahead of the stem lexicon and the model. On by default; the entries
-        #: are bundled per lect (see :mod:`arbtok.dialect_lexicon`). Set ``False``
-        #: to fall back to the MSA stem lexicon and the model alone.
+        #: Consult the lect's closed-class lexicon, the function words a dialect
+        #: writes in MSA orthography and vocalizes its own way, ahead of the stem
+        #: lexicon and the model (see :mod:`arbtok.dialect_lexicon`).
         self.dialect_lexicon = dialect_lexicon
-        #: Read a Latin-script (foreign) run as a loanword, nativised into the
-        #: matrix lect's phonology (see :mod:`arbtok.translit`). ``True`` is the
-        #: TTS default — a voice needs a pronounceable, in-inventory reading. Set
-        #: ``False`` for linguistic output that must not invent a pronunciation:
-        #: the Latin run is then left in place, untranscribed, rather than adapted.
+        #: Read a Latin-script run as a loanword nativised into the lect's phonology
+        #: (:mod:`arbtok.translit`). ``False`` leaves the run untranscribed.
         self.nativize = nativize
-        #: Read a Latin-script run written in *Arabizi* (Arabic in Latin letters +
-        #: digit-gutturals, e.g. ``7abibi`` = حبيبي) as Arabic: reverse-transliterate
-        #: it to an unpointed Arabic skeleton and send it through the normal
-        #: diacritize + phonology pipeline, so fusion restores the vocalism
-        #: dialect-aware (see :mod:`arbtok.arabizi`). The gate is conservative — a
-        #: Latin run is read as Arabizi only when it carries a digit-guttural (or a
-        #: caller passes an explicit hint), so genuine English/French embeds
-        #: (``meeting``, ``email``) stay on the loanword-nativisation path. ``True``
-        #: by default; set ``False`` to disable the Arabizi path entirely.
+        #: Read a Latin-script run written in Arabizi (``7abibi`` = حبيبي) as Arabic,
+        #: through an unpointed skeleton (:mod:`arbtok.arabizi`). A run counts as
+        #: Arabizi only when it carries a digit-guttural or the caller says so, so
+        #: ``meeting`` and ``email`` stay loanwords.
         self.arabizi = arabizi
-        #: The waqf (pausal) policy — ONE declared switch for the whole stack
-        #: (Wright, *A Grammar of the Arabic Language*, 3rd ed., I §372;
-        #: Ryding, *A Reference Grammar of MSA*, CUP 2005, §2.4).
-        #:
-        #: ``True`` — the TTS register, the default. A word standing at a
-        #: written phrase boundary takes its pausal form: the final short
-        #: vowel (iʿrāb) is dropped, tanwīn -un/-in drop with their /n/,
-        #: tanwīn -an lengthens to /aː/ on its written alif, and a tāʾ
-        #: marbūṭa voiced only by its ending falls silent with it (the
-        #: construct-state /at/ is documented as unmodeled). The
-        #: diacritizer, when it runs on bare text, restores the pausal
-        #: register throughout (the modern spoken register keeps no iʿrāb).
-        #:
-        #: ``False`` — full iʿrāb passthrough: every written ending is read
-        #: out and the diacritizer restores the full case/mood endings. The
-        #: recitation/pedagogical register, and the right mode to score
-        #: against iʿrāb-keeping gold.
-        #:
-        #: Both modes run the SAME lattice and rescorers; the flag is
-        #: consulted only at the sentence-level pause rescorer
-        #: (:mod:`arbtok.sandhi`) and the diacritizer, so the transform is
-        #: applied exactly once — never dropped twice, never guessed from
-        #: the IPA.
-        #:
-        #: ``register`` is the named front door to the same switch —
-        #: ``"pausal"`` (the default: ``pausal=True``, the TTS register) or
-        #: ``"full"`` (``pausal=False``: continuous full-iʿrāb passthrough,
-        #: every waqf reduction disabled throughout the stack). ``"full"`` is
-        #: the register for reading fully-vocalized MSA exactly as its author
-        #: pointed it — recitation, pedagogy, and scoring against
-        #: iʿrāb-keeping gold — where the pausal default would silently drop
-        #: the case endings the text spells. Wright I §372 scopes the waqf
-        #: reductions to a word standing *at a pause*, and Ryding 2005 §2.4
-        #: likewise treats them as the pause form, not the connected one; a
-        #: caller reading connected, fully-inflected MSA therefore wants
-        #: ``register="full"``. An explicit boolean ``pausal=`` argument (the
-        #: pre-``register`` spelling) still wins when both are passed.
+        #: The waqf policy (Wright, *A Grammar of the Arabic Language*, 3rd ed.,
+        #: I §372; Ryding, *A Reference Grammar of MSA*, CUP 2005, §2.4).
+        #: ``True``, the TTS register: a word at a written phrase boundary takes its
+        #: pausal form, and the diacritizer restores no iʿrāb. ``False``: every
+        #: written ending is read and the diacritizer restores the case and mood
+        #: endings, for recitation and iʿrāb-keeping gold. The flag is read by the
+        #: sandhi pause rule and the diacritizer only. ``register`` names the same
+        #: switch, ``"pausal"`` or ``"full"``; an explicit ``pausal=`` wins.
         if register not in ("pausal", "full"):
             raise ValueError(
                 f"register must be 'pausal' or 'full', got {register!r}")
@@ -204,8 +168,6 @@ class ArbtokG2PPlugin:
                 return code
         return self.lang
 
-    # ─── lifecycle hooks ─────────────────────────────────────────────
-
     def normalize(self, text: str) -> str:
         text = normalize_for_tts(text, self.lang)
         if self.diacritize:
@@ -213,21 +175,12 @@ class ArbtokG2PPlugin:
         return text
 
     def _diacritize(self, text: str) -> str:
-        """Restore the omitted marks, word by word, under the lattice's guard.
+        """Restore the omitted marks, word by word, under the lattice's guard
+        (:mod:`arbtok.diacritize`).
 
-        Each word is diacritized only if the writing leaves it underdetermined,
-        and the model's proposal is kept only if it preserves the skeleton and
-        the variety's grapheme table licenses it — see
-        :mod:`arbtok.diacritize`. A word whose proposal is refused is left as
-        written, which orthography2ipa will then report as underdetermined,
-        rather than transcribed from a confident hallucination.
-
-        Diacritization is a model, and a model can be absent (no onnxruntime, no
-        weights). That is a degraded mode, not an error: the text passes through
-        and the reading is a guess. A lexicon that was asked for and cannot be read
-        is an error: :class:`LexiconUnavailable`, and :class:`ModelUnavailableError`
-        for one on the Hugging Face Hub that is not cached and cannot be fetched. A
-        caller who wants the model alone passes ``lexicon=None``.
+        A missing model (no onnxruntime, no weights) is a degraded mode and the text
+        passes through. A lexicon that was asked for and cannot be read raises
+        :class:`LexiconUnavailable`.
         """
         if self._diacritizer_failed:
             return text
@@ -255,8 +208,6 @@ class ArbtokG2PPlugin:
         except Exception:
             return text
 
-    # ─── transcription ───────────────────────────────────────────────
-
     def transcribe(self, text: str, arabizi: Optional[bool] = None) -> str:
         """Transcribe *text*, reading any Latin-script word as a loanword.
 
@@ -275,25 +226,18 @@ class ArbtokG2PPlugin:
           default) it is nativised on its own (see :mod:`arbtok.translit`) and
           spliced back in its place; with it off the Latin run is left untouched.
 
-        *arabizi* is an explicit per-call hint: ``True`` forces the Arabizi reading
-        of the Latin runs, ``False`` forbids it (they go to the loanword path). When
-        ``None`` (the default) the digit-guttural gate decides. A caller that has
-        language-tagged its input drives the call this way; the module never sniffs
-        all-alphabetic Arabizi apart from English on its own (documented ambiguity).
+        *arabizi* is a per-call hint: ``True`` forces the Arabizi reading of the
+        Latin runs, ``False`` forbids it, and ``None`` leaves it to the
+        digit-guttural gate.
         """
         parts, buffer = [], []
-
-        latin = [t for t in text.split() if is_latin(t)]
         if not self.arabizi:
             arabizi_mode = False
         elif arabizi is not None:
             arabizi_mode = arabizi
         else:
-            # and the mapper must be able to spell it: a token it cannot write whole
-            # loses the letters it cannot map, silently.
-            # Decided over the RUNS, not the whole tokens: a glued الـ7abibi is not
-            # itself coverable -- its Arabic half is not Arabizi -- so asking the token
-            # answered no and the Arabizi word inside it went down the loanword path.
+            # Over the script runs, not the tokens: the Arabizi word in a glued
+            # الـ7abibi is a run, and the mapper must be able to write it whole.
             arabizi_mode = any(is_arabizi(r) and arabizi_covers(r)
                                for t in text.split() for r in _SCRIPT_RUN.findall(t))
 
@@ -304,61 +248,9 @@ class ArbtokG2PPlugin:
                                       pausal=self.pausal).ipa)
                 buffer.clear()
 
-        def _donor_knows(tok):
-            from arbtok.translit import DONOR_LANG
-            from arbtok.donor_lexicon import donor_engine
-            try:
-                # The donor has no lexicon-membership call, so ask it to read the
-                # word and see whether it gave a reading or handed the letters back:
-                # `ok` comes out ˌəʊkˈeɪ and `bmw` comes out ˈbmw, which is the input.
-                got = donor_engine(DONOR_LANG).transcribe_word(tok.lower()) or ""
-                # Strip stress, then fold the IPA symbols that merely LOOK like their
-                # ASCII letters: the donor hands `gps` back as ɡps with a script g
-                # (U+0261), which compares unequal to the input and made a passthrough
-                # look like a reading -- GPS then stayed whole and read `kbs`.
-                bare = "".join(_LOOKALIKE.get(c, c) for c in got if c not in "ˈˌ")
-                return bool(got) and bare != tok.lower()
-            except Exception:
-                return False
-
-        def _spelled_out(tok):
-            """An all-caps Latin run the donor does not know is a spelling: BMW read
-            `bmw`, its letters passed through as if they were already phones."""
-            return (tok.isascii() and tok.isalpha() and tok.isupper() and len(tok) > 1
-                    and not _donor_knows(tok))
-
-        def runs(tok):
-            """A token split into the parts that take different paths.
-
-            Two passes, and the order matters. First the script boundary, because
-            `is_latin` is true of any token CONTAINING a Latin letter and a mixed token
-            went whole to `transliterate`, which cannot look it up -- الـcharger read
-            `ʃaːdʒa` with the Arabic article dropped from the output altogether.
-
-            Then, within each non-Arabic run only, the letter/digit boundary -- but NOT
-            when that run is Arabizi the mapper can write whole. `7abibi` carries its
-            guttural as a digit, so splitting it yields `7` and `abibi` and reads the
-            seven as a number. A glued الـ7abibi is exactly the case that needs both
-            passes and only one of them: the article separates, the Arabizi word does
-            not.
-            """
-            out = []
-            for run in (m.group(0) for m in _SCRIPT_RUN.finditer(tok)):
-                if _ARABIC_RUN.search(run):
-                    out.append(run)
-                elif is_arabizi(run) and arabizi_covers(run):
-                    out.append(run)                       # Arabizi: never split
-                else:
-                    pieces = [m.group(0) for m in _MIXED_RUN.finditer(run)] or [run]
-                    for piece in pieces:
-                        out.extend(list(piece) if _spelled_out(piece) else [piece])
-            return out or [tok]
-
-        for token in [r for t in text.split() for r in runs(t)]:
+        for token in [r for t in text.split() for r in _runs(t)]:
             if is_latin(token):
                 if arabizi_mode:
-                    # Arabic-in-Latin: reverse-transliterate to a skeleton and let
-                    # it flow through the normal Arabic pipeline with its neighbours.
                     buffer.append(to_arabic_skeleton(token))
                     continue
                 flush_arabic()
@@ -378,37 +270,25 @@ class ArbtokG2PPlugin:
     ) -> str:
         lang = self._resolve_lang(context)
         if is_latin(word):
-            # A Latin-script word has no Arabic graphemes and no reading. Left to
-            # the engine its letters come back as themselves — `meeting` as
-            # `meeˈting` — which is not IPA at all. With nativisation off, a
-            # linguistic caller wants the source word back rather than an adapted
-            # reading, so it is returned untouched.
             if not self.nativize:
                 return word
             return transliterate(word, lang) or ""
         if context is None or (context.prev_word is None
                                and context.next_word is None):
-            # Isolated word: every variety runs on the orthography2ipa shared
-            # lattice, which reads the grapheme table and allophone rules of
-            # the variety's own spec. Only the two things the word lattice
-            # genuinely cannot do fall back to the cascade — lexical
-            # exceptions, which it hardcodes, and the words needing cross-word
-            # or lexical context (see `defers_to_cascade`).
+            # The lattice reads an isolated word, except a lexical exception and a
+            # word that needs cross-word context (`defers_to_cascade`).
             if (normalize_unicode(word) not in WORD_EXCEPTIONS
                     and not defers_to_cascade(word)):
                 return word_ipa(word, lang, stress=self.stress)
             return Sentence(word, lang=lang, stress=self.stress,
                             pausal=self.pausal).ipa
 
-        # Tokenize the word with its orthographic neighbours so the
-        # cross-word rules (wasl elision, idgham/iqlab, clitic
-        # attachment) see the same prev/next links as a full sentence.
+        # Read with its neighbours, so the cross-word rules see them.
         parts = [p for p in (context.prev_word, word, context.next_word)
                  if p is not None]
         target = 0 if context.prev_word is None else 1
-        tokens = Sentence(" ".join(parts), lang=lang, stress=self.stress,
-                          pausal=self.pausal).tokens
-        words = [t for t in tokens if t.surface not in ("",)]
+        words = Sentence(" ".join(parts), lang=lang, stress=self.stress,
+                         pausal=self.pausal).tokens
         if target < len(words):
             return words[target].ipa
         return Sentence(word, lang=lang, stress=self.stress,

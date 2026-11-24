@@ -5,8 +5,6 @@ import subprocess
 from typing import List, Optional
 from typing import Tuple
 
-import numpy as np
-import onnxruntime
 from linguatag import closest_lang
 from quebra_frases import sentence_tokenize
 

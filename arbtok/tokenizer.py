@@ -2,7 +2,7 @@ import dataclasses
 import re
 import string
 import unicodedata
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional
 
 # helper constants, make it more readable for non-arabic speakers (me)
 # each represent an arabic grapheme that maps to a IPA phoneme in ARABIC_TO_IPA
@@ -20,6 +20,8 @@ from orthography2ipa.vowels import is_ipa_vowel
 from arbtok.dialects import (VOWEL_MAP, ARABIC_TO_IPA_CONSONANTS, DIACRITIC_TO_IPA,
                              TANWIN_TO_IPA, WORD_EXCEPTIONS,
                              DEFAULT_LANG, consonant_ipa)
+
+_WORD_SPLIT = re.compile(r"(\s+|[" + re.escape(PUNCT) + r"])")
 
 
 def _reorder_diacritics(text: str) -> str:
@@ -42,41 +44,16 @@ def _reorder_diacritics(text: str) -> str:
     return "".join(chars)
 
 
-#: ⟨مائة⟩ "hundred" and everything built on it. The alif is written and not
-#: said — the word is /miʔa/ — and the spelling is a scribal survival, not a
-#: phonological fact; the phonetic spelling ⟨مئة⟩ is the same word. So the two
-#: are made one before anything reads them, and the morpheme transcribes
-#: identically wherever it stands: bare ⟨مائة⟩, the dual ⟨مائتان⟩, ⟨بالمائة⟩
-#: "per cent", and the fused hundreds ⟨ثلاثمائة⟩ … ⟨تسعمائة⟩, which is where a
-#: whole-word exception could never reach it.
-#:
-#: The pattern is deliberately narrow: a mīm (bearing kasra or nothing) + alif
-#: + hamza-on-yāʾ, and only when what follows the hamza seat is the tāʾ
-#: marbūṭa, or a plain tāʾ that itself continues into a long vowel (alif or
-#: yāʾ, skipping over any short-vowel diacritics — fatḥa, ḍamma, kasra, shadda,
-#: sukūn — in between, but NOT tanwīn: a hundred's tāʾ is never indefinite, so
-#: tanwīn on it is never this word either). That second arm is what the whole
-#: ⟨مائة⟩ paradigm shares: the dual ⟨مائتان⟩/⟨مائتين⟩, the construct
-#: ⟨مائتا⟩/⟨مائتي⟩ and the pausal ⟨مِائَتَيْنِ⟩ all carry the tāʾ into -ā- or -ay-
-#: (Wright, *A Grammar of the Arabic Language*, 3rd ed., I §319). A bare tāʾ
-#: with nothing long after it is not this word — it is the participle ⟨مائت⟩
-#: "dying/mortal" (of ماتَ يموتُ), which ends right there or takes its own
-#: short-vowel inflection (⟨مائتة⟩, ⟨مائتون⟩), never a following long vowel on
-#: that same tāʾ. Its indefinite accusative ⟨مائتًا⟩ carries tanwīn on that
-#: same tāʾ instead — a shape no hundred's tāʾ can take — which is the other
-#: reason tanwīn is excluded from the skip class. That leaves every alif that
-#: IS pronounced alone — ⟨مَائِدَة⟩ "table" keeps its /aː/, because its mīm
-#: carries fatḥa and no tāʾ follows the hamza at all.
-#:
-#: Two unpointed spellings stay genuinely ambiguous without a lexicon —
-#: ⟨مائتاً⟩ (hundred-construct accusative vs. the participle's tanwīn, which
-#: this pattern also declines to collapse since the tanwīn precedes the alif,
-#: not the tāʾ) and unpointed ⟨مائتي⟩ (hundred-construct vs. participle dual
-#: oblique) — and are resolved toward the far more frequent hundreds reading,
-#: same as `dev` did before this fix existed: the boundary is mapped, not
-#: missed, and left where a lexicon, not a regex, would have to draw it.
-#:
-#: Ryding, *A Reference Grammar of Modern Standard Arabic*, CUP 2005, §15.3.
+#: ⟨مائة⟩ "hundred" and every word built on it. The alif is written and not said:
+#: the word is /miʔa/, the same word as ⟨مئة⟩ (Ryding, *A Reference Grammar of Modern
+#: Standard Arabic*, CUP 2005, §15.3). The pattern is a mīm (with kasra or no mark),
+#: the alif, hamza-on-yāʾ, then either tāʾ marbūṭa or a tāʾ that continues into a long
+#: vowel across short-vowel marks: the dual ⟨مائتان⟩, the construct ⟨مائتا⟩/⟨مائتي⟩
+#: (Wright, *A Grammar of the Arabic Language*, 3rd ed., I §319). Tanwīn is not in the
+#: skip class, because a hundred's tāʾ is never indefinite: ⟨مائتًا⟩ is the participle
+#: "dying". The participle ⟨مائت⟩ ends at its tāʾ, and ⟨مَائِدَة⟩ "table" has no tāʾ
+#: after the hamza, so both keep their alif. Unpointed ⟨مائتي⟩ and ⟨مائتاً⟩ stay
+#: ambiguous without a lexicon and are read as the more frequent hundreds.
 _SILENT_ALIF_MIA = re.compile(
     f"{M}({KASRA}?){ALIF}({YA_HAMZA}{FATHA}?(?:{TA_MARBUTA}|{T}(?=[َ-ْ]*[اي])))"
 )
@@ -92,29 +69,13 @@ def elide_silent_alif(text: str) -> str:
 
 
 def normalize_unicode(text: str) -> str:
-    """
-    Normalize unicode to NFC (Normalization Form Canonical Composition).
-
-    Note on Diacritic Order:
-    In Arabic, the canonical order for stacking diacritics is usually:
-    Base Char + Shadda + Vowel.
-    NFC normalization generally handles this correctly, ensuring that
-    a Shadda + Fatha sequence is combined or ordered consistently.
-    This tokenizer relies on this standard order.
-    """
-    # 0. Tatweel (U+0640) is kashida: a typographic stretch with no sound and no
-    #    letter identity. Left in, it is not a letter the tokenizer knows, so it
-    #    breaks its word in two -- المـرء reads `ˈalm ˈraʔ` where المرء reads
-    #    `alˈmarʔ`, and all five lect tables agree on the split, so the
-    #    disagreement guard never sees it. It is removed before anything else
-    #    looks at the string.
+    """*text* without tatweel, in NFC, with shadda before the vowel, and with
+    ⟨مائة⟩ spelled as it is said (:func:`elide_silent_alif`)."""
+    # Tatweel (U+0640) is a typographic stretch with no sound. Left in, it splits
+    # its word in two: المـرء reads `ˈalm ˈraʔ` where المرء reads `alˈmarʔ`.
     text = text.replace("\u0640", "")
-    # 1. Standard Unicode normalization (NFC)
     text = unicodedata.normalize("NFC", text)
-    # 2. Enforce Consonant -> Shadda -> Vowel order
     text = _reorder_diacritics(text)
-    # 3. Collapse the two spellings of the ⟨مائة⟩ morpheme onto the one that
-    #    says what is pronounced (see :func:`elide_silent_alif`).
     return elide_silent_alif(text)
 
 
@@ -286,22 +247,12 @@ def _shadda_ipa(tok: 'CharToken', known: Dict[int, str]) -> str:
     # has a consonant to geminate.
     if tok.char_idx == 3 and tok.word.has_definite_article and tok.prev_token.is_sun:
         return ""
-    # Return the IPA of the previous token.
     if tok.prev_token:
         prev = tok._prev_ipa(known)
-        # A length mark cannot be geminated, and a geminated consonant's IPA
-        # never ends in one: a reading that ends in `ː` is a vowel or a bare
-        # length mark. If the previous letter still rendered as one, it was
-        # read as a mater lectionis despite carrying gemination, and
-        # duplicating it would emit `ːː`. The ya/waw branches prevent that at
-        # source; this refuses to manufacture the malformation if any other
-        # path reaches here.
+        # A length mark cannot be geminated: doubling it would emit `ːː`.
         if prev.endswith("ː"):
             return ""
         return prev
-    # A shadda with nothing before it has nothing to geminate. This used to
-    # return an ASCII ":" -- not the IPA length mark and not a phone at all,
-    # so it entered the inventory as its own symbol.
     return ""
 
 
@@ -568,22 +519,12 @@ class WordToken:
 
     @property
     def is_proclitic(self) -> bool:
-        """
-        Heuristic: short surface (1-2 chars) and starts with a clitic base letter.
-        Many Arabic proclitics are a single consonant optionally carrying a diacritic.
-        """
+        """Heuristic: one or two codepoints (a clitic letter and an optional mark)
+        that start with a clitic base letter."""
         s = self.normalized
-        # treat punctuation/non-words as non-clitics
-        if self.is_punct:
+        if self.is_punct or len(s) > 2:
             return False
-        # typical clitics are very short: 1 or 2 codepoints (letter + optional diacritic)
-        if len(s) > 2:
-            return False
-        # first character must be one of known clitic letters
-        first = s[0]
-        if first in CLITIC_BASES:
-            return True
-        return False
+        return s[0] in CLITIC_BASES
 
     @property
     def is_sun(self) -> bool:
@@ -612,59 +553,27 @@ class WordToken:
         lattice_ipa = self._lattice_ipa()
         if lattice_ipa is not None:
             return lattice_ipa
-
-        ipa = "".join([tok.ipa for tok in self.tokens])
-        # The doubled length mark this once claimed to normalise is fixed at source
-        # in CharToken.ipa: a ya or waw carrying a shadda is a consonant, so ⟨ـِيّ⟩
-        # is `ijj` and never `iːː`. What is left is one experimentally determined
-        # cluster repair, kept because it is a real reading rather than a symptom.
-        replacements = {
-            #"dˤdˤ": "ðˤ", # debatable
-            "idʒt": "ijt",
-        }
-        for k, v in replacements.items():
-            ipa = ipa.replace(k, v)
-        return ipa.strip()
+        # "idʒt" -> "ijt" is an experimentally determined cluster repair, applied on
+        # both paths so they agree.
+        return "".join([tok.ipa for tok in self.tokens]).replace("idʒt", "ijt").strip()
 
     def _lattice_ipa(self):
         """This word's IPA from the shared lattice, or ``None`` to use the cascade.
 
-        The cascade reads the grapheme layer only: it never applied the variety's
-        ``allophone_rules``, so the same word came out differently depending on
-        whether it was transcribed alone or in a sentence — Najdi قَهْوَة was
-        ˈɡahawa as a word and ˈɡahwa in an utterance, the gahawa epenthesis
-        silently missing. The rules cannot be applied to the assembled string
-        either: gahawa is conditioned on SYLLABLE POSITION, which only the lattice
-        knows.
-
-        So the word's own phonology comes from the lattice, and the cross-word
-        effects — including the article's waṣl elision, which is a fact about the
-        *spoken* neighbour — are left to :mod:`arbtok.sandhi`, which sees the
-        assembled utterance.
-
-        Returns ``None`` for the words the lattice cannot own — those needing the
-        lexical/cross-word rules it lacks (:func:`~arbtok.lattice.defers_to_cascade`).
+        The lattice applies the variety's ``allophone_rules``, which depend on
+        syllable position (Najdi gahawa epenthesis), so a word reads the same alone
+        and in a sentence. Cross-word effects, the article's waṣl elision among them,
+        are left to :mod:`arbtok.sandhi`, which sees the spoken neighbours. ``None``
+        for a word that needs the cascade (:func:`~arbtok.lattice.defers_to_cascade`).
         """
         from arbtok.lattice import defers_to_cascade, word_ipa
 
         if defers_to_cascade(self.surface):
             return None
-
         ipa = word_ipa(self.surface, self.lang, stress=False)
         if not ipa:
             return None
-
-        # The cascade's one surviving experimental fixup, kept so the two paths
-        # cannot disagree on it.
-        ipa = ipa.replace("idʒt", "ijt")
-
-        # Cross-word waṣl (the article's seat vowel eliding after a vowel-final
-        # word, "fiː albajt" → "fiː lbajt") is NOT applied here any more: it is a
-        # fact about the *spoken* neighbour, and a word-local check can only see
-        # the neighbour's spelling — it misses a tāʾ marbūṭa read as /a/ and a
-        # pause-shortened ending. arbtok.sandhi.apply_cross_word owns it, driven
-        # by the assembled spoken forms.
-        return ipa
+        return ipa.replace("idʒt", "ijt")
 
     def __eq__(self, other) -> bool:
         if isinstance(other, str):
@@ -692,18 +601,9 @@ class Sentence:
 
     @property
     def tokens(self) -> List[WordToken]:
-        """
-        Split text into words, keeping punctuation separate.
-        This tokenizer:
-          - splits on whitespace
-          - treats ASCII and Arabic punctuation as separate tokens
-          - preserves diacritics attached to letters
-        """
-        # pattern: split on whitespace OR any punctuation character (ASCII + Arabic)
-        punct_class = re.escape(PUNCT)
-        # Split by whitespace OR punctuation
-        pattern = r'(\s+|[' + punct_class + r'])'
-        pieces = [p for p in re.split(pattern, self.normalized) if p and not p.isspace()]
+        """The words, split on whitespace, with each ASCII or Arabic punctuation
+        character as a token of its own."""
+        pieces = [p for p in _WORD_SPLIT.split(self.normalized) if p and not p.isspace()]
 
         tokens: List[WordToken] = []
         for idx, piece in enumerate(pieces):
@@ -720,16 +620,8 @@ class Sentence:
 
     @property
     def ipa(self) -> str:
-        """
-        Produce IPA for sentence while propagating hamzat/wasl effects across clitics.
-        Specifically:
-          - Common proclitics (وَ، فَ، بِ، لِ، كَ، سَ) attach to the following word in connected speech;
-            we therefore concatenate their IPA with the next word's IPA (no separating space).
-          - When concatenating into a following definite article 'ال', drop the article's initial 'a'
-            (the short article vowel) to model wasl-elision: e.g. "بِ الْمَدِينَة" -> "bi lmadiːna" (not "bi almadiːna").
-        """
-        # A word's own phonology comes from the lattice; what happens BETWEEN
-        # words does not, and cannot — see arbtok.sandhi.
+        """The sentence's IPA: each word's own reading, then the cross-word rules of
+        :mod:`arbtok.sandhi` (waṣl elision, idghām, pausal forms), then stress."""
         from arbtok.sandhi import apply_cross_word, _has_article
         tokens = self.tokens
         pieces = apply_cross_word(
@@ -749,45 +641,24 @@ class Sentence:
             for w, p in zip(spoken_tokens, pieces)
         ]
 
+        # An assimilated مِن stays its own word (*mim baʕd*, not *mimbaʕd*): this
+        # transcription is read word by word by the aligner and the label builder.
         ipa_str = " ".join(pieces).replace(" ː", "ː ").strip()
-
-        # A word boundary survives assimilation. مِن before a sonorant or a labial
-        # takes that consonant's shape -- `apply_cross_word` has already done it,
-        # مِن بَعْد is *mim baʕd* -- and in connected speech the result is a geminate
-        # spanning the boundary. It is still two words, and this transcription is
-        # read per word: by the aligner, whose targets are word-aligned, and by the
-        # label builder, which pairs five lect tables word by word and can pair
-        # nothing if one table returns a different count.
-        #
-        # This used to be four blind substring replacements on the whole sentence
-        # ("mij j"->"mijj", "mil l"->"mill", "mim baʕ"->"mimbaʕ", "min t"->"mint"),
-        # marked HACK and TODO by their author. They did not test for مِن at all, so
-        # they fired on any word ending in those letters: كامل لبن ("whole milk",
-        # no مِن in it) came out as the single token *kaːˈmillaban*, and عامل لحم as
-        # *ʕaːmilˈlaħm*. Across the multilect label set they collapsed the word
-        # count on 2,200 rows, every one of which had to be dropped because no
-        # alternative could be sited against a table that had merged two words.
-        hacked = ipa_str
-
         if not self.stress:
-            return hacked
+            return ipa_str
 
-        words = hacked.split(" ")
+        words = ipa_str.split(" ")
         if len(words) == len(onsets):
-            # No word-merging fixup fired; stress each spoken word with its
-            # article-onset so the proclitic article stays unstressed. A declared
-            # prosodic clitic (a preposition, a vocative particle) is left
-            # unmarked, exactly as the engine leaves it — it leans on its host and
-            # carries no word stress.
+            # A declared prosodic clitic (a preposition, a vocative particle) leans
+            # on its host and carries no word stress, as in the o2i engine.
             spec = get(self.lang)
             return " ".join(
                 w if is_cliticless(t.surface, spec)
                 else stress_ipa(w, self.lang, proclitic_onset=o)
                 for w, o, t in zip(words, onsets, spoken_tokens))
-        # A fixup merged two words (a min/man assimilation): the onset alignment
-        # no longer holds, so fall back to plain per-word stress. These never
-        # coincide with an article onset, so nothing is lost.
-        return stress_words(hacked, self.lang)
+        # The words no longer align with the spoken tokens, so each word is
+        # stressed without its article onset.
+        return stress_words(ipa_str, self.lang)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, str):
