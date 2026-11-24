@@ -37,7 +37,7 @@ FALLBACKS = {
     "DATE_TWO_DIGIT_YEAR": (None, "ينتهي التسجيل 31/12/30", "31/12/30",
                             "ينتهي التسجيل الحادي والثلاثون من ديسمبر ألفين وثلاثين"),
     "DECIMAL_COMMA": (370, "الوزن 12,5", "12,5", "الوزن اثنا عشر فاصلة خمسة"),
-    "DECIMAL_DECLINED": (371, "سعر المدة 12.50 ريال", "12.50", "سعر المدة اثنا عشر فاصلة خمسة ريال"),
+    "DECIMAL_DECLINED": (371, "المسافة 3.75 كم", "3.75", "المسافة ثلاثة فاصلة خمسة وسبعون كم"),
     "CODE_DIGIT_SUFFIX": (None, "السيارة 520i", "520i", "السيارة خمسمئة وعشرون آيْ"),
     "LEADING_ZERO": (366, "رقمي 77 83 10 01", "01", "رقمي سبعة وسبعون ثلاثة وثمانون عشرة صفر واحد"),
     "FRACTION_OTHER": (None, "موديل 2099/2100", "2099/2100", "موديل ألفان وتسعة وتسعون/ألفان ومئة"),
@@ -53,6 +53,7 @@ MISREAD = {
     "SPACE_GROUPED": "TODO(text2spoken issue: SPACE_GROUPED) https://github.com/TigreGotico/text2spoken/issues/148",
     "LEADING_ZERO": "TODO(text2spoken issue: LEADING_ZERO) https://github.com/TigreGotico/text2spoken/issues/366",
     "DATE_TWO_DIGIT_YEAR": "arbtok.util misreads it: https://github.com/TigreGotico/arbtok/issues/362",
+    "DECIMAL_DECLINED": "arbtok.util misreads it: https://github.com/TigreGotico/arbtok/issues/366",
     "FRACTION_OTHER": "arbtok.util misreads it: https://github.com/TigreGotico/arbtok/issues/363",
     "NUMBER_AGAINST_WORD": "TODO(text2spoken issue: NUMBER_AGAINST_WORD) https://github.com/TigreGotico/text2spoken/issues/367",
 }
