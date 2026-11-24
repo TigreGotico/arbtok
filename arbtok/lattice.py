@@ -1,56 +1,28 @@
 """Arabic word phonology on the orthography2ipa shared lattice.
 
-arbtok builds on orthography2ipa's language-agnostic grapheme tokenizer
-(:class:`~orthography2ipa.phonetok.PhonetokTokenizer`) and its ``ar``
-spec grapheme table, rather than a private char-token tree. As of
-orthography2ipa 1.64 the ``ar`` engine natively handles the segment-local
-Arabic phonology arbtok once expressed as rescorers — gemination
-(shadda ّ doubling a consonant, glides included), presentation-form /
-lam-alif ligature normalisation (ﻻ → لا → ``laː``), onset glides
-(يَ → ``ja``, وَ → ``wa``), the bare glottal stop of a hamza carrier
-before an explicit harakah (أَمِير → ``ʔamiːr``), the word-final glide as
-a long vowel, and pausal tāʾ marbūṭa (مَدِينَة → ``madiːna``). Those
-private rescorers are gone.
+arbtok reads a word with orthography2ipa's grapheme tokenizer
+(:class:`~orthography2ipa.phonetok.PhonetokTokenizer`) and the variety's spec,
+then rescores the per-position lattice
+(:meth:`~orthography2ipa.phonetok.PhonetokTokenizer.ipa_lattice`) for what the
+shared ``ar`` table cannot express:
 
-What remains are the phenomena the shared ``ar`` table still cannot
-express, layered on as :class:`~orthography2ipa.rescorer.LatticeRescorer`\\ s
-over the per-position lattice
-(:meth:`~orthography2ipa.phonetok.PhonetokTokenizer.ipa_lattice`):
+- :class:`SunLetterRescorer`: the lām of the article ⟨ال⟩ assimilates into a
+  following sun letter (``aš-šams``) and stays before a moon letter (``al-qamar``).
+- :class:`WaslRescorer`: a word-initial bare alif is hamzat al-waṣl, silent, with
+  its following short vowel carrying the onset (``istiqbāl`` from اِسْتِقْبَال).
+- :class:`HamzaCarrierRescorer`: a hamza carrier before a sukūn or at a word edge
+  is the bare /ʔ/ (تَأْثِير → ``taʔθīr``, نَبَأ → ``nabaʔ``).
+- :class:`ConsonantalGlideRescorer`: a yāʾ or wāw before a vowel or its own
+  geminate is a consonant, not vowel length.
+- :class:`AccusativeAlifRescorer`: the alif after tanwīn al-fatḥ is silent
+  (مَرْحَبًا → ``marħaban``).
 
-- :class:`SunLetterRescorer` — sun-letter assimilation (idghām
-  ash-shamsiyya): the lām of the definite article ⟨ال⟩ assimilates into a
-  following coronal (sun) consonant — ``al-šams`` → ``aš-šams`` — while a
-  moon (non-coronal) letter keeps the lām — ``al-qamar`` → ``al-qamar``.
-- :class:`WaslRescorer` — hamzat al-waṣl (the prosthetic connecting
-  vowel): word-initial bare alif is silent, its following short vowel
-  carrying the onset (``istiqbāl`` from اِسْتِقْبَال).
-- :class:`HamzaCarrierRescorer` — a hamza-bearing carrier before a sukūn
-  or at a word edge is the bare glottal stop /ʔ/ with no vowel
-  (تَأْثِير → ``taʔθīr``, نَبَأ → ``nabaʔ``); the ``ar`` engine strips the
-  carrier's baked-in vowel only when an explicit harakah follows.
-- :class:`AccusativeAlifRescorer` — the otiose alif after tanwīn al-fatḥ
-  (accusative ``-an``) contributes no segment (مَرْحَبًا → ``marħaban``).
+The rescorers are word-local. Cross-word sandhi (clitic joining, waṣl elision,
+idghām, pausal forms) is in :mod:`arbtok.sandhi`.
 
-As of orthography2ipa 1.70 (upstream #251) the ``ar`` engine also natively
-produces the two forms arbtok once patched with private rescorers, so those
-rescorers are gone:
+Sources:
 
-- a fatḥa before a standalone alif maksūra ى collapses to one long vowel
-  (حَتَّى → ``ħattaː``, رَمَى → ``ramaː``) — the former
-  ``MaterLectionisRescorer``;
-- a word-final ي/و directly after a sukūn-bearing consonant is a coda glide,
-  not a mater-lectionis long vowel (رَمْي → ``ramj``, ظَبْي → ``ðˤabj``,
-  while فِي still → ``fiː``) — the former ``GlideCodaRescorer``.
-
-The rescorers are pure, word-local, and composable. Cross-word sandhi —
-clitic joining, cross-word waṣl elision, idghām/iqlāb, pausal forms — is
-orthogonal to the word lattice and lives in the sentence-level
-orchestration (the sanctioned
-the sentence orchestration), not here.
-
-Sources for the rescored rules:
-
-- Sun/moon (solar/lunar) letters and lām assimilation: W. Wright,
+- Sun and moon letters and lām assimilation: W. Wright,
   *A Grammar of the Arabic Language*, 3rd ed., I §17; K. Ryding,
   *A Reference Grammar of Modern Standard Arabic* (CUP 2005) §2.6.
 - Hamzat al-waṣl as a silent prosthetic vowel: Ryding §2.4; Wright I §19.
@@ -61,12 +33,13 @@ Sources for the rescored rules:
 """
 from __future__ import annotations
 
+import unicodedata
 from typing import Dict, List, Sequence, Tuple
 
 from orthography2ipa import get
 from orthography2ipa.allophony import compile_allophone_rescorer
 from orthography2ipa.stress import is_cliticless
-from orthography2ipa.phonetok import Candidate, PhonetokTokenizer, SegmentSlot
+from orthography2ipa.phonetok import Candidate, PhonetokTokenizer, SegmentSlot, _expand_arabic_gemination
 from orthography2ipa.rescorer import LatticeRescorer, RescoreContext
 
 from arbtok.constants import (
@@ -130,35 +103,17 @@ def _is_article_position(context: RescoreContext) -> bool:
     )
 
 
-def _prefer_only(slot: SegmentSlot, ipa: str, keep) -> Sequence[Candidate]:
-    """Like :func:`_prefer`, but keeping only the alternatives *keep* admits.
+def _prefer(slot: SegmentSlot, ipa: str, keep=None) -> Sequence[Candidate]:
+    """The slot's candidates with ``ipa`` made cheapest and the others kept behind
+    it at cost 1.0 or more, or only the others that *keep* admits.
 
-    A rescorer that has ruled out a reading on phonological grounds should drop
-    that reading; one that has merely chosen between readings that are both
-    real should not. This expresses both in one place, so a rescorer says which
-    of its alternatives survive rather than deleting the set wholesale.
+    A rescorer states a preference and does not delete the readings it turned down,
+    which a caller reading candidate sets (dialect attribution) needs. *keep* drops
+    the readings it has ruled out on phonological grounds.
     """
     kept = [Candidate(ipa=ipa, cost=0.0)]
     kept += [Candidate(ipa=c.ipa, cost=max(c.cost, 1.0))
-             for c in slot.candidates if c.ipa != ipa and keep(c.ipa)]
-    return tuple(kept)
-
-
-def _prefer(slot: SegmentSlot, ipa: str) -> Sequence[Candidate]:
-    """The slot's candidates with ``ipa`` made cheapest, none discarded.
-
-    A rescorer states a preference; it does not get to delete the reading it
-    turned down. Dropping the alternative is invisible to a caller reading
-    the winner and total to one reading candidate sets — which is how a
-    dialect attribution over this lattice loses the variation it exists to
-    measure. Cost is the mechanism the lattice already has for exactly this
-    (0.0 canonical, 1.0 next; see :mod:`orthography2ipa.weights`).
-    """
-    kept = [Candidate(ipa=ipa, cost=0.0)]
-    kept += [
-        Candidate(ipa=c.ipa, cost=max(c.cost, 1.0))
-        for c in slot.candidates if c.ipa != ipa
-    ]
+             for c in slot.candidates if c.ipa != ipa and (keep is None or keep(c.ipa))]
     return tuple(kept)
 
 
@@ -182,21 +137,11 @@ class SunLetterRescorer(LatticeRescorer):
         nxt = context.next_slot
         if nxt is None:
             return slot.candidates
-        # A written article + shadda-marked sun letter never reaches this
-        # rescorer: the spec fuses it into one grapheme (⟨السس⟩ → ``ass``) and
-        # assimilates natively. An ⟨ال⟩ standing as its own slot has NO
-        # written gemination, and what that means depends on whether anyone
-        # vocalized the word:
-        #
-        # * a **vocalized** word whose author pointed the stem but wrote no
-        #   shadda on the sun letter is deliberate — orthography2ipa reads
-        #   الصْبَاح as ``alsˤbaːħ`` and the relative اللِي as ``alliː``,
-        #   keeping the lām the page wrote (idghām ash-shamsiyya is carried by
-        #   the shadda, Wright I §17). The article is spec-canonical /al/.
-        # * a **bare** word omits every mark, the assimilating shadda with
-        #   them, so nothing can be read off the (absent) pointing: the letter
-        #   class is the only signal, and the classical rule applies —
-        #   assimilate before a sun letter, keep the lām before a moon.
+        # An article before a shadda-marked sun letter is one spec grapheme
+        # (⟨السس⟩ → ``ass``) and never reaches here. A standalone ⟨ال⟩ has no
+        # written gemination: in a vocalized word that is deliberate and the lām
+        # stays (الصْبَاح → ``alsˤbaːħ``); in a bare word the letter class is the
+        # only signal, and the classical rule applies (Wright I §17).
         if not _is_article_position(context):
             # A stem-internal ⟨ال⟩: the alif and lām belong to the root, so
             # neither assimilation nor the article reading applies. Left to
@@ -242,16 +187,10 @@ class WaslRescorer(LatticeRescorer):
             return ()
         if nxt is not None and _is_consonant_ipa(nxt.top.ipa):
             # Bare waṣl-alif directly before a consonant takes the /i/ helper
-            # vowel (انْتِمَاء → intimāʔ). The spec's ``aː`` reading is wrong
-            # here — the alif is a prosthetic support, not a long vowel — but
-            # its ``ʔi`` is not: waṣl elides only in connection, and the same
-            # word spoken utterance-initially carries the glottal onset
-            # (Wright I §19 on the two environments; Ryding §2.4). So the
-            # helper vowel is preferred and the glottal reading is kept behind
-            # it, rather than the slot being told there was never a choice —
-            # which is what a lattice consumer reading candidate sets, or a
-            # CTC pass over an alternatives graph, would otherwise be taught.
-            return _prefer_only(slot, "i", keep=lambda ipa: ipa.startswith("ʔ"))
+            # vowel (انْتِمَاء → intimāʔ). The spec's ``aː`` is wrong here, but its
+            # ``ʔi`` is the utterance-initial reading (Wright I §19; Ryding §2.4),
+            # so it stays behind the helper vowel.
+            return _prefer(slot, "i", keep=lambda ipa: ipa.startswith("ʔ"))
         return slot.candidates
 
 
@@ -399,16 +338,11 @@ _ENGINES: Dict[str, Tuple[PhonetokTokenizer, List[LatticeRescorer]]] = {}
 
 
 def _engine(lang: str) -> Tuple[PhonetokTokenizer, List[LatticeRescorer]]:
-    """Build (and cache) the tokenizer + rescorer chain for a spec code.
+    """The cached tokenizer and rescorer chain for a spec code.
 
-    The chain is arbtok's structural rescorers followed by the rescorer
-    compiled from the spec's own ``allophone_rules``. Order matters: the
-    structural rules resolve *which segment* a slot is (silencing the
-    otiose alif, assimilating the article's lām, stripping a hamza
-    carrier's baked-in vowel), and the allophone pass then realizes those
-    resolved segments in context (emphatic backing, Najdi affrication and
-    gahawa epenthesis, Hejazi monophthongization). Realization must see
-    the final segments, so it runs last.
+    arbtok's structural rescorers decide which segment a slot is; the rescorer
+    compiled from the spec's ``allophone_rules`` runs last, because it realizes
+    those segments in context (emphatic backing, Najdi affrication).
     """
     engine = _ENGINES.get(lang)
     if engine is None:
@@ -434,7 +368,6 @@ def word_lattice(word: str, lang: str = DEFAULT_LANG) -> List[SegmentSlot]:
     return tokenizer.ipa_lattice(text, rescorer=rescorers)
 
 
-
 def word_ipa(word: str, lang: str = DEFAULT_LANG, stress: bool = True) -> str:
     """Transcribe one diacritized *word* via the shared lattice + rescorers.
 
@@ -442,23 +375,15 @@ def word_ipa(word: str, lang: str = DEFAULT_LANG, stress: bool = True) -> str:
     Input must be diacritized (tashkeel) — the same contract the ar spec
     and arbtok share. *lang* selects the variety; see :func:`word_lattice`.
 
-    *stress* marks the stressed syllable. Arabic stress is quantity-sensitive —
-    it falls on a syllable because that syllable is *heavy*, and weight is a
-    property of the transcription, not of the spelling — so it can only be
-    placed once the IPA exists. Given diacritized input, weight is fully
-    determined and the placement is exact: superheavy final (kiˈtaːb) > heavy
-    penult (muˈdarris) > antepenult (ˈmadrasa). See the spec's stress block.
-
-    It matters for TTS: stress drives vowel duration and prominence, and getting
-    it wrong is one of the loudest cues of a non-native-sounding voice. Turn it
-    off for a consumer that scores against stress-free gold.
+    *stress* marks the stressed syllable, placed by weight on the transcription:
+    superheavy final (kiˈtaːb) > heavy penult (muˈdarris) > antepenult (ˈmadrasa).
+    Turn it off to score against stress-free gold.
     """
     ipa = spec_word_exception(word, lang)
     if ipa is None:
         ipa = "".join(slot.top.ipa for slot in word_lattice(word, lang))
     # A declared prosodic clitic (a preposition, a vocative particle) bears no
-    # word stress — it leans on its host. The engine leaves it unmarked, so the
-    # stack must too, or a bare ``ˈfiː`` diverges from o2i on every phrase.
+    # word stress: it leans on its host, as in the o2i engine.
     if not stress or is_cliticless(word, get(lang)):
         return ipa
     return stress_ipa(ipa, lang)
@@ -467,29 +392,18 @@ def word_ipa(word: str, lang: str = DEFAULT_LANG, stress: bool = True) -> str:
 def spec_word_exception(word: str, lang: str = DEFAULT_LANG):
     """The spec's whole-word IPA override for *word*, or ``None``.
 
-    orthography2ipa specs carry inline ``word_exceptions`` — the lexical
-    forms a variety's rules cannot derive (Lebanese هَيْدَا → ``hajda``
-    against the monophthongization rule, Emirati عِيش → ``ʕeːʃ``, qeltu
-    بَاكِر → ``baːkiʁ``). Its own engine consults them before the rules
-    (``G2P._override_for``); a lattice path that skips them re-derives those
-    words from rules the spec's authors have explicitly overridden, and
-    drifts from the reference output word by word. Matched on the same
-    NFC-normalized key the o2i engine uses (Arabic has no case), with
-    arbtok's mark-reordered normalization tried as well so a
-    vowel-before-shadda spelling still hits.
+    These are the lexical forms a variety's rules cannot derive (Lebanese هَيْدَا →
+    ``hajda``, Emirati عِيش → ``ʕeːʃ``), and the o2i engine consults them before its
+    rules. Tried on the NFC key the engine uses, on arbtok's normalization, and with
+    the shadda expanded to a doubled letter, as o2i stores keys (التتِلِيفُون).
     """
     exceptions = get(lang).word_exceptions
     if not exceptions:
         return None
-    import unicodedata
-    from orthography2ipa.phonetok import _expand_arabic_gemination
     hit = exceptions.get(unicodedata.normalize("NFC", word))
     if hit is None:
         hit = exceptions.get(normalize_unicode(word))
     if hit is None:
-        # o2i keys the table on its tokenizer's normalized form, in which a
-        # shadda is already expanded to a doubled letter (التِّلِيفُون is
-        # stored as التتِلِيفُون) — expand the same way before giving up.
         hit = exceptions.get(_expand_arabic_gemination(normalize_unicode(word)))
     return hit
 
@@ -498,30 +412,18 @@ _ALL_DIACRITICS = _HARAKAT | {SHADDA, "ٰ", "ٓ"}
 
 
 def defers_to_cascade(word: str) -> bool:
-    """True when a word needs cross-word/lexical rules the word lattice lacks.
+    """True when a word needs the cascade's cross-word or lexical rules.
 
-    Two cases remain:
+    - **Punctuation** in the word marks a pausal form, an utterance-level effect.
+    - **A proclitic (و ف ب ك ل س) before a stem that opens on a bare waṣl-alif that
+      is not the article** (وَبِاسْمِ → ``wabismi``): the elision crosses the
+      clitic boundary, and the lattice reads the alif as a vowel (``wabiaːsmi``).
 
-    - **trailing punctuation** — it marks a pausal form (tanwīn/tāʾ-marbūṭa
-      shortening), an utterance-level effect the cascade owns;
-    - **a proclitic (و ف ب ك ل س …) prefixed to a stem opening on a bare
-      waṣl-alif that is NOT the article** (وَبِاسْمِ → ``wabismi``) — the
-      elision of that internal hamzat al-waṣl spans the proclitic↔stem
-      boundary, and only the cascade performs it (the lattice reads the
-      alif as a vowel: ``wabiaːsmi``).
-
-    The proclitic + **article** case (وَالرُّطُوبَة, بِالزَّعْفَرَان) used to
-    defer here too, and must not: the cascade mis-reads it — an unelided و
-    and an unassimilated article lām, ``waːlrrutˤuːba`` — while the word
-    lattice elides the waṣl and assimilates exactly as orthography2ipa does
-    (``warrutˤuːba``, ``bizzaʕfaraːn``). It now stays on the lattice.
-
-    Deferring is only safe where the cascade is actually the better path.
+    A proclitic before the article (وَالرُّطُوبَة) stays on the lattice, which
+    elides and assimilates it as orthography2ipa does.
     """
     norm = normalize_unicode(word)
     if any(c in PUNCT for c in norm):
-        # Trailing punctuation marks a pausal form (tanwīn/tāʾ-marbūṭa
-        # shortening) — an utterance-level effect the cascade owns.
         return True
     # Peel leading proclitics (a clitic-base consonant + optional harakah);
     # if the stem then opens on a bare waṣl-alif that does not start the
