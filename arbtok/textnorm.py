@@ -3302,10 +3302,10 @@ def _unit_symbols_as_names(text: str) -> str:
         if symbol == "km" and not m.string.startswith("/", m.end()):
             return m.group(0)
         if symbol in units:
-            return space + units[symbol]
+            return (space or " ") + units[symbol]
         if symbol.isupper() and symbol.lower() not in _CAPITALISED_UNITS:
             return m.group(0)
-        return space + lowered[symbol.lower()]
+        return (space or " ") + lowered[symbol.lower()]
     return _unit_symbol_after_number().sub(name, text)
 
 

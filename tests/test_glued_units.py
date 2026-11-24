@@ -44,3 +44,13 @@ def test_no_digit_is_left(written):
 def test_what_is_no_glued_unit_reads_as_before(written):
     split = normalize_for_tts(written, "ar", CODES)
     assert " km" not in split and " كم" not in split.replace("كمية", "")
+
+
+@pytest.mark.parametrize("glued, spaced", [
+    ("الوزن 5kg", "الوزن 5 kg"),
+    ("الوزن 2.5kg", "الوزن 2.5 kg"),
+    ("المحرك 300hp", "المحرك 300 hp"),
+    ("الجرعة 10mg", "الجرعة 10 mg"),
+])
+def test_a_glued_unit_reads_as_the_spaced_unit_in_the_default_config(glued, spaced):
+    assert normalize_for_tts(glued, "ar") == normalize_for_tts(spaced, "ar")
