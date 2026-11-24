@@ -13,14 +13,8 @@ no word-level engine can see it:
 * **waṣl** — the article's vowel elides after a proclitic or a vowel-final word:
   فِي الْبَيْت is *fiː lbajt*.
 
-These used to live inside the character cascade, which is why the cascade could
-not be replaced wholesale by the lattice: doing so silently dropped them. They
-are cross-word rules, so they belong here — applied to the assembled words, where
-each one can actually see its neighbour.
-
-Keeping them separate is also what makes them testable. Inside the cascade they
-were conditions on a character's ``prev_token.prev_token``; here they are rules
-about words, which is what they are.
+They are rules about words, so they apply to the assembled words, where each one
+can see its neighbour.
 """
 
 from __future__ import annotations
@@ -28,13 +22,12 @@ from __future__ import annotations
 import re
 from typing import List, Optional, Sequence, Tuple
 
-# The closed class of words whose final short vowel is lexical (part of the
-# word) rather than iʿrāb, and so survives the pause — pronouns,
-# demonstratives, relatives and a few particles. arbtok.waqf owns the list
-# (it applies the same Wright §372 transform at the orthographic layer);
-# importing it keeps the two libraries from drifting.
+# The closed class of words whose final short vowel is lexical, not iʿrāb, and
+# survives the pause. arbtok.waqf owns the list and applies the same Wright §372
+# transform at the orthographic layer.
 from arbtok.waqf import LEXICAL_FINAL_VOWEL
 from arbtok.constants import ALIF, LAM, HAMZAT_AL_WASL
+from arbtok.stress import stress_ipa
 
 __all__ = ["apply_cross_word", "NUN_ASSIMILATION"]
 
@@ -42,6 +35,10 @@ __all__ = ["apply_cross_word", "NUN_ASSIMILATION"]
 #: character. A trailing length mark ``ː`` counts too — it is the tail of a
 #: long vowel. Used to decide whether a following word's hamzat al-waṣl elides.
 _IPA_VOWELS = set("aeiouɑæəɛɔ")
+
+#: The harakāt, tanwīn, shadda, sukūn and dagger alif.
+_MARKS = "ًٌٍَُِّْٰ"
+
 
 def _ends_in_vowel(ipa: str) -> bool:
     """Does this **spoken** word end on a vowel? — the waṣl trigger.
@@ -55,31 +52,22 @@ def _ends_in_vowel(ipa: str) -> bool:
     return bool(ipa) and (ipa[-1] in _IPA_VOWELS or ipa.endswith("ː"))
 
 
+def _has_article(surface: str) -> bool:
+    """True when the word opens on the definite article ``الـ`` (bare, with no
+    proclitic in front — a proclitic + article is one token whose waṣl is
+    already resolved inside the word lattice)."""
+    letters = [c for c in surface if c not in _MARKS]
+    return (len(letters) >= 2 and letters[0] in (ALIF, HAMZAT_AL_WASL)
+            and letters[1] == LAM)
+
+
 def _is_bare_wasl_alif(surface: str) -> bool:
     """True when the word opens on a bare hamzat al-**waṣl** alif that is not the
     definite article — اِشْتَرَى, اِنْتَ, اِسْم. Its onset is the connecting alif,
     written but silent in connected speech, surfacing as ``ʔV`` at an utterance
     edge (Ryding 2005 §2.4). ``أ``/``إ`` (hamzat al-qaṭʿ) and the article are
     excluded — the article is handled by :func:`_elide_article`."""
-    if not surface:
-        return False
-    first = surface[0]
-    if first not in (ALIF, HAMZAT_AL_WASL):
-        return False
-    # the definite article (ال) is a waṣl alif too, but it elides its *seat
-    # vowel* rather than restoring a glottal onset — handled separately.
-    letters = [c for c in surface if c not in "ًٌٍَُِّْٰ"]
-    return not (len(letters) >= 2 and letters[0] in (ALIF, HAMZAT_AL_WASL)
-                and letters[1] == LAM)
-
-
-def _has_article(surface: str) -> bool:
-    """True when the word opens on the definite article ``الـ`` (bare, with no
-    proclitic in front — a proclitic + article is one token whose waṣl is
-    already resolved inside the word lattice)."""
-    letters = [c for c in surface if c not in "ًٌٍَُِّْٰ"]
-    return (len(letters) >= 2 and letters[0] in (ALIF, HAMZAT_AL_WASL)
-            and letters[1] == LAM)
+    return surface[:1] in (ALIF, HAMZAT_AL_WASL) and not _has_article(surface)
 
 
 def _restore_wasl_onset(ipa: str) -> str:
@@ -134,15 +122,9 @@ NUN_ASSIMILATION = {
 
 def _assimilate_nun(ipa: str, next_ipa: str) -> str:
     """A final /n/ takes the shape of what follows it."""
-    if not ipa.endswith("n") or ipa not in _NUN_WORDS:
+    if ipa not in _NUN_WORDS or not next_ipa:
         return ipa
-    if not next_ipa:
-        return ipa
-    onset = next_ipa[0]
-    surface = NUN_ASSIMILATION.get(onset)
-    if surface is None:
-        return ipa
-    return ipa[:-1] + surface
+    return ipa[:-1] + NUN_ASSIMILATION.get(next_ipa[0], "n")
 
 
 #: The tanwīn. A word ends in one or it does not, and the ORTHOGRAPHY says
@@ -156,7 +138,7 @@ _TA_MARBUTA = "ة"
 _SHORT_VOWEL_IPA = {"َ": "a", "ُ": "u", "ِ": "i"}
 
 #: The run of harakāt at the very end of a written word.
-_TRAILING_MARKS = re.compile(r"[ًٌٍَُِّْٰ]+$")
+_TRAILING_MARKS = re.compile(f"[{_MARKS}]+$")
 
 
 def _pausal(ipa: str, surface: str) -> str:
@@ -234,7 +216,6 @@ def _article_vowel_is_stressed(ipa: str, lang: str) -> bool:
     *before* sandhi (its elision regex is anchored ``^[aɑ]`` and a leading ``ˈ``
     blocks the match); arbtok stresses last, so it asks the same question here.
     """
-    from arbtok.stress import stress_ipa
     return stress_ipa(ipa, lang)[:1] == "ˈ"
 
 

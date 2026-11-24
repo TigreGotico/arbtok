@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a15](https://github.com/TigreGotico/arbtok/tree/0.0.3a15) (2026-11-24)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a14...0.0.3a15)
+
+**Merged pull requests:**
+
+- refactor: make the arbtok modules easier to read [\#364](https://github.com/TigreGotico/arbtok/pull/364) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a14](https://github.com/TigreGotico/arbtok/tree/0.0.3a14) (2026-11-23)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a13...0.0.3a14)

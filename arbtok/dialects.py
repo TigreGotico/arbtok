@@ -10,13 +10,12 @@ jīm all come from cited spec data rather than a table in this file.
 The word lattice (:mod:`arbtok.lattice`) additionally compiles the spec's
 ``allophone_rules``, so context-conditioned phonology — Najdi affrication and
 gahawa epenthesis, Hejazi monophthongization, emphatic spreading — fires there.
-The sentence cascade below reads the spec's grapheme layer only; it has no
-allophone pass yet.
+The character cascade (:mod:`arbtok.tokenizer`) reads the spec's grapheme layer
+only, with no allophone pass.
 """
 
 import functools
 import warnings
-from enum import Enum
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 from linguatag import closest_lang, lang_distance, standardize_lang
@@ -28,7 +27,7 @@ from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WA
                               TANWIN_FATH, TANWIN_KASR, TANWIN_DAMM,
                               ALIF_MAKSURA)
 
-# Interdental graphemes referenced by the zone overrides.
+# The interdental graphemes.
 THEH = 'ث'   # ث
 THAL = 'ذ'   # ذ
 ZAH = 'ظ'    # ظ (emphatic interdental)
@@ -613,27 +612,13 @@ def supported_lects() -> List[Lect]:
 # of أُولِي and أُولَٰئِكَ. Those are the readings this table exists to prevent,
 # so the disagreement corroborates the entries rather than questioning them.
 WORD_EXCEPTIONS = {
-    # === Unicode / orthographic variants ===
-
-    # Demonstratives with "Dagger Alif" (pronounced long /a:/ but written short or omitted)
-    "أُولَٰئِكَ": "ʔulaːʔika",  # u-la-i-ka (those) - note medial hamza logic is complex, hardcoded here
-
-    # Particles
-
-    # Divine Names
-    "اللّٰه": "allaːh",  # Allah - heavy L, unwritten alif
-
-    # Irregular pronunciations
-    # NOTE: ⟨مِائَة⟩ "hundred" used to need an entry here for its silent alif,
-    # but arbtok.tokenizer.normalize_unicode now collapses that spelling onto
-    # ⟨مئة⟩ before any lexicon lookup runs (see elide_silent_alif), so the
-    # normal grapheme-to-IPA path already reads it correctly. This exception
-    # would never fire.
-    "عَمْرٌو": "ʕamrun",  # 'Amr - final Waw is silent (differentiates from 'Umar)
-    "أُولِي": "ʔuliː",  # 'uli (owners of) - silent Waw
-    "أُولُو": "ʔuluː",  # 'ulu - silent Waw
-
-    # Particles carrying hamzat al-qaṭʿ on ALEF_HAMZA_BELOW. Keys are stored in
-    # _reorder_diacritics-normalized form (shadda precedes vowel):
+    # Demonstrative with a dagger alif: a long /aː/ written short.
+    "أُولَٰئِكَ": "ʔulaːʔika",
+    # Divine name: unwritten alif.
+    "اللّٰه": "allaːh",
+    # Silent waw.
+    "عَمْرٌو": "ʕamrun",  # 'Amr, told from 'Umar by the waw
+    "أُولِي": "ʔuliː",
+    "أُولُو": "ʔuluː",
 }
 

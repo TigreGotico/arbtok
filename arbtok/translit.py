@@ -123,6 +123,8 @@ from orthography2ipa.distance import segment_distance
 from orthography2ipa.inventory import phoneme_inventory
 from orthography2ipa.inventory import tokenize as ipa_tokenize
 
+from arbtok.donor_lexicon import donor_engine
+
 __all__ = ["nativize", "transliterate", "is_latin", "guest_script", "segment_ipa",
            "SEGMENT_MAP", "DONOR_LANG", "DONOR_BY_SCRIPT", "nativization_table"]
 
@@ -130,8 +132,6 @@ __all__ = ["nativize", "transliterate", "is_latin", "guest_script", "segment_ipa
 #: source of live code-switching in Gulf Arabic, and it is the donor the map is
 #: measured for — but it is a DEFAULT, not an assumption baked into the code:
 #: :func:`transliterate` takes any orthography2ipa language as its donor.
-from arbtok.donor_lexicon import donor_engine  # noqa: E402
-
 DONOR_LANG = "en-GB"
 
 #: A guess at the donor from the script alone, for a caller who has not said. This
@@ -394,10 +394,9 @@ def nativization_table(lang: str) -> Dict[str, str]:
             return table
         seen.add(code)
         try:
-            parent = get(code).primary_parent
+            code = get(code).primary_parent
         except Exception:
             break
-        code = getattr(parent, "code", parent)
     return _DEFAULT_MAP
 
 
@@ -443,13 +442,6 @@ ESTABLISHED_LOANS: Dict[str, Dict[str, str]] = {
         "automatic": "ʔotomatik",
     },
 }
-# A French donor table was here with three entries -- automatique, modele, video -- and
-# it is removed rather than kept. Its values were mine, not cited: no gold row pins a
-# French-route reading, no lexicon carries one, and the Maghrebi form otomatik that
-# motivated it is asserted in this module's own comments and nowhere else. Three
-# uncited values live on every lect is a worse trade than a French token taking the
-# ordinary donor path, which is at least a reading somebody can point at. It returns
-# with a source or not at all.
 
 
 def _established(word: str, donor: str) -> Optional[str]:
@@ -542,23 +534,12 @@ def _targets(lang: str) -> Tuple[str, ...]:
 #: vowel with nowhere mid to go takes the high vowel of its own backness and
 #: rounding rather than the low one alphabetical order lands on.
 #:
-#: This is NOT the general behaviour of three-quality systems, and an earlier version
-#: of this comment said it was, citing Alhoody 2019 §5.2 and Hafez 1996 p. 388.
-#: Page locators are dropped throughout this module: the accessible edition of
-#: Hafez (Égypte/Monde arabe 27-28, pages 383-410) numbers PARAGRAPHS rather than
-#: pages, so no locator inside it was ever confirmed. The article range is.
-#: Both citations were wrong: §5.2 is the consonant hierarchy, and Hafez describes a
-#: six-quality Egyptian inventory that keeps mid vowels in loans (kwafeer, doktoor)
-#: and does not treat English /əʊ/ at all. Alhoody's vowel section is §6.1.8 (p. 121),
-#: and it says the opposite for a lect that HAS [oː]: English /əʊ, ɔː/ take the
-#: closest quality, [oː], in 44 of 64 tokens. His short [u] appears only when prosody
-#: forces a short vowel into a slot with no short mid vowel to fill it.
-#:
-#: What licenses this table is the narrow end of that rule — no mid quality available,
-#: so the nearest high one of the same backness and rounding — plus the orthography of
-#: the loans themselves, which write the wāw: داونلود, موبايل, أوكي. A lect that
-#: declares a mid vowel never reaches here, and reading the pan-Arabic default as [oː]
-#: instead would be a different change needing its own evidence.
+#: This is not the general behaviour of three-quality systems. Alhoody (2019) §6.1.8
+#: (p. 121) says a lect that has [oː] takes it for English /əʊ, ɔː/ (44 of 64 tokens),
+#: and Hafez (1996) keeps mid vowels in Egyptian loans (kwafeer, doktoor). What
+#: licenses this table is the narrow case, no mid quality available, so the nearest
+#: high one of the same backness and rounding, plus the loans' own spelling with wāw:
+#: داونلود, موبايل, أوكي. A lect that declares a mid vowel never reaches here.
 _RAISED = {"o": "u", "ɔ": "u", "e": "i", "ɛ": "i", "ø": "i", "œ": "i"}
 
 
@@ -576,13 +557,8 @@ def _project(segment: str, lang: str) -> Optional[str]:
         return None
     if segment in targets:
         return segment
-    # The cited tables are asked BEFORE the metric, not only when the metric cannot
-    # decide. This function's docstring already says a cited map beats feature
-    # arithmetic wherever one exists; consulting it only on a tie applied that rule in
-    # the one case where it changes least. On ar-MA and ar-DZ the metric has a UNIQUE
-    # answer for ð and it is [dʒ], so `the`, `this`, `mother` and `father` read dʒa,
-    # dʒis, madʒar and faːdʒar -- 445 lexicon entries a lect -- while their own parent
-    # ar-x-maghrebi says [d] and every cited table naming ð says [d] too.
+    # The cited tables are asked before the metric: on ar-MA and ar-DZ the metric's
+    # unique answer for ð is [dʒ], where every cited table naming ð says [d].
     #
     # Only a lect that does NOT declare the segment reaches here, so a lect keeping its
     # own interdentals is untouched. Where several tables name it they have so far
@@ -597,20 +573,15 @@ def _project(segment: str, lang: str) -> Optional[str]:
     tied = sorted(t for d, t in scored if d == best)
     if len(tied) == 1:
         return tied[0]
-    # The metric could not tell these apart. It returns one constant for every
-    # candidate when the guest's quality is absent from the matrix altogether, and
-    # `min` over a tie returns whichever sorts first -- so [o] landed on [a] rather
-    # than [u] on every lect declaring no /o/, and *video* came out `fidiaː`.
+    # The metric returns one constant for every candidate when the guest's quality is
+    # absent from the matrix, and a tie would go to whichever sorts first ([o] to [a]).
     base, length = (segment[:-1], segment[-1]) if segment.endswith("ː") else (segment, "")
     raised = _RAISED.get(base)
     for candidate in (raised + length, raised) if raised else ():
         if candidate in targets:
             return candidate
     # A short vowel with no cited mapping of its own follows what the tables do with its
-    # LONG counterpart, derived rather than typed. ɜ was the last segment resolving by
-    # sort order -- on all 35 lects, the whole of the alphabetical residue -- and every
-    # cited table maps ɜː to [a], so the short one went to [a] by accident of the
-    # alphabet and agreed with them only by luck.
+    # long counterpart (every cited table maps ɜː to [a]).
     if not length:
         for table in _BORROWABLE_TABLES:
             cited = table.get(segment + "ː")
@@ -709,40 +680,20 @@ def transliterate(
         script = guest_script(word)
         donor = DONOR_BY_SCRIPT.get(script or "", DONOR_LANG)
 
-    # An established loan is looked up before the donor is consulted at all: it is not
-    # adapted from the donor, it is already an Arabic word. It still goes through the
-    # inventory check below, because a settled reading is settled for Arabic and not
-    # for every lect of it.
+    # An established loan is already an Arabic word, not a donor phone, so it is
+    # returned without the inventory projection below, which would lengthen
+    # أوتوماتيك to ʔoːtoːmatik on the lects declaring /oː/ and no short /o/.
     settled = _established(word, donor)
     if settled is not None:
-        # Returned WITHOUT the inventory projection below. That projection exists to
-        # land a DONOR phone on the nearest thing the matrix declares; an established
-        # loan's value is not a donor phone, it is already the Arabic word, and putting
-        # it through the donor machinery lengthens vowels the loan does not have.
-        # أوتوماتيك came out ʔoːtoːmatik on the 22 lects that declare /oː/ and no short
-        # /o/, where the hand-authored gold for ar-JO and ar-LB reads ʔotomaˈtik. Those
-        # two rows are marked known-wrong precisely because the Arabic-script path does
-        # not reach them either -- it gives ʔuːtuːmaːˈtiːk -- so the lengthening is in
-        # both paths and this fixes the one it owns.
-        #
-        # A lect whose declared inventory lacks the quality still receives it, and that
-        # is the point: an established loan is a lexical fact about that lect rather
-        # than a guest sound being adapted, and the inventory under-declares the loan
-        # phones. Where that is wrong the table entry is wrong, not the projection.
         return settled
-    adapted = None
-    if adapted is None:
-        # The donor's own lexicon, if this package ships one for it. English rules
-        # cannot reach the right reading from spelling alone, and a caller who has
-        # set their own lexicon keeps it — see arbtok.donor_lexicon.
-        try:
-            donor_ipa = donor_engine(donor).transcribe_word(word)
-        except Exception:
-            return None
-        if not donor_ipa:
-            return None
-
-        adapted = nativize(donor_ipa, lang, donor=donor)
+    # The donor's own lexicon, if this package ships one for it (arbtok.donor_lexicon).
+    try:
+        donor_ipa = donor_engine(donor).transcribe_word(word)
+    except Exception:
+        return None
+    if not donor_ipa:
+        return None
+    adapted = nativize(donor_ipa, lang, donor=donor)
 
     spec = G2P(lang).spec
     declared = phoneme_inventory(spec) | {_LENGTH}
@@ -750,12 +701,10 @@ def transliterate(
     if outside:
         if strict:
             return None
-        # project any residual symbol onto the nearest declared phoneme —
-        # the word is pronounced, not dropped
+        # Project each residual symbol onto the nearest declared phoneme: the word
+        # is pronounced, not dropped.
         for t in set(outside):
             repl = _project(t, lang)
             if repl is not None:
                 adapted = adapted.replace(t, repl)
-        if any(t not in declared for t in ipa_tokenize(adapted, spec)):
-            return None if strict else adapted
     return adapted

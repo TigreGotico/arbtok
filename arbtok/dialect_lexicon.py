@@ -131,7 +131,7 @@ def _parent_chain(lang: str) -> List[str]:
         seen = {lang}
         cur = lang
         while True:
-            parent = getattr(get(cur), "parent", None)
+            parent = get(cur).parent
             if not parent or parent in seen:
                 break
             chain.append(parent)
