@@ -52,8 +52,8 @@ FALLBACKS = {
 MISREAD = {
     "SPACE_GROUPED": "TODO(text2spoken issue: SPACE_GROUPED) https://github.com/TigreGotico/text2spoken/issues/148",
     "LEADING_ZERO": "TODO(text2spoken issue: LEADING_ZERO) https://github.com/TigreGotico/text2spoken/issues/366",
-    "DATE_TWO_DIGIT_YEAR": "TODO(text2spoken issue: DATE_TWO_DIGIT_YEAR)",
-    "FRACTION_OTHER": "TODO(text2spoken issue: FRACTION_OTHER)",
+    "DATE_TWO_DIGIT_YEAR": "arbtok.util misreads it: https://github.com/TigreGotico/arbtok/issues/362",
+    "FRACTION_OTHER": "arbtok.util misreads it: https://github.com/TigreGotico/arbtok/issues/363",
     "NUMBER_AGAINST_WORD": "TODO(text2spoken issue: NUMBER_AGAINST_WORD) https://github.com/TigreGotico/text2spoken/issues/367",
 }
 
