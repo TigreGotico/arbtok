@@ -25,8 +25,11 @@ import datetime
 import functools
 import hashlib
 import json
+import math
 import re
+import sys
 import unicodedata
+from fractions import Fraction
 from pathlib import Path
 from typing import Dict, Mapping, Optional, Tuple
 
@@ -482,15 +485,80 @@ def _apply_lexicon(text: str, config: AsrNorm) -> str:
     return "".join(out)
 
 
+#: Digits of other scripts read as the digits they write; the second table also turns the
+#: Arabic decimal separator into a point, as a number already in digits is written back.
+_WESTERN_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "0123456789" * 2)
+_WRITTEN_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹٫", "0123456789" * 2 + ".")
+#: An underscore between two letters spells a space.
+_UNDERSCORE = re.compile(r"(?<=[^\W\d_])_(?=[^\W\d_])")
+
+
+def _value(mention):
+    """The int or float of a numtag value: an integer value is an int, a fraction or decimal
+    a float, and one too wide or too fine for a float rounds half up to an int. None when
+    an integer has more digits than ``str`` can write."""
+    from numtag import Kind
+    value = mention.value
+    if len(value.lstrip("-").split(".")[0].split("/")[0]) > sys.get_int_max_str_digits() > 0:
+        return None
+    if "/" not in value and "." not in value:
+        return int(value)
+    try:
+        exact = Fraction(value)
+        approx = float(exact)
+    except ValueError:
+        return None
+    except OverflowError:
+        approx = math.inf
+    if exact.denominator == 1 or (mention.kind is Kind.FRACTION and approx.is_integer() and abs(exact) >= 1):
+        return int(exact)
+    if approx.is_integer() or math.isinf(approx):
+        rounded = (2 * abs(exact.numerator) + exact.denominator) // (2 * exact.denominator)
+        return -rounded if exact < 0 else rounded
+    return approx
+
+
+def _numbers(text: str, lang: str, ordinals: bool = False):
+    """The (mention, value) of each number numtag reads in ``text``, in the order written.
+    Ordinals are left out unless asked for. Offsets in ``text`` and in the mentions agree."""
+    from numtag import Kind, tag_numbers
+    from ovos_number_parser.numbers_ar import resolve_ar_lang
+    spoken = _UNDERSCORE.sub(" ", text.translate(_WESTERN_DIGITS))
+    read = [(m, _value(m)) for m in tag_numbers(spoken, "ar" if resolve_ar_lang(lang) else lang)
+            if ordinals or m.kind is not Kind.ORDINAL]
+    return [(m, v) for m, v in read if v is not None]
+
+
+def _digits(text: str, lang: str) -> str:
+    """``text`` with each number written in words put in digits. A number already in digits
+    stays as written, in Western digits; an ordinal stays in words."""
+    from numtag import Form, Kind
+    out, at = [], 0
+    for mention, value in _numbers(text, lang, ordinals=True):
+        start, end = mention.char_span
+        if mention.form is Form.DIGITS and not any(char.isalpha() for char in text[start:end]):
+            written = text[start:end].translate(_WRITTEN_DIGITS)
+        elif mention.kind is Kind.ORDINAL:
+            continue
+        else:
+            written = str(value)
+        out += [text[at:start], written]
+        at = end
+    return "".join(out) + text[at:]
+
+
 def _numbers_to_digits(text: str, lang: str) -> str:
-    """The parser reads words and hands back words joined by single spaces, whether or
-    not it found a number. Text it found nothing in is returned as it came; text it
-    changed keeps its leading and trailing whitespace."""
-    from ovos_number_parser import numbers_to_digits
+    """The reader hands back words joined by single spaces, whether or not it found a
+    number. Text it found nothing in is returned as it came; text it changed keeps its
+    leading and trailing whitespace. A language numtag has no words for is left as written."""
+    from numtag import UnsupportedLanguageError
     words = text.split()
     if not words:
         return text
-    read = numbers_to_digits(" ".join(words), lang=lang)
+    try:
+        read = _digits(" ".join(words), lang)
+    except UnsupportedLanguageError:
+        return text
     if read.split() == words:
         return text
     return text[:len(text) - len(text.lstrip())] + read + text[len(text.rstrip()):]
@@ -499,9 +567,8 @@ def _numbers_to_digits(text: str, lang: str) -> str:
 @functools.lru_cache(maxsize=1 << 16)
 def _number_value(words: str):
     """What the number parser reads ``words`` as, or None when it reads no number."""
-    from ovos_number_parser import extract_number
-    value = extract_number(words, lang="ar")
-    return None if value is False else value
+    read = _numbers(words, "ar")
+    return read[0][1] if read else None
 
 
 #: The construct forms of three to nine that a hundred is built on (thalath-miya …
@@ -629,9 +696,8 @@ def _folded(word: str) -> str:
 @functools.lru_cache(maxsize=1 << 12)
 def _hour_value(words: str):
     """The hour ``words`` name, read as an ordinal or a cardinal: الثامنة and ثمانية are 8."""
-    from ovos_number_parser import extract_number
-    value = extract_number(words, lang="ar", ordinals=True)
-    return None if value is False else value
+    read = _numbers(words, "ar", ordinals=True)
+    return read[0][1] if read else None
 
 
 #: The night as Saudi speech says it after an hour, which the date parser does not read:
@@ -659,17 +725,18 @@ def _period_hour(hour: int, word: str, evening: bool = False):
         return hour if 1 <= hour <= 11 else None
     if _folded(word) in _EVENING_WORDS:
         return hour + 12 if evening and 5 <= hour <= 7 else None
-    from ovos_date_parser import extract_datetime
-    read = extract_datetime(f"الساعة {hour} {word}", "ar", datetime.datetime(2000, 1, 1))
-    return read[0].hour if read and not read[1].strip() else None
+    from chronologia import extract_timespan
+    read = extract_timespan(f"الساعة {hour} {word}", "ar", datetime.datetime(2000, 1, 1))
+    start = read and read.span.start_datetime
+    return start.hour if start and not read.remainder.strip() else None
 
 
 @functools.lru_cache(maxsize=1 << 12)
 def _is_day(word: str) -> bool:
     """Whether the date parser reads ``word`` alone as a day: اليوم, غدا, الخميس."""
-    from ovos_date_parser import extract_datetime
-    read = extract_datetime(word, "ar", datetime.datetime(2000, 1, 1))
-    return bool(read) and not read[1].strip()
+    from chronologia import extract_timespan
+    read = extract_timespan(word, "ar", datetime.datetime(2000, 1, 1))
+    return read is not None and read.span.start_datetime is not None and not read.remainder.strip()
 
 
 def _ends_time(keys, end) -> bool:
@@ -714,8 +781,7 @@ def _minute_number(keys, j):
 @functools.lru_cache(maxsize=1 << 12)
 def _one_number(words: str):
     """The whole number the parser writes ``words`` as, when it writes them as one."""
-    from ovos_number_parser import numbers_to_digits
-    read = numbers_to_digits(words, lang="ar")
+    read = _digits(words, "ar")
     return int(read) if read.isascii() and read.isdigit() else None
 
 

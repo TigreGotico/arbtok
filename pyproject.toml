@@ -57,10 +57,13 @@ dependencies = [
     # From 0.24.0a1 the parser has cited Najdi cardinals under `ars`, so `dialect_numbers` speaks
     # 15 for ar-SA and ar-SA-x-najd as خمسطعش; an older parser gives the literary خمسة عشر.
     "ovos-number-parser>=0.24.0a1",
-    # Transitive through ovos-number-parser, floored here: from 0.19.21a1 numtag reads the
+    # `textnorm` reads number words through numtag directly. From 0.19.21a1 numtag reads the
     # spoken teens and tens (خمستاشر, احدعش), which the canonical ASR comparison reads as
-    # numbers. ovos-number-parser floors it lower.
-    "numtag>=0.19.21a1",
+    # numbers.
+    "numtag>=0.19.23a1",
+    # `textnorm` reads the part of the day after an hour, and a day word, through chronologia
+    # directly: `extract_timespan` and the `start_datetime` of its span.
+    "chronologia>=0.43.13a5",
     # Floored at the release whose Arabic `nice_time` reads the hour as a feminine ordinal
     # with the fractions of the hour and the period words: `normalize_for_tts` takes the
     # words of a clock time with a period mark, and of a time text2spoken leaves as written,
