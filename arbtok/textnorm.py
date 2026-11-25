@@ -1918,6 +1918,8 @@ _GLUED_UNIT = re.compile(r"(?<![0-9٠-٩A-Za-z.,٫٬])([0-9]+(?:[.,][0-9]+)*|[٠
 _CODE_CHARS = "A-Za-z0-9٠-٩۰-۹"
 _MIXED_CODE = re.compile(f"(?<![{_CODE_CHARS}])(?<!\\d[.٫])(?=[{_CODE_CHARS}]*[A-Z])"
                          f"(?=[{_CODE_CHARS}]*[0-9٠-٩۰-۹])[{_CODE_CHARS}]+(?![{_CODE_CHARS}])")
+_MIXED_CODE_AND_NUMBER = re.compile(f"(?P<code>{_MIXED_CODE.pattern})"
+                                    f"(?:-(?P<number>[0-9٠-٩۰-۹]+)(?![{_CODE_CHARS}.,٫٬-])|-(?=[0-9٠-٩۰-۹]))?")
 #: Abbreviations of a currency written in capitals that are not its ISO 4217 code. English
 #: Wikipedia's "Saudi riyal" gives the riyal's symbol as "SAR, SR, ر.س"
 #: (https://en.wikipedia.org/w/index.php?oldid=1252604873).
@@ -2654,10 +2656,12 @@ class TtsNorm:
     #: only next to a number, after شهر or joined to another month name, ``من مارس إلى
     #: مايو``, since it is also a verb. A date written in digits that the cardinals read is
     #: named before this rule runs, so its month takes the caller's word too; a date that
-    #: ``spoken_forms`` alone reads is named after it, in the date parser's words, and keeps
+    #: ``spoken_forms`` alone reads is named after it, in text2spoken's words, and keeps
     #: them. Arabic only.
     month_names: Tuple[str, ...] = ()
-    #: Dates, times, numbers and units as words in ``lang``.
+    #: Dates, times, numbers and units as words in ``lang``. Arabic reads through
+    #: text2spoken, in the lect of ``lang`` and, under ``dialect_numbers``, in the
+    #: colloquial register; arbtok.util reads the digits of a lect written in Latin script.
     spoken_forms: bool = True
     #: Tatweel dropped, NFC, shadda ordered before its vowel, the spellings of مائة settled.
     canonical_unicode: bool = True
@@ -2720,6 +2724,11 @@ class TtsNorm:
                 + (_describe_parser() if speaks else ""))
 
 
+_ANY_DIGIT = re.compile("[0-9٠-٩۰-۹]")
+#: What arbtok.util reads after text2spoken: a digit, or a percent sign with no number.
+_LEFT_FOR_UTIL = re.compile("[0-9٠-٩۰-۹%٪]")
+
+
 #: Names the rule set of :func:`normalize_for_tts`, computed the way
 #: :data:`ASR_NORM_VERSION` is. It covers the rules and their patterns. What a config
 #: carries as values is configuration and is outside it: :data:`ARAB_PHONE_REGIONS`,
@@ -2742,6 +2751,7 @@ TTS_NORM_VERSION = _rule_set([f.name for f in dataclasses.fields(TtsNorm)], _CON
                              _AMOUNT_AFTER, _IDENTIFIER_GAP,
                              _WRITTEN_MONTH, _MARCH_BEFORE, _MARCH_AFTER,
                              _TATWEEL_BEFORE_LATIN, _SMALL_LETTER_CODE, _SMALL_SUFFIX_CODE, _READING_DIGITS,
+                             _ANY_DIGIT, _LEFT_FOR_UTIL,
                              tuple(sorted(_not_code_letters("ar"))),
                              tuple(sorted(spelled_codes("ar").items())))
 _PLUGIN_DEFAULT = TtsNorm()
@@ -3092,6 +3102,17 @@ def _spoken_clock(m: re.Match, lang: str, config: TtsNorm) -> Optional[str]:
     period = bool(marker) or hour == 0 or hour > 12
     if config.colloquial_clock:
         return _colloquial_clock(hour, minute, period, lang, config)
+    if not (m["marker"] or m["arabic_marker"]):
+        spoken = _text2spoken(f"الساعة {hour}:{minute:02d}", _text2spoken_tag(lang) or "ar", config)
+        if not _ANY_DIGIT.search(spoken):
+            return spoken
+    # text2spoken reads a time only after الساعة, so the time is read with it. It leaves am
+    # and pm after a time as written, and one o'clock, 13:00 to 13:59, 0:00 to 0:59 and
+    # 12:45, a limit its Arabic page lists; nice_time reads those, and every period mark.
+    # TODO(text2spoken issue: CLOCK_NEEDS_WORD)
+    # TODO(text2spoken issue: CLOCK_SPELLING_OR_DOT) https://github.com/TigreGotico/text2spoken/issues/368
+    # TODO(text2spoken issue: CLOCK_PERIOD_MARK) https://github.com/TigreGotico/text2spoken/issues/333
+    # TODO(text2spoken issue: CLOCK_DOCUMENTED_GAP)
     from ovos_date_parser import nice_time
     return nice_time(datetime.datetime(2000, 1, 1, hour, minute), "ar", use_24hour=False, use_ampm=period)
 
@@ -3226,6 +3247,71 @@ def _speak_numbers(text: str, lang: str, config: TtsNorm) -> str:
     return _WESTERN_NUMBER.sub(western, text)
 
 
+@functools.lru_cache(maxsize=64)
+def _text2spoken_tag(lang: str) -> Optional[str]:
+    """The tag text2spoken reads the Arabic tag ``lang`` under: the ISO 639-3 code of the
+    lect's spec chain with the region of the spec or of ``lang``, ``arz-EG`` or ``ayl-LY``.
+    The macrolanguage, Standard Arabic and a clade with no code of its own give ``ar``. A
+    lect written in Latin script gives None: text2spoken reads Arabic script only."""
+    if lang in ("ar", "arb"):
+        # spec_for_lang loads every orthography2ipa spec on its first call.
+        return "ar"
+    from orthography2ipa import get
+    from arbtok.dialects import spec_for_lang
+    spec = spec_for_lang(lang)
+    if get(spec).script == "Latin":
+        return None
+    node, code = spec, None
+    while node and code is None:
+        code, node = get(node).iso639_3, get(node).parent
+    if code in (None, "ara", "arb"):
+        return "ar"
+    region = next((sub.upper() for tag in (spec, lang) for sub in tag.split("-x-")[0].split("-")[1:]
+                   if len(sub) == 2 and sub.isalpha()), None)
+    return f"{code}-{region}" if region else code
+
+
+def _text2spoken(text: str, tag: str, config: TtsNorm) -> str:
+    """``text`` as text2spoken reads it under ``tag``: in the colloquial register when
+    ``dialect_numbers`` asks for a lect's own words, else in the formal one."""
+    import text2spoken
+    register = "colloquial" if config.dialect_numbers else "formal"
+    return text2spoken.normalize(text, tag, text2spoken.NormalizationParams(register=register))
+
+
+@functools.lru_cache(maxsize=1)
+def _unit_symbol_after_number():
+    """The pattern of a CLDR unit symbol after a number, in any case. "am" and "pm" after
+    an hour are clock marks, which the clock pass reads first. ``m²`` is not ``m``."""
+    symbols = "|".join(re.escape(symbol) for symbol in sorted(cldr_units("ar"), key=len, reverse=True))
+    return re.compile(rf"(?<=[0-9٠-٩])(\s*)({symbols})(?![A-Za-z0-9²³])", re.IGNORECASE)
+
+
+def _unit_symbols_as_names(text: str) -> str:
+    """Each unit symbol after a number but ``km`` written as its CLDR name, for text2spoken
+    to read with the number: it reads ``km``, not the ``km`` of ``km/h``, and leaves the
+    other symbols as written. A
+    symbol in capitals the table does not write it in is a code, ``3 MG`` the make, unless
+    people write that unit in capitals, ``100 KM``.
+
+    TODO(text2spoken issue: UNIT_DECLINED) https://github.com/TigreGotico/text2spoken/issues/336
+    """
+    units = cldr_units("ar")
+    # casefold, as the pattern matches: the micro sign µ folds to the Greek μ.
+    folded = {symbol.casefold(): name for symbol, name in units.items()}
+
+    def name(m):
+        space, symbol = m.groups()
+        if symbol == "km" and not m.string.startswith("/", m.end()):
+            return m.group(0)
+        if symbol in units:
+            return (space or " ") + units[symbol]
+        if symbol.isupper() and symbol.lower() not in _CAPITALISED_UNITS:
+            return m.group(0)
+        return (space or " ") + folded[symbol.casefold()]
+    return _unit_symbol_after_number().sub(name, text)
+
+
 def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = None, **flags) -> str:
     """Prepare text to be spoken.
 
@@ -3277,10 +3363,17 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     row after a word that names a plate, ``اللوحة XTR 6477``, by the capitals' names and
     digit by digit. Arabic only.
 
-    ``spoken_forms`` writes dates, times, numbers and units as words in ``lang``.
-    In Arabic, a clock time written in digits is read first, before any rule reads its
-    digits: ``7:30 pm`` and ``19:30`` become ``الساعة السابعة والنصف مساءً``, in the words
-    of the date parser's ``nice_time``. A time is ``h:mm`` with two-digit minutes, an
+    ``spoken_forms`` writes dates, times, numbers and units as words in ``lang``. In
+    Arabic, text2spoken reads them, under the tag of the lect ``lang`` names and in the
+    colloquial register when ``dialect_numbers`` is on. A unit symbol it leaves as written
+    after a number is given its CLDR name first, and :func:`arbtok.util.normalize` reads
+    the digits it leaves: telephone numbers, codes and the like. It also reads the digits
+    of a lect written in Latin script, which text2spoken does not read.
+    In an Arabic-script lect, a clock time written in digits is read first, before any rule reads its
+    digits: ``19:30`` becomes ``الساعة السابعة والنصف مساء``, in text2spoken's words, and
+    ``7:30 pm`` becomes ``الساعة السابعة والنصف مساءً``, in the words of the date parser's
+    ``nice_time``, which reads a time with a period mark and a time text2spoken leaves as
+    written. A time is ``h:mm`` with two-digit minutes, an
     hour of the 12-hour clock followed by "am" or "pm", or either after a written
     ``الساعة``. ص and م after ``h:mm`` or after ``الساعة`` are "am" and "pm" in Arabic:
     ``4:15 م`` is ``الساعة الرابعة والربع مساءً``. A score written with two-digit minutes,
@@ -3454,8 +3547,15 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
         amounts = _not_code_letters("ar")
         text = _HYPHENATED_CODE.sub(lambda m: m.group(0) if m.group(1) in amounts else hold(m.group(0)), text)
     # What the code reading did not take is an identifier all the same, and no rule
-    # below reads a digit out of the middle of one.
-    text = _MIXED_CODE.sub(lambda m: hold(m.group(0)), text)
+    # below reads a digit out of the middle of one. A number joined to it by a hyphen is
+    # part of the label: it is read here in its citation form, or text2spoken reads the
+    # hyphen as a minus sign (JTD-KB20U-793456789) and gives the number the gender of the
+    # next word (BMW X5-3 جديدة).
+    def code_and_number(m):
+        if m.group("number") and config.spoken_forms and is_arabic_lang(lang):
+            return hold(f"{m.group('code')}-{_cardinal(m.group('number'), lang, config)}")
+        return hold(m.group(0))
+    text = _MIXED_CODE_AND_NUMBER.sub(code_and_number, text)
     if (config.cardinal_numbers or config.dialect_numbers or config.number_forms) and is_arabic_lang(lang):
         # Before any rule reads a digit of it: the cardinals would read each part on its
         # own and leave the separators between them, and a day after an identifier word
@@ -3494,12 +3594,29 @@ def normalize_for_tts(text: str, lang: str = "ar", config: Optional[TtsNorm] = N
     if config.cardinal_numbers or config.dialect_numbers or config.number_forms:
         text = _RIYAL_SIGN.sub(" ريال", text)
         text = _speak_numbers(text, lang, config)
-    if config.spoken_forms:
-        from arbtok.util import normalize as spoken
-        # The literary words, whatever lect the tag names: a lect's own numbers are
-        # dialect_numbers' to give, through the cardinals. Handed the tag itself, the
-        # number parser speaks Egyptian for "arz" and the literary words for "ar-EG".
-        text = spoken(text, "ar" if is_arabic_lang(lang) else lang)
+    if config.spoken_forms and is_arabic_lang(lang) and (tag := _text2spoken_tag(lang)):
+        text = _text2spoken(_unit_symbols_as_names(text), tag, config)
+        if _LEFT_FOR_UTIL.search(text):
+            # arbtok.util reads the digits text2spoken leaves as written: telephone numbers
+            # and codes, which text2spoken leaves by design, and the forms below, until
+            # text2spoken reads them. Where text2spoken reads part of a span, this pass
+            # completes it wrong; tests/test_text2spoken_fallbacks.py holds those as xfails.
+            # TODO(text2spoken issue: SPACE_GROUPED) https://github.com/TigreGotico/text2spoken/issues/148
+            # TODO(text2spoken issue: DATE_TWO_DIGIT_YEAR)
+            # TODO(text2spoken issue: DECIMAL_COMMA) https://github.com/TigreGotico/text2spoken/issues/370
+            # TODO(text2spoken issue: DECIMAL_DECLINED) https://github.com/TigreGotico/text2spoken/issues/371
+            # TODO(text2spoken issue: CODE_DIGIT_SUFFIX)
+            # TODO(text2spoken issue: LEADING_ZERO) https://github.com/TigreGotico/text2spoken/issues/366
+            # TODO(text2spoken issue: FRACTION_OTHER)
+            # TODO(text2spoken issue: NUMBER_AGAINST_WORD) https://github.com/TigreGotico/text2spoken/issues/367
+            # TODO(text2spoken issue: T2S_DECLINES_OTHER)
+            from arbtok.util import normalize
+            text = normalize(text, "ar")
+    elif config.spoken_forms:
+        # A tag that is not Arabic, or a lect written in Latin script, which text2spoken
+        # does not read.
+        from arbtok.util import normalize
+        text = normalize(text, "ar" if is_arabic_lang(lang) else lang)
     for placeholder, digits in held.items():
         text = text.replace(placeholder, digits)
     if config.canonical_unicode:
