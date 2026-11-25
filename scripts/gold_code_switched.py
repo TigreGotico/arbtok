@@ -213,7 +213,7 @@ def _refusal_reason(word: str, lect: str) -> str:
     """Which adapted segment(s) were projected onto the lect's nearest phonemes."""
     from arbtok.translit import nativize, DONOR_LANG
     from orthography2ipa import G2P
-    from orthography2ipa.inventory import phoneme_inventory, tokenize as ipa_tok
+    from orthography2ipa import phoneme_inventory, tokenize as ipa_tok
     try:
         donor_ipa = G2P(DONOR_LANG).transcribe_word(word)
         adapted = nativize(donor_ipa, lect)

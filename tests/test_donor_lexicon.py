@@ -42,7 +42,7 @@ def test_the_lexicon_ships_with_the_package():
 
 
 def test_the_bundled_file_is_a_valid_lexicon():
-    from orthography2ipa.lexicon import validate_lexicon_text
+    from orthography2ipa import validate_lexicon_text
     assert validate_lexicon_text(bundled_path().read_text(encoding="utf-8")) == []
 
 

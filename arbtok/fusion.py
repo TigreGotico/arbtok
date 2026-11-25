@@ -54,7 +54,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from orthography2ipa import get, underdetermined_positions
-from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
+from orthography2ipa import PhonetokTokenizer, TokenKind
 
 from arbtok.dialects import DEFAULT_LANG
 from arbtok.diacritize import (

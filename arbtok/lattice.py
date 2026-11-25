@@ -37,10 +37,10 @@ import unicodedata
 from typing import Dict, List, Sequence, Tuple
 
 from orthography2ipa import get
-from orthography2ipa.allophony import compile_allophone_rescorer
+from orthography2ipa import compile_allophone_rescorer
 from orthography2ipa.stress import is_cliticless
 from orthography2ipa.phonetok import Candidate, PhonetokTokenizer, SegmentSlot, _expand_arabic_gemination
-from orthography2ipa.rescorer import LatticeRescorer, RescoreContext
+from orthography2ipa import LatticeRescorer, RescoreContext
 
 from arbtok.constants import (
     ALEF_HAMZA_ABOVE,
