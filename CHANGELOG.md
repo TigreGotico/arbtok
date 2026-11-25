@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a17](https://github.com/TigreGotico/arbtok/tree/0.0.3a17) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a16...0.0.3a17)
+
+**Merged pull requests:**
+
+- refactor: read day words and day parts through chronologia directly [\#370](https://github.com/TigreGotico/arbtok/pull/370) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a16](https://github.com/TigreGotico/arbtok/tree/0.0.3a16) (2026-11-25)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a15...0.0.3a16)
