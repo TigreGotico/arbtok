@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a16](https://github.com/TigreGotico/arbtok/tree/0.0.3a16) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a15...0.0.3a16)
+
+**Merged pull requests:**
+
+- feat: read spoken\_forms numbers, dates and clock times through text2spoken [\#346](https://github.com/TigreGotico/arbtok/pull/346) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a15](https://github.com/TigreGotico/arbtok/tree/0.0.3a15) (2026-11-24)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a14...0.0.3a15)
