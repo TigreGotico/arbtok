@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a22](https://github.com/TigreGotico/arbtok/tree/0.0.3a22) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a21...0.0.3a22)
+
+**Merged pull requests:**
+
+- refactor: read language tags with the public linguatag.parse\_tag [\#382](https://github.com/TigreGotico/arbtok/pull/382) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a21](https://github.com/TigreGotico/arbtok/tree/0.0.3a21) (2026-11-25)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a20...0.0.3a21)
