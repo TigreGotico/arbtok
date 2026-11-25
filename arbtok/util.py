@@ -11,6 +11,7 @@ from contextlib import suppress
 from datetime import date
 from typing import Optional
 
+from linguatag import standardize_lang
 from ovos_date_parser import nice_time, nice_date
 from ovos_number_parser import pronounce_number, pronounce_fraction
 from ovos_number_parser.util import is_numeric
@@ -675,9 +676,10 @@ def _verbalize_residual_digits_ar(text: str) -> str:
 def normalize(text: str, lang: str) -> str:
     """*text* with its dates, times, units, numbers, fractions, contractions and titles
     written as words in *lang* (a tag such as "en" or "en-US")."""
+    lang = standardize_lang(lang)
     lang_code = lang.split("-")[0]
 
-    date_format = "MDY" if lang.lower() == "en-us" else "DMY"
+    date_format = "MDY" if lang == "en-US" else "DMY"
     with suppress(Exception):  # ovos-date-parser raises on a language it does not support
         text = _normalize_dates_and_times(text, lang, date_format)
 

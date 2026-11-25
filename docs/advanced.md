@@ -104,9 +104,9 @@ Key methods:
   via the bundled tashkeel model.
 - `phonemize_string(text, lang) -> str`, raw espeak IPA string.
 - `phonemize_to_list(text, lang="ar") -> List[str]`, that string as a char list.
-- `add_diacritics(text, lang="ar") -> str`, diacritize Arabic input (pass-through
-  for other langs).
-- `get_lang(target_lang) -> str`, closest supported espeak voice.
+- `add_diacritics(text, lang="ar") -> str`, diacritize input in any Arabic variety
+  (`linguatag.is_arabic_variety`); pass-through for other langs.
+- `get_lang(target_lang) -> str`, closest supported espeak voice; `en_GB` and `en-GB` name the same voice.
 
 `EspeakError` wraps a missing binary or a non-zero espeak exit.
 

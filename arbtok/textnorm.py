@@ -1963,9 +1963,9 @@ def spelled_codes(lang: str = "ar") -> Dict[str, str]:
     not a guess from the sentence around it. F is the exception and is unpointed, because
     a voice hears the pointed form as V.
     """
-    path = Path(__file__).parent / "data" / "tts_lexicons" / f"en-codes.{lang.split('-')[0]}.tsv"
-    if not path.is_file():
+    if lang != "ar" and not is_arabic_lang(lang):
         raise ValueError(f"no bundled code spellings for {lang!r}; put the terms in the config's lexicon")
+    path = Path(__file__).parent / "data" / "tts_lexicons" / "en-codes.ar.tsv"
     rows = (line.rstrip("\n").split("\t") for line in path.read_text(encoding="utf-8").splitlines()
             if line and not line.startswith("#"))
     return {character: pointed for character, _, pointed in rows}
@@ -2028,7 +2028,7 @@ def cldr_units(lang: str = "ar") -> Dict[str, str]:
     """Unit symbols as English writes them, ``km`` ``kg`` ``hp``, each mapped to the unit's
     name in ``lang`` from Unicode CLDR. For reading a unit that follows a number; a bare
     ``in`` or ``m`` in running text is not a unit, which is why this is not a lexicon."""
-    if lang.split("-")[0] != "ar":
+    if lang != "ar" and not is_arabic_lang(lang):
         raise ValueError(f"no bundled CLDR unit names for {lang!r}")
     rows = _term_rows("units-cldr")
     names = {r["cldr_key"].split("/")[2]: r["arabic_form"] for r in rows
@@ -3254,7 +3254,9 @@ def _text2spoken_tag(lang: str) -> Optional[str]:
     lect's spec chain with the region of the spec or of ``lang``, ``arz-EG`` or ``ayl-LY``.
     The macrolanguage, Standard Arabic and a clade with no code of its own give ``ar``. A
     lect written in Latin script gives None: text2spoken reads Arabic script only."""
-    if lang in ("ar", "arb"):
+    from linguatag import standardize_lang
+
+    if standardize_lang(lang) in ("ar", "arb"):
         # spec_for_lang loads every orthography2ipa spec on its first call.
         return "ar"
     from orthography2ipa import get

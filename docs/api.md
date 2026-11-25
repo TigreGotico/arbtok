@@ -227,14 +227,15 @@ underscore written for a hyphen (`ar_SA`) do not matter. `spec_for_lang` raises
 
 Each Latin capital and ASCII digit mapped to its spoken English name in pointed
 Arabic, except `F`, which is written unpointed (`إف`) because a Saudi Arabic TTS
-voice hears the pointed `إِفْ` as `في`. Raises `ValueError` for a language with no bundled table.
+voice hears the pointed `إِفْ` as `في`. Every Arabic variety (`is_arabic_lang`) reads this table. Raises `ValueError` for any other language.
 
 ### `cldr_units(lang="ar") -> Dict[str, str]`
 
 English unit symbols (`km`, `kg`, `hp`) mapped to the unit's Arabic name from Unicode
 CLDR. `normalize_for_tts` writes a symbol after a number that text2spoken leaves as
 written as its name from it, and `arbtok.util.normalize` reads a symbol after a number
-from it.
+from it. Every Arabic variety (`is_arabic_lang`) reads this table; any other language raises
+`ValueError`.
 
 ### `bundled_asr_lexicon(name="cars-sa")`, `bundled_tts_lexicon(name="cars-sa", pointed=True) -> Dict[str, str]`
 
@@ -249,7 +250,8 @@ the bundled lexicons, for a name that is not one.
 ### `normalize(text: str, lang: str) -> str`
 
 Expand contractions, titles, numbers, dates, times, units and fractions into
-spoken words for the given locale tag (`"ar"`, `"en"`, `"en-US"`, `"pt"`, …).
+spoken words for the given locale tag (`"ar"`, `"en"`, `"en-US"`, `"pt"`, …). The tag is
+read as `linguatag.standardize_lang` reads it, so `en_US`, `eng-US` and `en-Latn-US` are one tag.
 Date/time normalization is attempted and silently skipped where unsupported.
 
 ```python

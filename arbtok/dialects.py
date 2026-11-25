@@ -19,6 +19,10 @@ import warnings
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 from linguatag import closest_lang, lang_distance, standardize_lang
+from linguatag import bcp47
+
+# spec_for_lang parses every spec code on each call, and linguatag does not cache it.
+parse = functools.lru_cache(maxsize=None)(bcp47.parse)
 
 from arbtok.textnorm import is_arabic_lang
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
@@ -226,8 +230,8 @@ def _dialect_index(codes: Sequence[str]) -> Dict[str, str]:
 
     index: Dict[str, str] = {}
     for code in codes:
-        if "-x-" in code:
-            index.setdefault(code.split("-x-")[-1].lower(), code)
+        if private := parse(code).private:
+            index.setdefault(private[2:], code)
     for alias, tag in _DIALECT_NAME_ALIASES.items():
         target = resolve(tag)
         if target in codes:
@@ -243,8 +247,7 @@ def _exact_spec(tag: str, codes: Sequence[str]) -> Optional[str]:
     standardization and its curated bare-tag defaults exactly; only its
     nearest-language guess is refused here. So the key and every alias of a lect
     land on the same spec, whichever key the installed orthography2ipa uses. A
-    spec key wins over orthography2ipa's answer, because BCP-47 standardization
-    reads ``ARB`` as ``ar`` where the caller named the ``arb`` spec.
+    spec key, matched in any case, wins over orthography2ipa's answer.
 
     An Arabic tag that orthography2ipa names exactly but that is not an Arabic
     lect arbtok carries is read as MSA (:data:`DEFAULT_LANG`), with a warning.
@@ -422,7 +425,7 @@ def _closest_spec(normalized: str) -> str:
     #    a tag built from :func:`lect_code` names the variety it came from. A
     #    sub-lect named in a subtag, and a spec reached by dropping subtags
     #    (``afb-AE-x-cairo`` is ``afb-AE``), have already won above.
-    spec = _LANGUAGE_CODE_SPECS.get(normalized.lower().split("-")[0])
+    spec = _LANGUAGE_CODE_SPECS.get(core[0])
     if spec:
         return resolve(spec)
 
@@ -436,7 +439,7 @@ def _closest_spec(normalized: str) -> str:
     #    without ISO 639-3 keys gives MSA.
     nearest = resolve(normalized)
     if nearest in codes and (nearest != DEFAULT_LANG
-                             or normalized.split("-")[0].lower() == "ar"):
+                             or core[0] == "ar"):
         return nearest
 
     # 6. A script subtag on an Arabic variety picks no spec of its own. The tag
@@ -458,9 +461,8 @@ def _closest_spec(normalized: str) -> str:
     #    Hassaniya, ``mey-MR``).
     match = closest_lang(normalized, codes, max_distance=_MAX_SPEC_DISTANCE)
     if match in (None, DEFAULT_LANG):
-        language = core[0].lower()
         own = [code for code in codes
-               if code.split("-")[0].lower() == language and _reads_script(code, script)]
+               if parse(code).language == core[0] and _reads_script(code, script)]
         if own:
             return min(own, key=lambda code: lang_distance(normalized, code))
     return match or DEFAULT_LANG

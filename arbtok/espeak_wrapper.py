@@ -5,7 +5,7 @@ import subprocess
 from typing import List, Optional
 from typing import Tuple
 
-from linguatag import closest_lang
+from linguatag import closest_lang, is_arabic_variety, standardize_lang
 from quebra_frases import sentence_tokenize
 
 from arbtok.tashkeel import TashkeelDiacritizer
@@ -59,13 +59,12 @@ class EspeakPhonemizer:
         Raises:
             ValueError: If the language code is unsupported.
         """
-        if target_lang.lower() == "en-gb":
+        tag = standardize_lang(target_lang)
+        if tag == "en-GB":
             return "en-gb-x-rp"
         if target_lang in cls.ESPEAK_LANGS:
             return target_lang
-        if target_lang.lower().split("-")[0] in cls.ESPEAK_LANGS:
-            return target_lang.lower().split("-")[0]
-        return cls.match_lang(target_lang, cls.ESPEAK_LANGS)
+        return cls.match_lang(tag, cls.ESPEAK_LANGS)
 
     @property
     def tashkeel(self) -> TashkeelDiacritizer:
@@ -138,7 +137,7 @@ class EspeakPhonemizer:
         return list(self.phonemize_string(text, lang))
 
     def add_diacritics(self, text: str, lang: str= "ar") -> str:
-        if lang.startswith("ar"):
+        if is_arabic_variety(lang):
             return self.tashkeel.diacritize(text, pausal=self.pausal)
         return text
 
