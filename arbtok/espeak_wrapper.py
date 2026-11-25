@@ -64,9 +64,7 @@ class EspeakPhonemizer:
             return "en-gb-x-rp"
         if target_lang in cls.ESPEAK_LANGS:
             return target_lang
-        if tag.split("-")[0] in cls.ESPEAK_LANGS:
-            return tag.split("-")[0]
-        return cls.match_lang(target_lang, cls.ESPEAK_LANGS)
+        return cls.match_lang(tag, cls.ESPEAK_LANGS)
 
     @property
     def tashkeel(self) -> TashkeelDiacritizer:

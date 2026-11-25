@@ -19,7 +19,10 @@ import warnings
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 from linguatag import closest_lang, lang_distance, standardize_lang
-from linguatag.bcp47 import parse
+from linguatag import bcp47
+
+# spec_for_lang parses every spec code on each call, and linguatag does not cache it.
+parse = functools.lru_cache(maxsize=None)(bcp47.parse)
 
 from arbtok.textnorm import is_arabic_lang
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
@@ -244,8 +247,7 @@ def _exact_spec(tag: str, codes: Sequence[str]) -> Optional[str]:
     standardization and its curated bare-tag defaults exactly; only its
     nearest-language guess is refused here. So the key and every alias of a lect
     land on the same spec, whichever key the installed orthography2ipa uses. A
-    spec key wins over orthography2ipa's answer, because BCP-47 standardization
-    reads ``ARB`` as ``ar`` where the caller named the ``arb`` spec.
+    spec key, matched in any case, wins over orthography2ipa's answer.
 
     An Arabic tag that orthography2ipa names exactly but that is not an Arabic
     lect arbtok carries is read as MSA (:data:`DEFAULT_LANG`), with a warning.

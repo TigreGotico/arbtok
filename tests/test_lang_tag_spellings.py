@@ -6,7 +6,7 @@ from ovos_date_parser import nice_date
 from ovos_number_parser import pronounce_number
 
 from arbtok.espeak_wrapper import EspeakPhonemizer
-from arbtok.textnorm import cldr_units, spelled_codes
+from arbtok.textnorm import cldr_units, normalize_for_tts, spelled_codes
 from arbtok.util import normalize
 
 
@@ -34,8 +34,15 @@ def test_an_arabic_tag_in_any_spelling_reads_the_arabic_tables(tag):
 
 
 @pytest.mark.parametrize("tag", ["ara", "AR", "ar_SA", "AR_sa"])
-def test_modern_standard_arabic_in_any_spelling_names_its_units(tag):
-    assert normalize("5 km", tag) == "خمسة كيلومتر"
+def test_modern_standard_arabic_in_any_spelling_reads_like_ar(tag):
+    assert normalize("5 km", tag) == normalize("5 km", "ar")
+    assert "كيلومتر" in normalize("5 km", tag)
+
+
+@pytest.mark.xfail(strict=True, reason="TigreGotico/arbtok#373: normalize reads a counted unit "
+                   "in the singular; CLDR ar gives the few form for 3 to 10")
+def test_a_counted_unit_takes_its_cldr_plural():
+    assert normalize("5 km", "ar") == "خمسة كيلومترات"
 
 
 @pytest.mark.parametrize("tag", ["fa", "en", "arc", "arn", "mt"])
@@ -51,9 +58,21 @@ def test_british_english_in_any_spelling_names_the_rp_voice(tag):
     assert EspeakPhonemizer.get_lang(tag) == "en-gb-x-rp"
 
 
-@pytest.mark.parametrize("tag", ["pt_BR", "PT_br", "por-BR"])
-def test_a_region_spelled_with_an_underscore_names_the_voice_of_its_language(tag):
-    assert EspeakPhonemizer.get_lang(tag) == EspeakPhonemizer.get_lang("pt-BR")
+# The voices are espeak-ng's own names (ESPEAK_LANGS).
+@pytest.mark.parametrize("tag,voice", [
+    ("pt_BR", "pt-br"), ("PT_br", "pt-br"), ("por-BR", "pt-br"), ("pt-BR", "pt-br"),
+    ("fr_BE", "fr-be"), ("fr_CH", "fr-ch"), ("es_419", "es-419"), ("es_MX", "es-419"),
+    ("ru_LV", "ru-lv"), ("de-DE", "de"), ("pt", "pt"),
+])
+def test_a_tag_in_any_spelling_names_its_regional_voice(tag, voice):
+    assert EspeakPhonemizer.get_lang(tag) == voice
+
+
+@pytest.mark.parametrize("tag", ["arz-EG", "AR_sa", "ary", "apc"])
+def test_spelling_out_codes_reads_every_arabic_lect(tag):
+    spelled = normalize_for_tts("الرمز AB12 صحيح", tag, spell_out_codes=True)
+    assert "AB12" not in spelled
+    assert spelled == normalize_for_tts("الرمز AB12 صحيح", "ar", spell_out_codes=True)
 
 
 @pytest.mark.parametrize("tag,diacritized", [
