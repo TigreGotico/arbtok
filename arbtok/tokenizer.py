@@ -15,8 +15,8 @@ from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WA
                               SUN_LETTERS, CLITIC_BASES, PUNCT)
 from arbtok.stress import stress_words, stress_ipa, _first_segment_len
 from orthography2ipa import get
-from orthography2ipa.stress import is_cliticless
-from orthography2ipa.vowels import is_ipa_vowel
+from orthography2ipa import is_cliticless
+from orthography2ipa import is_ipa_vowel
 from arbtok.dialects import (VOWEL_MAP, ARABIC_TO_IPA_CONSONANTS, DIACRITIC_TO_IPA,
                              TANWIN_TO_IPA, WORD_EXCEPTIONS,
                              DEFAULT_LANG, consonant_ipa)
