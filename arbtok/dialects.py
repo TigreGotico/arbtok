@@ -19,10 +19,10 @@ import warnings
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 from linguatag import closest_lang, lang_distance, standardize_lang
-from linguatag import bcp47
+from linguatag import parse_tag
 
 # spec_for_lang parses every spec code on each call, and linguatag does not cache it.
-parse = functools.lru_cache(maxsize=None)(bcp47.parse)
+parse = functools.lru_cache(maxsize=None)(parse_tag)
 
 from arbtok.textnorm import is_arabic_lang
 from arbtok.constants import (B, T, DJ, X, D, R, Z, S, F, Q, K, M, N, H, LAM, WAW, YA,
