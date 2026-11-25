@@ -32,6 +32,12 @@ diac = TashkeelDiacritizer()
 print(diac.diacritize("قال الملك"))   # قَالَ المَلَكَ
 ```
 
+The default output keeps the case ending of the last word:
+
+```python
+print(diac.diacritize("كتاب جميل"))   # كِتَابٌ جَمِيلَ
+```
+
 ### `diacritize(text, pausal=False) -> str`
 
 Returns the input text with diacritics inserted.
@@ -162,4 +168,4 @@ diacritization failure passes the text through: the engine transcribes whatever
 diacritics the input carries.
 
 ---
-[← Quickstart](quickstart.md) · [Index](index.md) · [Rawi-lattice fusion →](rawi-fusion.md)
+[← Overview](overview.md) · [Index](index.md) · [Rawi-lattice fusion →](rawi-fusion.md)

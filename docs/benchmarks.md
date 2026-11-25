@@ -177,6 +177,12 @@ gold. Wiring `--lect` into CI against this gold would only gate arbtok against i
 own specs. `tests/test_lect_benchmark.py` pins that the runner works (2 lects × 3
 sentences, no network), not any score.
 
+## The test suite's gold
+
+The test suite pins a gold sentence set with a character error rate (CER) of at
+most 5% against the reference transcriptions, and it benchmarks against
+espeak-ng. See `tests/test_ipa_fuzzy.py`.
+
 ## IqraEval Qur'anic gold (`scripts/benchmark_iqraeval.py`)
 
 The gold is

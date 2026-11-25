@@ -26,6 +26,14 @@ That pulls the runtime deps (`numpy`, `onnxruntime`, `orthography2ipa`,
 `unicode-rbnf`, `ovos-utils`, `ovos-config`, `huggingface_hub`) and the bundled rawi diacritizer
 ensemble. `arbtok.__version__` is the installed version.
 
+`pip install arbtok` without `--pre` gives the latest stable release, which can
+lag behind the features that these pages describe.
+
+The diacritizer model ships inside the wheel. The default stem lexicon does not.
+If the file is not cached and the Hub cannot be reached, the first call that
+diacritizes raises `arbtok.ModelUnavailableError`. A lexicon that cannot be read
+for any other reason raises its base class, `arbtok.lexicon.LexiconUnavailable`.
+
 ## 2. The one call to know
 
 `ArbtokG2PPlugin` is the engine. Give it text, get IPA. It restores the missing
@@ -36,6 +44,10 @@ from arbtok.plugin import ArbtokG2PPlugin
 
 p = ArbtokG2PPlugin()
 print(p.transcribe("ذهب الولد الى المدرسة"))  # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
+```
+
+```python
+print(p.transcribe("كتاب جميل"))   # kiˈtaːb dʒaˈmiːl
 ```
 
 `ArbtokG2PPlugin()` with no argument transcribes Modern Standard Arabic. The input here is **bare**, no ḥarakāt, the way Arabic is normally typed. arbtok
@@ -56,6 +68,8 @@ from arbtok.plugin import ArbtokG2PPlugin
 najdi = ArbtokG2PPlugin(lang="ar-SA-x-najd")
 tunis = ArbtokG2PPlugin(lang="ar-TN")
 
+print(ArbtokG2PPlugin(lang="ar").transcribe("ذهب الولد الى المدرسة"))  # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
+print(ArbtokG2PPlugin(lang="ar-TN").transcribe("ذهب الولد الى المدرسة"))  # ˈðahab ˈalwalad ˈʔilɛː lˈmudrasa
 print(najdi.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈɡahawa fiː lˈbeːt
 print(tunis.transcribe("يشرب القهوة في البيت"))  # ˈjaʃrab alˈqahwa fiː lˈbiːt
 ```
@@ -93,6 +107,7 @@ no dialect model, go straight to `Sentence`:
 from arbtok.tokenizer import Sentence
 
 print(Sentence("قَالَ ٱلْمَلِكُ").ipa)        # ˈqaːla lˈmaliku
+print(Sentence("اَلسَّلَامُ عَلَيْكُمْ").ipa)  # assaˈlaːmu ʕaˈlajkum
 ```
 
 `Sentence` expects the vowels to be **written** as combining marks. Without them
@@ -108,6 +123,7 @@ speak MSA or a covered dialect, pull requests are very welcome.
 
 ## Where next
 
+- [overview.md](overview.md), what arbtok adds over orthography2ipa
 - [tashkeel.md](tashkeel.md), the flagship diacritizer and its lexicons
 - [rawi-fusion.md](rawi-fusion.md), how the diacritizer is scored, not just run
 - [dialects.md](dialects.md), varieties, resolution, and per-lect phonology
@@ -116,4 +132,4 @@ speak MSA or a covered dialect, pull requests are very welcome.
 - [advanced.md](advanced.md), token internals, espeak baseline, recipes, gotchas
 
 ---
-[Index](index.md) · [Diacritization →](tashkeel.md)
+[Index](index.md) · [Overview →](overview.md)

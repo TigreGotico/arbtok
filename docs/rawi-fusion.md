@@ -13,6 +13,36 @@ tashkeel** for every supported variety ([dialects.md](dialects.md) lists them).
 It runs entirely on the model arbtok bundles (`arbtok/_ensemble.py`): arbtok is
 self-contained, with no external diacritization package at runtime.
 
+## Dialect-aware tashkeel
+
+To our knowledge, arbtok is the only Arabic phonemizer whose diacritization is
+dialect-aware. Other pipelines run an MSA-trained diacritizer and then
+phonemize whatever it wrote. arbtok turns that pipeline around. The bundled rawi
+ensemble exposes its per-character **distribution**, and arbtok scores that
+distribution against the phonological licensing of **each variety**: the
+orthography2ipa grapheme table and the allophone rules of the target lect. The
+chosen tashkeel is the most probable reading of the model that the orthography
+of the dialect admits. This holds for every supported lect, from Najdi and
+Hejazi to Tunisian, Egyptian and the qeltu Iraqi of Mosul
+([dialects.md](dialects.md)).
+
+The same bare sentence receives marks and IPA that suit the variety:
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+bare = "ذهب الولد الى المدرسة"
+print(ArbtokG2PPlugin(lang="ar").transcribe(bare))     # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
+print(ArbtokG2PPlugin(lang="ar-TN").transcribe(bare))  # ˈðahab ˈalwalad ˈʔilɛː lˈmudrasa
+```
+
+The bare-input TTS gold has 33 lects with 20 sentences each. On that gold,
+scoring the ensemble distribution under dialect licensing gives a lower mean
+phoneme error rate per sentence than running the same ensemble as a free
+generator. The margin is largest on the lects that differ most from MSA, which
+shows that the licensing does the work. [The measured result](#the-measured-result)
+has the full table.
+
 ## The problem
 
 arbtok restores tashkeel with a model (the bundled rawi ensemble) and then

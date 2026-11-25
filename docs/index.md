@@ -14,9 +14,11 @@ The pages below follow the reading order, from the first call to the internals a
 | Page | What you get from it |
 |---|---|
 | [Quickstart](quickstart.md) | Install arbtok and phonemize a first Arabic sentence, bare or in a dialect |
+| [Overview](overview.md) | What arbtok adds over orthography2ipa, the three capabilities and the word lattice |
 | [Diacritization](tashkeel.md) | How the bundled model and the stem lexicon restore the missing short vowels |
 | [Rawi-lattice fusion](rawi-fusion.md) | How the diacritizer scores the readings that a variety's orthography admits |
 | [Varieties](dialects.md) | How a language tag resolves to a variety, and where each variety's phonology comes from |
+| [Waqf](waqf.md) | The pausal and full registers, and what a dialect lect keeps |
 | [Arabizi input](arabizi.md) | How Latin-script Arabic with digit consonants is detected and read |
 | [Text normalization](normalization.md) | Clean recognizer output for scoring, and expand written text into spoken words |
 | [Code-switched gold](gold-code-switched.md) | The gold set that pins the loanword nativization, row by row |
