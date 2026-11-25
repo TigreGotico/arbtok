@@ -42,7 +42,7 @@ def test_a_language_numtag_has_no_words_for_is_left_as_written():
 
 
 @pytest.mark.parametrize("word, day", [("اليوم", True), ("غدا", True), ("الخميس", True), ("كتاب", False),
-                                       ("١٢٣٤٥", False)])
+                                       ("١٢٣٤٥", False), ("ومارس", False)])
 def test_is_day(word, day):
     assert _is_day(word) is day
 
