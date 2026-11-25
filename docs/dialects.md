@@ -210,6 +210,7 @@ it.
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'maniɡar'  (Cairene stop ǧīm)
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar'  (Najdi affricate)
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("think")           # 'tink'     (interdental merger)
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("think")    # 'θink'     (Najdi keeps the interdental)
 ```
 
 ### The Maghreb borrows from French
