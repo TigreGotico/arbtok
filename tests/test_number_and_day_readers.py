@@ -1,6 +1,6 @@
-"""The readers in arbtok.textnorm that call numtag and chronologia directly give the values the
-ovos-number-parser and ovos-date-parser layers gave before. The expected values are the layers'
-own answers, written down before the layers were left."""
+"""The number and day readers in arbtok.textnorm. The day readers call chronologia directly, and
+give the values that the ovos-date-parser layer gave before. The expected values are that
+layer's own answers, written down before the change."""
 import pytest
 
 from arbtok.textnorm import (_hour_value, _is_day, _number_value, _numbers_to_digits, _one_number,

@@ -100,8 +100,8 @@ normalize_asr("الف او خمسمية", fix_asr_errors=True, spoken_numbers_to
 # '1000 او 500'
 ```
 
-Some spoken numbers read wrong or read no number. numtag reads the
-number words, and each of these gaps is an open numtag issue:
+Some spoken numbers read wrong or read no number. ovos-number-parser reads the
+number words through numtag, and each of these gaps is an open numtag issue:
 
 - The spoken teens احداشر and احداش (11), اطناش, اثناش and ثنعش (12), ثلطعش (13),
   ثمنطعش and ثمنتاشر (18) read no number
