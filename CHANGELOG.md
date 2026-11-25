@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a23](https://github.com/TigreGotico/arbtok/tree/0.0.3a23) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a22...0.0.3a23)
+
+**Merged pull requests:**
+
+- refactor: import orthography2ipa names from its public package [\#385](https://github.com/TigreGotico/arbtok/pull/385) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a22](https://github.com/TigreGotico/arbtok/tree/0.0.3a22) (2026-11-25)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a21...0.0.3a22)
