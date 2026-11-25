@@ -22,6 +22,17 @@ ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت")    # 'ˈbeː
 ArbtokG2PPlugin().transcribe_word("قَهْوَة")                      # 'ˈqahwa'  (MSA)
 ```
 
+The whole sentence shows the same split. Najdi reads qāf as /ɡ/, adds the
+epenthetic vowel of *gahawa* and keeps /eː/ in *bayt*. Tunisian keeps /q/ and
+monophthongizes *bayt* to /iː/:
+
+```python
+print(ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("يشرب القهوة في البيت"))
+# ˈjaʃrab alˈɡahawa fiː lˈbeːt
+print(ArbtokG2PPlugin(lang="ar-TN").transcribe("يشرب القهوة في البيت"))
+# ˈjaʃrab alˈqahwa fiː lˈbiːt
+```
+
 The variety may also ride on `WordContext.lang` per call, which overrides the
 instance default. An Arabic tag that names no Arabic spec narrows a subtag at a
 time (`ar-SA-x-najd` → `ar-SA` → `ar`) and ultimately falls back to the `ar` leaf,
@@ -54,6 +65,9 @@ import arbtok
 
 for lect in arbtok.supported_lects():
     print(lect.code, lect.tier)
+
+print(arbtok.supported_lects()[:2])
+# [Lect(code='aao', tier='stub'), Lect(code='abh', tier='stub')]
 ```
 
 The roster lists each variety by its canonical code. orthography2ipa keys a lect
@@ -167,6 +181,17 @@ lang→zone map, and the first ancestor carrying a table wins:
 | Maghrebi | `ar-x-maghrebi` | Kenstowicz & Louriz (2009). Ziadna (2018). Oueslati (2021). Heath (2020) |
 | default | `ar` | Watson (2002). Holes (2004) |
 
+Real Arabic text holds Latin-script words, such as *عندي meeting الساعة ٣*. The
+Najdi reading of the run is:
+
+```python
+print(ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("عندي meeting الساعة ٣"))
+# ˈʕindiː miːtinɡ asˈsaːʕa θˈθaːliθa
+```
+
+A lect with no table of its own, such as `ar-KW`, falls back to the conservative
+pan-Arabic default.
+
 Which leaves inherit which table is not listed here, and deliberately. The answer
 comes from orthography2ipa's genealogy, so it changes whenever that package ships
 a spec, and a written-out list would go wrong. Ask the code:
@@ -185,6 +210,7 @@ it.
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'maniɡar'  (Cairene stop ǧīm)
 ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar'  (Najdi affricate)
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("think")           # 'tink'     (interdental merger)
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("think")    # 'θink'     (Najdi keeps the interdental)
 ```
 
 ### The Maghreb borrows from French
@@ -422,4 +448,4 @@ default reads exactly like the setting working, and a comparison run that way wo
 compare one path with itself.
 
 ---
-[← Rawi-lattice fusion](rawi-fusion.md) · [Index](index.md) · [Arabizi input →](arabizi.md)
+[← Rawi-lattice fusion](rawi-fusion.md) · [Index](index.md) · [Waqf →](waqf.md)
