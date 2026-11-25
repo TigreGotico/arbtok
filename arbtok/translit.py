@@ -119,9 +119,9 @@ import unicodedata
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from orthography2ipa import G2P
-from orthography2ipa.distance import segment_distance
-from orthography2ipa.inventory import phoneme_inventory
-from orthography2ipa.inventory import tokenize as ipa_tokenize
+from orthography2ipa import segment_distance
+from orthography2ipa import phoneme_inventory
+from orthography2ipa import tokenize as ipa_tokenize
 
 from arbtok.donor_lexicon import donor_engine
 

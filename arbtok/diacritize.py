@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Sequence
 
 from orthography2ipa import get, underdetermined_positions
-from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
+from orthography2ipa import PhonetokTokenizer, TokenKind
 
 from arbtok.dialect_lexicon import DialectLexicon
 from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon

@@ -45,7 +45,7 @@ import functools
 import unicodedata
 from typing import TYPE_CHECKING, List, Sequence
 
-from orthography2ipa.plugins import SandhiPlugin
+from orthography2ipa import SandhiPlugin
 
 if TYPE_CHECKING:
     from orthography2ipa import Pipeline

@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from orthography2ipa import get
-from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
+from orthography2ipa import PhonetokTokenizer, TokenKind
 
 from arbtok.diacritize import LatticeDiacritizer, _skeleton_is_preserved
 from arbtok.dialect_lexicon import (

@@ -9,8 +9,8 @@ as a rescorer over the shared lattice, with a moon-letter control.
 import pytest
 
 from orthography2ipa import get
-from orthography2ipa.phonetok import PhonetokTokenizer
-from orthography2ipa.rescorer import LatticeRescorer
+from orthography2ipa import PhonetokTokenizer
+from orthography2ipa import LatticeRescorer
 
 from arbtok.constants import SUN_LETTERS
 from arbtok.lattice import (
