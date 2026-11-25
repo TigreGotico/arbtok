@@ -38,8 +38,8 @@ from typing import Dict, List, Sequence, Tuple
 
 from orthography2ipa import get
 from orthography2ipa import compile_allophone_rescorer
-from orthography2ipa.stress import is_cliticless
-from orthography2ipa.phonetok import Candidate, PhonetokTokenizer, SegmentSlot, _expand_arabic_gemination
+from orthography2ipa import is_cliticless
+from orthography2ipa import Candidate, PhonetokTokenizer, SegmentSlot, expand_arabic_gemination
 from orthography2ipa import LatticeRescorer, RescoreContext
 
 from arbtok.constants import (
@@ -404,7 +404,7 @@ def spec_word_exception(word: str, lang: str = DEFAULT_LANG):
     if hit is None:
         hit = exceptions.get(normalize_unicode(word))
     if hit is None:
-        hit = exceptions.get(_expand_arabic_gemination(normalize_unicode(word)))
+        hit = exceptions.get(expand_arabic_gemination(normalize_unicode(word)))
     return hit
 
 

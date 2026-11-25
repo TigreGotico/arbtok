@@ -17,10 +17,8 @@ wrong is one of the loudest cues of a non-native-sounding voice.
 from __future__ import annotations
 
 from orthography2ipa import get
-from orthography2ipa.vowels import is_ipa_vowel
-from orthography2ipa.stress import (
-    apply_stress_mark, detect_stress, detect_stress_by_weight, syllabify_ipa,
-)
+from orthography2ipa import is_ipa_vowel
+from orthography2ipa import apply_stress_mark, detect_stress, detect_stress_by_weight, syllabify_ipa
 
 from arbtok.dialects import DEFAULT_LANG
 
