@@ -659,17 +659,18 @@ def _period_hour(hour: int, word: str, evening: bool = False):
         return hour if 1 <= hour <= 11 else None
     if _folded(word) in _EVENING_WORDS:
         return hour + 12 if evening and 5 <= hour <= 7 else None
-    from ovos_date_parser import extract_datetime
-    read = extract_datetime(f"الساعة {hour} {word}", "ar", datetime.datetime(2000, 1, 1))
-    return read[0].hour if read and not read[1].strip() else None
+    from chronologia import extract_timespan
+    read = extract_timespan(f"الساعة {hour} {word}", "ar", datetime.datetime(2000, 1, 1))
+    start = read and read.span.start_datetime
+    return start.hour if start and not read.remainder.strip() else None
 
 
 @functools.lru_cache(maxsize=1 << 12)
 def _is_day(word: str) -> bool:
     """Whether the date parser reads ``word`` alone as a day: اليوم, غدا, الخميس."""
-    from ovos_date_parser import extract_datetime
-    read = extract_datetime(word, "ar", datetime.datetime(2000, 1, 1))
-    return bool(read) and not read[1].strip()
+    from chronologia import extract_timespan
+    read = extract_timespan(word, "ar", datetime.datetime(2000, 1, 1))
+    return read is not None and read.span.start_datetime is not None and not read.remainder.strip()
 
 
 def _ends_time(keys, end) -> bool:
