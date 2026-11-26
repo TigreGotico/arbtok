@@ -77,6 +77,8 @@ read.
 </picture>
 
 `img/plot_lect_benchmark.py` makes this figure from `benchmarks/lect_results.json`.
+The diacritized arm mostly measures self-consistency: the gold comes from the
+same spec rules that arbtok reads.
 
 Sorted best to worst by arbtok diacritized PER.
 
@@ -292,4 +294,4 @@ above), nothing is bundled or redistributed, and this doc states the gap
 rather than assuming a license.
 
 ---
-[← Advanced](advanced.md) · [Index](index.md)
+[← Advanced](advanced.md) · [Home](index.md)
