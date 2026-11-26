@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a27](https://github.com/TigreGotico/arbtok/tree/0.0.3a27) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a26...0.0.3a27)
+
+**Merged pull requests:**
+
+- docs: README, docs index, navigation and agent hints [\#393](https://github.com/TigreGotico/arbtok/pull/393) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a26](https://github.com/TigreGotico/arbtok/tree/0.0.3a26) (2026-11-26)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a25...0.0.3a26)
