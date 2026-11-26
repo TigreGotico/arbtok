@@ -47,7 +47,7 @@ from pathlib import Path
 from typing import Optional
 
 from orthography2ipa import G2P, Pipeline, load_lexicon, resolve, resolves_exactly
-from orthography2ipa.lexicon import lexicon_path
+from orthography2ipa import lexicon_path
 
 #: The donor whose lexicon is bundled. Kept in step with
 #: :data:`arbtok.translit.DONOR_LANG`.
