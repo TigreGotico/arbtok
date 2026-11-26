@@ -939,4 +939,4 @@ phones = Sentence(text).ipa
 - [advanced.md](advanced.md), internals and recipes
 
 ---
-[← Arabizi input](arabizi.md) · [Index](index.md) · [Code-switched gold →](gold-code-switched.md)
+[← Arabizi input](arabizi.md) · [Home](index.md) · [Code-switched gold →](gold-code-switched.md)

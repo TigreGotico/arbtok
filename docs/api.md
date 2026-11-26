@@ -353,4 +353,4 @@ release removes it. Nothing replaces it.
 - [advanced.md](advanced.md), internals, espeak baseline, recipes, gotchas
 
 ---
-[← Code-switched gold](gold-code-switched.md) · [Index](index.md) · [Advanced →](advanced.md)
+[← Code-switched gold](gold-code-switched.md) · [Home](index.md) · [Advanced →](advanced.md)

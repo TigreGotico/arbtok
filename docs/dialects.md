@@ -448,4 +448,4 @@ default reads exactly like the setting working, and a comparison run that way wo
 compare one path with itself.
 
 ---
-[← Rawi-lattice fusion](rawi-fusion.md) · [Index](index.md) · [Waqf →](waqf.md)
+[← Rawi-lattice fusion](rawi-fusion.md) · [Home](index.md) · [Waqf →](waqf.md)

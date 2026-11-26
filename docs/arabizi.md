@@ -126,4 +126,4 @@ The ceiling is the diacritizer and the dialect phonologies, not the input path. 
 rows stand as the acceptance test the pipeline has to earn.
 
 ---
-[← Waqf](waqf.md) · [Index](index.md) · [Text normalization →](normalization.md)
+[← Waqf](waqf.md) · [Home](index.md) · [Text normalization →](normalization.md)

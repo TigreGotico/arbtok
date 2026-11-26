@@ -63,4 +63,4 @@ Both modes run the same lattice and the same rescorers. The flag is consulted in
 one place, `arbtok.sandhi`, so the transform applies exactly once.
 
 ---
-[← Varieties](dialects.md) · [Index](index.md) · [Arabizi input →](arabizi.md)
+[← Varieties](dialects.md) · [Home](index.md) · [Arabizi input →](arabizi.md)

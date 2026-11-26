@@ -137,4 +137,4 @@ Key methods:
 - [tashkeel.md](tashkeel.md), diacritizer details
 
 ---
-[← API reference](api.md) · [Index](index.md) · [Per-lect benchmarks →](benchmarks.md)
+[← API reference](api.md) · [Home](index.md) · [Per-lect benchmarks →](benchmarks.md)

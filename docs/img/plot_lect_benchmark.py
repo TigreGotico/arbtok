@@ -16,14 +16,19 @@ ARMS = (("arbtok_diac", "arbtok, diacritized"), ("arbtok_undiac", "arbtok, bare"
         ("espeak", "espeak-ng (MSA voice)"))
 
 
-def draw(fig, theme):
+data = {"lects": codes,
+        "arms": {key: [lects[c][key]["per"] if lects[c][key] else None for c in codes]
+                 for key, _ in ARMS}}
+
+
+def draw(fig, theme, data):
     ax = fig.subplots()
-    y = range(len(codes))
+    y = range(len(data["lects"]))
     for colour, (key, label) in zip(theme["series"], ARMS):
-        ax.scatter([lects[c][key]["per"] for c in codes if lects[c][key]],
-                   [i for i, c in zip(y, codes) if lects[c][key]],
+        points = [(per, i) for i, per in zip(y, data["arms"][key]) if per is not None]
+        ax.scatter([p for p, _ in points], [i for _, i in points],
                    s=22, color=colour, label=label, zorder=3)
-    ax.set_yticks(list(y), codes, fontsize=7)
+    ax.set_yticks(list(y), data["lects"], fontsize=7)
     ax.invert_yaxis()
     ax.set_xlim(0, None)
     ax.set_xlabel("PER against the o2i Arabic TTS gold (lower is better)")
@@ -32,4 +37,4 @@ def draw(fig, theme):
     ax.legend(loc="lower right", fontsize=8)
 
 
-save(str(ROOT / "docs" / "img" / "lect-benchmark"), draw, width=7, height=7.5)
+save(str(ROOT / "docs" / "img" / "lect-benchmark"), draw, data, width=7, height=7.5)

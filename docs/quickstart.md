@@ -132,4 +132,4 @@ speak MSA or a covered dialect, pull requests are very welcome.
 - [advanced.md](advanced.md), token internals, espeak baseline, recipes, gotchas
 
 ---
-[Index](index.md) · [Overview →](overview.md)
+[Home](index.md) · [Overview →](overview.md)

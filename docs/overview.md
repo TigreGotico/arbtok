@@ -131,4 +131,4 @@ diacritizes bare text first, inside the wheel.
   diacritization library that trains the rawi model family that arbtok bundles.
 
 ---
-[← Quickstart](quickstart.md) · [Index](index.md) · [Diacritization →](tashkeel.md)
+[← Quickstart](quickstart.md) · [Home](index.md) · [Diacritization →](tashkeel.md)

@@ -217,4 +217,4 @@ the candidate set be the dialect's admissible vowels directly, rather than rawi'
 top-`k` filtered after the fact.
 
 ---
-[← Diacritization](tashkeel.md) · [Index](index.md) · [Varieties →](dialects.md)
+[← Diacritization](tashkeel.md) · [Home](index.md) · [Varieties →](dialects.md)
