@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a28](https://github.com/TigreGotico/arbtok/tree/0.0.3a28) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a27...0.0.3a28)
+
+**Merged pull requests:**
+
+- test: strict xfails fail only on their assertion [\#399](https://github.com/TigreGotico/arbtok/pull/399) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a27](https://github.com/TigreGotico/arbtok/tree/0.0.3a27) (2026-11-26)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a26...0.0.3a27)
