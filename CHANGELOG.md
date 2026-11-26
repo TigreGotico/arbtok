@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a26](https://github.com/TigreGotico/arbtok/tree/0.0.3a26) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a25...0.0.3a26)
+
+**Merged pull requests:**
+
+- docs\(benchmarks\): caveat under the figure, Home footer [\#391](https://github.com/TigreGotico/arbtok/pull/391) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a25](https://github.com/TigreGotico/arbtok/tree/0.0.3a25) (2026-11-26)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a24...0.0.3a25)
