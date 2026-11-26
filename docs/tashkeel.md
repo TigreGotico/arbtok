@@ -168,4 +168,4 @@ diacritization failure passes the text through: the engine transcribes whatever
 diacritics the input carries.
 
 ---
-[← Overview](overview.md) · [Index](index.md) · [Rawi-lattice fusion →](rawi-fusion.md)
+[← Overview](overview.md) · [Home](index.md) · [Rawi-lattice fusion →](rawi-fusion.md)

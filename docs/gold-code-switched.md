@@ -159,4 +159,4 @@ python scripts/gold_code_switched.py validate [lect ...]  # CI gate (also in pyt
 `tests/test_gold_code_switched.py` runs the gate in CI, parameterized per lect.
 
 ---
-[← Text normalization](normalization.md) · [Index](index.md) · [API reference →](api.md)
+[← Text normalization](normalization.md) · [Home](index.md) · [API reference →](api.md)
