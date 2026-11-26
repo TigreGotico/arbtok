@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a25](https://github.com/TigreGotico/arbtok/tree/0.0.3a25) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a24...0.0.3a25)
+
+**Merged pull requests:**
+
+- docs\(benchmarks\): commit the per-lect results and plot them [\#389](https://github.com/TigreGotico/arbtok/pull/389) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a24](https://github.com/TigreGotico/arbtok/tree/0.0.3a24) (2026-11-26)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a23...0.0.3a24)
