@@ -105,7 +105,7 @@ dependencies = [
     # names apc-SY and not apc. From 7.124.27a2 an Arabic tag whose region no Arabic spec names
     # resolves to `ar`, where 7.124.25a2 gives `arz-EG` for `ar-ZZ`. The Najdi spec reads /aj aw/
     # as [eː oː], which the code-switched gold pins.
-    "orthography2ipa>=7.130.1a2",
+    "orthography2ipa>=7.131.0a2",
     "huggingface_hub",
 ]
 
