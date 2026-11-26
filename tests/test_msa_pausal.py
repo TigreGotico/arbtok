@@ -445,7 +445,7 @@ def test_long_narrative_sequence():
 # ─── genuinely blocked cases (strict xfail, precise reasons) ─────────────
 
 
-@pytest.mark.xfail(strict=True,
+@pytest.mark.xfail(raises=AssertionError, strict=True,
                    reason="cross-proclitic waṣl elision (wa+ismuhu → "
                           "wasmuhu) is a sentence-seam rule not yet applied "
                           "inside a joined token — roadmap E2; engine reads "
@@ -456,7 +456,7 @@ def test_wasl_through_joined_proclitic():
     check("وَاسْمُه", "wasmuhu")
 
 
-@pytest.mark.xfail(strict=True,
+@pytest.mark.xfail(raises=AssertionError, strict=True,
                    reason="waṣl elision across a SPACE-separated proclitic "
                           "(bi + ismi → bismi) is cross-word — roadmap E2; "
                           "engine keeps the helper vowel: 'bi ismi'")
@@ -465,7 +465,7 @@ def test_wasl_across_space():
     check("بِ اسْمِ", "bismi")
 
 
-@pytest.mark.xfail(strict=True,
+@pytest.mark.xfail(raises=AssertionError, strict=True,
                    reason="second word writes no shadda on the sun letter "
                           "(الشَجَرَة) and the waṣl runs through joined "
                           "wa- — both cross-word/lexical gaps (E2); legacy "
@@ -476,7 +476,7 @@ def test_sun_assimilation_through_joined_wa():
     check("الشَّمْس وَالشَجَرَة", "aʃʃams waʃʃadʒara")
 
 
-@pytest.mark.xfail(strict=True,
+@pytest.mark.xfail(raises=AssertionError, strict=True,
                    reason="deficient spelling: no kasra/wāw vocalisation "
                           "written on سُيوف; reading /sujuːf/ is a lexical "
                           "fact the bare Sentence path (no diacritizer) "
@@ -486,7 +486,7 @@ def test_deficiently_spelled_plural():
     check("سُيوف", "sujuːf")
 
 
-@pytest.mark.xfail(strict=True,
+@pytest.mark.xfail(raises=AssertionError, strict=True,
                    reason="phonotactic-repair epenthesis for an illegal "
                           "initial cluster is unimplemented; engine emits "
                           "the raw cluster 'str'")
@@ -497,7 +497,7 @@ def test_epenthesis_synthetic_cluster():
     check("سْتْر", "sitar")
 
 
-@pytest.mark.xfail(strict=True,
+@pytest.mark.xfail(raises=AssertionError, strict=True,
                    reason="prothetic /i/ before an initial sukūn cluster "
                           "(مْسَلَّة → imsalla) is unimplemented; legacy "
                           "gold 'imsallːa' also carried a spurious length "

@@ -59,7 +59,7 @@ def pairs(topic, kind, rows):
         opts = extra[0] if extra else {}
         row_id = f"{topic}-{kind}-{n:02d}"
         reason = opts.get("gap") or NUMTAG_GAPS.get(row_id)
-        marks = [pytest.mark.xfail(strict=True, reason=reason)] if reason else []
+        marks = [pytest.mark.xfail(raises=AssertionError, strict=True, reason=reason)] if reason else []
         out.append(pytest.param(written, heard, id=row_id, marks=marks))
     return out
 

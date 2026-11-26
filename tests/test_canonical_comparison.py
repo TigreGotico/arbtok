@@ -204,7 +204,7 @@ NUMTAG_GAPS = dict.fromkeys(
 
 
 @pytest.mark.parametrize("written, heard", [
-    pytest.param(w, h, id=w, marks=[pytest.mark.xfail(strict=True, reason=NUMTAG_GAPS[w])] if w in NUMTAG_GAPS else [])
+    pytest.param(w, h, id=w, marks=[pytest.mark.xfail(raises=AssertionError, strict=True, reason=NUMTAG_GAPS[w])] if w in NUMTAG_GAPS else [])
     for w, h in SAME])
 def test_the_same_speech_written_two_ways_scores_zero(written, heard):
     assert normalize_asr(written, CER_CANONICAL) == normalize_asr(heard, CER_CANONICAL)

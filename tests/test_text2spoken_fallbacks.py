@@ -67,7 +67,7 @@ def test_text2spoken_still_leaves_the_fallback_form(cls):
 
 
 @pytest.mark.parametrize("cls", [
-    pytest.param(cls, marks=pytest.mark.xfail(strict=True, reason=MISREAD[cls])) if cls in MISREAD else cls
+    pytest.param(cls, marks=pytest.mark.xfail(raises=AssertionError, strict=True, reason=MISREAD[cls])) if cls in MISREAD else cls
     for cls in FALLBACKS])
 def test_the_fallback_reads_the_form(cls):
     _, text, _, reading = FALLBACKS[cls]
@@ -181,7 +181,7 @@ def test_a_number_after_a_label_word_keeps_its_citation_form(text, number):
 
 # A number that names a thing is said in its citation form, whatever word follows it
 # (Ryding 2005, p. 335).
-@pytest.mark.xfail(strict=True, reason="text2spoken takes the gender of the next word: "
+@pytest.mark.xfail(raises=AssertionError, strict=True, reason="text2spoken takes the gender of the next word: "
                    "https://github.com/TigreGotico/text2spoken/issues/535")
 @pytest.mark.parametrize("text, number", [
     ("الغرفة 205 مشغولة", "مئتان وخمسة"),
