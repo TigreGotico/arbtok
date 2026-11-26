@@ -39,7 +39,7 @@ def test_modern_standard_arabic_in_any_spelling_reads_like_ar(tag):
     assert "كيلومتر" in normalize("5 km", tag)
 
 
-@pytest.mark.xfail(strict=True, reason="TigreGotico/arbtok#373: normalize reads a counted unit "
+@pytest.mark.xfail(raises=AssertionError, strict=True, reason="TigreGotico/arbtok#373: normalize reads a counted unit "
                    "in the singular; CLDR ar gives the few form for 3 to 10")
 def test_a_counted_unit_takes_its_cldr_plural():
     assert normalize("5 km", "ar") == "خمسة كيلومترات"

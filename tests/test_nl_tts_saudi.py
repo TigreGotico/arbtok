@@ -73,7 +73,7 @@ def cases(topic, profile, rows):
     for n, (written, said, *extra) in enumerate(rows, 1):
         opts = extra[0] if extra else {}
         slug = f"{topic}-{profile}-{n:02d}" + (f"-convention-{opts['note']}" if "note" in opts else "")
-        marks = [pytest.mark.xfail(strict=True, reason=opts["gap"])] if "gap" in opts else []
+        marks = [pytest.mark.xfail(raises=AssertionError, strict=True, reason=opts["gap"])] if "gap" in opts else []
         out.append(pytest.param(profile, written, said, id=slug, marks=marks))
     return out
 

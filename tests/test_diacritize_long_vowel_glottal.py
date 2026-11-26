@@ -7,7 +7,7 @@ seats a hamza, so a bare و became ؤ. The restoration exists for alif, where a 
 really does leave the hamza off (اكل for أكل), and is now limited to it -- on و or ي a
 restored hamza is not a missing mark, it is a different letter.
 
-Fixed in `arbtok/fusion.py`. These were `xfail(strict=True)` before the fix and are
+Fixed in `arbtok/fusion.py`. These were `xfail(raises=AssertionError, strict=True)` before the fix and are
 plain assertions now; the one that remains xfail is a different disagreement, named
 below. The five native controls must keep passing, because a fix that changed them
 would be trading one defect for a worse one.
@@ -60,7 +60,7 @@ def test_the_combined_path_agrees_with_its_own_two_halves(word, correct):
     assert _plugin(True).transcribe(word) == correct
 
 
-@pytest.mark.xfail(strict=True, reason="fusion writes الْمُوبَايْل where the lattice "
+@pytest.mark.xfail(raises=AssertionError, strict=True, reason="fusion writes الْمُوبَايْل where the lattice "
                                        "writes الْمُوبَايِل -- a ḥaraka disagreement "
                                        "between the two diacritizers, not the hamza; "
                                        "the bare موبايل reads muːˈbaːjl in both, so "
