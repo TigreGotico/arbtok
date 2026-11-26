@@ -294,4 +294,4 @@ above), nothing is bundled or redistributed, and this doc states the gap
 rather than assuming a license.
 
 ---
-[← Advanced](advanced.md) · [Index](index.md)
+[← Advanced](advanced.md) · [Home](index.md)
