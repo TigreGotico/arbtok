@@ -1,0 +1,603 @@
+{
+  "gold": "orthography2ipa/data/gold/arabic_tts (o2i #358)",
+  "provenance": "LLM-generated from cited spec rules; engine-similarity, not native-validated ground truth",
+  "espeak": "ar (MSA) voice for every lect — no dialect voices exist",
+  "lexicon": "hf://TigreGotico/arabic-stem-lexicon/ar-stems.tsv",
+  "pausal": true,
+  "lects": {
+    "acm-IQ": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0029717682020802376,
+        "wer": 0.009433962264150943
+      },
+      "arbtok_undiac": {
+        "per": 0.14710252600297177,
+        "wer": 0.5188679245283019
+      },
+      "undiac_delta_per": 0.14413075780089155,
+      "undiac_delta_wer": 0.5094339622641509,
+      "espeak": {
+        "per": 0.2585438335809807,
+        "wer": 0.7735849056603774
+      }
+    },
+    "acw-SA": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0016051364365971107,
+        "wer": 0.009615384615384616
+      },
+      "arbtok_undiac": {
+        "per": 0.09470304975922954,
+        "wer": 0.33653846153846156
+      },
+      "undiac_delta_per": 0.09309791332263243,
+      "undiac_delta_wer": 0.3269230769230769,
+      "espeak": {
+        "per": 0.19743178170144463,
+        "wer": 0.5384615384615384
+      }
+    },
+    "acx-OM": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.10093167701863354,
+        "wer": 0.3394495412844037
+      },
+      "undiac_delta_per": 0.10093167701863354,
+      "undiac_delta_wer": 0.3394495412844037,
+      "espeak": {
+        "per": 0.18012422360248448,
+        "wer": 0.5321100917431193
+      }
+    },
+    "aeb-TN": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0013157894736842105,
+        "wer": 0.007751937984496124
+      },
+      "arbtok_undiac": {
+        "per": 0.11842105263157894,
+        "wer": 0.4418604651162791
+      },
+      "undiac_delta_per": 0.11710526315789473,
+      "undiac_delta_wer": 0.43410852713178294,
+      "espeak": {
+        "per": 0.20657894736842106,
+        "wer": 0.6511627906976745
+      }
+    },
+    "afb-AE": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.012326656394453005,
+        "wer": 0.07407407407407407
+      },
+      "arbtok_undiac": {
+        "per": 0.15408320493066255,
+        "wer": 0.5092592592592593
+      },
+      "undiac_delta_per": 0.14175654853620953,
+      "undiac_delta_wer": 0.43518518518518523,
+      "espeak": {
+        "per": 0.275808936825886,
+        "wer": 0.6759259259259259
+      }
+    },
+    "afb-BH": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.020249221183800622,
+        "wer": 0.12149532710280374
+      },
+      "arbtok_undiac": {
+        "per": 0.16822429906542055,
+        "wer": 0.4953271028037383
+      },
+      "undiac_delta_per": 0.14797507788161993,
+      "undiac_delta_wer": 0.37383177570093457,
+      "espeak": {
+        "per": 0.2616822429906542,
+        "wer": 0.6728971962616822
+      }
+    },
+    "afb-KW": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.013201320132013201,
+        "wer": 0.0761904761904762
+      },
+      "arbtok_undiac": {
+        "per": 0.16831683168316833,
+        "wer": 0.5142857142857142
+      },
+      "undiac_delta_per": 0.15511551155115513,
+      "undiac_delta_wer": 0.43809523809523804,
+      "espeak": {
+        "per": 0.2953795379537954,
+        "wer": 0.7428571428571429
+      }
+    },
+    "afb-QA": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.014184397163120567,
+        "wer": 0.0851063829787234
+      },
+      "arbtok_undiac": {
+        "per": 0.15070921985815602,
+        "wer": 0.44680851063829785
+      },
+      "undiac_delta_per": 0.13652482269503546,
+      "undiac_delta_wer": 0.36170212765957444,
+      "espeak": {
+        "per": 0.2553191489361702,
+        "wer": 0.7978723404255319
+      }
+    },
+    "afb-SA-x-sharqiya": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.01984732824427481,
+        "wer": 0.12037037037037036
+      },
+      "arbtok_undiac": {
+        "per": 0.13435114503816795,
+        "wer": 0.4444444444444444
+      },
+      "undiac_delta_per": 0.11450381679389314,
+      "undiac_delta_wer": 0.32407407407407407,
+      "espeak": {
+        "per": 0.23206106870229007,
+        "wer": 0.5833333333333334
+      }
+    },
+    "afb": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.020477815699658702,
+        "wer": 0.125
+      },
+      "arbtok_undiac": {
+        "per": 0.1825938566552901,
+        "wer": 0.6041666666666666
+      },
+      "undiac_delta_per": 0.1621160409556314,
+      "undiac_delta_wer": 0.47916666666666663,
+      "espeak": {
+        "per": 0.2883959044368601,
+        "wer": 0.7395833333333334
+      }
+    },
+    "apc-JO": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.1316818774445893,
+        "wer": 0.504
+      },
+      "undiac_delta_per": 0.1316818774445893,
+      "undiac_delta_wer": 0.504,
+      "espeak": {
+        "per": 0.17470664928292046,
+        "wer": 0.48
+      }
+    },
+    "apc-LB": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.006060606060606061,
+        "wer": 0.03669724770642202
+      },
+      "arbtok_undiac": {
+        "per": 0.1590909090909091,
+        "wer": 0.5412844036697247
+      },
+      "undiac_delta_per": 0.15303030303030302,
+      "undiac_delta_wer": 0.5045871559633027,
+      "espeak": {
+        "per": 0.2606060606060606,
+        "wer": 0.6697247706422018
+      }
+    },
+    "apc-PS": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0016863406408094434,
+        "wer": 0.009900990099009901
+      },
+      "arbtok_undiac": {
+        "per": 0.12141652613827993,
+        "wer": 0.5643564356435643
+      },
+      "undiac_delta_per": 0.11973018549747048,
+      "undiac_delta_wer": 0.5544554455445544,
+      "espeak": {
+        "per": 0.19561551433389546,
+        "wer": 0.4752475247524752
+      }
+    },
+    "apc-SY": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.1460823373173971,
+        "wer": 0.5365853658536586
+      },
+      "undiac_delta_per": 0.1460823373173971,
+      "undiac_delta_wer": 0.5365853658536586,
+      "espeak": {
+        "per": 0.23107569721115537,
+        "wer": 0.5853658536585366
+      }
+    },
+    "apc": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.16859504132231404,
+        "wer": 0.6464646464646465
+      },
+      "undiac_delta_per": 0.16859504132231404,
+      "undiac_delta_wer": 0.6464646464646465,
+      "espeak": {
+        "per": 0.2611570247933884,
+        "wer": 0.6262626262626263
+      }
+    },
+    "apd-SD": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.10804321728691477,
+        "wer": 0.38345864661654133
+      },
+      "undiac_delta_per": 0.10804321728691477,
+      "undiac_delta_wer": 0.38345864661654133,
+      "espeak": {
+        "per": 0.21608643457382953,
+        "wer": 0.5338345864661654
+      }
+    },
+    "ar-IQ-x-qeltu": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.12368024132730016,
+        "wer": 0.45794392523364486
+      },
+      "undiac_delta_per": 0.12368024132730016,
+      "undiac_delta_wer": 0.45794392523364486,
+      "espeak": {
+        "per": 0.20211161387631976,
+        "wer": 0.4953271028037383
+      }
+    },
+    "ar-LY": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.16986706056129985,
+        "wer": 0.5403225806451613
+      },
+      "undiac_delta_per": 0.16986706056129985,
+      "undiac_delta_wer": 0.5403225806451613,
+      "espeak": {
+        "per": 0.19202363367799113,
+        "wer": 0.532258064516129
+      }
+    },
+    "ar-SA-x-rijal-alma": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0030349013657056147,
+        "wer": 0.017857142857142856
+      },
+      "arbtok_undiac": {
+        "per": 0.08801213960546282,
+        "wer": 0.3125
+      },
+      "undiac_delta_per": 0.08497723823975721,
+      "undiac_delta_wer": 0.29464285714285715,
+      "espeak": {
+        "per": 0.21851289833080426,
+        "wer": 0.5089285714285714
+      }
+    },
+    "ar-x-maghrebi": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.16838487972508592,
+        "wer": 0.5510204081632653
+      },
+      "undiac_delta_per": 0.16838487972508592,
+      "undiac_delta_wer": 0.5510204081632653,
+      "espeak": {
+        "per": 0.17010309278350516,
+        "wer": 0.46938775510204084
+      }
+    },
+    "ar-x-mashriqi": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.12626262626262627,
+        "wer": 0.4020618556701031
+      },
+      "undiac_delta_per": 0.12626262626262627,
+      "undiac_delta_wer": 0.4020618556701031,
+      "espeak": {
+        "per": 0.19865319865319866,
+        "wer": 0.5360824742268041
+      }
+    },
+    "ar-x-peninsul": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0016750418760469012,
+        "wer": 0.010101010101010102
+      },
+      "arbtok_undiac": {
+        "per": 0.09212730318257957,
+        "wer": 0.31313131313131315
+      },
+      "undiac_delta_per": 0.09045226130653267,
+      "undiac_delta_wer": 0.30303030303030304,
+      "espeak": {
+        "per": 0.18425460636515914,
+        "wer": 0.48484848484848486
+      }
+    },
+    "ar": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.04403866809881848,
+        "wer": 0.2076923076923077
+      },
+      "arbtok_undiac": {
+        "per": 0.1686358754027927,
+        "wer": 0.8153846153846154
+      },
+      "undiac_delta_per": 0.12459720730397422,
+      "undiac_delta_wer": 0.6076923076923076,
+      "espeak": {
+        "per": 0.15574650912996776,
+        "wer": 0.5615384615384615
+      }
+    },
+    "arb": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.043820224719101124,
+        "wer": 0.216
+      },
+      "arbtok_undiac": {
+        "per": 0.13820224719101123,
+        "wer": 0.84
+      },
+      "undiac_delta_per": 0.0943820224719101,
+      "undiac_delta_wer": 0.624,
+      "espeak": {
+        "per": 0.16404494382022472,
+        "wer": 0.544
+      }
+    },
+    "arq-DZ": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.13983739837398373,
+        "wer": 0.4672897196261682
+      },
+      "undiac_delta_per": 0.13983739837398373,
+      "undiac_delta_wer": 0.4672897196261682,
+      "espeak": {
+        "per": 0.17398373983739837,
+        "wer": 0.4485981308411215
+      }
+    },
+    "ars-SA-x-qassim": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0015105740181268882,
+        "wer": 0.008695652173913044
+      },
+      "arbtok_undiac": {
+        "per": 0.09516616314199396,
+        "wer": 0.3565217391304348
+      },
+      "undiac_delta_per": 0.09365558912386707,
+      "undiac_delta_wer": 0.34782608695652173,
+      "espeak": {
+        "per": 0.22507552870090636,
+        "wer": 0.5391304347826087
+      }
+    },
+    "ars-SA": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0448,
+        "wer": 0.125
+      },
+      "arbtok_undiac": {
+        "per": 0.1264,
+        "wer": 0.33653846153846156
+      },
+      "undiac_delta_per": 0.0816,
+      "undiac_delta_wer": 0.21153846153846156,
+      "espeak": {
+        "per": 0.2,
+        "wer": 0.5384615384615384
+      }
+    },
+    "ary-MA": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.16138763197586728,
+        "wer": 0.5535714285714286
+      },
+      "undiac_delta_per": 0.16138763197586728,
+      "undiac_delta_wer": 0.5535714285714286,
+      "espeak": {
+        "per": 0.1794871794871795,
+        "wer": 0.5089285714285714
+      }
+    },
+    "arz-EG": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.13246753246753246,
+        "wer": 0.4796747967479675
+      },
+      "undiac_delta_per": 0.13246753246753246,
+      "undiac_delta_wer": 0.4796747967479675,
+      "espeak": {
+        "per": 0.2545454545454545,
+        "wer": 0.5853658536585366
+      }
+    },
+    "ayn-YE": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.05167173252279635,
+        "wer": 0.17117117117117117
+      },
+      "undiac_delta_per": 0.05167173252279635,
+      "undiac_delta_wer": 0.17117117117117117,
+      "espeak": {
+        "per": 0.16109422492401215,
+        "wer": 0.4864864864864865
+      }
+    },
+    "mey-MR": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.001594896331738437,
+        "wer": 0.00909090909090909
+      },
+      "arbtok_undiac": {
+        "per": 0.16427432216905902,
+        "wer": 0.5363636363636364
+      },
+      "undiac_delta_per": 0.1626794258373206,
+      "undiac_delta_wer": 0.5272727272727273,
+      "espeak": {
+        "per": 0.21690590111642744,
+        "wer": 0.6090909090909091
+      }
+    },
+    "shu-NG": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.1407185628742515,
+        "wer": 0.39473684210526316
+      },
+      "undiac_delta_per": 0.1407185628742515,
+      "undiac_delta_wer": 0.39473684210526316,
+      "espeak": {
+        "per": 0.18712574850299402,
+        "wer": 0.5964912280701754
+      }
+    },
+    "shu-TD": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0,
+        "wer": 0.0
+      },
+      "arbtok_undiac": {
+        "per": 0.10181311018131102,
+        "wer": 0.36065573770491804
+      },
+      "undiac_delta_per": 0.10181311018131102,
+      "undiac_delta_wer": 0.36065573770491804,
+      "espeak": {
+        "per": 0.17573221757322174,
+        "wer": 0.47540983606557374
+      }
+    }
+  }
+}

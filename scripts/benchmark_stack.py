@@ -262,6 +262,10 @@ def run_lect_benchmark(codes: Optional[List[str]] = None,
     if codes:
         available = {c: available[resolve(c)] for c in codes
                      if resolve(c) in available}
+    else:
+        # o2i ships gold for varieties arbtok does not read (xaa, Andalusian).
+        arabic = {resolve(code) for code in tiers}
+        available = {k: f for k, f in available.items() if k in arabic}
 
     espeak_on = with_espeak and _espeak_available()
     espeak = None

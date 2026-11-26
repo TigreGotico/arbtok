@@ -1,0 +1,39 @@
+{
+  "gold": "orthography2ipa/data/gold/arabic_tts (o2i #358)",
+  "provenance": "LLM-generated from cited spec rules; engine-similarity, not native-validated ground truth",
+  "espeak": "ar (MSA) voice for every lect — no dialect voices exist",
+  "lexicon": "hf://TigreGotico/arabic-stem-lexicon/ar-stems.tsv",
+  "pausal": false,
+  "lects": {
+    "ar": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0010741138560687433,
+        "wer": 0.007692307692307693
+      },
+      "arbtok_undiac": {
+        "per": 0.04403866809881848,
+        "wer": 0.18461538461538463
+      },
+      "undiac_delta_per": 0.04296455424274973,
+      "undiac_delta_wer": 0.17692307692307693,
+      "espeak": null
+    },
+    "arb": {
+      "tier": "research",
+      "sentences": 20,
+      "arbtok_diac": {
+        "per": 0.0011235955056179776,
+        "wer": 0.008
+      },
+      "arbtok_undiac": {
+        "per": 0.030337078651685393,
+        "wer": 0.16
+      },
+      "undiac_delta_per": 0.029213483146067417,
+      "undiac_delta_wer": 0.152,
+      "espeak": null
+    }
+  }
+}
