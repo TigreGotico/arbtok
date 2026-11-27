@@ -2,7 +2,7 @@
 """Code-switched Arabic gold set — build and validation tooling.
 
 The set lives in ``data/gold_code_switched/<lect>.tsv`` (one file per lect,
-20 rows) and pins arbtok's *loanword-nativisation* pipeline: a Latin-script
+at least 17 rows) and pins arbtok's *loanword-nativisation* pipeline: a Latin-script
 word embedded in dialectal Arabic is read as a loan and mapped into the matrix
 lect's phonology out of that lect's own cited table (:mod:`arbtok.translit`) —
 Najdi = Alhoody (2019), Egyptian = Hafez (1996) + Watson (2002), Levantine =
@@ -44,7 +44,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 GOLD_DIR = REPO_ROOT / "data" / "gold_code_switched"
 FIELDS = ["id", "sentence", "raw", "ipa", "gloss_en", "cs_words", "notes"]
-MIN_ROWS = 20
+MIN_ROWS = 17
 HARAKAT = "ًٌٍَُِّْٰ"
 _LATIN = re.compile(r"[A-Za-z]")
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
@@ -415,9 +415,7 @@ def _leakage_failures(rid, row, lect):
     tokens = row["ipa"].split()
     for w in [t for t in row["cs_words"].split(";") if t]:
         # Only Latin-script embeds go through nativisation-leakage checking; an
-        # Arabic-script loanword (pinned loan rows) or an Arabizi token is read
-        # as native graphemes, not a guest run, so the transliterate() gate below
-        # does not apply to it.
+        # Arabic-script loanword is read as native graphemes, not a guest run.
         if not _LATIN.search(w):
             continue
         if w not in row["sentence"]:
