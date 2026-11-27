@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a32](https://github.com/TigreGotico/arbtok/tree/0.0.3a32) (2026-11-27)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a31...0.0.3a32)
+
+**Merged pull requests:**
+
+- docs: link the demo Space from the README [\#409](https://github.com/TigreGotico/arbtok/pull/409) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a31](https://github.com/TigreGotico/arbtok/tree/0.0.3a31) (2026-11-27)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a30...0.0.3a31)
@@ -356,10 +364,6 @@
 ## [0.0.2a67](https://github.com/TigreGotico/arbtok/tree/0.0.2a67) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a66...0.0.2a67)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): a number before a unit after "year و" is no year [\#293](https://github.com/TigreGotico/arbtok/pull/293) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a66](https://github.com/TigreGotico/arbtok/tree/0.0.2a66) (2026-10-19)
 
