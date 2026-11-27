@@ -5,8 +5,8 @@
 The `constructed` tier is data/gold_arabizi. `--attested` adds human-written Arabizi
 from three public sets, fetched at pinned commits into CACHE_DIR because their
 licences do not allow a copy in this repository: DODa (ar-MA, sentences, CC BY-NC
-4.0), NArabizi (ar-DZ, test split, Arabic tokens only; Seddah et al. 2020) and TArC
-(ar-TN, words tagged `arabizi`, CODA, CC BY-NC-SA 4.0). Each attested tier takes its
+4.0), NArabizi (ar-DZ, test split, Arabic tokens only; Seddah et al. 2020, Touileb & Barnes 2021) and TArC
+(ar-TN, words tagged `arabizi` whose CODA field is all Arabic script, CC BY-NC-SA 4.0). Each attested tier takes its
 first LIMIT units.
 
 Two scores for each row of each tier:
@@ -65,6 +65,7 @@ ATTESTED = {
     "tarc": "https://raw.githubusercontent.com/eligugliotta/tarc/ee2b293c5af994ff8f03cedbf8d1868f3bcd9689/tarc.tsv",
 }
 _DIGIT = re.compile(r"[2-9]")
+_CODA = re.compile(r"[\u0600-\u06FF]+")
 
 
 def fetch(name: str, cache: Path) -> Path:
@@ -98,7 +99,7 @@ def tarc(path):
     seen = set()
     for r in csv.DictReader(path.open(encoding="utf-8"), delimiter="\t"):
         word = (r["arabish"] or "").strip()
-        if r["class"] == "arabizi" and _DIGIT.search(word) and " " not in r["CODA"].strip() and word not in seen:
+        if r["class"] == "arabizi" and _DIGIT.search(word) and _CODA.fullmatch(r["CODA"].strip()) and word not in seen:
             seen.add(word)
             yield "ar-TN", word, r["CODA"].strip()
 

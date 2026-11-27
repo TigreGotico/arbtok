@@ -29,17 +29,17 @@
  },
  "attested-tarc": {
   "rows": 300,
-  "skeleton_cer": 0.4534,
-  "skeleton_exact": 24,
-  "reading_per": 0.4442,
-  "reading_exact": 42
+  "skeleton_cer": 0.41,
+  "skeleton_exact": 25,
+  "reading_per": 0.4969,
+  "reading_exact": 29
  },
  "attested-tarc/ar-TN": {
   "rows": 300,
-  "skeleton_cer": 0.4534,
-  "skeleton_exact": 24,
-  "reading_per": 0.4442,
-  "reading_exact": 42
+  "skeleton_cer": 0.41,
+  "skeleton_exact": 25,
+  "reading_per": 0.4969,
+  "reading_exact": 29
  },
  "constructed": {
   "rows": 86,

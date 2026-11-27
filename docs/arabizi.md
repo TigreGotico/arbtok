@@ -104,7 +104,7 @@ The Arabizi path is on by default. The constructor argument `arabizi=False` disa
 `scripts/benchmark_arabizi.py` scores the Arabizi path on two kinds of data:
 
 - `constructed`: `data/gold_arabizi/constructed.tsv`, 86 sentences in 31 lects. Each row gives the Arabizi and the Arabic spelling that it stands for.
-- `attested-*` (with `--attested CACHE_DIR`): human-written Arabizi with a human Arabic-script reference, fetched at pinned commits. Their licences do not allow a copy in this repository. DODa gives Moroccan sentences (CC BY-NC 4.0), NArabizi (Seddah et al. 2020) gives Algerian sentences from its test split, and TArC (Gugliotta & Dinarelli 2020, CC BY-NC-SA 4.0) gives Tunisian words in CODA spelling.
+- `attested-*` (with `--attested CACHE_DIR`): human-written Arabizi with a human Arabic-script reference, fetched at pinned commits. Their licences do not allow a copy in this repository. DODa gives Moroccan sentences (CC BY-NC 4.0), NArabizi (Seddah et al. 2020; Touileb & Barnes 2021) gives the Arabic tokens of the Algerian sentences in its test split, and TArC (Gugliotta & Dinarelli 2020, CC BY-NC-SA 4.0) gives Tunisian words in CODA spelling.
 
 It gives two scores for each row:
 
@@ -117,10 +117,10 @@ It gives two scores for each row:
 | :--- | ---: | ---: | ---: | ---: | ---: |
 | `attested-doda` | 300 | 0.1865 | 6 | 0.2794 | 6 |
 | `attested-narabizi` | 135 | 0.2598 | 1 | 0.3614 | 2 |
-| `attested-tarc` | 300 | 0.4534 | 24 | 0.4442 | 42 |
+| `attested-tarc` | 300 | 0.41 | 25 | 0.4969 | 29 |
 | `constructed` | 86 | 0.2317 | 0 | 0.3437 | 0 |
 
-TArC scores worst, for two reasons: CODA spelling is further from the sound than free spelling, and Tunisian Arabizi uses `5` for غ and `8` for ه, where the digit map has خ and غ.
+TArC scores worst. Its references follow CODA, a conventional spelling, and not the free spelling of the other sets. The benchmark leaves out each TArC row whose CODA field keeps Latin letters or digits.
 
 ## What the path does and does not achieve
 
