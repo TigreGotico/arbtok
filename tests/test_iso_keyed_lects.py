@@ -145,5 +145,6 @@ def test_the_lects_without_gold_are_lects():
     assert all(resolves_exactly(code) for code in gcs.NO_GOLD)
     no_gold = {resolve(code) for code in gcs.NO_GOLD}
     skip = {resolve(code) for code in gcs.SKIP}
+    retired = {resolve(code) for code in gcs.RETIRED if resolves_exactly(code)}
     assert no_gold <= codes
-    assert set(gcs._roster()) == codes - skip - no_gold
+    assert set(gcs._roster()) == codes - skip - no_gold - retired

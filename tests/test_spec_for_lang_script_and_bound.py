@@ -8,7 +8,6 @@ from arbtok.dialects import _MAX_SPEC_DISTANCE, DEFAULT_LANG, _arabic_codes, spe
 
 
 @pytest.mark.parametrize("tag, spec", [
-    ("bbz-Arab-TD", "bbz"), ("bbz-Latn-TD", "bbz"),
     ("acm-Latn", "acm-IQ"), ("acm-Latn-IQ", "acm-IQ"), ("ary-Latn", "ary-MA"),
     ("ayl-Latn", "ayl"), ("apc-Latn-LB", "apc-LB"), ("mey-Latn", "mey-MR"),
     ("pga-Latn-SS", "pga"),
@@ -45,7 +44,7 @@ def test_another_language_raises(tag):
 def test_the_bound_admits_every_arabic_variety_and_no_other_language():
     codes = _arabic_codes()
     regions = {s for code in codes for s in code.split("-")[1:] if len(s) == 2 and s.isupper()}
-    languages = {code.split("-")[0] for code in codes} | {"ajp", "bbz"}
+    languages = {code.split("-")[0] for code in codes} | {"ajp", "bbz"}  # a retired tag still arrives as input
     # mey stands 54 from mey-MR outside Mauritania; the own-language rule takes it.
     farthest = max(min(lang_distance(f"{language}-{region}", code) for code in codes)
                    for language in languages if language != "mey" for region in regions)
