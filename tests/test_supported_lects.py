@@ -100,16 +100,8 @@ def test_supported_lects_excludes_the_lookalike_languages():
     assert not {"arc", "arn", "mt"} & codes
 
 
-def test_a_spec_that_declares_no_language_is_named_by_its_key():
-    """orthography2ipa keys Babalia Creole Arabic ``bbz`` with ``iso639_3: bbz``, or
-    ``ar-TD-x-babalia`` with no declared language under a clade parent. The primary
-    language subtag of the key names it Arabic, so it stays on the list either way."""
-    codes = {lect.code for lect in arbtok.supported_lects()}
-    assert resolve("bbz") in codes
-
-
 def test_a_key_without_an_arabic_subtag_or_language_is_not_arabic():
-    """The clade above Babalia declares no language, and its key names none."""
+    """A clade key declares no language, and its key names none."""
     from arbtok.dialects import _is_arabic_code
 
     assert not _is_arabic_code("x-clade-afro1255")

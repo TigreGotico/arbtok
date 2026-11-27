@@ -339,7 +339,7 @@ def spec_for_lang(lang: Optional[str]) -> str:
       (``ar-EG-x-cairo`` → ``ar-EG``, ``ar-SA-x-riyadh`` → ``ar-SA-x-najd``);
     * an Arabic variety with a script subtag resolves as it does without it
       when that spec reads the script (``acm-Latn`` → ``acm-IQ``,
-      ``bbz-Arab-TD`` → ``ar-TD-x-babalia``); a Latin-script lect does not read
+      ``ayl-Latn`` → ``ayl``); a Latin-script lect does not read
       Arabic script, so ``pga-Arab-SA`` reads as MSA;
     * a lect of the tag's own language outranks MSA at any region distance
       (``mey-SN`` → ``mey-MR``);
@@ -443,8 +443,8 @@ def _closest_spec(normalized: str) -> str:
         return nearest
 
     # 6. A script subtag on an Arabic variety picks no spec of its own. The tag
-    #    resolves as it does without its script (``bbz-Arab-TD`` as ``bbz-TD``,
-    #    ``acm-Latn`` as ``acm``) when that spec reads the script, so a script
+    #    resolves as it does without its script (``acm-Latn`` as ``acm``)
+    #    when that spec reads the script, so a script
     #    alone never sends a variety to ``ar-Latn-x-buckwalt``. Only the core
     #    subtags go on: the rest were read in step 3, and a core holds one
     #    script, so this recurses once.
@@ -539,9 +539,7 @@ def _is_arabic_code(code: str) -> bool:
     :func:`arbtok.textnorm.is_arabic_lang` accepts. A spec that declares no code
     is the language of its ``parent``, so a dialect child with no code of its own
     and the Buckwalter romanization of ``ar`` count. When no spec in the lineage
-    declares a code, the primary language subtag of the key decides: Babalia
-    Creole Arabic, ``ar-TD-x-babalia``, declares none under a clade parent, and
-    its tag names it Arabic.
+    declares a code, the primary language subtag of the key decides.
 
     The spec must also read the script arbtok reads, Arabic or Latin
     (:func:`_reads_script`). Judeo-Tunisian Arabic, ``ajt``, is an Arabic

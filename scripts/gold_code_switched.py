@@ -58,7 +58,10 @@ SKIP = {"ar-Latn-buckwalter"}
 
 # Arabic specs orthography2ipa keys by an ISO 639-3 code alone. No code-switched
 # gold is written for them; two (acy, pga) are written in Latin script.
-NO_GOLD = {"aao", "abh", "acq", "acy", "auz", "ayh", "ayl", "ayp", "bbz", "pga", "ssh"}
+NO_GOLD = {"aao", "abh", "acq", "acy", "auz", "ayh", "ayl", "ayp", "pga", "ssh"}
+#: Babalia Creole Arabic, retired by ISO 639-3 change request 2019-013. Its spec
+#: is a lect with no gold until the orthography2ipa floor drops it (o2i #2732).
+RETIRED = {"bbz"}
 
 # Which dialectal-particle set each lect frames its Arabic in. The English words
 # and their nativised reflexes (the point of this set) are identical across
@@ -243,8 +246,9 @@ def _roster():
     """The lects with code-switched gold. SKIP and NO_GOLD name each spec by a key
     orthography2ipa resolves; it keeps a renamed spec's old key as an exact alias."""
     import arbtok
-    from orthography2ipa import resolve
+    from orthography2ipa import resolve, resolves_exactly
     excluded = {resolve(code) for code in SKIP | NO_GOLD}
+    excluded |= {resolve(code) for code in RETIRED if resolves_exactly(code)}
     return [l.code for l in arbtok.supported_lects() if l.code not in excluded]
 
 
