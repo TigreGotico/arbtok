@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a30](https://github.com/TigreGotico/arbtok/tree/0.0.3a30) (2026-11-27)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a29...0.0.3a30)
+
+**Merged pull requests:**
+
+- fix: drop the Babalia \(bbz\) references that o2i \#2732 retires [\#405](https://github.com/TigreGotico/arbtok/pull/405) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a29](https://github.com/TigreGotico/arbtok/tree/0.0.3a29) (2026-11-27)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a28...0.0.3a29)
