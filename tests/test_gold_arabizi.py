@@ -17,7 +17,7 @@ def test_every_constructed_row_has_arabizi_and_an_arabic_reference():
     assert len({r["id"] for r in gold}) == 86
     for r in gold:
         assert DIGIT_WORD.search(r["arabizi"]), r["id"]
-        assert re.fullmatch(r"[؀-ۿً-ْٰ ]+", r["arabic"]), r["id"]
+        assert re.fullmatch(r"[\u0621-\u0652\u0670-\u06D3 ]+", r["arabic"]), r["id"]
 
 
 def test_the_code_switched_gold_has_no_arabizi_row():

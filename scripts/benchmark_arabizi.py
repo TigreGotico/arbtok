@@ -65,7 +65,7 @@ ATTESTED = {
     "tarc": "https://raw.githubusercontent.com/eligugliotta/tarc/ee2b293c5af994ff8f03cedbf8d1868f3bcd9689/tarc.tsv",
 }
 _DIGIT = re.compile(r"[2-9]")
-_CODA = re.compile(r"[\u0600-\u06FF]+")
+_CODA = re.compile(r"[\u0621-\u0652\u0670-\u06D3]+")
 
 
 def fetch(name: str, cache: Path) -> Path:
