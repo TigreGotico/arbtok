@@ -1,0 +1,268 @@
+{
+ "attested-doda": {
+  "rows": 300,
+  "skeleton_cer": 0.1865,
+  "skeleton_exact": 6,
+  "reading_per": 0.2794,
+  "reading_exact": 6
+ },
+ "attested-doda/ar-MA": {
+  "rows": 300,
+  "skeleton_cer": 0.1865,
+  "skeleton_exact": 6,
+  "reading_per": 0.2794,
+  "reading_exact": 6
+ },
+ "attested-narabizi": {
+  "rows": 135,
+  "skeleton_cer": 0.2598,
+  "skeleton_exact": 1,
+  "reading_per": 0.3614,
+  "reading_exact": 2
+ },
+ "attested-narabizi/ar-DZ": {
+  "rows": 135,
+  "skeleton_cer": 0.2598,
+  "skeleton_exact": 1,
+  "reading_per": 0.3614,
+  "reading_exact": 2
+ },
+ "attested-tarc": {
+  "rows": 300,
+  "skeleton_cer": 0.41,
+  "skeleton_exact": 25,
+  "reading_per": 0.4969,
+  "reading_exact": 29
+ },
+ "attested-tarc/ar-TN": {
+  "rows": 300,
+  "skeleton_cer": 0.41,
+  "skeleton_exact": 25,
+  "reading_per": 0.4969,
+  "reading_exact": 29
+ },
+ "constructed": {
+  "rows": 86,
+  "skeleton_cer": 0.2317,
+  "skeleton_exact": 0,
+  "reading_per": 0.3437,
+  "reading_exact": 0
+ },
+ "constructed/ar-AE": {
+  "rows": 3,
+  "skeleton_cer": 0.1379,
+  "skeleton_exact": 0,
+  "reading_per": 0.2,
+  "reading_exact": 0
+ },
+ "constructed/ar-BH": {
+  "rows": 3,
+  "skeleton_cer": 0.225,
+  "skeleton_exact": 0,
+  "reading_per": 0.4074,
+  "reading_exact": 0
+ },
+ "constructed/ar-DZ": {
+  "rows": 2,
+  "skeleton_cer": 0.2222,
+  "skeleton_exact": 0,
+  "reading_per": 0.4103,
+  "reading_exact": 0
+ },
+ "constructed/ar-EG": {
+  "rows": 3,
+  "skeleton_cer": 0.3333,
+  "skeleton_exact": 0,
+  "reading_per": 0.5,
+  "reading_exact": 0
+ },
+ "constructed/ar-IQ": {
+  "rows": 3,
+  "skeleton_cer": 0.2623,
+  "skeleton_exact": 0,
+  "reading_per": 0.4516,
+  "reading_exact": 0
+ },
+ "constructed/ar-IQ-x-qeltu": {
+  "rows": 3,
+  "skeleton_cer": 0.2075,
+  "skeleton_exact": 0,
+  "reading_per": 0.322,
+  "reading_exact": 0
+ },
+ "constructed/ar-JO": {
+  "rows": 3,
+  "skeleton_cer": 0.3036,
+  "skeleton_exact": 0,
+  "reading_per": 0.3651,
+  "reading_exact": 0
+ },
+ "constructed/ar-KW": {
+  "rows": 3,
+  "skeleton_cer": 0.322,
+  "skeleton_exact": 0,
+  "reading_per": 0.3968,
+  "reading_exact": 0
+ },
+ "constructed/ar-LB": {
+  "rows": 3,
+  "skeleton_cer": 0.3818,
+  "skeleton_exact": 0,
+  "reading_per": 0.3934,
+  "reading_exact": 0
+ },
+ "constructed/ar-LY": {
+  "rows": 3,
+  "skeleton_cer": 0.2093,
+  "skeleton_exact": 0,
+  "reading_per": 0.3023,
+  "reading_exact": 0
+ },
+ "constructed/ar-MA": {
+  "rows": 3,
+  "skeleton_cer": 0.1607,
+  "skeleton_exact": 0,
+  "reading_per": 0.3333,
+  "reading_exact": 0
+ },
+ "constructed/ar-MR": {
+  "rows": 2,
+  "skeleton_cer": 0.2174,
+  "skeleton_exact": 0,
+  "reading_per": 0.3265,
+  "reading_exact": 0
+ },
+ "constructed/ar-NG": {
+  "rows": 3,
+  "skeleton_cer": 0.1556,
+  "skeleton_exact": 0,
+  "reading_per": 0.2917,
+  "reading_exact": 0
+ },
+ "constructed/ar-OM": {
+  "rows": 3,
+  "skeleton_cer": 0.1408,
+  "skeleton_exact": 0,
+  "reading_per": 0.2329,
+  "reading_exact": 0
+ },
+ "constructed/ar-PS": {
+  "rows": 3,
+  "skeleton_cer": 0.2879,
+  "skeleton_exact": 0,
+  "reading_per": 0.3562,
+  "reading_exact": 0
+ },
+ "constructed/ar-QA": {
+  "rows": 3,
+  "skeleton_cer": 0.2174,
+  "skeleton_exact": 0,
+  "reading_per": 0.2329,
+  "reading_exact": 0
+ },
+ "constructed/ar-SA-x-hejaz": {
+  "rows": 3,
+  "skeleton_cer": 0.1613,
+  "skeleton_exact": 0,
+  "reading_per": 0.1935,
+  "reading_exact": 0
+ },
+ "constructed/ar-SA-x-najd": {
+  "rows": 3,
+  "skeleton_cer": 0.2976,
+  "skeleton_exact": 0,
+  "reading_per": 0.4624,
+  "reading_exact": 0
+ },
+ "constructed/ar-SA-x-qassim": {
+  "rows": 3,
+  "skeleton_cer": 0.2424,
+  "skeleton_exact": 0,
+  "reading_per": 0.3649,
+  "reading_exact": 0
+ },
+ "constructed/ar-SA-x-rijal-alma": {
+  "rows": 3,
+  "skeleton_cer": 0.2308,
+  "skeleton_exact": 0,
+  "reading_per": 0.3906,
+  "reading_exact": 0
+ },
+ "constructed/ar-SA-x-sharqiyya": {
+  "rows": 1,
+  "skeleton_cer": 0.16,
+  "skeleton_exact": 0,
+  "reading_per": 0.3636,
+  "reading_exact": 0
+ },
+ "constructed/ar-SD": {
+  "rows": 2,
+  "skeleton_cer": 0.2,
+  "skeleton_exact": 0,
+  "reading_per": 0.3438,
+  "reading_exact": 0
+ },
+ "constructed/ar-SY": {
+  "rows": 3,
+  "skeleton_cer": 0.3,
+  "skeleton_exact": 0,
+  "reading_per": 0.4133,
+  "reading_exact": 0
+ },
+ "constructed/ar-TD": {
+  "rows": 3,
+  "skeleton_cer": 0.1556,
+  "skeleton_exact": 0,
+  "reading_per": 0.2979,
+  "reading_exact": 0
+ },
+ "constructed/ar-TN": {
+  "rows": 3,
+  "skeleton_cer": 0.2727,
+  "skeleton_exact": 0,
+  "reading_per": 0.4355,
+  "reading_exact": 0
+ },
+ "constructed/ar-YE": {
+  "rows": 3,
+  "skeleton_cer": 0.1429,
+  "skeleton_exact": 0,
+  "reading_per": 0.2273,
+  "reading_exact": 0
+ },
+ "constructed/ar-x-gulf": {
+  "rows": 3,
+  "skeleton_cer": 0.2444,
+  "skeleton_exact": 0,
+  "reading_per": 0.3529,
+  "reading_exact": 0
+ },
+ "constructed/ar-x-levantine": {
+  "rows": 3,
+  "skeleton_cer": 0.3,
+  "skeleton_exact": 0,
+  "reading_per": 0.375,
+  "reading_exact": 0
+ },
+ "constructed/ar-x-maghrebi": {
+  "rows": 2,
+  "skeleton_cer": 0.1628,
+  "skeleton_exact": 0,
+  "reading_per": 0.3409,
+  "reading_exact": 0
+ },
+ "constructed/ar-x-mashriqi": {
+  "rows": 3,
+  "skeleton_cer": 0.2075,
+  "skeleton_exact": 0,
+  "reading_per": 0.254,
+  "reading_exact": 0
+ },
+ "constructed/ar-x-peninsular": {
+  "rows": 2,
+  "skeleton_cer": 0.2069,
+  "skeleton_exact": 0,
+  "reading_per": 0.2121,
+  "reading_exact": 0
+ }
+}

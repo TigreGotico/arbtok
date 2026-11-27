@@ -1,6 +1,6 @@
 """Regression gate for the code-switched Arabic gold set.
 
-The gold lives in ``data/gold_code_switched/<lect>.tsv`` (20 rows per lect) and
+The gold lives in ``data/gold_code_switched/<lect>.tsv`` (at least 17 rows per lect) and
 pins arbtok's loanword-nativisation pipeline: the ``ipa`` column is
 ``ArbtokG2PPlugin(lang, diacritize=True, nativize=True, pausal=True).transcribe``
 output, so a drift in the pipeline or in the cited nativisation tables
@@ -9,7 +9,7 @@ output, so a drift in the pipeline or in the cited nativisation tables
 
 Each lect asserts, per row:
 
-* schema and the 20-row minimum;
+* schema and the row minimum;
 * ``raw == sentence`` stripped of ḥarakāt;
 * ``ipa == transcribe(sentence)`` (the regression pin);
 * no Latin leakage — every embedded Latin word is present as its nativised

@@ -55,10 +55,9 @@ the column, so that fact is on the row rather than hidden:
   wrong output and the divergence are spelled out in `notes`. Never ship wrong
   IPA as gold, the correct value is pinned and the bug is documented for a later
   `arbtok.translit` fix.
-- `unsupported`, an Arabizi row (Latin-written Arabic, *3arabi/7abibi* style),
-  three to a file. The pipeline sniffs a Latin run as Arabic only on a
-  digit-guttural or an explicit hint, so it has no path for most of these. `ipa`
-  is the derived reading, in the file's own lect, of the Arabic the row spells.
+- `unsupported`, a row the pipeline has no path for. `ipa` is the derived reading, in the file's own lect, of the Arabic the row spells.
+
+Arabizi (Arabic in Latin letters and digits) is not code-switching, so it has its own set: [arabizi.md](arabizi.md#benchmark).
 
 `validate` (and the pytest gate) only pin `pipeline_status == "pinned"` rows.
 `known-wrong` / `unsupported` rows are still schema-, `raw`- and dedup-checked
