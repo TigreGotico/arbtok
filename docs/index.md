@@ -10,6 +10,8 @@ see: README.md, AGENTS.md
 
 `arbtok` turns Arabic text into IPA for Modern Standard Arabic, Classical Arabic and 30 or more regional varieties, and it restores the missing short vowels first.
 
+arbtok covers Arabic lects only. No leader language (pt-PT, pt-BR, es-CO, fr-FR, it-IT, de-DE, nl-NL, da-DK, kab, hi-IN, bn-IN, mwr) is in scope. [orthography2ipa](https://github.com/TigreGotico/orthography2ipa) covers those languages.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="img/lect-benchmark-dark.svg">
   <img alt="PER by lect: arbtok diacritized 0.000 to 0.045, arbtok bare 0.05 to 0.18, espeak-ng 0.16 to 0.30." src="img/lect-benchmark.svg">
