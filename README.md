@@ -10,6 +10,8 @@ see: docs/index.md, docs/quickstart.md, AGENTS.md
 
 arbtok turns Arabic text into IPA for Modern Standard Arabic, Classical Arabic and 30 or more regional varieties. It restores the missing short vowels with a dialect-aware diacritizer that ships in the wheel, and it builds on [orthography2ipa](https://github.com/TigreGotico/orthography2ipa). The documentation starts at [docs/index.md](docs/index.md).
 
+Try it in your browser: [TigreGotico/arbtok on Hugging Face](https://huggingface.co/spaces/TigreGotico/arbtok).
+
 arbtok covers Arabic lects only. No leader language (pt-PT, pt-BR, es-CO, fr-FR, it-IT, de-DE, nl-NL, da-DK, kab, hi-IN, bn-IN, mwr) is in scope. [orthography2ipa](https://github.com/TigreGotico/orthography2ipa) covers those languages.
 
 ## Install
