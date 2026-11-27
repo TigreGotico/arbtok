@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a33](https://github.com/TigreGotico/arbtok/tree/0.0.3a33) (2026-11-27)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a32...0.0.3a33)
+
+**Merged pull requests:**
+
+- feat: Arabizi gold set and benchmark, out of the code-switched gold [\#412](https://github.com/TigreGotico/arbtok/pull/412) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a32](https://github.com/TigreGotico/arbtok/tree/0.0.3a32) (2026-11-27)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a31...0.0.3a32)
