@@ -594,6 +594,9 @@ class Sentence:
     #: -un/-in dropped, tanwīn -an lengthened to -aː, tāʾ marbūṭa /a/;
     #: ``False`` reads the full iʿrāb as written. See arbtok.sandhi._pausal.
     pausal: bool = True
+    #: The spoken form of the word before this text, when the text continues an
+    #: utterance (a nativized loanword before it). The article onset reads it.
+    preceding: Optional[str] = None
 
     @property
     def normalized(self) -> str:
@@ -626,7 +629,7 @@ class Sentence:
         tokens = self.tokens
         pieces = apply_cross_word(
             [(w.ipa, w.surface, w.is_punct) for w in tokens],
-            pausal=self.pausal, lang=self.lang)
+            pausal=self.pausal, lang=self.lang, preceding=self.preceding)
 
         # A waṣl-elided definite article is proclitic — unstressed, outside its
         # host's stress domain. When the article's seat vowel has been elided

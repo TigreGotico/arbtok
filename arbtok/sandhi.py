@@ -91,14 +91,33 @@ def _restore_wasl_onset(ipa: str) -> str:
     return ipa
 
 
-def _elide_article(ipa: str) -> str:
+#: Lects whose article vowel is i wherever it is kept: Cairene, "In EA, the definite
+#: article is /il-/" (Abdel-Massih et al. 1979, "Definite article: form"); Lebanese,
+#: "l- ('el-, 'l-) … partout invariable" (Feghali 1919, §VI).
+ARTICLE_I = frozenset({"arz-EG", "apc-LB"})
+#: Lects whose article is al- at the start of an utterance and il- after a consonant:
+#: Gulf, "If the article prefix is preceded by a consonant, the 'a … changes into i"
+#: (Qafisheh 1970, Basic Gulf Arabic, pp. 20-21).
+ARTICLE_I_AFTER_CONSONANT = frozenset({"afb", "afb-AE", "afb-KW", "afb-QA"})
+
+
+def _article_vowel(ipa: str, vowel: str) -> str:
+    """Set the seat vowel of the article, after an optional stress mark."""
+    head = ipa[:1] if ipa[:1] in "ˈˌ" else ""
+    body = ipa[len(head):]
+    if body[:1] in ("a", "ɑ", "i"):
+        return head + vowel + body[1:]
+    return ipa
+
+
+def _elide_article(ipa: str, vowels: tuple = ("a", "ɑ")) -> str:
     """Drop the definite article's seat vowel: ``aljawm`` → ``ljawm``.
 
     Applied only after a vowel-final word (waṣl): فِي الْبَيْت is *fiː lbajt*,
     عَلَى الشَّمْس is *ʕalaː ʃʃams* (Ryding 2005 §2.10, o2i ``AR_HAMZAT_WASL``).
     Only the leading short ``a``/``ɑ`` seat vowel is removed; the lām (or its
     sun-letter assimilate) stays and carries the article."""
-    if ipa[:1] in ("a", "ɑ"):
+    if ipa[:1] in vowels:
         return ipa[1:]
     return ipa
 
@@ -223,6 +242,7 @@ def apply_cross_word(
     words: Sequence[Tuple[str, str, bool]],
     pausal: bool = True,
     lang: str = "ar",
+    preceding: Optional[str] = None,
 ) -> List[str]:
     """Apply the between-word rules to ``(ipa, surface, is_punct)`` words.
 
@@ -286,7 +306,7 @@ def apply_cross_word(
     #
     #  * the definite article's seat vowel elides after a vowel-final word
     #    (فِي الْبَيْت → *fiː lbajt*); utterance-initial or after a consonant it
-    #    stays (*aljawm*).
+    #    stays. ARTICLE_I and ARTICLE_I_AFTER_CONSONANT set its vowel.
     #  * a bare hamzat al-waṣl word regains its glottal onset (اِنْتَ → *ʔinta*).
     #    The word lattice reads the connecting alif as a bare helper vowel — the
     #    mid-utterance connected form; here it is restored to the ʔV the varieties
@@ -307,10 +327,14 @@ def apply_cross_word(
             if out[j]:
                 prev_spoken = out[j]
                 break
+        else:
+            prev_spoken = preceding
         after_vowel = (prev_spoken is not None and not prev_was_pause
                        and _ends_in_vowel(prev_spoken))
 
         if _has_article(surface):
+            if lang in ARTICLE_I or (lang in ARTICLE_I_AFTER_CONSONANT and not after_vowel):
+                out[i] = _article_vowel(out[i], "i" if lang in ARTICLE_I or prev_spoken else "a")
             if after_vowel and not _article_vowel_is_stressed(out[i], lang):
                 # The article's seat vowel elides after a vowel only when it is
                 # unstressed — a stressed vowel cannot be deleted. This is how
@@ -319,7 +343,7 @@ def apply_cross_word(
                 # leading stress mark. So aldʒiˈdiːda and ʃˈʃams (stress off the
                 # article) elide after a vowel, while ˈalqalam, ˈallahu,
                 # ˈaʃʃamis and ˈattmnija (stress on the article syllable) keep it.
-                out[i] = _elide_article(out[i])
+                out[i] = _elide_article(out[i], ("a", "ɑ", "i") if lang in ARTICLE_I else ("a", "ɑ"))
         elif _is_bare_wasl_alif(surface):
             out[i] = _restore_wasl_onset(out[i])
 

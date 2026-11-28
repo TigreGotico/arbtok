@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.0.3a36](https://github.com/TigreGotico/arbtok/tree/0.0.3a36) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a35...0.0.3a36)
+
+**Merged pull requests:**
+
+- fix: the article after a nativized loanword reads it as the word before [\#421](https://github.com/TigreGotico/arbtok/pull/421) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a35](https://github.com/TigreGotico/arbtok/tree/0.0.3a35) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a34...0.0.3a35)
+
+**Merged pull requests:**
+
+- fix: the article vowel after a consonant in Gulf, Lebanese and Cairene [\#418](https://github.com/TigreGotico/arbtok/pull/418) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a34](https://github.com/TigreGotico/arbtok/tree/0.0.3a34) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a33...0.0.3a34)
+
+**Merged pull requests:**
+
+- ci: check the docs standard on each pull request [\#416](https://github.com/TigreGotico/arbtok/pull/416) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a33](https://github.com/TigreGotico/arbtok/tree/0.0.3a33) (2026-11-27)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a32...0.0.3a33)
