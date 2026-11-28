@@ -2,7 +2,7 @@
 
 <!-- agent-hint
 covers: how arbtok detects Latin-script Arabic and which digit map it reads
-source: arbtok/arabizi.py, arbtok/plugin.py
+source: arbtok/arabizi.py, arbtok/plugin.py, scripts/benchmark_arabizi.py, benchmarks/arabizi.json, data/gold_arabizi/constructed.tsv
 generated: no
 verify: .venv/bin/python scripts/check_docs_examples.py docs/arabizi.md
 see: dialects.md, gold-code-switched.md
@@ -98,6 +98,29 @@ ArbtokG2PPlugin(lang="ar-EG", arabizi=False).arabizi
 ```
 
 The Arabizi path is on by default. The constructor argument `arabizi=False` disables it for every call.
+
+## Benchmark
+
+`scripts/benchmark_arabizi.py` scores the Arabizi path on two kinds of data:
+
+- `constructed`: `data/gold_arabizi/constructed.tsv`, 86 sentences in 31 lects. Each row gives the Arabizi and the Arabic spelling that it stands for.
+- `attested-*` (with `--attested CACHE_DIR`): human-written Arabizi with a human Arabic-script reference, fetched at pinned commits. Their licences do not allow a copy in this repository. DODa gives Moroccan sentences (CC BY-NC 4.0), NArabizi (Seddah et al. 2020; Touileb & Barnes 2021) gives the Arabic tokens of the Algerian sentences in its test split, and TArC (Gugliotta & Dinarelli 2020, CC BY-NC-SA 4.0) gives Tunisian words in CODA spelling.
+
+It gives two scores for each row:
+
+- **skeleton CER**: `to_arabic_skeleton` against the reference spelling, after both sides lose their marks and take one form of alef, yeh and teh marbuta.
+- **reading PER**: the transcription of the Arabizi against the transcription of the reference Arabic, with the same plugin. This needs no hand-written IPA.
+
+`benchmarks/arabizi.json` holds the results, per tier and per lect:
+
+| Tier | Rows | Skeleton CER | Skeleton exact | Reading PER | Reading exact |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| `attested-doda` | 300 | 0.1865 | 6 | 0.2794 | 6 |
+| `attested-narabizi` | 135 | 0.2598 | 1 | 0.3614 | 2 |
+| `attested-tarc` | 300 | 0.41 | 25 | 0.4969 | 29 |
+| `constructed` | 86 | 0.2317 | 0 | 0.3437 | 0 |
+
+TArC scores worst. Its references follow CODA, a conventional spelling, and not the free spelling of the other sets. The benchmark leaves out each TArC row whose CODA field keeps Latin letters or digits.
 
 ## What the path does and does not achieve
 

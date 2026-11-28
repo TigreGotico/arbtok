@@ -241,11 +241,13 @@ class ArbtokG2PPlugin:
             arabizi_mode = any(is_arabizi(r) and arabizi_covers(r)
                                for t in text.split() for r in _SCRIPT_RUN.findall(t))
 
+        guest_before = None
+
         def flush_arabic():
             if buffer:
                 parts.append(Sentence(self.normalize(" ".join(buffer)),
                                       lang=self.lang, stress=self.stress,
-                                      pausal=self.pausal).ipa)
+                                      pausal=self.pausal, preceding=guest_before).ipa)
                 buffer.clear()
 
         for token in [r for t in text.split() for r in _runs(t)]:
@@ -260,6 +262,8 @@ class ArbtokG2PPlugin:
                 guest = transliterate(token.strip(PUNCT_STRIP), self.lang)
                 if guest:
                     parts.append(guest)
+                # Punctuation after the loanword is a pause: the next article starts an utterance.
+                guest_before = guest if guest and token[-1] not in PUNCT_STRIP else None
             else:
                 buffer.append(token)
         flush_arabic()
