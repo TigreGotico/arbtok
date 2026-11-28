@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a37](https://github.com/TigreGotico/arbtok/tree/0.0.3a37) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a36...0.0.3a37)
+
+**Merged pull requests:**
+
+- feat: loom sandhi fragments: the bare conjunction, and the article after a consonant [\#414](https://github.com/TigreGotico/arbtok/pull/414) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a36](https://github.com/TigreGotico/arbtok/tree/0.0.3a36) (2026-11-28)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a35...0.0.3a36)
@@ -388,10 +396,6 @@
 ## [0.0.2a68](https://github.com/TigreGotico/arbtok/tree/0.0.2a68) (2026-10-21)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a67...0.0.2a68)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): say F unpointed in spelled codes and let a table change move TTS\_NORM\_VERSION [\#303](https://github.com/TigreGotico/arbtok/pull/303) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a67](https://github.com/TigreGotico/arbtok/tree/0.0.2a67) (2026-10-19)
 
