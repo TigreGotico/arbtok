@@ -137,5 +137,5 @@ include = ["arbtok*"]
 # bundled rather than fetched — see arbtok.dialect_lexicon).
 arbtok = ["models/*.onnx", "models/*.json", "data/phone_plans.json", "data/rank_ordinals.tsv", "data/feminine_counted_nouns.tsv",
           "data/lexicons/*.tsv",
-          "data/donor_lexicons/*.tsv", "data/tts_lexicons/*.tsv",
+          "data/donor_lexicons/*.tsv", "data/tts_lexicons/*.tsv", "data/loom/*.json",
           "data/term_lexicons/*.tsv", "data/term_lexicons/*.json"]
