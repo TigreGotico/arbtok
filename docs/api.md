@@ -52,7 +52,7 @@ p = ArbtokG2PPlugin(lang="ar-EG")
 | `language_codes` | `List[str]` | `["ar", "arb"]`. |
 
 ```python
-p.transcribe("ذهب الولد الى المدرسة")            # 'ˈdahab ˈalwalad ˈʔilaː lˈmudrasa' — bare input, auto-diacritized
+p.transcribe("ذهب الولد الى المدرسة")            # 'ˈdahab ˈilwalad ˈʔilaː lˈmudrasa' — bare input, auto-diacritized
 p.transcribe_word("قَهْوَة")                      # 'ˈʔahwa' — single word
 p.transcribe("عِنْدِي meeting", arabizi=False)    # 'ˈʕindiː miːtinɡ' — force the loanword reading
 ```
