@@ -242,6 +242,7 @@ def apply_cross_word(
     words: Sequence[Tuple[str, str, bool]],
     pausal: bool = True,
     lang: str = "ar",
+    preceding: Optional[str] = None,
 ) -> List[str]:
     """Apply the between-word rules to ``(ipa, surface, is_punct)`` words.
 
@@ -326,6 +327,8 @@ def apply_cross_word(
             if out[j]:
                 prev_spoken = out[j]
                 break
+        else:
+            prev_spoken = preceding
         after_vowel = (prev_spoken is not None and not prev_was_pause
                        and _ends_in_vowel(prev_spoken))
 
