@@ -470,11 +470,7 @@ def cmd_refresh(args):
                 r["ipa"] = new
                 touched += 1
         if touched:
-            with open(p, "w", encoding="utf-8", newline="") as f:
-                w = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t",
-                                   lineterminator="\n")
-                w.writeheader()
-                w.writerows(rows)
+            _write_rows(p, fieldnames, rows)
             changed += 1
         print(f"{lect}: re-pinned {touched} row(s)")
     print(f"updated {changed} file(s)")
