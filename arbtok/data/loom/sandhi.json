@@ -1,0 +1,7 @@
+{
+ "ir_version": 1,
+ "sandhi": [
+  {"left": "^ˈw$", "left_spelling": "^وْ?$", "right": "^", "left_out": "w"},
+  {"pause": true, "left": "^ˈw$", "left_spelling": "^وْ?$", "left_out": "w"}
+ ]
+}
