@@ -1,35 +1,42 @@
 """A clock time written in digits inside Arabic text is spoken as Arabic speakers say
 it: the hour as a feminine ordinal after الساعة, a quarter, a third and a half of the
-hour, twenty and a quarter to the next hour, and the period words. The words are the
-date parser's ``nice_time``; each literal below is also checked against it."""
+hour, twenty and a quarter to the next hour, and the period words. text2spoken reads the
+time after الساعة; the date parser's ``nice_time`` reads a time with a period mark and a
+time text2spoken leaves as written. Each literal below is also checked against its reader.
+text2spoken writes no diacritics, so its words have no tanween: the diacritizer adds it."""
 import datetime
 
 import pytest
+import text2spoken
 from ovos_date_parser import nice_time
 
 from arbtok.textnorm import normalize_for_tts
 
 CONFIGS = [{}, {"cardinal_numbers": True}]
 
-# written text, spoken text, and the (hour, minute, use_ampm) nice_time reads the time from
+# written text, spoken text, and the (hour, minute, use_ampm) the time is read from. A row
+# with use_ampm None has no period mark, and text2spoken reads it. 00:30 is one that
+# text2spoken leaves as written (its Arabic page lists 0:00 to 0:59), so nice_time reads it.
 SPOKEN = [
     ("الموعد 7:30 pm", "الموعد الساعة السابعة والنصف مساءً", (19, 30, True)),
     ("الموعد 7 pm", "الموعد الساعة السابعة مساءً", (19, 0, True)),
     ("الموعد 7pm", "الموعد الساعة السابعة مساءً", (19, 0, True)),
-    ("الموعد 7:40", "الموعد الساعة الثامنة إلا ثلثاً", (7, 40, False)),
+    ("الموعد 7:40", "الموعد الساعة الثامنة إلا ثلثا", (7, 40, None)),
     ("الموعد 12:00 pm", "الموعد الساعة الثانية عشرة ظهراً", (12, 0, True)),
-    ("الموعد 19:30", "الموعد الساعة السابعة والنصف مساءً", (19, 30, True)),
-    ("الساعة 3", "الساعة الثالثة", (3, 0, False)),
-    ("الساعة ٧:٣٠", "الساعة السابعة والنصف", (7, 30, False)),
+    ("الموعد 19:30", "الموعد الساعة السابعة والنصف مساء", (19, 30, None)),
+    ("الساعة 3", "الساعة الثالثة", (3, 0, None)),
+    ("الساعة ٧:٣٠", "الساعة السابعة والنصف", (7, 30, None)),
     ("at 7:15 am", "at الساعة السابعة والربع صباحاً", (7, 15, True)),
     ("00:30", "الساعة الثانية عشرة والنصف صباحاً", (0, 30, True)),
     ("12 am", "منتصف الليل", (0, 0, True)),
     ("بالساعة 11 pm", "بالساعة الحادية عشرة مساءً", (23, 0, True)),
-    ("7:30 ريال", "الساعة السابعة والنصف ريال", (7, 30, False)),
+    ("7:30 ريال", "الساعة السابعة والنصف ريال", (7, 30, None)),
 ]
 
 
-def _nice(hour, minute, use_ampm):
+def _reading(hour, minute, use_ampm):
+    if use_ampm is None:
+        return text2spoken.normalize(f"الساعة {hour}:{minute:02d}", "ar")
     return nice_time(datetime.datetime(2000, 1, 1, hour, minute), "ar", use_24hour=False, use_ampm=use_ampm)
 
 
@@ -40,8 +47,8 @@ def test_a_clock_time_is_spoken(written, spoken, time, flags):
 
 
 @pytest.mark.parametrize("written, spoken, time", SPOKEN, ids=[w for w, _, _ in SPOKEN])
-def test_the_words_are_the_date_parsers(written, spoken, time):
-    assert _nice(*time) in spoken
+def test_the_words_are_their_readers(written, spoken, time):
+    assert _reading(*time) in spoken
 
 
 def test_a_written_saa_is_not_said_twice():
@@ -53,7 +60,9 @@ NOT_A_TIME = [
     ("النتيجة 3:1", "النتيجة ثلاثة:واحد", "النتيجة ثلاثة:واحد"),
     ("الطول 300 pm", "الطول ثلاثمئة بيكومتر", "الطول ثلاثمئة pm"),
     ("13 pm", "ثلاثة عشر بيكومتر", "ثلاثة عشر pm"),
-    ("05-06-2024", "الأربعاء، الخامس من يونيو ألفان وأربعة وعشرون", "خمسة يونيو ألفان وأربعة وعشرون"),
+    # A date reads the day as a masculine ordinal, then من and the month (Ryding 2005,
+    # pp. 357-358). The text names no weekday, so none is said.
+    ("05-06-2024", "الخامس من يونيو ألفين وأربعة وعشرين", "خمسة يونيو ألفان وأربعة وعشرون"),
     ("12:30:45", "اثنا عشر:ثلاثون:خمسة وأربعون", "اثنا عشر:ثلاثون:خمسة وأربعون"),
     ("الساعة 25", "الساعة خمسة وعشرون", "الساعة خمسة وعشرون"),
     ("24:00", "أربعة وعشرون:صفر", "أربعة وعشرون:صفر"),

@@ -190,7 +190,7 @@ def test_egyptian_jim_is_g_but_the_word_still_reads():
     assert word_ipa("جَمِيل", "ar") == "dʒaˈmiːl"
 
 
-@pytest.mark.xfail(
+@pytest.mark.xfail(raises=AssertionError, 
     reason="A diphthong split across slots (glide onset + coda glide) is not "
            "one segment, so the monophthongization rule cannot see it: يَوْم "
            "tokenizes as يَ|وْ|م = ja|w|m, and the rule targets an /aw/ atom. "

@@ -101,8 +101,13 @@ def test_a_tatweel_not_written_against_a_term_stays(written):
 
 def test_the_default_config_is_unchanged_for_these_shapes():
     """The G2P plugin's config spells no code, so these shapes read as they always did."""
-    assert normalize_for_tts("مازدا CX-5 متوفرة") == "مازدا CX خمسة متوفرة"
     assert normalize_for_tts("BMW iX3") == "BMW iX3"
+
+
+def test_the_default_config_reads_the_digit_of_a_hyphenated_code_as_a_cardinal():
+    # text2spoken keeps the hyphen of CX-5, where the cardinal path dropped it; the
+    # phonemizer reads both the same.
+    assert normalize_for_tts("مازدا CX-5 متوفرة").replace("-", " ") == "مازدا CX خمسة متوفرة"
 
 
 @pytest.mark.parametrize("written, said", [

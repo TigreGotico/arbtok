@@ -27,7 +27,8 @@ The shape mirrors the stem lexicon deliberately:
   correctly under every spec that shares the word. Freezing IPA into the data
   would bypass everything the engine knows and pin one leaf's pronunciation.
 - The entry is held to **every guard a model proposal is**: it must spell the
-  word it keys (marks added, letters untouched) and it must tokenize against the
+  word it keys (marks added, letters untouched but for a hamza seat or tāʾ
+  marbūṭa the model may also restore) and it must tokenize against the
   variety's grapheme table. The lexicon is data, and data can be wrong.
 
 Unlike the stem lexicon, this data is **hand-authored from the dialect grammars**
@@ -36,6 +37,16 @@ mined from a corpus, so it is small, Apache-2.0-clean, and **bundled** in the
 wheel beside the code (``arbtok/data/lexicons/<lect>.tsv``) rather than fetched.
 Each row carries its source in a third column, for a human auditing the data;
 lookup does not read it.
+
+``ar.tsv`` (Modern Standard) and ``arb.tsv`` (Classical, the ancestor every
+dialect lect inherits from) hold the few function words whose bare spelling the
+model misreads and whose reading the classical grammar records. Bare ⟨الي⟩ is
+⟨إِلَى⟩ "to" written with ي for ى (Wright I §358 (a)), which the model reads
+as a nisba. The row answers in every context, so it holds the frequent sense:
+the stem lexicon counts إلى 65,793 times and إلي (إِلَيّ "to me") 1,242 times.
+Written with the hamza (إلي) or pointed (إِلَيَّ), the word keeps the
+reading إِلَيّ. The Maghrebi file reads bare ⟨الي⟩ as the relative ⟨الِّي⟩
+and wins there.
 
 A lect inherits its ancestors' entries: ``ar-MA`` sees the pan-Maghrebi function
 words in ``ar-x-maghrebi.tsv`` *and* its own Moroccan-specific ones, with the
@@ -120,7 +131,7 @@ def _parent_chain(lang: str) -> List[str]:
         seen = {lang}
         cur = lang
         while True:
-            parent = getattr(get(cur), "parent", None)
+            parent = get(cur).parent
             if not parent or parent in seen:
                 break
             chain.append(parent)

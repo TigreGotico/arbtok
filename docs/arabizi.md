@@ -1,5 +1,13 @@
 # Arabizi input
 
+<!-- agent-hint
+covers: how arbtok detects Latin-script Arabic and which digit map it reads
+source: arbtok/arabizi.py, arbtok/plugin.py, scripts/benchmark_arabizi.py, benchmarks/arabizi.json, data/gold_arabizi/constructed.tsv
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/arabizi.md
+see: dialects.md, gold-code-switched.md
+-->
+
 *Arabizi*, also **3arabi**, **Franco-Arabic**, **chat Arabic**, is Arabic written
 in the Latin letters and digits a keyboard offers, with numerals standing in for the
 consonants Latin has no glyph for: `7abibi` is حبيبي, `3ala` is على, `5alid` is خالد.
@@ -43,6 +51,7 @@ the digits echo the mirrored Arabic letters.
 | `3'`  | غ      | ʿayn + prime = ġayn |
 | `7'`  | خ      | ḥāʾ + prime = ḫāʾ |
 | `6'`  | ظ      | ṭāʾ + prime = ẓāʾ |
+| `9'`  | ق      | qāf + prime = qāf |
 
 Consonant digraphs (`kh gh sh ch th dh`) and emphatic capitals (`S D T Z` → ص ض ط ظ)
 round out the consonants. Long vowels, doubled `aa ee oo` and the diphthong digraphs
@@ -62,7 +71,7 @@ Arabizi form spells several skeletons, and the vowels are the ambiguous part).
 
 1. an **explicit hint**, a caller that has language-tagged its input passes
    `arabizi=True`/`False`, and that always wins.
-2. a **digit-guttural** (`2 3 5 6 7 9` and the primed forms). No English word
+2. a **digit-guttural** (`2 3 5 6 7 8 9` and the primed forms). No English word
    contains one, so their presence is strong, low-false-positive evidence of
    Arabic-in-Latin.
 
@@ -79,13 +88,39 @@ default: `g` → ق (the Gulf/Bedouin qāf reflex, not the Egyptian ǧīm) and `
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-p = ArbtokG2PPlugin(lang="ar-EG")           # arabizi=True by default
-p.transcribe("3andi maw3ed el sa3a sab3a")  # digit-guttural → read as Arabic
-p.transcribe("عِنْدِي meeting مَعَ manager") # digit-free English → nativized loans
-p.transcribe("habibi", arabizi=True)         # force the Arabizi reading of a run
-p.transcribe("3ala", arabizi=False)          # force the loanword reading
-ArbtokG2PPlugin(lang="ar-EG", arabizi=False) # disable the path entirely
+p = ArbtokG2PPlugin(lang="ar-EG")
+p.transcribe("3andi maw3ed el sa3a sab3a")  # 'ˈʕaːnid moːˈʕiːd ˈʔal ˈsaːʕaː ˈsaːbiʕaː' — digit-guttural, read as Arabic
+p.transcribe("عِنْدِي meeting مَعَ manager")  # 'ˈʕindiː miːtinɡ ˈmaʕa maniɡar' — digit-free English, nativized loans
+p.transcribe("habibi", arabizi=True)  # 'haːˈbiːb' — force the Arabizi reading of a run
+p.transcribe("3ala", arabizi=False)  # 'ala' — force the loanword reading
+ArbtokG2PPlugin(lang="ar-EG", arabizi=False).arabizi
+# False
 ```
+
+The Arabizi path is on by default. The constructor argument `arabizi=False` disables it for every call.
+
+## Benchmark
+
+`scripts/benchmark_arabizi.py` scores the Arabizi path on two kinds of data:
+
+- `constructed`: `data/gold_arabizi/constructed.tsv`, 86 sentences in 31 lects. Each row gives the Arabizi and the Arabic spelling that it stands for.
+- `attested-*` (with `--attested CACHE_DIR`): human-written Arabizi with a human Arabic-script reference, fetched at pinned commits. Their licences do not allow a copy in this repository. DODa gives Moroccan sentences (CC BY-NC 4.0), NArabizi (Seddah et al. 2020; Touileb & Barnes 2021) gives the Arabic tokens of the Algerian sentences in its test split, and TArC (Gugliotta & Dinarelli 2020, CC BY-NC-SA 4.0) gives Tunisian words in CODA spelling.
+
+It gives two scores for each row:
+
+- **skeleton CER**: `to_arabic_skeleton` against the reference spelling, after both sides lose their marks and take one form of alef, yeh and teh marbuta.
+- **reading PER**: the transcription of the Arabizi against the transcription of the reference Arabic, with the same plugin. This needs no hand-written IPA.
+
+`benchmarks/arabizi.json` holds the results, per tier and per lect:
+
+| Tier | Rows | Skeleton CER | Skeleton exact | Reading PER | Reading exact |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| `attested-doda` | 300 | 0.1865 | 6 | 0.2794 | 6 |
+| `attested-narabizi` | 135 | 0.2598 | 1 | 0.3614 | 2 |
+| `attested-tarc` | 300 | 0.41 | 25 | 0.4969 | 29 |
+| `constructed` | 86 | 0.2317 | 0 | 0.3437 | 0 |
+
+TArC scores worst. Its references follow CODA, a conventional spelling, and not the free spelling of the other sets. The benchmark leaves out each TArC row whose CODA field keeps Latin letters or digits.
 
 ## What the path does and does not achieve
 
@@ -114,4 +149,4 @@ The ceiling is the diacritizer and the dialect phonologies, not the input path. 
 rows stand as the acceptance test the pipeline has to earn.
 
 ---
-[← Varieties](dialects.md) · [Home](../README.md) · [Code-switched gold →](gold-code-switched.md)
+[← Waqf](waqf.md) · [Home](index.md) · [Text normalization →](normalization.md)

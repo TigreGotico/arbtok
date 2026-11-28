@@ -1,19 +1,21 @@
-"""TODO: update for arabic, extracted from phoonnx
-Pull Requests in ovos-date-parser and ovos-number-parser welcomed!
+"""Dates, times, units, numbers, contractions and titles written as words.
+
+Taken from phoonnx. :func:`normalize` is the ``spoken_forms`` pass of
+:func:`arbtok.textnorm.normalize_for_tts`.
 """
 import datetime
+import logging
 import re
 import string
+from contextlib import suppress
 from datetime import date
 from typing import Optional
 
+from linguatag import standardize_lang
 from ovos_date_parser import nice_time, nice_date
 from ovos_number_parser import pronounce_number, pronounce_fraction
 from ovos_number_parser.util import is_numeric
 from unicode_rbnf import RbnfEngine, FormatPurpose
-
-
-import logging
 
 LOG = logging.getLogger("phoonnx")
 
@@ -373,38 +375,21 @@ UNITS["ar"] = cldr_units("ar")
 
 
 def _get_number_separators(full_lang: str) -> tuple[str, str]:
-    """
-    Determines decimal and thousands separators based on language.
-    Defaults to '.' decimal and ',' thousands for most languages.
-    Special cases:
-    - 'pt', 'es', 'fr', 'de': ',' decimal and '.' thousands.
-    """
-    lang_code = full_lang.split("-")[0]
-    decimal_separator = '.'
-    thousands_separator = ','
-    if lang_code in ["pt", "es", "fr", "de"]:
-        decimal_separator = ','
-        thousands_separator = '.'
-    return decimal_separator, thousands_separator
+    """The decimal and thousands separators of *full_lang*."""
+    if full_lang.split("-")[0] in ("pt", "es", "fr", "de"):
+        return ",", "."
+    return ".", ","
 
 
 def resolve_thousands_or_decimal(word: str, thousands_separator: str = ",") -> Optional[str]:
     """The number ``word`` reads as, when its ``thousands_separator``s resolve to one
     unambiguous shape, else ``None``.
 
-    A separator is a thousands grouping only where every one of them is followed by
-    exactly three digits, end to end ('1,500', '1,234,567'). A separator followed by
-    fewer digits ('12,5') or by more ('1,0000') is not that shape, and to a
-    decimal-comma writer it marks the fraction: '12,5' reads as '12.5' does. A number
-    has one fractional part, so this reading applies only where ``word`` carries
-    exactly one separator. An ambiguous full grouping like '1,500' keeps today's
-    reading (the grouped integer).
-
-    Two or more separators that do not form a grouping resolve nothing: folding every
-    group after the first separator into one fraction ('1,2,3' -> '1.23') reads a
-    number nobody wrote and can drop digits a wide float rounds away ('055,123,4567'
-    lost its last group this way). Shared by :mod:`arbtok.util`'s word-level number
-    reading and :mod:`arbtok.textnorm`'s cardinal-numbers pass.
+    Separators that are each followed by exactly three digits are a thousands grouping
+    ('1,500', '1,234,567'), and the grouping wins where the shape is ambiguous. One
+    separator followed by fewer or more digits ('12,5', '1,0000') marks a decimal
+    fraction. Two or more separators that form no grouping resolve nothing: '1,2,3' is
+    not 1.23, and '055,123,4567' would lose digits as a float.
     """
     thousands_esc = re.escape(thousands_separator)
     if re.fullmatch(rf"\d{{1,3}}(?:{thousands_esc}\d{{3}})+", word):
@@ -418,62 +403,42 @@ def resolve_thousands_or_decimal(word: str, thousands_separator: str = ",") -> O
 
 
 def _normalize_number_word(word: str, full_lang: str, rbnf_engine) -> str:
-    """
-    Helper function to normalize a single word that is a number, handling
-    decimal and thousands separators based on locale.
-    """
+    """*word* spoken when it is a number or a fraction, its trailing punctuation kept."""
     cleaned_word = word.rstrip(string.punctuation)
+    trailing = word[len(cleaned_word):]
 
-    # Handle fractions like '3/3'
     if is_fraction(cleaned_word):
         try:
-            return pronounce_fraction(cleaned_word, full_lang) + word[len(cleaned_word):]
+            return pronounce_fraction(cleaned_word, full_lang) + trailing
         except Exception as e:
             LOG.error(f"ovos-number-parser failed to pronounce fraction: {word} - ({e})")
             return word
 
-    # Handle numbers with locale-specific separators
     decimal_separator, thousands_separator = _get_number_separators(full_lang)
-    temp_cleaned_word = cleaned_word
-
-    # Check if the word contains a thousands separator followed by digits and a decimal separator
-    # This is a specific check for formats like '123.456,78'
-    has_thousands_and_decimal = (
-            thousands_separator in temp_cleaned_word and
-            decimal_separator in temp_cleaned_word and
-            temp_cleaned_word.index(thousands_separator) < temp_cleaned_word.index(decimal_separator)
-    )
-
-    if has_thousands_and_decimal:
-        temp_cleaned_word = temp_cleaned_word.replace(thousands_separator, "")
-        temp_cleaned_word = temp_cleaned_word.replace(decimal_separator, ".")
-    elif decimal_separator in temp_cleaned_word and is_numeric(temp_cleaned_word.replace(decimal_separator, ".", 1)):
-        # Handle cases like '1,2' -> '1.2'
-        temp_cleaned_word = temp_cleaned_word.replace(decimal_separator, ".")
-    elif thousands_separator in temp_cleaned_word:
-        # See resolve_thousands_or_decimal for the rule. A word its separators do not
-        # resolve is left with them in, which is not numeric, so it falls through
-        # unread here to the digit-run fallback below it always had
-        # (``_verbalize_residual_digits_ar``, which speaks every digit run on its own
-        # and leaves the separators as written) rather than to a reading invented for
-        # a shape nobody specified.
-        resolved = resolve_thousands_or_decimal(temp_cleaned_word, thousands_separator)
+    number = cleaned_word
+    if (thousands_separator in number and decimal_separator in number
+            and number.index(thousands_separator) < number.index(decimal_separator)):
+        # '123.456,78'
+        number = number.replace(thousands_separator, "").replace(decimal_separator, ".")
+    elif decimal_separator in number and is_numeric(number.replace(decimal_separator, ".", 1)):
+        number = number.replace(decimal_separator, ".")
+    elif thousands_separator in number:
+        # A shape that does not resolve keeps its separators and is not numeric, so it
+        # is left to _verbalize_residual_digits_ar, which speaks each digit run.
+        resolved = resolve_thousands_or_decimal(number, thousands_separator)
         if resolved is not None:
-            temp_cleaned_word = resolved
+            number = resolved
 
-    # Check if the word is a valid number after processing
-    if is_numeric(temp_cleaned_word):
+    if is_numeric(number):
         try:
-            num = float(temp_cleaned_word) if "." in temp_cleaned_word else int(temp_cleaned_word)
-            return pronounce_number(num, lang=full_lang) + word[len(cleaned_word):]
+            return pronounce_number(float(number) if "." in number else int(number), lang=full_lang) + trailing
         except Exception as e:
             LOG.error(f"ovos-number-parser failed to pronounce number: {word} - ({e})")
             return word
 
-    elif rbnf_engine and cleaned_word.isdigit():
+    if rbnf_engine and cleaned_word.isdigit():
         try:
-            pronounced_number = rbnf_engine.format_number(cleaned_word, FormatPurpose.CARDINAL).text
-            return pronounced_number + word[len(cleaned_word):]
+            return rbnf_engine.format_number(cleaned_word, FormatPurpose.CARDINAL).text + trailing
         except Exception as e:
             LOG.error(f"unicode-rbnf failed to pronounce number: {word} - ({e})")
             return word
@@ -481,114 +446,68 @@ def _normalize_number_word(word: str, full_lang: str, rbnf_engine) -> str:
     return word
 
 
-# --- Date and Time Pronunciation ---
 def pronounce_date(date_obj: date, full_lang: str) -> str:
-    """
-    Pronounces a date object using ovos-date-parser.
-    """
+    """*date_obj* spoken in *full_lang*, by ovos-date-parser."""
     return nice_date(date_obj, full_lang)
 
 
 def pronounce_time(time_string: str, full_lang: str) -> str:
-    """
-    Pronounces a time string using ovos-date-parser.
-    Handles military time like "15h01" and converts it to a
-    datetime.time object before passing it to nice_time.
-    """
+    """A 24-hour time written "15h01", spoken in *full_lang* by ovos-date-parser."""
     try:
         hours, mins = time_string.split("h")
         time_obj = datetime.time(int(hours), int(mins))
-        # Use nice_time from ovos-date-parser
         return nice_time(time_obj, full_lang, speech=True, use_24hour=True, use_ampm=False)
     except Exception as e:
         LOG.warning(f"Failed to parse time string '{time_string}': {e}")
         return time_string.replace("h", " ")
 
 
+_TIME_24H = re.compile(r"(\d{1,2})h(\d{2})", re.IGNORECASE)
+_NUMERIC_DATE = re.compile(r"(\d{1,4})[/-](\d{1,2})[/-](\d{1,4})")
+_WORD_HYPHEN_DIGIT = re.compile(r"(\w+)-(\d+)")
+
+
 def _normalize_dates_and_times(text: str, full_lang: str, date_format: str = "DMY") -> str:
-    """
-    Helper function to normalize dates and times using regular expressions.
-    This prepares the strings for pronunciation.
-    """
-    lang_code = full_lang.split("-")[0]
-    # Pre-process with regex to handle English am/pm times
-    if lang_code == "en":
+    """Speak every 24-hour time and the first numeric date in *text*."""
+    if full_lang.split("-")[0] == "en":
         text = re.sub(r"(?i)(\d+)(am|pm)", r"\1 \2", text)
-        # Handle the pronunciation for TTS
         text = text.replace("am", "A M").replace("pm", "P M")
 
-    # Normalize times like "15h01" to words
-    time_pattern = re.compile(r"(\d{1,2})h(\d{2})", re.IGNORECASE)
+    text = _TIME_24H.sub(lambda m: pronounce_time(m.group(0), full_lang), text)
 
-    def replace_time(match):
-        time_str = match.group(0)
-        return pronounce_time(time_str, full_lang)
+    match = _NUMERIC_DATE.search(text)
+    if not match:
+        return text
+    part1_str, part2_str, part3_str = match.groups()
+    p1, p2, p3 = int(part1_str), int(part2_str), int(part3_str)
 
-    text = time_pattern.sub(replace_time, text)
+    if len(part1_str) == 4:
+        year, rest_parts = p1, [p2, p3]
+    elif len(part3_str) == 4:
+        year, rest_parts = p3, [p1, p2]
+    else:
+        # The year is last. Two digits read 00-29 as 2000-2029 and 30-99 as 1930-1999.
+        year = p3
+        if year < 100:
+            year = 2000 + year if year < 30 else 1900 + year
+        rest_parts = [p1, p2]
 
-    # Find dates like "DD/MM/YYYY" or "YYYY/MM/DD"
-    date_pattern = re.compile(r"(\d{1,4})[/-](\d{1,2})[/-](\d{1,4})")
+    if any(p > 12 and len(str(p)) == 2 for p in rest_parts):
+        # A two-digit part above 12 is the day.
+        day = next(p for p in rest_parts if p > 12)
+        rest_parts.remove(day)
+        month = rest_parts[0]
+    elif date_format.lower() == "mdy":
+        month, day = rest_parts[0], rest_parts[1]
+    else:
+        day, month = rest_parts[0], rest_parts[1]
 
-    match = date_pattern.search(text)
-
-    if match:
-        # Get the three parts of the date string
-        part1_str, part2_str, part3_str = match.groups()
-        p1, p2, p3 = int(part1_str), int(part2_str), int(part3_str)
-
-        # Initialize month, day, and year
-        month, day, year = None, None, None
-
-        # Determine year first based on length (4 digits)
-        if len(part1_str) == 4:
-            year, rest_parts = p1, [p2, p3]
-        elif len(part3_str) == 4:
-            year, rest_parts = p3, [p1, p2]
-        else:
-            # If no 4-digit year, it's ambiguous, assume a 2-digit year.
-            # We'll assume the last part is the year based on common patterns.
-            year = p3
-            # Expand 2-digit year to 4-digit year
-            if year < 100:
-                # Assume years 00-29 are 2000-2029, 30-99 are 1930-1999
-                year = 2000 + year if year < 30 else 1900 + year
-            rest_parts = [p1, p2]
-
-        # From the remaining parts, try to determine day and month
-        if day is None and any(p > 12 and len(str(p)) == 2 for p in rest_parts):
-            # If a two-digit number is > 12, it's a day
-            day_candidate = next((p for p in rest_parts if p > 12), None)
-            if day_candidate:
-                day = day_candidate
-                rest_parts.remove(day_candidate)
-                month = rest_parts[0]
-
-        # Fallback to date_format if day/month are still ambiguous
-        if day is None or month is None:
-            if date_format.lower() == "mdy":
-                month, day = rest_parts[0], rest_parts[1]
-            else:  # default to DD/MM/YY
-                day, month = rest_parts[0], rest_parts[1]
-
-        try:
-            date_obj = date(year, month, day)
-            pronounced_date_str = pronounce_date(date_obj, full_lang)
-            text = text.replace(match.group(0), pronounced_date_str)
-        except (ValueError, IndexError) as e:
-            LOG.warning(f"Could not parse date from '{match.group(0)}': {e}")
-
-    return text
-
-
-def _normalize_word_hyphen_digit(text: str) -> str:
-    """
-    Helper function to normalize words attached to digits with a hyphen,
-    such as 'sub-23' -> 'sub 23'.
-    """
-    # Regex to find a word (\w+) followed by a hyphen and a digit (\d+)
-    pattern = re.compile(r"(\w+)-(\d+)")
-    text = pattern.sub(r"\1 \2", text)
-    return text
+    try:
+        pronounced_date_str = pronounce_date(date(year, month, day), full_lang)
+    except (ValueError, IndexError) as e:
+        LOG.warning(f"Could not parse date from '{match.group(0)}': {e}")
+        return text
+    return text.replace(match.group(0), pronounced_date_str)
 
 
 def _unit_word(units: dict, symbol: str) -> str:
@@ -614,112 +533,91 @@ def _is_clock_time(match: re.Match) -> bool:
 
 
 def _normalize_units(text: str, full_lang: str) -> str:
+    """Speak each number written with a unit symbol, the symbol as its unit's name.
+
+    Symbols that are not alphanumeric (``°C``, ``%``) go first, then alphanumeric ones,
+    which must end on a word boundary.
     """
-    Helper function to normalize units attached to numbers.
-    This function handles symbolic and alphanumeric units separately
-    to avoid issues with word boundaries.
-    """
-    text = text.replace("º", "°")  # these characters look the same... but...
+    text = text.replace("º", "°")  # the ordinal indicator, typed for the degree sign
     lang_code = full_lang.split("-")[0]
-    if lang_code in UNITS:
-        # Determine number separators for the language
-        decimal_separator, thousands_separator = _get_number_separators(full_lang)
-        # A grouping is groups of three digits. Any other shape carrying a separator
-        # is not a number this pass reads, and is left exactly as it was written: a
-        # dot before fewer than three digits is a decimal point, not a grouping.
-        thousands, decimal = re.escape(thousands_separator), re.escape(decimal_separator)
-        grouped = re.compile(rf"\d{{1,3}}(?:{thousands}\d{{3}})+(?:{decimal}\d+)?")
-        # Anchored at both ends: a match may not begin right after a digit or a
-        # separator, nor stop in front of one, or a shape that forms no grouping is
-        # read from the digits after its separator with the rest left glued in front.
-        number_pattern_str = (rf"(?<![\d.,])({grouped.pattern}"
-                              rf"|\d+(?:[{decimal}.]\d+)?)(?![\d.,]*\d)")
+    if lang_code not in UNITS:
+        return text
+    decimal_separator, thousands_separator = _get_number_separators(full_lang)
+    # A grouping is groups of three digits. Any other shape carrying a separator
+    # is not a number this pass reads, and is left exactly as it was written: a
+    # dot before fewer than three digits is a decimal point, not a grouping.
+    thousands, decimal = re.escape(thousands_separator), re.escape(decimal_separator)
+    grouped = re.compile(rf"\d{{1,3}}(?:{thousands}\d{{3}})+(?:{decimal}\d+)?")
+    # Anchored at both ends: a match may not begin right after a digit or a
+    # separator, nor stop in front of one, or a shape that forms no grouping is
+    # read from the digits after its separator with the rest left glued in front.
+    number_pattern_str = (rf"(?<![\d.,])({grouped.pattern}"
+                          rf"|\d+(?:[{decimal}.]\d+)?)(?![\d.,]*\d)")
 
-        # Separate units into symbolic and alphanumeric
-        symbolic_units = {k: v for k, v in UNITS[lang_code].items() if not k.isalnum()}
-        alphanumeric_units = {k: v for k, v in UNITS[lang_code].items() if k.isalnum()}
+    def plain_number(match: re.Match) -> str:
+        number = match.group(1)
+        if grouped.fullmatch(number):
+            number = number.replace(thousands_separator, "")
+        return number.replace(decimal_separator, ".")
 
-        # Create regex pattern for symbolic units and replace them first
-        sorted_symbolic = sorted(symbolic_units.keys(), key=len, reverse=True)
-        symbolic_pattern_str = "|".join(re.escape(unit) for unit in sorted_symbolic)
-        if symbolic_pattern_str:
-            symbolic_pattern = re.compile(number_pattern_str + r"\s*(" + symbolic_pattern_str + r")", re.IGNORECASE)
+    symbolic_units = {k: v for k, v in UNITS[lang_code].items() if not k.isalnum()}
+    alphanumeric_units = {k: v for k, v in UNITS[lang_code].items() if k.isalnum()}
 
-            def replace_symbolic(match):
-                number = match.group(1)
-                if grouped.fullmatch(number):
-                    number = number.replace(thousands_separator, "")
-                if decimal_separator != ".":
-                    number = number.replace(decimal_separator, ".")
-                unit_symbol = match.group(2)
-                unit_word = _unit_word(symbolic_units, unit_symbol)
-                try:
-                    return f"{pronounce_number(float(number) if '.' in number else int(number), full_lang)} {unit_word}"
-                except Exception as e:
-                    LOG.error(f"Failed to pronounce number with unit: {number}{unit_symbol} - ({e})")
-                    return match.group(0)
+    symbolic_pattern_str = "|".join(re.escape(unit) for unit in sorted(symbolic_units, key=len, reverse=True))
+    if symbolic_pattern_str:
+        symbolic_pattern = re.compile(number_pattern_str + r"\s*(" + symbolic_pattern_str + r")", re.IGNORECASE)
 
-            text = symbolic_pattern.sub(replace_symbolic, text)
-
-        # Create regex pattern for alphanumeric units and replace them next
-        sorted_alphanumeric = sorted(alphanumeric_units.keys(), key=len, reverse=True)
-        alphanumeric_pattern_str = "|".join(re.escape(unit) for unit in sorted_alphanumeric)
-        if alphanumeric_pattern_str:
-            alphanumeric_pattern = re.compile(number_pattern_str + r"\s*(" + alphanumeric_pattern_str + r")\b",
-                                              re.IGNORECASE)
-
-            def replace_alphanumeric(match):
-                number = match.group(1)
-                if grouped.fullmatch(number):
-                    number = number.replace(thousands_separator, "")
-                if decimal_separator != ".":
-                    number = number.replace(decimal_separator, ".")
-                unit_symbol = match.group(2)
-                if unit_symbol.lower() in _CLOCK_MARKERS and _is_clock_time(match):
-                    return match.group(0)
-                # Capitals a symbol is not written in are evidence of a code: "3 mg" is
-                # milligrams where "3 MG" is the make, and "2 EV" a car rather than two
-                # electronvolts. A symbol the table itself capitalises, GB, is untouched,
-                # and so are the four people capitalise whatever the table spells them.
-                written = next(k for k in alphanumeric_units if k.lower() == unit_symbol.lower())
-                if unit_symbol.isupper() and not written.isupper() \
-                        and unit_symbol.lower() not in _CAPITALISED_UNITS:
-                    return match.group(0)
-                unit_word = _unit_word(alphanumeric_units, unit_symbol)
+        def replace_symbolic(match: re.Match) -> str:
+            number = plain_number(match)
+            unit_symbol = match.group(2)
+            unit_word = _unit_word(symbolic_units, unit_symbol)
+            try:
                 return f"{pronounce_number(float(number) if '.' in number else int(number), full_lang)} {unit_word}"
+            except Exception as e:
+                LOG.error(f"Failed to pronounce number with unit: {number}{unit_symbol} - ({e})")
+                return match.group(0)
 
-            text = alphanumeric_pattern.sub(replace_alphanumeric, text)
+        text = symbolic_pattern.sub(replace_symbolic, text)
+
+    alphanumeric_pattern_str = "|".join(re.escape(unit) for unit in sorted(alphanumeric_units, key=len, reverse=True))
+    if alphanumeric_pattern_str:
+        alphanumeric_pattern = re.compile(number_pattern_str + r"\s*(" + alphanumeric_pattern_str + r")\b",
+                                          re.IGNORECASE)
+
+        def replace_alphanumeric(match: re.Match) -> str:
+            number = plain_number(match)
+            unit_symbol = match.group(2)
+            if unit_symbol.lower() in _CLOCK_MARKERS and _is_clock_time(match):
+                return match.group(0)
+            # Capitals a symbol is not written in are evidence of a code: "3 mg" is
+            # milligrams where "3 MG" is the make, and "2 EV" a car rather than two
+            # electronvolts. A symbol the table itself capitalises, GB, is untouched,
+            # and so are the four people capitalise whatever the table spells them.
+            written = next(k for k in alphanumeric_units if k.lower() == unit_symbol.lower())
+            if unit_symbol.isupper() and not written.isupper() \
+                    and unit_symbol.lower() not in _CAPITALISED_UNITS:
+                return match.group(0)
+            unit_word = _unit_word(alphanumeric_units, unit_symbol)
+            return f"{pronounce_number(float(number) if '.' in number else int(number), full_lang)} {unit_word}"
+
+        text = alphanumeric_pattern.sub(replace_alphanumeric, text)
     return text
 
 
 def _normalize_word(word: str, full_lang: str, rbnf_engine) -> str:
-    """
-    Helper function to normalize a single word.
-    """
+    """*word* expanded when it is a contraction or a title, else spoken as a number."""
     lang_code = full_lang.split("-")[0]
-
     if word in CONTRACTIONS.get(lang_code, {}):
         return CONTRACTIONS[lang_code][word]
-
     if word in TITLES.get(lang_code, {}):
         return TITLES[lang_code][word]
-
-    # Delegate number parsing to the new helper function
-    normalized_number = _normalize_number_word(word, full_lang, rbnf_engine)
-    if normalized_number != word:
-        return normalized_number
-
-    return word
+    return _normalize_number_word(word, full_lang, rbnf_engine)
 
 
 def is_fraction(word: str) -> bool:
-    """Checks if a word is a fraction like '3/3'."""
-    if "/" in word:
-        parts = word.split("/")
-        if len(parts) == 2:
-            n1, n2 = parts
-            return n1.isdigit() and n2.isdigit()
-    return False
+    """Whether *word* is a fraction of two digit runs, like '3/4'."""
+    parts = word.split("/")
+    return len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit()
 
 
 # Arabic-Indic and extended (Persian) digits mapped to ASCII so one rule covers them all.
@@ -741,18 +639,14 @@ _GLUED_TIME_UNITS = {"h": "ساعة", "s": "ثانية"}
 _GLUED_DIGIT_RUN = re.compile(r"(?<![A-Za-z\d])([A-Za-z]*)(\d{2,})([A-Za-z]*)(?![A-Za-z\d])")
 # A lone percent sign (ASCII "%" or Arabic "٪") left behind once its number was verbalized.
 _RESIDUAL_PERCENT = re.compile(r"\s*[%٪]")
-# Spoken form of "%".
 _PERCENT_WORD_AR = "بالمئة"
 
 
 def _verbalize_residual_digits_ar(text: str) -> str:
-    """Guarantee no digit reaches the phoneme map: verbalize every remaining digit run.
+    """Speak every digit run the number pass left, so no digit reaches the phoneme map.
 
-    Runs after the locale number pass, so it only catches what that pass missed — numbers glued
-    to punctuation ("10،"), a stray "%", or Arabic-Indic digits. Number-to-words conversion is
-    delegated to ovos-number-parser (as everywhere else in this module); arbtok only decides which
-    digits are numbers. Arabizi digits (glued to Latin letters) are left untouched for the Arabizi
-    transcription path.
+    Catches a number glued to punctuation ("10،"), a stray "%" and Arabic-Indic digits.
+    A single digit glued to Latin letters is Arabizi and is left for that path.
     """
     text = text.translate(_AR_INDIC_DIGITS)
 
@@ -776,105 +670,29 @@ def _verbalize_residual_digits_ar(text: str) -> str:
 
     text = _GLUED_DIGIT_RUN.sub(glued, text)
     text = _RESIDUAL_NUM.sub(repl, text)
-    # A percent sign that survived the number pass (the digit was verbalized but the "%" was
-    # left behind) must still be spoken, never reach the phoneme map as a bare symbol.
-    text = _RESIDUAL_PERCENT.sub(f" {_PERCENT_WORD_AR}", text)
-    return text
+    return _RESIDUAL_PERCENT.sub(f" {_PERCENT_WORD_AR}", text)
 
 
 def normalize(text: str, lang: str) -> str:
-    """
-    Normalize a text string for speech by expanding contractions and titles and converting dates, times, numbers, units, and fractions into spoken forms.
-    
-    Parameters:
-        text (str): Input text to normalize.
-        lang (str): Locale language tag (e.g., "en", "en-US") that determines language-specific rules.
-    
-    Returns:
-        str: The normalized text with expanded contractions and titles and with dates, times, numbers, units, and fractions converted to their spoken equivalents.
-    
-    Notes:
-        Date and time normalization is attempted for the locale and is silently skipped if unsupported. Numeric formatting may use a locale RBNF engine when available; otherwise a fallback is used.
-    """
-    full_lang = lang
-    lang_code = full_lang.split("-")[0]
-    dialog = text
+    """*text* with its dates, times, units, numbers, fractions, contractions and titles
+    written as words in *lang* (a tag such as "en" or "en-US")."""
+    lang = standardize_lang(lang)
+    lang_code = lang.split("-")[0]
 
-    # Step 1: Handle dates and times with ovos-date-parser
-    date_format = "MDY" if full_lang.lower() == "en-us" else "DMY"
-    try:
-        dialog = _normalize_dates_and_times(dialog, full_lang, date_format)
-    except:  # throws exception on unsupported langs
-        pass
+    date_format = "MDY" if lang == "en-US" else "DMY"
+    with suppress(Exception):  # ovos-date-parser raises on a language it does not support
+        text = _normalize_dates_and_times(text, lang, date_format)
 
-    # Step 2: Normalize words with hyphens and digits
-    dialog = _normalize_word_hyphen_digit(dialog)
+    text = _WORD_HYPHEN_DIGIT.sub(r"\1 \2", text)  # 'sub-23' -> 'sub 23'
+    text = _normalize_units(text, lang)
 
-    # Step 3: Expand units attached to numbers
-    dialog = _normalize_units(dialog, full_lang)
-
-    # Step 4: Normalize word-by-word
-    words = dialog.split()
     rbnf_engine = None
     try:
         rbnf_engine = RbnfEngine.for_language(lang_code)
     except (ValueError, KeyError) as e:
         LOG.debug(f"RBNF engine not available for language '{lang_code}': {e}")
+    text = " ".join(_normalize_word(word, lang, rbnf_engine) for word in text.split())
 
-    normalized_words = [_normalize_word(word, full_lang, rbnf_engine) for word in words]
-    dialog = " ".join(normalized_words)
-
-    # Step 5 (Arabic): guarantee no digit survives into the phoneme map.
     if lang_code == "ar":
-        dialog = _verbalize_residual_digits_ar(dialog)
-
-    return dialog
-
-
-if __name__ == "__main__":
-    # --- Example usage for demonstration purposes ---
-
-    # General normalization examples
-    print("General English example: " + normalize('I\'m Dr. Prof. 3/3 0.5% of 12345€, 5ft, and 10kg', 'en'))
-    print(
-        f"Word Salad Portuguese (Dr. Prof. 3/3 0,5% de 12345€, 5m, e 10kg): {normalize('Dr. Prof. 3/3 0,5% de 12345€, 5m, e 10kg', 'pt')}")
-    print(
-        f"Word Salad Portuguese (Dr. Prof. 3/3 0.5% de 12345€, 5m, e 10kg): {normalize('Dr. Prof. 3/3 0.5% de 12345€, 5m, e 10kg', 'pt')}")
-
-    # Portuguese examples with comma decimal separator
-    print("\n--- Portuguese Decimal Separator Examples ---")
-    print(
-        f"Original: 'A coima aplicada é de 1,2 milhões de euros.' Normalized: '{normalize('A coima aplicada é de 1,2 milhões de euros.', 'pt')}'")
-    print(
-        f"Original: 'Agora, tem 1,88 metros e muito para contar.' Normalized: '{normalize('Agora, tem 1,88 metros e muito para contar.', 'pt')}'")
-    print(
-        f"Original: 'Ainda temos 1,7 milhões de pobres!' Normalized: '{normalize('Ainda temos 1,7 milhões de pobres!', 'pt')}'")
-    print(f"Original: 'O lucro foi de 123.456,78€.' Normalized: '{normalize('O lucro foi de 123.456,78€.', 'pt')}'")
-    print(f"Normalized: '{normalize('O lucro foi de 123.456,78€.', 'pt-PT')}'")
-
-    # English dates and times
-    print("\n--- English Date & Time Examples ---")
-    print(f"English date (MDY format): {normalize('The date is 08/03/2025', 'en-US')}")
-    print(f"English ambiguous date (MDY assumed): {normalize('The report is due 15/05/2025', 'en-US')}")
-    print(f"English date with dashes: {normalize('The event is on 11-04-2025', 'en-US')}")
-    print(f"English AM/PM time: {normalize('The meeting is at 10am', 'en-US')}")
-    print(f"English military time: {normalize('The party is at 19h30', 'en-US')}")
-    print(f"English month name: {normalize('The report is due 15 May 2025', 'en-US')}")
-
-    # Portuguese dates and times
-    print("\n--- Portuguese Date & Time Examples ---")
-    print(f"Portuguese date (A data é 03/08/2025): {normalize('A data é 03/08/2025', 'pt')}")
-    print(
-        f"Portuguese ambiguous date (O relatório é para 15/05/2025): {normalize('O relatório é para 15/05/2025', 'pt')}")
-    print(
-        f"Portuguese date with dashes (O evento é no dia 25-10-2024): {normalize('O evento é no dia 25-10-2024', 'pt')}")
-    print(f"Portuguese military time (O encontro é às 14h30): {normalize('O encontro é às 14h30', 'pt')}")
-
-    # Other examples
-    print(f"\n--- Other Examples ---")
-    print(f"English fraction: {normalize('The fraction is 1/2', 'en')}")
-    print(f"English plural fraction: {normalize('There are 3/4 of a cup', 'en')}")
-    print(f"Spanish example with units: {normalize('The temperature is 25ºC', 'es')}")
-    print(f"Portuguese with punctuation: {normalize('12345€, 5m e 10kg', 'pt')}")
-    print(
-        f"Portuguese word-digit: {normalize('Esta temporada leva oito jogos ao serviço da equipa sub-23 leonina.', 'pt')}")
+        text = _verbalize_residual_digits_ar(text)
+    return text

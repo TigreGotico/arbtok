@@ -1,5 +1,13 @@
 # Varieties
 
+<!-- agent-hint
+covers: how a tag resolves to a variety, the ISO 639-3 codes, loanword nativization per variety and the diacritization provenance
+source: arbtok/dialects.py, arbtok/translit.py, arbtok/donor_lexicon.py, arbtok/diacritize.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/dialects.md
+see: tashkeel.md, arabizi.md, gold-code-switched.md, api.md
+-->
+
 A variety is an **orthography2ipa spec**, named by its code, and each variety's
 spec does more than allophony: its grapheme table is the **licensing filter**
 that makes arbtok's tashkeel dialect-aware (the fusion scorer picks the model's
@@ -14,6 +22,17 @@ ArbtokG2PPlugin(lang="ar-SA-x-hejaz").transcribe_word("بَيْت")    # 'ˈbeː
 ArbtokG2PPlugin().transcribe_word("قَهْوَة")                      # 'ˈqahwa'  (MSA)
 ```
 
+The whole sentence shows the same split. Najdi reads qāf as /ɡ/, adds the
+epenthetic vowel of *gahawa* and keeps /eː/ in *bayt*. Tunisian keeps /q/ and
+monophthongizes *bayt* to /iː/:
+
+```python
+print(ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("يشرب القهوة في البيت"))
+# ˈjaʃrab alˈɡahawa fiː lˈbeːt
+print(ArbtokG2PPlugin(lang="ar-TN").transcribe("يشرب القهوة في البيت"))
+# ˈjaʃrab alˈqahwa fiː lˈbiːt
+```
+
 The variety may also ride on `WordContext.lang` per call, which overrides the
 instance default. An Arabic tag that names no Arabic spec narrows a subtag at a
 time (`ar-SA-x-najd` → `ar-SA` → `ar`) and ultimately falls back to the `ar` leaf,
@@ -21,8 +40,10 @@ so an unknown region is MSA rather than an error.
 
 A tag that is not Arabic, `fi` or `en-US`, raises `ValueError`. On
 `WordContext.lang` such a tag keeps the instance default. The extlang form names
-its language (`ar-arz` is `arz`). The retired code `ajp`, merged into `apc` in
-ISO 639-3, reads as `apc` (`ajp-JO` is `apc-JO`).
+its language (`ar-arz` is `arz`). A retired ISO 639-3 code names the code it
+was merged into: `ajp-JO` is `apc-JO`, and Judeo-Tunisian `ajt` is Tunisian
+`aeb-TN`. Bare `ajp`, `ar-ajp` and `ajp-Arab` read as `apc-JO`, the lect
+orthography2ipa keys `ajp` to. Bare `apc` is the region-less `apc` lect.
 
 Any Arabic spec orthography2ipa carries can be named, `ar`, `arb` (Classical),
 the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
@@ -35,23 +56,32 @@ the proto nodes (`ar-x-peninsular`, `ar-x-gulf`, `ar-x-levantine`,
 the orthography2ipa `quality` tier of its spec, so the list tracks the installed
 data set rather than a table in arbtok. Ask the code rather than a page: a spec
 shipped upstream joins the roster without arbtok changing, which is what makes a
-written-out list here wrong within a release or two.
+written-out list here wrong within a release or two. The roster holds only specs
+that declare Arabic, Latin or undetermined (`Zyyy`) script. A spec written for
+another script, such as Judeo-Tunisian `ajt` in Hebrew script, stays off it.
 
 ```python
 import arbtok
 
 for lect in arbtok.supported_lects():
     print(lect.code, lect.tier)
+
+print(arbtok.supported_lects()[:2])
+# [Lect(code='aao', tier='stub'), Lect(code='abh', tier='stub')]
 ```
 
-The roster runs from MSA `ar` and Classical `arb` through the grouping nodes
-(`ar-x-gulf`, `ar-x-levantine`, `ar-x-maghrebi`, `ar-x-mashriqi`,
-`ar-x-peninsular`) to the national leaves (`ar-EG`, `ar-IQ`, `ar-MA`, …) and the
-sub-lects below them (`ar-SA-x-najd`, `ar-IQ-x-qeltu`, `ar-BH-x-baharna`, …),
-with the Buckwalter romanization `ar-Latn-buckwalter` among them as a
-machine-readable anchor. Most sit at `research` tier and a handful at `stub`,
-where the grapheme layer resolves but the allophone rule set has not been taken
-as far. The tier is a property of the installed orthography2ipa spec, not of
+The roster lists each variety by its canonical code. orthography2ipa keys a lect
+that has its own ISO 639-3 code by that code, so `supported_lects()` gives `arz-EG`
+for `ar-EG`, `ars-SA` for `ar-SA-x-najd`, `acw-SA` for `ar-SA-x-hejaz` and `afb`
+for `ar-x-gulf`. The regional tags resolve as aliases: `lang="ar-EG"` and
+`lang="arz-EG"` select the same spec, and `spec_for_lang` returns the canonical
+code. The roster runs from MSA `ar` and Classical `arb` through the grouping nodes
+(`afb`, `ar-x-maghrebi`, `ar-x-mashriqi`, `ar-x-peninsul`, …) to the national leaves
+(`arz-EG`, `acm-IQ`, `ary-MA`, …) and the sub-lects below them (`ars-SA-x-qassim`,
+`ar-IQ-x-qeltu`, `abv-BH`, …), with the Buckwalter romanization
+`ar-Latn-x-buckwalt` among them as a machine-readable anchor. Most sit at
+`research` tier and a handful at `stub`, where the grapheme layer resolves but the
+allophone rule set has not been taken as far. The tier is a property of the installed orthography2ipa spec, not of
 arbtok's cascade.
 
 ## The ISO 639-3 code a tag names
@@ -67,15 +97,19 @@ than a list of countries.
 ```python
 from arbtok import lect_code
 
-lect_code("ar-SA-x-hejaz")   # 'acw' — Hijazi
-lect_code("ar-KW")           # 'afb' — Gulf, from the ar-x-gulf node it descends from
-lect_code("ar-SA")           # 'ars' — Najdi, which ar-SA resolves to
-lect_code("ar")              # None  — the macrolanguage names no lect
+lect_code("ar-SA-x-hejaz")   # 'acw'  (Hijazi)
+lect_code("ar-KW")           # 'afb'  (Gulf, from the ar-x-gulf node it descends from)
+lect_code("ar-SA")           # 'ars'  (Najdi, which ar-SA resolves to)
+lect_code("ar")              # None  (the macrolanguage names no lect)
 ```
 
 Whether anything is said differently under the code is the answer of whoever
 holds the data: the parser speaks a lect's cardinals only for the lects it has
-read a source for, and `ars` is not among them.
+read a source for. Its lects include Hijazi `acw`, Gulf `afb`, Najdi `ars`,
+Cairene Egyptian `arz`, Levantine `apc`, Moroccan `ary`, Tunisian `aeb` and
+Algerian `arq`. `lect_code` gives only `acw`, `afb`, `ars` and `arz`, so a tag
+reaches any other lect only when it is the ISO 639-3 code itself, such as `ary-MA` (see
+[normalization.md](normalization.md#numbers-in-the-words-a-lect-actually-uses)).
 
 ## Pipeline order: MSA restoration before dialect allophony
 
@@ -95,9 +129,9 @@ The order is observable. Bare `قلم`:
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-ArbtokG2PPlugin(lang="ar", diacritize=True).transcribe("قلم")          # 'ˈqalam'
-ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=True).transcribe("قلم") # 'ˈɡalam'
-ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=False).transcribe("قلم") # 'ɡlm'
+ArbtokG2PPlugin(lang="ar", diacritize=True).transcribe("قلم")  # 'ˈqalam'
+ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=True).transcribe("قلم")  # 'ˈɡalam'
+ArbtokG2PPlugin(lang="ar-SA-x-najd", diacritize=False).transcribe("قلم")  # 'ɡlm'
 ```
 
 `ˈɡalam` carries both the restored MSA vowels *and* the Najdi qāf → /ɡ/ reflex:
@@ -147,15 +181,24 @@ lang→zone map, and the first ancestor carrying a table wins:
 | Maghrebi | `ar-x-maghrebi` | Kenstowicz & Louriz (2009). Ziadna (2018). Oueslati (2021). Heath (2020) |
 | default | `ar` | Watson (2002). Holes (2004) |
 
+Real Arabic text holds Latin-script words, such as *عندي meeting الساعة ٣*. The
+Najdi reading of the run is:
+
+```python
+print(ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe("عندي meeting الساعة ٣"))
+# ˈʕindiː miːtinɡ asˈsaːʕa θˈθaːliθa
+```
+
+A lect with no table of its own, such as `ar-KW`, falls back to the conservative
+pan-Arabic default.
+
 Which leaves inherit which table is not listed here, and deliberately. The answer
 comes from orthography2ipa's genealogy, so it changes whenever that package ships
-a spec — `ar-SA-x-shamali` and three `ar-EG-x-*` lects exist on newer releases than
-this repository's floor pin and would already have made a written-out list wrong.
-Ask the code:
+a spec, and a written-out list would go wrong. Ask the code:
 
 ```python
 from arbtok.translit import nativization_table, SEGMENT_MAP
-nativization_table("ar-SA-x-qassim") is SEGMENT_MAP   # True — inherits Najdi
+nativization_table("ar-SA-x-qassim") is SEGMENT_MAP   # True  (inherits Najdi)
 ```
 
 Two leaves are held out of their group's table by naming the default ahead of
@@ -165,8 +208,9 @@ it.
 
 ```python
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("manager")         # 'maniɡar'  (Cairene stop ǧīm)
-ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar' (Najdi affricate)
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("manager")  # 'manidʒar'  (Najdi affricate)
 ArbtokG2PPlugin(lang="ar-EG").transcribe_word("think")           # 'tink'     (interdental merger)
+ArbtokG2PPlugin(lang="ar-SA-x-najd").transcribe_word("think")    # 'θink'     (Najdi keeps the interdental)
 ```
 
 ### The Maghreb borrows from French
@@ -232,9 +276,22 @@ which has no /θ/.
 caller for whom a nearest-sound guess is worse than no answer:
 
 ```python
-transliterate("meeting", "ar")                # 'miːtink'  — /ɡ/ projected onto /k/
-transliterate("meeting", "ar", strict=True)   # None       — MSA declares no /ɡ/
-transliterate("meeting", "ar-SA-x-najd")      # 'miːtinɡ'  — Najdi declares it
+transliterate("meeting", "ar")                # 'miːtink'  (/ɡ/ projected onto /k/)
+transliterate("meeting", "ar", strict=True)   # None  (MSA declares no /ɡ/)
+transliterate("meeting", "ar-SA-x-najd")      # 'miːtinɡ'  (Najdi declares it)
+```
+
+The donor segmentation can cut a long vowel into the vowel and a separate `ː`.
+The `ː` joins the vowel before it again, and the long vowel is then checked like
+any other segment. MSA declares /aː/, so both calls keep it. Juba Arabic (`pga`)
+declares only short vowels, so projection shortens the vowel and `strict=True`
+refuses the word:
+
+```python
+transliterate("password", "ar")                # 'baːswaːrd'
+transliterate("password", "ar", strict=True)   # 'baːswaːrd'
+transliterate("password", "pga")               # 'basward'
+transliterate("password", "pga", strict=True)  # None
 ```
 
 `strict` governs that one decision and nothing else. `None` also comes back,
@@ -254,11 +311,8 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meetin
 - The **sentence cascade has no allophone pass**, it reads the grapheme layer
   only. Word-level transcription (`transcribe_word`, `arbtok.lattice.word_ipa`)
   is where a variety's rules fire.
-- Spec `quality` is `research`, not `production`, for the Arabic varieties, and
-  their gold has not been validated by a native speaker.
-
----
-[← Rawi-lattice fusion](rawi-fusion.md) · [Home](../README.md) · [Arabizi →](arabizi.md)
+- Spec `quality` is `research` or `stub`, never `production`, for the Arabic
+  varieties, and their gold has not been validated by a native speaker.
 
 ## Diacritizing without phonemizing, and knowing who decided
 
@@ -268,8 +322,8 @@ ArbtokG2PPlugin(lang="ar-SA-x-najd", nativize=False).transcribe("عندي meetin
 import arbtok
 
 out = arbtok.vocalize("عندي meeting مهم", "ar-EG")
-str(out)                                        # the vocalized string
-[(w.surface, w.provenance) for w in out.words]  # who decided each word
+str(out)                                        # 'عِنْدِي meeting مُهِمّ'  (the vocalized string)
+[(w.surface, w.provenance) for w in out.words]  # [('عندي', 'stem-lexicon'), ('meeting', 'not-arabic'), ('مهم', 'stem-lexicon')]  (who decided each word)
 ```
 
 Each `DiacritizedWord` carries `surface`, `output` and `provenance` — one of
@@ -286,8 +340,9 @@ untouched, whatever variety was asked for. Measured: six MSA vocalizations again
 
 So `provenance == "model"` means the model's MSA prior decided that word with nothing
 from the lect opposing it. That is not a bug report; it is the shape of the cascade, and
-the field is what lets a caller see it. `w.lect_constrained` excludes `model` and
-`model-repaired` for exactly this reason.
+the field is what lets a caller see it. `w.lect_constrained` is true only for
+`closed-class`, `author` and `proclitic`, so it excludes `model` and `model-repaired`
+for exactly this reason.
 
 The veto is not inert, and the distinction matters. Over the 636 model-path words of the
 shipped gold, **5 carry a reading at least one lect in the roster would reject** — the
@@ -379,11 +434,18 @@ So the lattice's advantage over the bare model on this gold is mostly **undoing 
 hamza restoration**, not correcting ḥarakāt. A mask that knew the variety could refuse
 the restoration where the orthography does not use it, and would not need the repair.
 
+The first line below builds the step plugin's generator, and `ArbtokG2PPlugin` takes `fusion=` instead. The second line makes the same choice for an orthography2ipa `Pipeline`:
+
 ```python
-ArbtokDiacritizer(path="fusion")   # the step plugin's generator; ArbtokG2PPlugin takes fusion=
-pipeline("ar", path="fusion")      # the same choice for an orthography2ipa Pipeline
+from arbtok.o2i_plugins import ArbtokDiacritizer, pipeline
+
+ArbtokDiacritizer(path="fusion")
+pipeline("ar", path="fusion")
 ```
 
 A value that is neither raises rather than falling back: a typo that silently kept the
 default reads exactly like the setting working, and a comparison run that way would
 compare one path with itself.
+
+---
+[← Rawi-lattice fusion](rawi-fusion.md) · [Home](index.md) · [Waqf →](waqf.md)

@@ -40,28 +40,21 @@ The design, concretely:
    reading is reduced to its pausal form, dropping the iʿrāb-style final short
    vowels the dialect targets would drop at pause anyway.
 
-The lexicon is still consulted first: a written-down word is a lexical fact, not
-a thing to score. Fusion only changes what happens for words nobody has recorded,
-and its whole margin over the shipped pipeline is the set of words whose argmax
-the orthography refuses — where the generator falls back to a bare skeleton and
-the scorer instead recovers the best licensed reading.
-
-Ownership note: this is arbtok code by design (roadmap §T.3 route 4). The bundled
-ensemble (:mod:`arbtok._ensemble`) stays a generic diacritizer that knows nothing
-of lattices; this module is the one place that knows about both it and
-orthography2ipa.
+The lexicon is consulted first: a written-down word is a lexical fact, not a thing
+to score. The bundled ensemble (:mod:`arbtok._ensemble`) knows nothing of lattices;
+this module is the one place that knows both it and orthography2ipa.
 """
 
 from __future__ import annotations
 
 import math
 import unicodedata
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 
 from orthography2ipa import get, underdetermined_positions
-from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
+from orthography2ipa import PhonetokTokenizer, TokenKind
 
 from arbtok.dialects import DEFAULT_LANG
 from arbtok.diacritize import (
@@ -73,6 +66,7 @@ from arbtok.lexicon import AMBIGUOUS_SHARE, DEFAULT_LEXICON, StemLexicon
 from arbtok.lattice import word_lattice
 from arbtok.nisba import restore_nisba
 from arbtok.tokenizer import normalize_unicode
+from arbtok.waqf import pausal
 
 #: Letters a writer may leave a hamza off. Alif carries it silently all the time
 #: (اكل for أكل); و and ي do not -- an unwritten hamza there would change which
@@ -170,15 +164,9 @@ class FusionDiacritizer:
     @property
     def diacritizer(self):
         if self._diacritizer is None:
-            # The bundled ensemble reader (logits / decode / diacritize) —
-            # arbtok's own stitched ONNX, exposing the flagship distribution to
-            # score. waqf is applied by this module (after scoring), not by the
-            # model.
             from arbtok._ensemble import get_ensemble
             self._diacritizer = get_ensemble()
         return self._diacritizer
-
-    # ── licensing (shared with the guarded pipeline) ────────────────────────
 
     def _is_licensed(self, word: str) -> bool:
         try:
@@ -196,15 +184,15 @@ class FusionDiacritizer:
             return 0.0
 
     def _dialect_lookup(self, word: str) -> Optional[str]:
-        """The lect's closed-class vocalization for *word*, guarded like a stem
-        entry (spells the word, licensed by the variety). Register-invariant, so
-        it answers in both waqf modes. See :mod:`arbtok.dialect_lexicon`."""
+        """The lect's closed-class vocalization for *word*, guarded like a model
+        proposal (spells the word, licensed by the variety). Register-invariant,
+        so it answers in both waqf modes. See :mod:`arbtok.dialect_lexicon`."""
         if self.dialect_lexicon is None:
             return None
         voc = self.dialect_lexicon.get(word)
         if voc is None:
             return None
-        if strip_marks(voc) != strip_marks(word) or not self._is_licensed(voc):
+        if not _skeleton_is_preserved(word, voc) or not self._is_licensed(voc):
             return None
         return voc
 
@@ -218,8 +206,6 @@ class FusionDiacritizer:
         if strip_marks(stem) != strip_marks(word) or not self._is_licensed(stem):
             return None
         return stem
-
-    # ── the beam ────────────────────────────────────────────────────────────
 
     def _pins(self, word: str, bare_word: str):
         """Per position of *bare_word*: the hard constraint the writing imposes.
@@ -305,7 +291,6 @@ class FusionDiacritizer:
         completed, never rescored) and as the nothing-licensed fallback."""
         proposed = self.diacritizer.diacritize(normalized)
         if self.waqf:
-            from arbtok.waqf import pausal
             proposed = pausal(proposed)
         if not _skeleton_is_preserved(normalized, proposed):
             repaired = repair_skeleton(normalized, proposed)
@@ -358,14 +343,9 @@ class FusionDiacritizer:
             self.rejected.append(orig_word)
             return orig_word
 
-        # (2b) A word a human has vocalized — even partially — is the
-        # generator's to complete, not the scorer's. The written marks are an
-        # author's answers; completing the few silent positions is exactly the
-        # constrained argmax the shipped generator applies, and using the same
-        # decision rule keeps vocalized input byte-identical whether fusion is
-        # on or off. Fusion's scoring engages only where the writing is wholly
-        # silent (bare words), which is also the only place its PER margin
-        # comes from.
+        # (2d) A word a human has vocalized, even in part, is completed by the
+        # generator's constrained argmax, so vocalized input reads the same with
+        # fusion on or off. Scoring engages only on bare words.
         if strip_marks(normalized) != normalized:
             return self._generate(orig_word, normalized)
 
@@ -378,7 +358,6 @@ class FusionDiacritizer:
             rendered = restore_nisba(self.diacritizer.decode(
                 bare_word, list(hyp.class_ids)))
             if self.waqf:
-                from arbtok.waqf import pausal
                 rendered = pausal(rendered)
             if not self._is_licensed(rendered):
                 continue
@@ -403,13 +382,10 @@ class FusionDiacritizer:
         # left unlicensed? (The margin this whole path exists to capture.)
         argmax = restore_nisba(self.diacritizer.diacritize(normalized))
         if self.waqf:
-            from arbtok.waqf import pausal
             argmax = pausal(argmax)
         if not self._is_licensed(argmax):
             self.recovered.append(orig_word)
         return best
-
-    # ── sentence entry point (one model run) ────────────────────────────────
 
     def _bare_words(self, bare: str) -> List[Tuple[str, int]]:
         """Split the model's bare sequence into (word, start_index) on spaces,
@@ -435,7 +411,7 @@ class FusionDiacritizer:
         back to the shipped guarded pipeline rather than risk a misaligned slice.
         """
         bare, logits, _classes = self.diacritizer.logits(text)
-        orig_words = [w for w in text.split(" ")]
+        orig_words = text.split(" ")
         bare_words = self._bare_words(bare) if bare else []
 
         # Align by the non-empty words only; a mismatch means the safe thing is

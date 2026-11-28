@@ -1,9 +1,47 @@
 # Rawi-lattice fusion: the diacritizer as a scorer, not a generator
 
+<!-- agent-hint
+covers: how fusion scores the licensed readings of a word with the model distribution, and what it measured
+source: arbtok/fusion.py, arbtok/_ensemble.py, tools/build_ensemble_logits_onnx.py, scripts/benchmark_fusion.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/rawi-fusion.md
+see: tashkeel.md, dialects.md, benchmarks.md
+-->
+
 This is the mechanism behind arbtok's flagship capability, **dialect-aware
 tashkeel** for every supported variety ([dialects.md](dialects.md) lists them).
 It runs entirely on the model arbtok bundles (`arbtok/_ensemble.py`): arbtok is
 self-contained, with no external diacritization package at runtime.
+
+## Dialect-aware tashkeel
+
+To our knowledge, arbtok is the only Arabic phonemizer whose diacritization is
+dialect-aware. Other pipelines run an MSA-trained diacritizer and then
+phonemize whatever it wrote. arbtok turns that pipeline around. The bundled rawi
+ensemble exposes its per-character **distribution**, and arbtok scores that
+distribution against the phonological licensing of **each variety**: the
+orthography2ipa grapheme table and the allophone rules of the target lect. The
+chosen tashkeel is the most probable reading of the model that the orthography
+of the dialect admits. This holds for every supported lect, from Najdi and
+Hejazi to Tunisian, Egyptian and the qeltu Iraqi of Mosul
+([dialects.md](dialects.md)).
+
+The same bare sentence receives marks and IPA that suit the variety:
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+bare = "ذهب الولد الى المدرسة"
+print(ArbtokG2PPlugin(lang="ar").transcribe(bare))     # ˈðahab ˈalwalad ˈʔilaː lˈmudrasa
+print(ArbtokG2PPlugin(lang="ar-TN").transcribe(bare))  # ˈðahab ˈalwalad ˈʔilɛː lˈmudrasa
+```
+
+The bare-input TTS gold has 33 lects with 20 sentences each. On that gold,
+scoring the ensemble distribution under dialect licensing gives a lower mean
+phoneme error rate per sentence than running the same ensemble as a free
+generator. The margin is largest on the lects that differ most from MSA, which
+shows that the licensing does the work. [The measured result](#the-measured-result)
+has the full table.
 
 ## The problem
 
@@ -111,6 +149,20 @@ This is the point of doing it in arbtok. rawi is one voice. The pick is
 
 A free generator hears neither of these until it is too late to change its mind.
 
+The two arms read one Tunisian sentence differently. The generator and fusion pick different vowels for the verb, so the outputs differ:
+
+```python
+from arbtok.plugin import ArbtokG2PPlugin
+
+text = "ما نحبش قهوة، نحب تاي سخون برشة."
+ArbtokG2PPlugin(lang="ar-TN", fusion=False).transcribe(text)
+# 'ˈmɛː ˈnaħbaʃ ˈqahwa nuˈħibb ˈtɛːijj saˈxuːn ˈbarʃa'
+ArbtokG2PPlugin(lang="ar-TN", fusion=True).transcribe(text)
+# 'ˈmɛː ˈnaħbiʃ ˈqahwa nuˈħibb ˈtɛːijj saˈxuːn ˈbarʃa'
+```
+
+The table below says which arm scores better over the whole gold.
+
 ## The measured result
 
 `scripts/benchmark_fusion.py` scores two arms on the bare (`raw`) column of the
@@ -165,4 +217,4 @@ the candidate set be the dialect's admissible vowels directly, rather than rawi'
 top-`k` filtered after the fact.
 
 ---
-[← Diacritization](tashkeel.md) · [Home](../README.md) · [Varieties →](dialects.md)
+[← Diacritization](tashkeel.md) · [Home](index.md) · [Varieties →](dialects.md)

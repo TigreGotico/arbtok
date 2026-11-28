@@ -1,5 +1,13 @@
 # Per-lect benchmarks
 
+<!-- agent-hint
+covers: how the per-lect benchmark scores arbtok, the figures it reaches and what they can claim
+source: benchmarks/lect_results.json, benchmarks/lect_results_full_irab.json, scripts/benchmark_stack.py, scripts/benchmark_gold20.py, scripts/benchmark_iqraeval.py
+generated: no
+verify: for f in $(grep -oP 'scripts/\w+\.py' docs/benchmarks.md | sort -u); do test -f $f || exit 1; done && .venv/bin/python -m pytest -q tests/test_lect_benchmark.py
+see: rawi-fusion.md, gold-code-switched.md
+-->
+
 Two benchmarks live in `scripts/benchmark_stack.py`.
 
 - **default mode**, the MSA stack question: is arbtok better than its parts and
@@ -21,7 +29,7 @@ python scripts/benchmark_stack.py --lect --no-espeak         # arbtok arms only
 The gold is orthography2ipa's Arabic TTS set (`data/gold/arabic_tts`, o2i #358):
 one TSV per lect, sentence-level, with a vocalized `sentence`, its bare `raw`
 skeleton, and a reference `ipa`. It covers every Arabic lect orthography2ipa
-ships a spec for, twenty sentences each; the table below reports a run over five
+ships a spec for, twenty sentences each. The table below reports a run over all twenty
 sentences per lect.
 
 **Its provenance is load-bearing and must be quoted with every number.** The
@@ -55,111 +63,108 @@ variety's own spec:
   vowels the writing omits. This is the everyday-input question.
 - **ΔPER** = bare − diac: the price of the missing harakat, per lect.
 
-## Results (full gold, 5 sentences/lect, default stem lexicon)
+## Results (full gold, 20 sentences per lect, default stem lexicon)
 
-Sorted best-to-worst by arbtok diacritized PER.
+`benchmarks/lect_results.json` holds the run, written by
+`python scripts/benchmark_stack.py --lect --json benchmarks/lect_results.json`.
+The figure and the table read that file. The run scores the 33 gold lects that
+arbtok reads. The gold also has `xaa` (Andalusian Arabic), which arbtok does not
+read.
 
-| Lect | N | arbtok PER (diac) | arbtok WER (diac) | arbtok PER (bare) | arbtok WER (bare) | ΔPER (bare−diac) | espeak PER | espeak WER |
-|---|---|---|---|---|---|---|---|---|
-| ar-SA-x-najd | 5 | 0.009 | 0.057 | 0.131 | 0.343 | +0.122 | 0.221 | 0.543 |
-| ar-JO | 5 | 0.010 | 0.030 | 0.178 | 0.606 | +0.168 | 0.223 | 0.515 |
-| ar-OM | 5 | 0.015 | 0.094 | 0.100 | 0.344 | +0.085 | 0.230 | 0.594 |
-| ar-TN | 5 | 0.016 | 0.091 | 0.207 | 0.606 | +0.191 | 0.170 | 0.576 |
-| ar-LY | 5 | 0.017 | 0.061 | 0.211 | 0.545 | +0.194 | 0.211 | 0.545 |
-| ar-KW | 5 | 0.019 | 0.088 | 0.184 | 0.559 | +0.164 | 0.266 | 0.559 |
-| ar-AE | 5 | 0.020 | 0.091 | 0.164 | 0.515 | +0.144 | 0.333 | 0.818 |
-| ar-YE | 5 | 0.020 | 0.094 | 0.110 | 0.344 | +0.090 | 0.220 | 0.719 |
-| ar-NG | 5 | 0.020 | 0.121 | 0.182 | 0.515 | +0.162 | 0.167 | 0.545 |
-| ar-MA | 5 | 0.021 | 0.091 | 0.181 | 0.636 | +0.161 | 0.187 | 0.485 |
-| ar-QA | 5 | 0.021 | 0.094 | 0.140 | 0.375 | +0.119 | 0.228 | 0.562 |
-| ar-SA-x-hejaz | 5 | 0.022 | 0.135 | 0.152 | 0.459 | +0.130 | 0.225 | 0.541 |
-| ar-DZ | 5 | 0.022 | 0.094 | 0.170 | 0.531 | +0.148 | 0.236 | 0.562 |
-| ar-SD | 5 | 0.022 | 0.111 | 0.179 | 0.528 | +0.156 | 0.246 | 0.639 |
-| ar-SY | 5 | 0.023 | 0.091 | 0.213 | 0.697 | +0.190 | 0.262 | 0.667 |
-| ar-BH | 5 | 0.024 | 0.156 | 0.173 | 0.594 | +0.149 | 0.269 | 0.750 |
-| ar-PS | 5 | 0.027 | 0.138 | 0.161 | 0.690 | +0.134 | 0.285 | 0.655 |
-| ar-EG | 5 | 0.027 | 0.176 | 0.224 | 0.618 | +0.197 | 0.287 | 0.647 |
-| ar-LB | 5 | 0.028 | 0.111 | 0.144 | 0.528 | +0.116 | 0.306 | 0.750 |
-| ar-TD | 5 | 0.028 | 0.139 | 0.131 | 0.417 | +0.103 | 0.160 | 0.417 |
-| ar-IQ-x-qeltu | 5 | 0.032 | 0.100 | 0.101 | 0.400 | +0.069 | 0.238 | 0.533 |
-| ar-MR | 5 | 0.036 | 0.188 | 0.169 | 0.594 | +0.133 | 0.205 | 0.531 |
-| ar-IQ | 5 | 0.037 | 0.125 | 0.206 | 0.656 | +0.168 | 0.336 | 0.844 |
-| arb | 5 | 0.055 | 0.378 | 0.114 | 0.838 | +0.059 | 0.216 | 0.622 |
-| ar | 5 | 0.083 | 0.368 | 0.245 | 0.816 | +0.162 | 0.176 | 0.605 |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="img/lect-benchmark-dark.svg">
+  <img alt="PER by lect: arbtok diacritized 0.000 to 0.045, arbtok bare 0.05 to 0.18, espeak-ng 0.16 to 0.30." src="img/lect-benchmark.svg">
+</picture>
+
+`img/plot_lect_benchmark.py` makes this figure from `benchmarks/lect_results.json`.
+The diacritized arm mostly measures self-consistency: the gold comes from the
+same spec rules that arbtok reads.
+
+Sorted best to worst by arbtok diacritized PER.
+
+| Lect | Tier | N | arbtok PER (diac) | arbtok WER (diac) | arbtok PER (bare) | arbtok WER (bare) | ΔPER (bare−diac) | espeak PER | espeak WER |
+|---|---|---|---|---|---|---|---|---|---|
+| acx-OM | research | 20 | 0.000 | 0.000 | 0.101 | 0.339 | +0.101 | 0.180 | 0.532 |
+| apc-JO | research | 20 | 0.000 | 0.000 | 0.132 | 0.504 | +0.132 | 0.175 | 0.480 |
+| apc-SY | research | 20 | 0.000 | 0.000 | 0.146 | 0.537 | +0.146 | 0.231 | 0.585 |
+| apc | research | 20 | 0.000 | 0.000 | 0.169 | 0.646 | +0.169 | 0.261 | 0.626 |
+| apd-SD | research | 20 | 0.000 | 0.000 | 0.108 | 0.383 | +0.108 | 0.216 | 0.534 |
+| ar-IQ-x-qeltu | research | 20 | 0.000 | 0.000 | 0.124 | 0.458 | +0.124 | 0.202 | 0.495 |
+| ar-LY | research | 20 | 0.000 | 0.000 | 0.170 | 0.540 | +0.170 | 0.192 | 0.532 |
+| ar-x-maghrebi | research | 20 | 0.000 | 0.000 | 0.168 | 0.551 | +0.168 | 0.170 | 0.469 |
+| ar-x-mashriqi | research | 20 | 0.000 | 0.000 | 0.126 | 0.402 | +0.126 | 0.199 | 0.536 |
+| arq-DZ | research | 20 | 0.000 | 0.000 | 0.140 | 0.467 | +0.140 | 0.174 | 0.449 |
+| ary-MA | research | 20 | 0.000 | 0.000 | 0.161 | 0.554 | +0.161 | 0.179 | 0.509 |
+| arz-EG | research | 20 | 0.000 | 0.000 | 0.132 | 0.480 | +0.132 | 0.255 | 0.585 |
+| ayn-YE | research | 20 | 0.000 | 0.000 | 0.052 | 0.171 | +0.052 | 0.161 | 0.486 |
+| shu-NG | research | 20 | 0.000 | 0.000 | 0.141 | 0.395 | +0.141 | 0.187 | 0.596 |
+| shu-TD | research | 20 | 0.000 | 0.000 | 0.102 | 0.361 | +0.102 | 0.176 | 0.475 |
+| aeb-TN | research | 20 | 0.001 | 0.008 | 0.118 | 0.442 | +0.117 | 0.207 | 0.651 |
+| ars-SA-x-qassim | research | 20 | 0.002 | 0.009 | 0.095 | 0.357 | +0.094 | 0.225 | 0.539 |
+| mey-MR | research | 20 | 0.002 | 0.009 | 0.164 | 0.536 | +0.163 | 0.217 | 0.609 |
+| acw-SA | research | 20 | 0.002 | 0.010 | 0.095 | 0.337 | +0.093 | 0.197 | 0.538 |
+| ar-x-peninsul | research | 20 | 0.002 | 0.010 | 0.092 | 0.313 | +0.090 | 0.184 | 0.485 |
+| apc-PS | research | 20 | 0.002 | 0.010 | 0.121 | 0.564 | +0.120 | 0.196 | 0.475 |
+| acm-IQ | research | 20 | 0.003 | 0.009 | 0.147 | 0.519 | +0.144 | 0.259 | 0.774 |
+| ar-SA-x-rijal-alma | research | 20 | 0.003 | 0.018 | 0.088 | 0.312 | +0.085 | 0.219 | 0.509 |
+| apc-LB | research | 20 | 0.006 | 0.037 | 0.159 | 0.541 | +0.153 | 0.261 | 0.670 |
+| afb-AE | research | 20 | 0.012 | 0.074 | 0.154 | 0.509 | +0.142 | 0.276 | 0.676 |
+| afb-KW | research | 20 | 0.013 | 0.076 | 0.168 | 0.514 | +0.155 | 0.295 | 0.743 |
+| afb-QA | research | 20 | 0.014 | 0.085 | 0.151 | 0.447 | +0.137 | 0.255 | 0.798 |
+| afb-SA-x-sharqiya | research | 20 | 0.020 | 0.120 | 0.134 | 0.444 | +0.115 | 0.232 | 0.583 |
+| afb-BH | research | 20 | 0.020 | 0.121 | 0.168 | 0.495 | +0.148 | 0.262 | 0.673 |
+| afb | research | 20 | 0.020 | 0.125 | 0.183 | 0.604 | +0.162 | 0.288 | 0.740 |
+| arb | research | 20 | 0.044 | 0.216 | 0.138 | 0.840 | +0.094 | 0.164 | 0.544 |
+| ar | research | 20 | 0.044 | 0.208 | 0.169 | 0.815 | +0.125 | 0.156 | 0.562 |
+| ars-SA | research | 20 | 0.045 | 0.125 | 0.126 | 0.337 | +0.082 | 0.200 | 0.538 |
 
 ## Interpretation
 
-**Diacritized path, arbtok reproduces the specs, and beats the MSA baseline
-everywhere.** With the marks present, arbtok's PER sits at 0.01-0.08 and beats
-espeak-ng's MSA voice on every single lect, by 5-20× on PER. Read honestly, this
-is largely *self-consistency*: the reference IPA is generated from the same cited
-spec rules arbtok's lattice consults, so a low number confirms the lattice
-faithfully executes the specs, it is not independent evidence about native
-pronunciation. The espeak gap is real but expected: espeak has no reflexes for
-qāf→/g/, gīm→/g/, interdental shifts, or imāla, so it mistranscribes exactly the
-segments that define a dialect.
+**Diacritized path: arbtok reproduces the specs and beats the MSA baseline on
+every lect.** With the marks present, arbtok's PER is 0.000 to 0.045, and
+espeak-ng's MSA voice is 0.16 to 0.30. This is mostly self-consistency: the
+reference IPA comes from the same cited spec rules that arbtok's lattice reads.
+A low number confirms that the lattice runs the specs. It is not independent
+evidence about native speech. espeak has no reflexes for qāf→/g/, gīm→/g/, the
+interdental shifts or imāla, so it misses the segments that define a dialect.
+Fifteen lects score PER 0.000 on this path, among them Omani `acx-OM`,
+Jordanian `apc-JO` and Syrian `apc-SY`.
 
-**The two worst diacritized rows are `ar` (MSA) and `arb` (Classical), not a
-skeleton dialect.** Their WER (0.37-0.38) is far above any dialect's. Diagnosis:
-these gold sentences carry full iʿrāb case endings and hamzat-waṣl that
-arbtok's pausal-TTS defaults resolve away, so word-final segments disagree with a
-gold that kept them. This is a policy seam (pausal vs full iʿrāb),
-not a dialect-rule failure.
+**The worst diacritized rows are `ars-SA` (0.045), `ar` (MSA, 0.044) and `arb`
+(Classical, 0.044).** `ar` and `arb` have WER 0.21 and 0.22. Their gold sentences
+keep the full iʿrāb case endings and hamzat-waṣl, which arbtok's pausal TTS
+default removes. This is a register difference, not a dialect rule failure (see
+the next section).
 
-**Undiacritized path (D1), stripping harakat costs +0.06 to +0.20 PER.** The
-MSA-trained diacritizer and stem lexicon do not know dialectal vowels, so the
-bare-skeleton input is where the real dialect work remains. The largest ΔPER
-falls on the lects with the heaviest vowel reduction / syncope, where the abjad
-skeleton underdetermines the most, Egyptian (+0.197), Libyan (+0.194), Tunisian
-(+0.191), Syrian (+0.190). The smallest ΔPER is Classical `arb` (+0.059) and
-Iraqi qeltu (+0.069), whose fuller vocalism the MSA diacritizer handles closer to
-right. The closed-class dialect lexicons are what narrow this residual.
+**Undiacritized path: removing the harakat adds 0.05 to 0.17 PER.** The
+MSA-trained diacritizer and stem lexicon do not know dialect vowels, so the
+bare input is where the dialect work remains. The largest additions are Libyan
+`ar-LY` (+0.170), Levantine `apc` (+0.169), `ar-x-maghrebi` (+0.168) and
+Mauritanian `mey-MR` (+0.163). The smallest is Yemeni `ayn-YE` (+0.052).
 
-**On the bare path, arbtok still beats espeak on most lects, but loses on MSA.**
-For `ar`, espeak's bare-input PER (0.176) beats arbtok's (0.245), espeak's engine
-*is* MSA-tuned, so on the one target it was built for, arbtok's diacritizer adds
-noise rather than removing it. Every dialect bare row where espeak looks close
-(TN, NG, TD) is espeak scoring an MSA reading against a dialect gold and getting
-lucky on shared segments, not reading the dialect.
+**On the bare path, arbtok beats espeak on every lect except `ar`.** For `ar`,
+espeak's PER (0.156) beats arbtok's bare PER (0.169). espeak is tuned for MSA,
+so on that one target arbtok's diacritizer adds errors. Where espeak comes
+close on a dialect (`ar-LY`, `ar-x-maghrebi`, `ary-MA`), it scores an MSA
+reading against a dialect gold and matches the shared segments.
 
-### 3 best / 3 worst lects (by arbtok diacritized PER)
+### The MSA rows are a register difference, and the waqf policy sets it
 
-Best (lattice tracks the cited rules almost exactly):
-
-- **ar-SA-x-najd** 0.009, Najdi reflexes (qāf→/g/, gahawa-syndrome epenthesis)
-  are among the most fully cited specs. The lattice reproduces them cleanly.
-- **ar-JO** 0.010, Jordanian's moderate consonant shifts and light reduction
-  leave little for the transcription to disagree about.
-- **ar-OM** 0.015, Omani's conservative vocalism maps closely to the spec's
-  predicted segments.
-
-Worst (by diacritized PER, a policy/register issue, not broken dialect rules):
-
-- **ar** (MSA) 0.083 / WER 0.368, full iʿrāb and waṣl in the gold vs arbtok's
-  pausal-TTS defaults. The disagreement is word-final case endings.
-- **arb** (Classical) 0.055 / WER 0.378, same iʿrāb/register seam, sharpened by
-  Classical's fully-marked endings.
-- **ar-IQ** (gilit) 0.037, Iraqi gilit has the richest set of reflexes (kāf→/tʃ/,
-  qāf→/g/, affrication) and the most room for a single segment to diverge.
-
-### The MSA rows are a register seam, and the waqf policy prices it
-
-The `ar`/`arb` gold keeps the full iʿrāb. Arbtok's default is the declared
-pausal (waqf) policy, `ArbtokG2PPlugin(pausal=True)`, Wright I §372, which
-drops the endings a TTS voice should not read out. Scoring the right register
-against the right gold (`--full-irab`, i.e. `pausal=False`) removes almost the
-whole gap:
+The `ar` and `arb` gold keeps the full iʿrāb. arbtok's default is the pausal
+(waqf) policy, `ArbtokG2PPlugin(pausal=True)`, Wright I §372, which drops the
+endings that a TTS voice does not read out. With the gold's register
+(`--full-irab`, that is `pausal=False`), almost all of the gap goes.
+`benchmarks/lect_results_full_irab.json` holds that run:
 
 | Lect | mode | PER (diac) | WER (diac) | PER (bare) | WER (bare) |
 |---|---|---|---|---|---|
-| ar  | pausal (default) | 0.086 | 0.400 | 0.231 | 0.800 |
-| ar  | `--full-irab`    | **0.015** | **0.089** | 0.203 | 0.644 |
-| arb | pausal (default) | 0.062 | 0.405 | 0.115 | 0.786 |
-| arb | `--full-irab`    | **0.007** | **0.048** | 0.128 | 0.595 |
+| ar  | pausal (default) | 0.044 | 0.208 | 0.169 | 0.815 |
+| ar  | `--full-irab`    | **0.001** | **0.008** | 0.044 | 0.185 |
+| arb | pausal (default) | 0.044 | 0.216 | 0.138 | 0.840 |
+| arb | `--full-irab`    | **0.001** | **0.008** | 0.030 | 0.160 |
 
-The residual diacritized error in `--full-irab` mode is the ordinary rule
-seam, not the register. The waqf policy is one flag consulted in one place
-(`arbtok.sandhi`), and both modes run the same lattice.
+The waqf policy is one flag, read in one place (`arbtok.sandhi`), and both modes
+run the same lattice.
 
 ## Why these are reported, not gated
 
@@ -168,6 +173,12 @@ not used as a pass/fail gate. A CI regression gate belongs on native word-level
 gold. Wiring `--lect` into CI against this gold would only gate arbtok against its
 own specs. `tests/test_lect_benchmark.py` pins that the runner works (2 lects × 3
 sentences, no network), not any score.
+
+## The test suite's gold
+
+The test suite pins a gold sentence set with a character error rate (CER) of at
+most 5% against the reference transcriptions, and it benchmarks against
+espeak-ng. See `tests/test_ipa_fuzzy.py`.
 
 ## IqraEval Qur'anic gold (`scripts/benchmark_iqraeval.py`)
 
@@ -283,4 +294,4 @@ above), nothing is bundled or redistributed, and this doc states the gap
 rather than assuming a license.
 
 ---
-[← Advanced](advanced.md) · [Home](../README.md)
+[← Advanced](advanced.md) · [Home](index.md)

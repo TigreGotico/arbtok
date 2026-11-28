@@ -1,5 +1,13 @@
 # Text normalization
 
+<!-- agent-hint
+covers: the two normalizers: normalize_asr for recognizer output and normalize_for_tts for written text
+source: arbtok/textnorm.py, arbtok/util.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/normalization.md
+see: quickstart.md, api.md, advanced.md
+-->
+
 Speech work needs text cleaned in two opposite directions, and arbtok has one
 function for each.
 
@@ -92,6 +100,37 @@ normalize_asr("الف او خمسمية", fix_asr_errors=True, spoken_numbers_to
 # '1000 او 500'
 ```
 
+Some spoken numbers read wrong or read no number. ovos-number-parser reads the
+number words through numtag, and each of these gaps is an open numtag issue:
+
+- The spoken teens احداشر and احداش (11), اطناش, اثناش and ثنعش (12), ثلطعش (13),
+  ثمنطعش and ثمنتاشر (18) read no number
+  ([numtag #274](https://github.com/TigreGotico/numtag/issues/274)).
+- A proclitic ب or بال goes into the number span and is lost
+  ([numtag #267](https://github.com/TigreGotico/numtag/issues/267)).
+- `الف ميتين` without و reads as two numbers
+  ([numtag #268](https://github.com/TigreGotico/numtag/issues/268)).
+- The definite numeral الخمسة reads as 5 before digits and as no number before a
+  spoken number ([numtag #269](https://github.com/TigreGotico/numtag/issues/269)).
+- مية and ميه, "water", read as 100 outside a number
+  ([numtag #160](https://github.com/TigreGotico/numtag/issues/160)).
+
+```python
+normalize_asr("المسافة اطناش كيلو", spoken_numbers_to_digits=True)
+# 'المسافة اطناش كيلو'
+normalize_asr("بخمسميه الف", fix_asr_errors=True, spoken_numbers_to_digits=True)
+# '500000'
+normalize_asr("الف ميتين واربعة وثلاثين", spoken_numbers_to_digits=True)
+# '1000 234'
+normalize_asr("الكفرات الخمسة الفين", spoken_numbers_to_digits=True)
+# 'الكفرات الخمسة 2000'
+normalize_asr("كباية ميه", fix_asr_errors=True, spoken_numbers_to_digits=True)
+# 'كباية 100'
+```
+
+The tests mark each gap as a strict expected failure, so the test turns red when
+a numtag release reads the number.
+
 Text the number rule finds nothing in comes back exactly as it went in. Text it
 changes keeps the whitespace at its ends, and its words come back single-spaced
 with any Arabic-Indic digits written in ASCII.
@@ -151,6 +190,8 @@ from arbtok.textnorm import CER_NORM, TRUTH_CHECK
 normalize_asr("مَرْحَبًا بِكُمْ، يا أَحْمَد!", TRUTH_CHECK)
 # 'مرحبا بكم، يا احمد!'
 
+reference = "مَرْحَبًا بِكُمْ"
+hypothesis = "مرحبا بكم"
 ref_tokens = normalize_asr(reference, CER_NORM).split()
 hyp_tokens = normalize_asr(hypothesis, CER_NORM).split()
 ```
@@ -199,6 +240,8 @@ mark is not a word character, so in that order each mark becomes a space and a
 pointed word breaks into letters:
 
 ```python
+from arbtok.textnorm import CER_MARKS_FIRST, CER_STRIP
+
 normalize_asr("مَرْحَبا", CER_STRIP)        # 'م ر ح با'
 normalize_asr("مَرْحَبا", CER_MARKS_FIRST)  # 'مرحبا'
 ```
@@ -217,7 +260,7 @@ normalize_asr("قال [noise] نعم [french: au moins] شيء", CER_MARKS_FIRST
 
 A bundle takes overrides and a lexicon:
 
-```python
+```text
 normalize_asr(text, TRUTH_CHECK, fold_digits=True)
 normalize_asr(text, CER_NORM.with_lexicon(LEXICON))
 ```
@@ -229,10 +272,10 @@ Two error rates are comparable only when the same rules produced both.
 named in it by its entry count and a digest of its entries, and the number
 parser by its version when numbers are read.
 
-```python
+```text
 CER_NORM.with_lexicon(LEXICON).describe()
 # 'arbtok-asr-norm <rule set>: punctuation_before_marks,strip_harakat,strip_tatweel,
-#  unify_alef,unify_ta_marbuta,unify_alef_maqsura,unify_hamza_carriers,
+#  unify_spoken_variants,unify_alef,unify_ta_marbuta,unify_alef_maqsura,unify_hamza_carriers,
 #  blank_punctuation,drop_word_final_hamza,collapse_whitespace;
 #  lexicon 3 entries sha256:a44661c91a5bc932'
 ```
@@ -304,7 +347,22 @@ The rules are booleans on a `TtsNorm`, the way `normalize_asr`'s are on an
 no config it runs `spoken_forms` and `canonical_unicode`, which is what the G2P
 plugin runs.
 
-`spoken_forms` writes dates, times, numbers and units as words in `lang`.
+`spoken_forms` writes dates, times, numbers and units as words in `lang`. In Arabic,
+text2spoken reads them. The tag it gets is the ISO 639-3 code of the lect that `lang`
+names, with the region: `arz-EG` for Egyptian, `ayl-LY` for `ar-LY`. The macrolanguage,
+Standard Arabic and a clade such as `ar-x-mashriqi` read as `ar`. The register is formal,
+and colloquial when `dialect_numbers` is on. text2spoken reads Arabic script only, so a
+lect written in Latin script, such as `acy`, has its digits and clock times read by
+`arbtok.util.normalize`, in Arabic script: `7:30` becomes `سبعة:ثلاثون`.
+
+text2spoken leaves some forms as written, such as a telephone number, a code such as
+`520i` or a decimal comma. arbtok reads those digits with `arbtok.util.normalize`, so no
+digit reaches the phonemizer. Each such form is marked in `arbtok/textnorm.py` with the
+text2spoken issue that covers it. Where text2spoken reads part of a span, this pass
+completes the span, and some of those readings are wrong:
+`1 500 000` becomes `واحد خمسمئة صفر`. `tests/test_text2spoken_fallbacks.py` lists those
+forms as expected failures, with the right reading.
+
 `canonical_unicode` drops tatweel, applies NFC, orders shadda before its vowel
 and settles the spellings of مائة, which is the form the tokenizer reads.
 `strip_controls`, off by default, drops zero-width and bidirectional characters
@@ -330,7 +388,10 @@ attached, and a tatweel written between the two, `للـNissan`, is dropped once
 term is read in Arabic: `للنيسان`. A spelled code drops it the same way. A digit
 written against the letters of a reading, the bundled `أتش1` for `H1`, is read apart
 from them by its English name, as a spelled code's digit is: `أتش وَنْ`, where the
-cardinals would otherwise fuse it to the letters as `أتشواحد`.
+cardinals would otherwise fuse it to the letters as `أتشواحد`. A term made only of
+digits, such as a model number `530`, matches a whole figure only. It does not
+match inside `530,000`, `1,530` or `530.5`, where a group or decimal separator
+joins it to another digit.
 
 `spell_out_codes=True` reads what the lexicon did not claim and is a code, one
 character at a time. A code is a run of capitals and digits with at least one of
@@ -440,6 +501,8 @@ sentences. A pointed word it leaves alone, so the reading is the one the entry
 gives.
 
 ```python
+from arbtok.tokenizer import Sentence
+
 Sentence("اكس فايف", stress=False).ipa        # 'ʔiks faːjf'
 Sentence("إِكْسْ فَيْفْ", stress=False).ipa   # 'ʔiks fajf'
 ```
@@ -586,9 +649,13 @@ cardinals speak numbers it is said `ريال` after a number, written with a spa
 or against the digits: `1,200 ر.س` is `ألف ومئتين ريال`.
 
 A unit symbol is read only where it follows a number, because `in` and `m` in running
-text are not units. `spoken_forms` does that for Arabic from the same CLDR table
-(`cldr_units()`): `المسافة 5 km` becomes `المسافة خمسة كيلومتر`. The unit takes its
-CLDR display name; it is not inflected for the number before it.
+text are not units. `spoken_forms` does that for Arabic. text2spoken reads `km`, and
+the noun agrees with the number: `المسافة 5 km` becomes `المسافة خمسة كيلومترات`, because
+from 3 to 10 the counted noun is plural (Ryding 2005, p. 334). For every other symbol,
+arbtok writes the CLDR name from the same table (`cldr_units()`), and text2spoken reads
+the number before it. That name does not agree with the number:
+`3 kg` becomes `ثلاثة كيلوغرام`. TigreGotico/text2spoken#336 asks text2spoken to read the
+other symbols.
 
 A voice agent that speaks its numbers through the cardinals, with `spoken_forms` off,
 reads no unit symbol this way. For the kilometre, the unit its replies carry most,
@@ -709,8 +776,8 @@ Every rule of `normalize_for_tts`, in the order they run; a lexicon is applied a
 | `space_fused_hundreds` | in those cardinals `ثلاثمئة` becomes `ثلاث مئة`; a synthesizer keeps the spaced form and garbles the fused one |
 | `dialect_numbers` | the cardinals and the digit-by-digit readings take the words the lect `lang` names uses, asked of the number parser under that lect's ISO 639-3 code |
 | `number_forms` | your own words for values, `{100: "مية"}`, over the lect's or instead of them; set with `with_number_forms` |
-| `month_names` | your own words for the twelve months, January first, said wherever a month name is written and for a date in digits the cardinals read: with `جون` for June, `15 يونيو` is `15 جون`; a date `spoken_forms` alone reads keeps the date parser's month; Arabic only |
-| `spoken_forms` | dates, times, numbers and units as words in `lang`; on by default. A time written with a dot after `الساعة`, `الساعة 9.30`, is a time, as it is under `cardinal_numbers`, unless a currency or a unit follows it: `سعر الساعة 12.50 ريال` is a decimal |
+| `month_names` | your own words for the twelve months, January first, said wherever a month name is written and for a date in digits the cardinals read: with `جون` for June, `15 يونيو` is `15 جون`; a date `spoken_forms` alone reads keeps text2spoken's month; Arabic only |
+| `spoken_forms` | dates, times, numbers and units as words in `lang`, read by text2spoken in Arabic; on by default. A time written with a dot after `الساعة`, `الساعة 9.30`, is a time, as it is under `cardinal_numbers`, unless a currency or a unit follows it: `سعر الساعة 12.50 ريال` is a decimal |
 | `canonical_unicode` | tatweel dropped, NFC, shadda before its vowel, the spellings of مائة settled; on by default |
 | `drop_false_starts` | a two- or three-letter word ending in tatweel is dropped with the whitespace after it where the next word begins the same way: `الـ السيارة` becomes `السيارة`; a one-letter fragment is kept, since it is also how a detached clitic is written; Arabic only, on by default |
 | `plain_orthography` | the output in the orthography speech-recognition transcripts use: no harakat, tatweel or Quranic marks, alef without hamza, a dagger alef written ا where the standard spelling has it, ڤ as ف, and ة, ى, ؤ and ئ kept, so `بِي إِمْ دَبَلْيُو` is `بي ام دبليو` and `ألف` is `الف`; the last rule, over the whole text |
@@ -729,19 +796,27 @@ normalize_for_tts("السعر 350 ريال", "ar-SA-x-hejaz", VOICE_AGENT, diale
 # 'السعر تلت مية وخمسين ريال'
 ```
 
-The words are the parser's, quoted there from a published grammar with its page,
-and it composes the number the same way whichever lect it speaks: a lect differs
-in its words and not in its arithmetic. It has words for Hijazi `acw`, Gulf `afb`,
-Najdi `ars` and Cairene Egyptian `arz`. What arbtok adds is the translation from the tag you
-passed to that code, `arbtok.lect_code`, which walks the orthography2ipa parent
-chain, so Kuwaiti and Qatari take the Gulf code from the node they descend from.
+The words are the parser's, each quoted there with its source, and it composes
+the number the same way whichever lect it speaks: a lect differs in its words and
+not in its arithmetic. Its lects include Hijazi `acw`, Gulf `afb`, Najdi `ars`,
+Cairene Egyptian `arz`, Levantine `apc`, Moroccan `ary`, Tunisian `aeb` and
+Algerian `arq`. What
+arbtok adds is the translation from the tag you passed to that code,
+`arbtok.lect_code`, which walks the orthography2ipa parent chain, so Kuwaiti and
+Qatari take the Gulf code from the node they descend from. `lect_code` knows `acw`,
+`afb`, `ars` and `arz`. For any other lect, pass the ISO 639-3 tag, such as
+`ary-MA`: `ar-MA` keeps the literary words.
 **A lect the parser has no cited words for keeps the literary ones**: a form no
-source gives is not written. `ar-SA` resolves to Najdi and takes its words.
+source gives is not written, and a code the parser does not serve, such as
+Hassaniya `mey`, keeps them too. `ar-SA` resolves to Najdi and takes its words.
 
 **The noun is the author's.** Arabic makes the counted noun agree with the number,
 and the dialects covered agree in the same direction: two to ten take a plural noun
-and eleven upwards a singular. The noun is left as written, because the text around
-the number is the author's; write it the way the number you passed in requires.
+and eleven upwards a singular. The cardinals leave the noun as written, because the
+text around the number is the author's; write it the way the number you passed in
+requires. `spoken_forms` reads through text2spoken, which gives the noun after 11 to 99
+in the accusative singular (Ryding 2005, pp. 339-345): `الثمن 12 ريال` is `الثمن اثنا
+عشر ريالا`.
 
 The number agrees with the noun where the noun after it shows how. A number from 3 to
 10 written right before a plural whose singular is feminine takes its short form, as
@@ -851,7 +926,7 @@ phones for words that were said. Phonemize the spoken form, never the written
 one: the tokenizer passes a `3` through as the character `3`, which is not a
 phone, and the syllables the speaker produced are left with nothing to align to.
 
-```python
+```text
 from arbtok.tokenizer import Sentence
 
 text = normalize_for_tts(transcript_of_record)
@@ -864,4 +939,4 @@ phones = Sentence(text).ipa
 - [advanced.md](advanced.md), internals and recipes
 
 ---
-[← Advanced](advanced.md) · [Home](../README.md) · [API →](api.md)
+[← Arabizi input](arabizi.md) · [Home](index.md) · [Code-switched gold →](gold-code-switched.md)

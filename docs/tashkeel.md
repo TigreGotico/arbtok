@@ -1,5 +1,13 @@
 # Diacritization (tashkeel)
 
+<!-- agent-hint
+covers: how arbtok restores diacritics: the bundled model, the stem lexicon and the closed-class lexicon
+source: arbtok/diacritize.py, arbtok/tashkeel.py, arbtok/lexicon.py, arbtok/dialect_lexicon.py, arbtok/_ensemble.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/tashkeel.md
+see: rawi-fusion.md, dialects.md, api.md
+-->
+
 Arabic in the wild is written without short vowels. The phonemizer needs them, no diacritics means no vowels to emit. arbtok restores diacritics with a model it
 **bundles**: the rawi stitched ensemble, one 4.9 MB int8 ONNX inside the wheel
 (`arbtok/_ensemble.py`, onnxruntime + numpy, no PyTorch, no network, no external
@@ -21,7 +29,13 @@ the exposed distribution's argmax equals the graph's own decision.
 from arbtok.tashkeel import TashkeelDiacritizer
 
 diac = TashkeelDiacritizer()
-print(diac.diacritize("قال الملك"))
+print(diac.diacritize("قال الملك"))   # قَالَ المَلَكَ
+```
+
+The default output keeps the case ending of the last word:
+
+```python
+print(diac.diacritize("كتاب جميل"))   # كِتَابٌ جَمِيلَ
 ```
 
 ### `diacritize(text, pausal=False) -> str`
@@ -29,7 +43,7 @@ print(diac.diacritize("قال الملك"))
 Returns the input text with diacritics inserted.
 
 ```python
-diac.diacritize("ذهب الطالب")
+diac.diacritize("ذهب الطالب")   # 'ذَهَبَ الطَّالِبُ'
 ```
 
 `pausal=True` drops the word-final case and mood endings (iʿrāb), leaving the
@@ -37,7 +51,7 @@ pausal (waqf) form that is spoken, the transform is deterministic and
 rule-cited (`arbtok/waqf.py`. Wright I §372, Ryding §2.4):
 
 ```python
-diac.diacritize("كتب", pausal=True)
+diac.diacritize("كتب", pausal=True)   # 'كَتَب'
 ```
 
 `TashkeelDiacritizer` is also callable. `diac(text)` is equivalent to
@@ -54,17 +68,23 @@ lexicon** before they ever call the model:
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-ArbtokG2PPlugin()                          # the default lexicon
-ArbtokG2PPlugin(lexicon="/data/mine.tsv")  # a local file, a URL, or an hf:// id
-ArbtokG2PPlugin(lexicon=None)              # the model, unassisted
+ArbtokG2PPlugin()
+ArbtokG2PPlugin(lexicon="/data/mine.tsv")
+ArbtokG2PPlugin(lexicon=None)
 ```
+
+The first line uses the default lexicon. The second names a local file, a URL, or
+an `hf://` id. The third runs the model unassisted.
 
 The default lexicon is the Hugging Face dataset
 `TigreGotico/arabic-stem-lexicon`, file `ar-stems.tsv`. The first call that
 diacritizes downloads it to the Hugging Face cache. When the file is not in the
 cache and the Hub is offline (`HF_HUB_OFFLINE=1`) or cannot be reached, that call
 raises `arbtok.ModelUnavailableError`, a `ValueError` that names the dataset and
-the file. To run with no network, fetch the file once, or pass `lexicon=None`.
+the file. A lexicon you name that cannot be read for another reason, such as a
+missing local file, raises its base class `arbtok.lexicon.LexiconUnavailable`. The
+engine does not fall back to the model. To run with no network, fetch the file
+once, or pass `lexicon=None`.
 
 The lexicon maps an **undiacritized surface form** to the most frequent
 **diacritized stem** for it in a large diacritized corpus, not to IPA. The stem
@@ -82,10 +102,10 @@ An entry is held to the same guards as a model proposal: it must spell the word
 it was asked about, and the variety's grapheme table must license it. Data can be
 wrong too.
 
-Nothing is bundled. The lexicon is mined from a GPL-2.0 corpus and arbtok is
-Apache-2.0, so it ships as a Hugging Face dataset fetched on first use, exactly
-as the diacritizer's model weights are. `scripts/build_stem_lexicon.py` builds
-one from any diacritized corpus.
+The stem lexicon is not bundled. It is mined from a GPL-2.0 corpus and arbtok is
+Apache-2.0, so it ships as a Hugging Face dataset fetched on first use. The
+diacritizer's model weights are different: they ship inside the wheel.
+`scripts/build_stem_lexicon.py` builds a lexicon from any diacritized corpus.
 
 ## The per-lect closed-class lexicon
 
@@ -107,8 +127,8 @@ lexicon and the model:
 ```python
 from arbtok.plugin import ArbtokG2PPlugin
 
-ArbtokG2PPlugin(lang="ar-x-maghrebi").transcribe("كيفاش راك اليوم")
-ArbtokG2PPlugin(lang="ar-x-maghrebi", dialect_lexicon=False)  # off
+ArbtokG2PPlugin(lang="ar-x-maghrebi").transcribe("كيفاش راك اليوم")   # 'kiːˈfaːʃ ˈraːk alˈjuːm'
+ArbtokG2PPlugin(lang="ar-x-maghrebi", dialect_lexicon=False).transcribe("كيفاش راك اليوم")   # 'kajˈfaːʃ ˈraːk alˈjawm'
 ```
 
 The value is a **diacritized surface form**, not IPA, fed back through the
@@ -128,12 +148,24 @@ its ancestors' entries, `ar-MA` sees the pan-Maghrebi function words in
 `ar-x-maghrebi.tsv` *and* its own Moroccan-specific ones, the more specific file
 winning on a collision. See `arbtok/dialect_lexicon.py`.
 
+`ar.tsv` (Modern Standard) and `arb.tsv` (Classical, which every dialect lect
+inherits) hold function words whose bare spelling the model misreads. Bare `الي`
+is `إِلَى` "to", written with ي for ى (Wright I §358 (a)), so
+`ArbtokG2PPlugin().transcribe("ذهب الي البيت")` gives `ˈðahab ˈʔilaː lˈbajt`. The
+Maghrebi file reads bare `الي` as the relative `الِّي` and wins there.
+
 ### Errors
 
 Failures inside the model raise `TashkeelError` with the underlying cause
-attached. The G2P engine (`arbtok.plugin.ArbtokG2PPlugin`) degrades
-gracefully: when diacritization is unavailable it transcribes whatever
-diacritics are present in the input.
+attached.
+
+The G2P engine (`arbtok.plugin.ArbtokG2PPlugin`) raises one kind of error and
+absorbs the rest. A stem lexicon that cannot be read raises
+`arbtok.lexicon.LexiconUnavailable`. Its subclass `arbtok.ModelUnavailableError`,
+also a `ValueError`, is raised for a file on the Hugging Face Hub that is not in
+the local cache when the Hub is offline or cannot be reached. Any other
+diacritization failure passes the text through: the engine transcribes whatever
+diacritics the input carries.
 
 ---
-[← Quickstart](quickstart.md) · [Home](../README.md) · [Rawi-lattice fusion →](rawi-fusion.md)
+[← Overview](overview.md) · [Home](index.md) · [Rawi-lattice fusion →](rawi-fusion.md)

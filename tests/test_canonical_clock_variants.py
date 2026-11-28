@@ -48,7 +48,7 @@ DIFFERENT = [
 ]
 
 
-@pytest.mark.parametrize("written, heard", SAME, ids=[h for _, h in SAME])
+@pytest.mark.parametrize("written, heard", [pytest.param(w, h, id=h) for w, h in SAME])
 def test_a_period_word_with_its_tanween_heard_reads_as_the_period(written, heard):
     assert cost(written, heard) == 0
 

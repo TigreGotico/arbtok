@@ -1,5 +1,13 @@
 # Advanced
 
+<!-- agent-hint
+covers: the token tree, sun and moon letters, wasl, the espeak baseline, recipes and the known sharp edges
+source: arbtok/tokenizer.py, arbtok/sandhi.py, arbtok/espeak_wrapper.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/advanced.md
+see: api.md, benchmarks.md
+-->
+
 Token internals, the espeak baseline, recipes, and the sharp edges.
 
 ## Inspecting the token tree
@@ -32,8 +40,8 @@ letter, skipping the definite article:
 ```python
 from arbtok.tokenizer import Sentence
 
-print(Sentence("الشَّمْس").ipa)    # sun letter: the ل assimilates, ش doubles
-print(Sentence("الْقَمَر").ipa)    # moon letter: the ل is pronounced
+print(Sentence("الشَّمْس").ipa)    # aʃˈʃams — sun letter: the ل assimilates, ش doubles
+print(Sentence("الْقَمَر").ipa)    # ˈalqamar — moon letter: the ل is pronounced
 ```
 
 ## Wasl and clitics across word boundaries
@@ -96,9 +104,9 @@ Key methods:
   via the bundled tashkeel model.
 - `phonemize_string(text, lang) -> str`, raw espeak IPA string.
 - `phonemize_to_list(text, lang="ar") -> List[str]`, that string as a char list.
-- `add_diacritics(text, lang="ar") -> str`, diacritize Arabic input (pass-through
-  for other langs).
-- `get_lang(target_lang) -> str`, closest supported espeak voice.
+- `add_diacritics(text, lang="ar") -> str`, diacritize input in any Arabic variety
+  (`linguatag.is_arabic_variety`); pass-through for other langs.
+- `get_lang(target_lang) -> str`, closest supported espeak voice; `en_GB` and `en-GB` name the same voice.
 
 `EspeakError` wraps a missing binary or a non-zero espeak exit.
 
@@ -129,4 +137,4 @@ Key methods:
 - [tashkeel.md](tashkeel.md), diacritizer details
 
 ---
-[← API reference](api.md) · [Home](../README.md) · [Benchmarks →](benchmarks.md)
+[← API reference](api.md) · [Home](index.md) · [Per-lect benchmarks →](benchmarks.md)

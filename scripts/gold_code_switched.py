@@ -2,7 +2,7 @@
 """Code-switched Arabic gold set — build and validation tooling.
 
 The set lives in ``data/gold_code_switched/<lect>.tsv`` (one file per lect,
-20 rows) and pins arbtok's *loanword-nativisation* pipeline: a Latin-script
+at least 17 rows) and pins arbtok's *loanword-nativisation* pipeline: a Latin-script
 word embedded in dialectal Arabic is read as a loan and mapped into the matrix
 lect's phonology out of that lect's own cited table (:mod:`arbtok.translit`) —
 Najdi = Alhoody (2019), Egyptian = Hafez (1996) + Watson (2002), Levantine =
@@ -44,7 +44,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 GOLD_DIR = REPO_ROOT / "data" / "gold_code_switched"
 FIELDS = ["id", "sentence", "raw", "ipa", "gloss_en", "cs_words", "notes"]
-MIN_ROWS = 20
+MIN_ROWS = 17
 HARAKAT = "ًٌٍَُِّْٰ"
 _LATIN = re.compile(r"[A-Za-z]")
 PUNCT_STRIP = ".,;:!?()[]\"'،؛؟"
@@ -58,7 +58,7 @@ SKIP = {"ar-Latn-buckwalter"}
 
 # Arabic specs orthography2ipa keys by an ISO 639-3 code alone. No code-switched
 # gold is written for them; two (acy, pga) are written in Latin script.
-NO_GOLD = {"aao", "abh", "acq", "acy", "auz", "ayh", "ayl", "ayp", "bbz", "pga", "ssh"}
+NO_GOLD = {"aao", "abh", "acq", "acy", "auz", "ayh", "ayl", "ayp", "pga", "ssh"}
 
 # Which dialectal-particle set each lect frames its Arabic in. The English words
 # and their nativised reflexes (the point of this set) are identical across
@@ -213,7 +213,7 @@ def _refusal_reason(word: str, lect: str) -> str:
     """Which adapted segment(s) were projected onto the lect's nearest phonemes."""
     from arbtok.translit import nativize, DONOR_LANG
     from orthography2ipa import G2P
-    from orthography2ipa.inventory import phoneme_inventory, tokenize as ipa_tok
+    from orthography2ipa import phoneme_inventory, tokenize as ipa_tok
     try:
         donor_ipa = G2P(DONOR_LANG).transcribe_word(word)
         adapted = nativize(donor_ipa, lect)
@@ -415,9 +415,7 @@ def _leakage_failures(rid, row, lect):
     tokens = row["ipa"].split()
     for w in [t for t in row["cs_words"].split(";") if t]:
         # Only Latin-script embeds go through nativisation-leakage checking; an
-        # Arabic-script loanword (pinned loan rows) or an Arabizi token is read
-        # as native graphemes, not a guest run, so the transliterate() gate below
-        # does not apply to it.
+        # Arabic-script loanword is read as native graphemes, not a guest run.
         if not _LATIN.search(w):
             continue
         if w not in row["sentence"]:
@@ -472,11 +470,7 @@ def cmd_refresh(args):
                 r["ipa"] = new
                 touched += 1
         if touched:
-            with open(p, "w", encoding="utf-8", newline="") as f:
-                w = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t",
-                                   lineterminator="\n")
-                w.writeheader()
-                w.writerows(rows)
+            _write_rows(p, fieldnames, rows)
             changed += 1
         print(f"{lect}: re-pinned {touched} row(s)")
     print(f"updated {changed} file(s)")

@@ -1,0 +1,7 @@
+{
+ "ir_version": 1,
+ "langs": ["afb", "afb-AE", "afb-KW", "afb-QA", "arz-EG"],
+ "sandhi": [
+  {"left": "[^aeiouɑæɐəɛɪɔʊː]$", "right": "^(ˈ?)[aɑ]", "right_spelling": "^ال", "right_out": "\\1i"}
+ ]
+}

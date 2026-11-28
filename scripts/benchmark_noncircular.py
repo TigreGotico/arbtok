@@ -31,7 +31,7 @@ def main():
     a = ap.parse_args()
 
     from arbtok.plugin import ArbtokG2PPlugin
-    from orthography2ipa.g2p import G2P
+    from orthography2ipa import G2P
 
     rows = load_gold(a.split, limit=a.limit)
     assert len(rows) > 100, f"control failed: only {len(rows)} gold rows loaded"

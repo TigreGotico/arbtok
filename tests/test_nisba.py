@@ -48,7 +48,7 @@ class TestTranscription:
         assert ipa("باقي") == "baːqiː"
         assert ipa("ثاني") == "θaːniː"
 
-    @pytest.mark.xfail(strict=True, reason=(
+    @pytest.mark.xfail(raises=AssertionError, strict=True, reason=(
         "a borrowed final /iː/ is a lexical fact about a word never built from an "
         "Arabic root; no rule reaches it, and a caller-supplied lexicon is the fix"))
     def test_loanword_keeps_its_long_vowel(self, ipa):

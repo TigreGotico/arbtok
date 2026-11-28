@@ -1,5 +1,13 @@
 # Code-switched Arabic gold set
 
+<!-- agent-hint
+covers: the schema, the pipeline status and the provenance of the code-switched gold set
+source: data/gold_code_switched/, scripts/gold_code_switched.py
+generated: no
+verify: .venv/bin/python scripts/gold_code_switched.py validate && diff <(grep -oP '^\| \x60\K[a-z_]+(?=\x60 \|)' docs/gold-code-switched.md | head -8 | sort) <(.venv/bin/python -I -c "import ast,re;print(*sorted(ast.literal_eval(re.search(r'FIELDS = (\[.*?\])',open('scripts/gold_code_switched.py').read()).group(1))+['pipeline_status']),sep='\n')")
+see: dialects.md, arabizi.md, benchmarks.md
+-->
+
 `data/gold_code_switched/<lect>.tsv`, twenty or so realistic Arabic/English
 code-switched sentences per lect, pinning arbtok's **loanword-nativization**
 pipeline: a Latin-script word embedded in dialectal Arabic is read as a loan and
@@ -47,10 +55,9 @@ the column, so that fact is on the row rather than hidden:
   wrong output and the divergence are spelled out in `notes`. Never ship wrong
   IPA as gold, the correct value is pinned and the bug is documented for a later
   `arbtok.translit` fix.
-- `unsupported`, an Arabizi row (Latin-written Arabic, *3arabi/7abibi* style),
-  three to a file. The pipeline sniffs a Latin run as Arabic only on a
-  digit-guttural or an explicit hint, so it has no path for most of these. `ipa`
-  is the derived reading, in the file's own lect, of the Arabic the row spells.
+- `unsupported`, a row the pipeline has no path for. `ipa` is the derived reading, in the file's own lect, of the Arabic the row spells.
+
+Arabizi (Arabic in Latin letters and digits) is not code-switching, so it has its own set: [arabizi.md](arabizi.md#benchmark).
 
 `validate` (and the pytest gate) only pin `pipeline_status == "pinned"` rows.
 `known-wrong` / `unsupported` rows are still schema-, `raw`- and dedup-checked
@@ -120,14 +127,15 @@ target count:
 - **Rich-inventory lects realise the whole common loan set unaltered.** The Gulf
   group (`ar-KW`, `ar-AE`, `ar-BH`, `ar-QA`, `ar-OM`, `ar-x-gulf`,
   `ar-SA-x-hejaz`, `ar-SA-x-qassim`, `ar-SA-x-sharqiyya`, `ar-YE`), Egyptian
-  (`ar-EG`), the Iraqi lects (`ar-IQ`, `ar-IQ-x-qeltu`) and the whole Levantine
-  branch declare /ɡ/, the mid long vowels /eː oː/, and /ʒ/ or /dʒ/, so *meeting*
+  (`ar-EG`), the Iraqi lects (`ar-IQ`, `ar-IQ-x-qeltu`), Najdi (`ar-SA-x-najd`),
+  Chadian (`ar-TD`) and the whole Levantine branch declare /ɡ/, the mid long
+  vowels /eː oː/, and /ʒ/ or /dʒ/, so *meeting*
   `miːtinɡ`, *email* `iːmeːl` and *garage* `ɡaraːdʒ`/`ɡaraːɡ` all come out whole.
 - **Three-vowel / no-/ɡ/ lects show the projection instead.** MSA (`ar`) and
   Classical (`arb`) have neither /ɡ/ nor /eː/, so *meeting* reads `miːtink`,
   *garage* `karaːdʒ` and *email* `iːmiːl`, while *manager* needs nothing they lack
-  and surfaces as `manidʒar`. Najdi (`ar-SA-x-najd`), Mauritanian (`ar-MR`), the
-  Sudanic lects (`ar-TD`, `ar-NG`) and Rijāl Almaʿ (`ar-SA-x-rijal-alma`, the
+  and surfaces as `manidʒar`. Mauritanian (`ar-MR`), Nigerian (`ar-NG`) and Rijāl
+  Almaʿ (`ar-SA-x-rijal-alma`, the
   conservative /q/-retaining ʿAsīr variety) raise *email* to `iːmiːl` for want of
   [eː]; the Maghrebi leaves (`ar-MA`, `ar-TN`, `ar-DZ`) read it `iːmel` on their
   own short mid vowel.
@@ -150,4 +158,4 @@ python scripts/gold_code_switched.py validate [lect ...]  # CI gate (also in pyt
 `tests/test_gold_code_switched.py` runs the gate in CI, parameterized per lect.
 
 ---
-[← Arabizi](arabizi.md) · [Home](../README.md) · [API reference →](api.md)
+[← Text normalization](normalization.md) · [Home](index.md) · [API reference →](api.md)

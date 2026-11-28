@@ -105,7 +105,7 @@ def test_no_reachable_tie_resolves_by_alphabetical_order():
     them alphabetical.
     """
     from orthography2ipa import G2P
-    from orthography2ipa.distance import segment_distance
+    from orthography2ipa import segment_distance
     from arbtok import translit
     from pathlib import Path
 

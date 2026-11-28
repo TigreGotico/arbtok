@@ -1,5 +1,296 @@
 # Changelog
 
+## [0.0.3a37](https://github.com/TigreGotico/arbtok/tree/0.0.3a37) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a36...0.0.3a37)
+
+**Merged pull requests:**
+
+- feat: loom sandhi fragments: the bare conjunction, and the article after a consonant [\#414](https://github.com/TigreGotico/arbtok/pull/414) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a36](https://github.com/TigreGotico/arbtok/tree/0.0.3a36) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a35...0.0.3a36)
+
+**Merged pull requests:**
+
+- fix: the article after a nativized loanword reads it as the word before [\#421](https://github.com/TigreGotico/arbtok/pull/421) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a35](https://github.com/TigreGotico/arbtok/tree/0.0.3a35) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a34...0.0.3a35)
+
+**Merged pull requests:**
+
+- fix: the article vowel after a consonant in Gulf, Lebanese and Cairene [\#418](https://github.com/TigreGotico/arbtok/pull/418) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a34](https://github.com/TigreGotico/arbtok/tree/0.0.3a34) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a33...0.0.3a34)
+
+**Merged pull requests:**
+
+- ci: check the docs standard on each pull request [\#416](https://github.com/TigreGotico/arbtok/pull/416) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a33](https://github.com/TigreGotico/arbtok/tree/0.0.3a33) (2026-11-27)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a32...0.0.3a33)
+
+**Merged pull requests:**
+
+- feat: Arabizi gold set and benchmark, out of the code-switched gold [\#412](https://github.com/TigreGotico/arbtok/pull/412) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a32](https://github.com/TigreGotico/arbtok/tree/0.0.3a32) (2026-11-27)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a31...0.0.3a32)
+
+**Merged pull requests:**
+
+- docs: link the demo Space from the README [\#409](https://github.com/TigreGotico/arbtok/pull/409) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a31](https://github.com/TigreGotico/arbtok/tree/0.0.3a31) (2026-11-27)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a30...0.0.3a31)
+
+**Merged pull requests:**
+
+- chore: floor orthography2ipa at 7.133.1a3 and drop RETIRED [\#407](https://github.com/TigreGotico/arbtok/pull/407) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a30](https://github.com/TigreGotico/arbtok/tree/0.0.3a30) (2026-11-27)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a29...0.0.3a30)
+
+**Merged pull requests:**
+
+- fix: drop the Babalia \(bbz\) references that o2i \#2732 retires [\#405](https://github.com/TigreGotico/arbtok/pull/405) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a29](https://github.com/TigreGotico/arbtok/tree/0.0.3a29) (2026-11-27)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a28...0.0.3a29)
+
+**Merged pull requests:**
+
+- docs: scope line, Arabic lects only [\#401](https://github.com/TigreGotico/arbtok/pull/401) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a28](https://github.com/TigreGotico/arbtok/tree/0.0.3a28) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a27...0.0.3a28)
+
+**Merged pull requests:**
+
+- test: strict xfails fail only on their assertion [\#399](https://github.com/TigreGotico/arbtok/pull/399) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a27](https://github.com/TigreGotico/arbtok/tree/0.0.3a27) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a26...0.0.3a27)
+
+**Merged pull requests:**
+
+- docs: README, docs index, navigation and agent hints [\#393](https://github.com/TigreGotico/arbtok/pull/393) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a26](https://github.com/TigreGotico/arbtok/tree/0.0.3a26) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a25...0.0.3a26)
+
+**Merged pull requests:**
+
+- docs\(benchmarks\): caveat under the figure, Home footer [\#391](https://github.com/TigreGotico/arbtok/pull/391) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a25](https://github.com/TigreGotico/arbtok/tree/0.0.3a25) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a24...0.0.3a25)
+
+**Merged pull requests:**
+
+- docs\(benchmarks\): commit the per-lect results and plot them [\#389](https://github.com/TigreGotico/arbtok/pull/389) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a24](https://github.com/TigreGotico/arbtok/tree/0.0.3a24) (2026-11-26)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a23...0.0.3a24)
+
+**Merged pull requests:**
+
+- refactor: public orthography2ipa imports for the \#2637 names [\#387](https://github.com/TigreGotico/arbtok/pull/387) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a23](https://github.com/TigreGotico/arbtok/tree/0.0.3a23) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a22...0.0.3a23)
+
+**Merged pull requests:**
+
+- refactor: import orthography2ipa names from its public package [\#385](https://github.com/TigreGotico/arbtok/pull/385) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a22](https://github.com/TigreGotico/arbtok/tree/0.0.3a22) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a21...0.0.3a22)
+
+**Merged pull requests:**
+
+- refactor: read language tags with the public linguatag.parse\_tag [\#382](https://github.com/TigreGotico/arbtok/pull/382) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a21](https://github.com/TigreGotico/arbtok/tree/0.0.3a21) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a20...0.0.3a21)
+
+**Merged pull requests:**
+
+- refactor: import orthography2ipa names from its public package [\#381](https://github.com/TigreGotico/arbtok/pull/381) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a20](https://github.com/TigreGotico/arbtok/tree/0.0.3a20) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a19...0.0.3a20)
+
+**Merged pull requests:**
+
+- chore: pin linguatag\>=0.4.5a1 [\#379](https://github.com/TigreGotico/arbtok/pull/379) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a19](https://github.com/TigreGotico/arbtok/tree/0.0.3a19) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a18...0.0.3a19)
+
+**Merged pull requests:**
+
+- docs: keep the README short and move the details into docs/ [\#377](https://github.com/TigreGotico/arbtok/pull/377) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a18](https://github.com/TigreGotico/arbtok/tree/0.0.3a18) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a17...0.0.3a18)
+
+**Merged pull requests:**
+
+- fix: read every language tag through linguatag [\#372](https://github.com/TigreGotico/arbtok/pull/372) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a17](https://github.com/TigreGotico/arbtok/tree/0.0.3a17) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a16...0.0.3a17)
+
+**Merged pull requests:**
+
+- refactor: read day words and day parts through chronologia directly [\#370](https://github.com/TigreGotico/arbtok/pull/370) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a16](https://github.com/TigreGotico/arbtok/tree/0.0.3a16) (2026-11-25)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a15...0.0.3a16)
+
+**Merged pull requests:**
+
+- feat: read spoken\_forms numbers, dates and clock times through text2spoken [\#346](https://github.com/TigreGotico/arbtok/pull/346) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a15](https://github.com/TigreGotico/arbtok/tree/0.0.3a15) (2026-11-24)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a14...0.0.3a15)
+
+**Merged pull requests:**
+
+- refactor: make the arbtok modules easier to read [\#364](https://github.com/TigreGotico/arbtok/pull/364) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a14](https://github.com/TigreGotico/arbtok/tree/0.0.3a14) (2026-11-23)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a13...0.0.3a14)
+
+**Merged pull requests:**
+
+- docs: sync the docs with dev [\#360](https://github.com/TigreGotico/arbtok/pull/360) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a13](https://github.com/TigreGotico/arbtok/tree/0.0.3a13) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a12...0.0.3a13)
+
+**Merged pull requests:**
+
+- build: require numtag 0.19.21a1, which reads the spoken teens [\#358](https://github.com/TigreGotico/arbtok/pull/358) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a12](https://github.com/TigreGotico/arbtok/tree/0.0.3a12) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a11...0.0.3a12)
+
+**Merged pull requests:**
+
+- test: strict xfail the Arabic spoken-number gaps numtag holds [\#356](https://github.com/TigreGotico/arbtok/pull/356) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a11](https://github.com/TigreGotico/arbtok/tree/0.0.3a11) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a10...0.0.3a11)
+
+**Merged pull requests:**
+
+- fix: keep the length mark when projecting onto the declared inventory [\#354](https://github.com/TigreGotico/arbtok/pull/354) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a10](https://github.com/TigreGotico/arbtok/tree/0.0.3a10) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a9...0.0.3a10)
+
+**Merged pull requests:**
+
+- docs: README, docs index, navigation and agent hints [\#350](https://github.com/TigreGotico/arbtok/pull/350) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a9](https://github.com/TigreGotico/arbtok/tree/0.0.3a9) (2026-11-21)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a8...0.0.3a9)
+
+**Merged pull requests:**
+
+- fix: floor orthography2ipa at 7.124.27a2 and declare dependencies in pyproject.toml [\#351](https://github.com/TigreGotico/arbtok/pull/351) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a8](https://github.com/TigreGotico/arbtok/tree/0.0.3a8) (2026-11-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a7...0.0.3a8)
+
+**Merged pull requests:**
+
+- fix: send bare article-shaped words like الى to the diacritizer [\#345](https://github.com/TigreGotico/arbtok/pull/345) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a7](https://github.com/TigreGotico/arbtok/tree/0.0.3a7) (2026-11-19)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a6...0.0.3a7)
+
+**Merged pull requests:**
+
+- fix\(gold\): pin Chadian "email" as iːmeːl under orthography2ipa 7.124 [\#347](https://github.com/TigreGotico/arbtok/pull/347) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a6](https://github.com/TigreGotico/arbtok/tree/0.0.3a6) (2026-11-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a5...0.0.3a6)
+
+## [0.0.3a5](https://github.com/TigreGotico/arbtok/tree/0.0.3a5) (2026-11-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a4...0.0.3a5)
+
+## [0.0.3a4](https://github.com/TigreGotico/arbtok/tree/0.0.3a4) (2026-11-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a3...0.0.3a4)
+
+## [0.0.3a3](https://github.com/TigreGotico/arbtok/tree/0.0.3a3) (2026-11-18)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a2...0.0.3a3)
+
+**Merged pull requests:**
+
+- fix: declare unicode-rbnf, which arbtok.util imports [\#340](https://github.com/TigreGotico/arbtok/pull/340) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+- fix: the plugin raises a lexicon it cannot read [\#339](https://github.com/TigreGotico/arbtok/pull/339) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+- fix: a digit-only lexicon term does not match inside a grouped figure [\#338](https://github.com/TigreGotico/arbtok/pull/338) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+- fix: ask the number parser only for a code it serves [\#337](https://github.com/TigreGotico/arbtok/pull/337) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a2](https://github.com/TigreGotico/arbtok/tree/0.0.3a2) (2026-11-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a1...0.0.3a2)
+
+**Merged pull requests:**
+
+- docs: sync README and docs with dev [\#333](https://github.com/TigreGotico/arbtok/pull/333) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.3a1](https://github.com/TigreGotico/arbtok/tree/0.0.3a1) (2026-11-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2...0.0.3a1)
+
+**Merged pull requests:**
+
+- fix: keep ajt on aeb-TN and read every form of ajp as apc-JO [\#334](https://github.com/TigreGotico/arbtok/pull/334) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
+## [0.0.2](https://github.com/TigreGotico/arbtok/tree/0.0.2) (2026-11-16)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a82...0.0.2)
+
 ## [0.0.2a82](https://github.com/TigreGotico/arbtok/tree/0.0.2a82) (2026-11-12)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a81...0.0.2a82)
@@ -106,289 +397,145 @@
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a67...0.0.2a68)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): say F unpointed in spelled codes and let a table change move TTS\_NORM\_VERSION [\#303](https://github.com/TigreGotico/arbtok/pull/303) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a67](https://github.com/TigreGotico/arbtok/tree/0.0.2a67) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a66...0.0.2a67)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): a number before a unit after "year و" is no year [\#293](https://github.com/TigreGotico/arbtok/pull/293) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a66](https://github.com/TigreGotico/arbtok/tree/0.0.2a66) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a65...0.0.2a66)
 
-**Merged pull requests:**
-
-- fix\(tts\): colloquial number forms cover the construct two hundred [\#291](https://github.com/TigreGotico/arbtok/pull/291) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a65](https://github.com/TigreGotico/arbtok/tree/0.0.2a65) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a64...0.0.2a65)
-
-**Merged pull requests:**
-
-- test\(clock\): a bare compound hour reads back [\#290](https://github.com/TigreGotico/arbtok/pull/290) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a64](https://github.com/TigreGotico/arbtok/tree/0.0.2a64) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a63...0.0.2a64)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): CER\_CANONICAL joins digits read one by one and reads dates and units as said [\#284](https://github.com/TigreGotico/arbtok/pull/284) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a63](https://github.com/TigreGotico/arbtok/tree/0.0.2a63) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a62...0.0.2a63)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): colloquial\_units says a kilometre كيلو, and ص ب is read صندوق بريد [\#281](https://github.com/TigreGotico/arbtok/pull/281) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a62](https://github.com/TigreGotico/arbtok/tree/0.0.2a62) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a61...0.0.2a62)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): CER\_CANONICAL reads a written clock time as it is said [\#283](https://github.com/TigreGotico/arbtok/pull/283) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a61](https://github.com/TigreGotico/arbtok/tree/0.0.2a61) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a60...0.0.2a61)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): read Saudi plates and VINs the way they are written [\#279](https://github.com/TigreGotico/arbtok/pull/279) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a60](https://github.com/TigreGotico/arbtok/tree/0.0.2a60) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a59...0.0.2a60)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): read amounts beside a currency code, ر.س and %10 [\#286](https://github.com/TigreGotico/arbtok/pull/286) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a59](https://github.com/TigreGotico/arbtok/tree/0.0.2a59) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a58...0.0.2a59)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): years after موديلات and و, h.mm after الساعة, a colon after an identifier [\#287](https://github.com/TigreGotico/arbtok/pull/287) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a58](https://github.com/TigreGotico/arbtok/tree/0.0.2a58) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a57...0.0.2a58)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): a spoken number agrees with the word after it [\#282](https://github.com/TigreGotico/arbtok/pull/282) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a57](https://github.com/TigreGotico/arbtok/tree/0.0.2a57) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a56...0.0.2a57)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): CER\_CANONICAL reads مية بالمية, a definite count before الف, and H1 as said [\#285](https://github.com/TigreGotico/arbtok/pull/285) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a56](https://github.com/TigreGotico/arbtok/tree/0.0.2a56) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a55...0.0.2a56)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): spell iX3, 520i and CX-5 as codes, and drop a tatweel before a term [\#280](https://github.com/TigreGotico/arbtok/pull/280) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a55](https://github.com/TigreGotico/arbtok/tree/0.0.2a55) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a54...0.0.2a55)
-
-**Merged pull requests:**
-
-- test\(textnorm\): natural-language Saudi cases for TTS and scoring [\#274](https://github.com/TigreGotico/arbtok/pull/274) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a54](https://github.com/TigreGotico/arbtok/tree/0.0.2a54) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a53...0.0.2a54)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): a time read with a one-letter variant is still a time [\#267](https://github.com/TigreGotico/arbtok/pull/267) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a53](https://github.com/TigreGotico/arbtok/tree/0.0.2a53) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a52...0.0.2a53)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): month\_names says each month in the caller's word for it [\#253](https://github.com/TigreGotico/arbtok/pull/253) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a52](https://github.com/TigreGotico/arbtok/tree/0.0.2a52) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a51...0.0.2a52)
 
-**Merged pull requests:**
-
-- feat\(textnorm\): colloquial\_years reads a year from 2020 as Saudi speech says it [\#252](https://github.com/TigreGotico/arbtok/pull/252) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a51](https://github.com/TigreGotico/arbtok/tree/0.0.2a51) (2026-10-19)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a50...0.0.2a51)
-
-**Merged pull requests:**
-
-- fix\(util\): a digit run glued to Latin letters is read whole [\#258](https://github.com/TigreGotico/arbtok/pull/258) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a50](https://github.com/TigreGotico/arbtok/tree/0.0.2a50) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a49...0.0.2a50)
 
-**Merged pull requests:**
-
-- feat\(textnorm\): colloquial\_clock reads a clock time as Saudi speech says it [\#251](https://github.com/TigreGotico/arbtok/pull/251) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a49](https://github.com/TigreGotico/arbtok/tree/0.0.2a49) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a48...0.0.2a49)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): the cardinals read a date written in digits as a date [\#250](https://github.com/TigreGotico/arbtok/pull/250) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a48](https://github.com/TigreGotico/arbtok/tree/0.0.2a48) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a47...0.0.2a48)
 
-**Merged pull requests:**
-
-- feat\(textnorm\): plain\_orthography writes the output as recogniser transcripts do [\#256](https://github.com/TigreGotico/arbtok/pull/256) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a47](https://github.com/TigreGotico/arbtok/tree/0.0.2a47) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a46...0.0.2a47)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): a number written against its unit is read as one written apart [\#255](https://github.com/TigreGotico/arbtok/pull/255) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a46](https://github.com/TigreGotico/arbtok/tree/0.0.2a46) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a45...0.0.2a46)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): ص and م after a clock time are its am and pm [\#264](https://github.com/TigreGotico/arbtok/pull/264) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a45](https://github.com/TigreGotico/arbtok/tree/0.0.2a45) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a44...0.0.2a45)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): spoken-sa term table for the canonical lexicon [\#262](https://github.com/TigreGotico/arbtok/pull/262) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a44](https://github.com/TigreGotico/arbtok/tree/0.0.2a44) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a43...0.0.2a44)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): Najdi takes the parser's cited cardinals [\#263](https://github.com/TigreGotico/arbtok/pull/263) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a43](https://github.com/TigreGotico/arbtok/tree/0.0.2a43) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a42...0.0.2a43)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): CER\_CANONICAL brings a text and its readback to one form [\#257](https://github.com/TigreGotico/arbtok/pull/257) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a42](https://github.com/TigreGotico/arbtok/tree/0.0.2a42) (2026-10-18)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a41...0.0.2a42)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): a code written with a hyphen is one code [\#249](https://github.com/TigreGotico/arbtok/pull/249) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a41](https://github.com/TigreGotico/arbtok/tree/0.0.2a41) (2026-10-13)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a40...0.0.2a41)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): the clock rule accepts the definite minute form [\#247](https://github.com/TigreGotico/arbtok/pull/247) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a40](https://github.com/TigreGotico/arbtok/tree/0.0.2a40) (2026-10-13)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a39...0.0.2a40)
 
-**Merged pull requests:**
-
-- feat\(textnorm\): a code written with a space reads as the joined code [\#245](https://github.com/TigreGotico/arbtok/pull/245) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a39](https://github.com/TigreGotico/arbtok/tree/0.0.2a39) (2026-10-10)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a38...0.0.2a39)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): spoken\_numbers\_to\_digits reads a clock time spoken after الساعة [\#243](https://github.com/TigreGotico/arbtok/pull/243) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a38](https://github.com/TigreGotico/arbtok/tree/0.0.2a38) (2026-10-08)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a37...0.0.2a38)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): the closing في أمان الله written as one word normalises to the three words under the CER bundles [\#241](https://github.com/TigreGotico/arbtok/pull/241) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a37](https://github.com/TigreGotico/arbtok/tree/0.0.2a37) (2026-10-06)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a36...0.0.2a37)
-
-**Merged pull requests:**
-
-- feat\(textnorm\): Arabic-script licence plates read letter by name and digit by digit [\#238](https://github.com/TigreGotico/arbtok/pull/238) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a36](https://github.com/TigreGotico/arbtok/tree/0.0.2a36) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a35...0.0.2a36)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): the cardinal-numbers path reads a short decimal comma as a decimal [\#236](https://github.com/TigreGotico/arbtok/pull/236) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a35](https://github.com/TigreGotico/arbtok/tree/0.0.2a35) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a34...0.0.2a35)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): a decimal glued to a code keeps its decimal reading [\#232](https://github.com/TigreGotico/arbtok/pull/232) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a34](https://github.com/TigreGotico/arbtok/tree/0.0.2a34) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a33...0.0.2a34)
 
-**Merged pull requests:**
-
-- fix\(textnorm\): a comma followed by one or two digits is a decimal mark [\#230](https://github.com/TigreGotico/arbtok/pull/230) ([JarbasAl](https://github.com/JarbasAl))
-
 ## [0.0.2a33](https://github.com/TigreGotico/arbtok/tree/0.0.2a33) (2026-09-29)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.2a32...0.0.2a33)
-
-**Merged pull requests:**
-
-- fix\(textnorm\): drop an English possessive clitic when a code is spelled out [\#231](https://github.com/TigreGotico/arbtok/pull/231) ([JarbasAl](https://github.com/JarbasAl))
 
 ## [0.0.2a32](https://github.com/TigreGotico/arbtok/tree/0.0.2a32) (2026-09-29)
 

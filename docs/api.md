@@ -1,12 +1,20 @@
 # API reference
 
+<!-- agent-hint
+covers: every public name of arbtok with its signature and default
+source: arbtok/__init__.py, arbtok/plugin.py, arbtok/tokenizer.py, arbtok/textnorm.py, arbtok/dialects.py, arbtok/o2i_plugins.py
+generated: no
+verify: .venv/bin/python scripts/check_docs_examples.py docs/api.md
+see: quickstart.md, advanced.md
+-->
+
 Every public symbol, with real signatures and return shapes. Import paths are
 module-qualified (`from arbtok.plugin import ArbtokG2PPlugin`).
 
 `arbtok.__version__` is the installed version, as the PEP 440 string the
 distribution carries. The package root also re-exports `Lect`, `spec_for_lang`, `lect_code`, `supported_lects`,
-`vocalize`, `AsrNorm`, `TtsNorm`, `normalize_asr`, `normalize_for_tts` and
-`is_arabic_lang`.
+`vocalize`, `ModelUnavailableError`, `AsrNorm`, `TtsNorm`, `normalize_asr`,
+`normalize_for_tts` and `is_arabic_lang`.
 
 ## `arbtok.plugin`
 
@@ -44,13 +52,20 @@ p = ArbtokG2PPlugin(lang="ar-EG")
 | `language_codes` | `List[str]` | `["ar", "arb"]`. |
 
 ```python
-p.transcribe("ذهب الولد الى المدرسة")            # bare input, auto-diacritized
-p.transcribe_word("قَهْوَة")                      # single word
-p.transcribe("عِنْدِي meeting", arabizi=False)    # force the loanword reading
+p.transcribe("ذهب الولد الى المدرسة")            # 'ˈdahab ˈilwalad ˈʔilaː lˈmudrasa' — bare input, auto-diacritized
+p.transcribe_word("قَهْوَة")                      # 'ˈʔahwa' — single word
+p.transcribe("عِنْدِي meeting", arabizi=False)    # 'ˈʕindiː miːtinɡ' — force the loanword reading
 ```
 
-Diacritization degrades gracefully: if the model cannot load, the engine
-transcribes whatever diacritics are already present rather than raising.
+Diacritization degrades, with one exception. If the model cannot load or fails,
+the engine transcribes whatever diacritics are already present. The exception is a
+stem lexicon that cannot be read: a missing or unreadable file, or a Hugging Face
+dataset that does not exist, raises `arbtok.lexicon.LexiconUnavailable`, a
+`RuntimeError`. A Hugging Face file that is not in the local cache while the Hub is
+offline or cannot be reached raises its subclass `arbtok.ModelUnavailableError`,
+which is also a `ValueError` and names the dataset and the file. Pass
+`lexicon=None` to run with no stem lexicon and no network. The bundled `ar.tsv`
+and `arb.tsv` lexicons still apply; `dialect_lexicon=False` turns them off.
 
 ## `arbtok.tokenizer`
 
@@ -58,9 +73,11 @@ The phonemization core. Three dataclasses form a three-level hierarchy:
 `Sentence` holds `WordToken`s, and each `WordToken` holds `CharToken`s, linked
 bidirectionally so phonology can read neighbors.
 
-### `Sentence(surface: str)`
+### `Sentence(surface: str, lang="ar", stress=True, pausal=True)`
 
-The main entry point. Build it from raw (diacritized) Arabic text.
+The main entry point. Build it from raw (diacritized) Arabic text. `lang` is the
+variety, `stress` marks the stressed syllable, and `pausal` applies the waqf
+reductions at a written pause.
 
 ```python
 from arbtok.tokenizer import Sentence
@@ -77,12 +94,12 @@ s = Sentence("قَالَ ٱلْمَلِكُ")
 
 ```python
 print(s.ipa)              # "ˈqaːla lˈmaliku"
-print(len(s.tokens))      # word + punctuation tokens
+print(len(s.tokens))      # 2 — word and punctuation tokens
 ```
 
 `Sentence` compares equal to its surface string (`Sentence("x") == "x"`).
 
-### `WordToken(surface: str, word_idx: int, prev_word=None, next_word=None)`
+### `WordToken(surface: str, word_idx: int, prev_word=None, next_word=None, lang="ar")`
 
 One word (or one punctuation mark). You rarely construct these directly, read
 them off `Sentence.tokens`, but the properties are useful for inspection.
@@ -105,7 +122,7 @@ them off `Sentence.tokens`, but the properties are useful for inspection.
 ```python
 word = Sentence("الْمَدْرَسَةِ").tokens[0]
 print(word.has_definite_article)   # True
-print(word.ipa)                    # IPA for the word
+print(word.ipa)                    # almadrasati — IPA for the word
 ```
 
 ### `CharToken(surface, char_idx, prev_token=None, next_token=None, word=None)`
@@ -133,7 +150,7 @@ print(chars[-1].is_last_char)                      # True
 
 ### Module-level normalization helpers
 
-```python
+```text
 from arbtok.tokenizer import normalize_unicode
 
 normalize_unicode(text: str) -> str
@@ -193,7 +210,9 @@ metadata by `scripts/build_phone_plans.py`.
 `TTS_NORM_VERSION` names the rule set. `with_number_forms(mapping)` sets your own
 word for a value, `{100: "مية"}`, which `number_forms` then uses; `dialect_numbers`
 takes the lect's own words from the number parser instead, under the ISO 639-3 code
-`lect_code` gives for `lang`. Both write Arabic words, so they raise `ValueError`
+`lect_code` gives for `lang`. A code the parser does not serve, such as Hassaniya
+`mey`, keeps the literary words, and so does every Arabic tag when
+`dialect_numbers` is off. Both write Arabic words, so they raise `ValueError`
 for a `lang` that is not Arabic.
 
 ### `is_arabic_lang(lang) -> bool`
@@ -208,12 +227,15 @@ underscore written for a hyphen (`ar_SA`) do not matter. `spec_for_lang` raises
 
 Each Latin capital and ASCII digit mapped to its spoken English name in pointed
 Arabic, except `F`, which is written unpointed (`إف`) because a Saudi Arabic TTS
-voice hears the pointed `إِفْ` as `في`. Raises `ValueError` for a language with no bundled table.
+voice hears the pointed `إِفْ` as `في`. Every Arabic variety (`is_arabic_lang`) reads this table. Raises `ValueError` for any other language.
 
 ### `cldr_units(lang="ar") -> Dict[str, str]`
 
 English unit symbols (`km`, `kg`, `hp`) mapped to the unit's Arabic name from Unicode
-CLDR. `arbtok.util.normalize` reads a symbol that follows a number from it.
+CLDR. `normalize_for_tts` writes a symbol after a number that text2spoken leaves as
+written as its name from it, and `arbtok.util.normalize` reads a symbol after a number
+from it. Every Arabic variety (`is_arabic_lang`) reads this table; any other language raises
+`ValueError`.
 
 ### `bundled_asr_lexicon(name="cars-sa")`, `bundled_tts_lexicon(name="cars-sa", pointed=True) -> Dict[str, str]`
 
@@ -228,7 +250,8 @@ the bundled lexicons, for a name that is not one.
 ### `normalize(text: str, lang: str) -> str`
 
 Expand contractions, titles, numbers, dates, times, units and fractions into
-spoken words for the given locale tag (`"ar"`, `"en"`, `"en-US"`, `"pt"`, …).
+spoken words for the given locale tag (`"ar"`, `"en"`, `"en-US"`, `"pt"`, …). The tag is
+read as `linguatag.standardize_lang` reads it, so `en_US`, `eng-US` and `en-Latn-US` are one tag.
 Date/time normalization is attempted and silently skipped where unsupported.
 
 ```python
@@ -261,7 +284,7 @@ Variety resolution and the base phoneme maps.
 ```python
 from arbtok.dialects import ARABIC_TO_IPA_CONSONANTS, lect_code, spec_for_lang
 
-print(spec_for_lang("ar-SA"))          # "ar-SA-x-najd"
+print(spec_for_lang("ar-SA"))          # "ars-SA" — Najdi, keyed by its ISO 639-3 code
 print(lect_code("ar-KW"))              # "afb" — Gulf, off the parent chain
 print(ARABIC_TO_IPA_CONSONANTS["ب"])   # "b"
 ```
@@ -304,7 +327,21 @@ G2P("ar", pipeline=pipeline("ar")).transcribe("كتب")    # 'ˈkatab' — arbto
 
 `pipeline(lang)` gives orthography2ipa every arbtok step: `normalize_for_tts` as `expand`, the diacritizer as `mark`, the rescorers and the cross-word sandhi. `pipeline(lang, path="fusion")` selects the fusion diacritizer.
 
+### `ArbtokDiacritizer(path="lattice")`
+
+The `mark` step. `path` selects the generator: `"lattice"` (the default) or
+`"fusion"`. Any other value raises `ValueError`. The path is a constructor
+argument only, and no environment variable changes it. The measurement behind the
+default is in [dialects.md](dialects.md#which-generator-answers-a-word-nobody-has-written-down).
+`normalize(text, lang)` returns *text* with the tashkeel restored.
+
 arbtok also registers the three classes as the entry points `orthography2ipa.normalize`, `orthography2ipa.rescore` and `orthography2ipa.sandhi`, under the name `arbtok`. They serve `G2P(lang, plugins={"normalize": "arbtok"})`, which orthography2ipa deprecates. The entry points go when orthography2ipa 8.0.0 removes `plugins=`.
+
+## `arbtok.unicode_symbol2label` (deprecated)
+
+`UNICODE_SYMBOL_TO_LABEL` maps Unicode symbols to their Arabic names. No arbtok code
+reads it. Importing the module emits a `DeprecationWarning`, and the next major
+release removes it. Nothing replaces it.
 
 ## Where next
 
@@ -316,4 +353,4 @@ arbtok also registers the three classes as the entry points `orthography2ipa.nor
 - [advanced.md](advanced.md), internals, espeak baseline, recipes, gotchas
 
 ---
-[← Code-switched gold](gold-code-switched.md) · [Home](../README.md) · [Advanced →](advanced.md)
+[← Code-switched gold](gold-code-switched.md) · [Home](index.md) · [Advanced →](advanced.md)

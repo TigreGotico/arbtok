@@ -6,9 +6,9 @@ import unittest
 from pathlib import Path
 
 from orthography2ipa import get
-from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
+from orthography2ipa import PhonetokTokenizer, TokenKind
 
-from arbtok.diacritize import LatticeDiacritizer, strip_marks
+from arbtok.diacritize import LatticeDiacritizer, _skeleton_is_preserved
 from arbtok.dialect_lexicon import (
     DialectLexicon, available_lects, lexicon_dir, lexicon_file, parse,
 )
@@ -58,7 +58,7 @@ class TestDialectLexicon(unittest.TestCase):
                              normalize_unicode("شَي"), "the leaf overrides group")
 
     def test_a_lect_with_no_file_is_a_cost_free_empty_map(self):
-        lex = DialectLexicon("ar")  # MSA ships no closed-class lexicon
+        lex = DialectLexicon("he")  # no file on Hebrew's parent chain
         self.assertEqual(len(lex), 0)
         self.assertIsNone(lex.get(KI))
 
@@ -124,6 +124,12 @@ class TestGuards(unittest.TestCase):
         d = self._with_entry("ar-x-maghrebi", "كي", "كُتُب")
         self.assertIsNone(d._dialect_lookup("كي"))
 
+    def test_an_entry_may_restore_a_hamza_seat_as_the_model_may(self):
+        # bare الي is إِلَى (Wright I §358 (a)): the alif's hamza and the
+        # final ى are restored
+        d = self._with_entry("ar", "الي", "إِلَى")
+        self.assertEqual(d._dialect_lookup("الي"), normalize_unicode("إِلَى"))
+
     def test_an_unlicensed_entry_is_refused(self):
         # a Perso-Arabic گ the Maghrebi grapheme table does not declare
         d = self._with_entry("ar-x-maghrebi", "گي", "گِي")
@@ -152,8 +158,8 @@ class TestBundledData(unittest.TestCase):
             entries = parse(lexicon_file(lect).read_text(encoding="utf-8"))
             self.assertTrue(entries, f"{lect} lexicon is empty")
             for key, voc in entries.items():
-                self.assertEqual(
-                    strip_marks(normalize_unicode(voc)), key,
+                self.assertTrue(
+                    _skeleton_is_preserved(key, normalize_unicode(voc)),
                     f"{lect}: {voc!r} does not spell its key {key!r}")
                 tokens = tokenizer.tokenize(normalize_unicode(voc))
                 self.assertTrue(

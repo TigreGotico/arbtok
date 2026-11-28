@@ -1,48 +1,30 @@
 """Diacritization as a *guarded* step, not a free generation.
 
-Restoring tashkeel is a statistical problem — which vowel follows a letter is
-morphological and syntactic, and the letters say none of it — so it belongs to a
-model — arbtok's bundled rawi ensemble (:mod:`arbtok._ensemble`). But a model
-asked to write
-into a word can write *anything*, including a reading the orthography does not
-license and a consonant that was never there. Downstream, that is indetectable:
-the phonemizer will faithfully transcribe the hallucination.
+Which vowel follows a letter is a morphological and syntactic fact the letters do
+not show, so a model restores it: arbtok's bundled rawi ensemble
+(:mod:`arbtok._ensemble`). A model can also write a reading the orthography does not
+license, and the phonemizer would transcribe it faithfully. So the model
+**proposes** and the orthography2ipa lattice **disposes**.
 
-arbtok is the one library that knows about both the diacritizer and the
-orthography2ipa lattice, so it is where the two meet. The model **proposes**; the
-lattice **disposes**.
+The ensemble decodes under an orthographic constraint (:mod:`arbtok.orthography`,
+applied in :mod:`arbtok._ensemble`): it cannot rewrite a letter the writing spells
+or overwrite a mark a human wrote. Before the model, :mod:`arbtok.lexicon` answers
+the words somebody has written down, because which vowels a word carries is a
+lexical fact.
 
-Two of the three guards this once carried live at **decision time**, where they
-belong. The ensemble decodes under an orthographic constraint
-(:mod:`arbtok.orthography`, applied in :mod:`arbtok._ensemble`): it cannot rewrite
-a letter the writing spells, and it cannot overwrite a mark a human wrote, because
-the classes that would do so are masked out before the argmax. Those are facts
-about Arabic and about the model's class space — no lattice is needed to know
-them, so no lattice should have to.
+The lattice adds two guards:
 
-Before any of that, though, comes the cheapest guard of all: **a known word is a
-known word**. Which vowels a word carries is a lexical fact, and a model asked to
-re-derive a lexical fact will sometimes derive it wrong — so :mod:`arbtok.lexicon`
-is consulted first, and the model is only asked about words nobody has written
-down (see that module for why the entry is a diacritized *stem* and not IPA).
-
-What is left here is the part that genuinely needs a lattice:
-
-1. **Only act where the writing is actually silent.** orthography2ipa reports
-   which letters are underdetermined (:func:`~orthography2ipa.is_underdetermined`),
-   so a fully-marked word is never handed to a model at all.
-2. **The result must be licensed.** The diacritized word is tokenized against the
-   *variety's own* grapheme table. A mark sequence the orthography does not admit
-   is not an answer, and only the spec knows which those are.
+1. **Act only where the writing is silent.** orthography2ipa reports which letters
+   are underdetermined (:func:`~orthography2ipa.is_underdetermined`), so a
+   fully-marked word never reaches a model.
+2. **The result must be licensed** by the variety's own grapheme table.
 
 The lattice guards the lexicon exactly as it guards the model: an entry that the
 variety's orthography does not license is refused like any other proposal. The
 lexicon is data, and data can be wrong.
 
-A refused proposal falls back to the word as written — an underdetermined reading,
-which orthography2ipa reports as such, rather than a confident wrong one. The
-skeleton check stays as a cheap backstop: it should now never fire, and if it does,
-something upstream has regressed.
+A refused proposal falls back to the word as written, which orthography2ipa
+reports as underdetermined, rather than to a confident wrong reading.
 """
 
 from __future__ import annotations
@@ -51,14 +33,15 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional, Sequence
 
-from orthography2ipa import get, is_underdetermined, underdetermined_positions
-from orthography2ipa.phonetok import PhonetokTokenizer, TokenKind
+from orthography2ipa import get, underdetermined_positions
+from orthography2ipa import PhonetokTokenizer, TokenKind
 
 from arbtok.dialect_lexicon import DialectLexicon
 from arbtok.lexicon import DEFAULT_LEXICON, StemLexicon
 from arbtok.nisba import restore_nisba
 from arbtok.dialects import DEFAULT_LANG
 from arbtok.tokenizer import normalize_unicode
+from arbtok.waqf import pausal
 
 __all__ = ["LatticeDiacritizer", "DiacritizedWord", "DiacritizedText",
            "diacritize", "strip_marks", "repair_skeleton"]
@@ -112,11 +95,18 @@ def _author_complete(word: str, positions) -> bool:
     author chose not to write. The proclitic position therefore counts as
     already answered *when the rest of the word is*; a bare word stays the
     model's to vocalize.
+
+    The article clause needs a mark somewhere in the word, because an author who
+    wrote no mark pointed nothing. A word-final letter is never silent, so bare
+    ال with one letter after it has no silent position outside the article.
+    Without the mark test, bare الى passes as written and reads /ˈalaː/. The
+    preposition is إِلَى /ˈʔilaː/ (Wright, *A Grammar of the Arabic Language*,
+    3rd ed., I §358 (a)), and the model restores it.
     """
     if not positions:
         return True
     m = _ARTICLE_RE.match(word)
-    if not m:
+    if not m or not _MARKS.intersection(word):
         return False
     # The alif and the lām are the two characters the match ends on.
     article = {m.end() - 2, m.end() - 1}
@@ -238,16 +228,10 @@ class DiacritizedWord:
     def lect_constrained(self) -> bool:
         """True when something the lect declares chose this word's marks.
 
-        ``model`` is excluded deliberately, and the reason is measured rather than
-        argued. Licensing is a veto over letters, not a preference over readings, so a
-        well-formed MSA vocalization passes it untouched — six MSA vocalizations against
-        four dialect specs, zero rejections. The veto is not *inert*, though: over the
-        636 model-path words of the shipped gold, 5 carry a reading at least one lect in
-        the roster would reject, the narrower Omani and southern Saudi specs among them.
-        Five is enough to refute "the veto never fires" and not enough to say how often
-        it does: a numerator of 5 over 636, on one gold, is not a rate.
-        So ``model`` means the lect did not object, not that it could not — and not
-        objecting is weaker evidence than choosing, which is why it does not count here.
+        ``model`` does not count: licensing vetoes letters, not readings, so a
+        well-formed MSA vocalization passes it. Over the 636 model-path words of the
+        shipped gold, 5 carry a reading some lect in the roster rejects; not
+        objecting is weaker evidence than choosing.
         """
         return self.provenance in ("closed-class", "author", "proclitic")
 
@@ -338,7 +322,6 @@ class LatticeDiacritizer:
         the model cannot know: :func:`arbtok.waqf.pausal`)."""
         proposed = self.diacritizer.diacritize(word)
         if self.waqf:
-            from arbtok.waqf import pausal
             proposed = pausal(proposed)
         return proposed
 
@@ -364,9 +347,10 @@ class LatticeDiacritizer:
         """The lect's closed-class vocalization for *word*, if it has one the
         orthography licenses.
 
-        Held to the same guards as a model proposal and a stem entry: the
-        vocalization must spell the word we were given (marks added, letters
-        untouched) and it must tokenize against the variety's grapheme table.
+        Held to the same guards as a model proposal: the vocalization must
+        spell the word we were given (marks added, letters untouched but for a
+        hamza seat or tāʾ marbūṭa the model may also restore) and it must
+        tokenize against the variety's grapheme table.
         These are register-invariant function words with no iʿrāb, so — unlike
         the pausal stem lexicon — the entry answers in both waqf modes.
         """
@@ -375,7 +359,7 @@ class LatticeDiacritizer:
         voc = self.dialect_lexicon.get(word)
         if voc is None:
             return None
-        if strip_marks(voc) != strip_marks(word) or not self._is_licensed(voc):
+        if not _skeleton_is_preserved(word, voc) or not self._is_licensed(voc):
             return None
         return voc
 
