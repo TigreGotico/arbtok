@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.3a36](https://github.com/TigreGotico/arbtok/tree/0.0.3a36) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a35...0.0.3a36)
+
+**Merged pull requests:**
+
+- fix: the article after a nativized loanword reads it as the word before [\#421](https://github.com/TigreGotico/arbtok/pull/421) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.0.3a35](https://github.com/TigreGotico/arbtok/tree/0.0.3a35) (2026-11-28)
 
 [Full Changelog](https://github.com/TigreGotico/arbtok/compare/0.0.3a34...0.0.3a35)
