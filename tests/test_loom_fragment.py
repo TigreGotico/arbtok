@@ -22,3 +22,17 @@ def test_the_donor_words_are_the_bundled_lexicon():
     part = loom_fragment.fragment(resolve("ar-EG"))["contact"][0]
     assert part["donor_words"]["a"] == "eɪ"
     assert len(part["donor_words"]) == 74318
+
+
+def test_a_diphthong_maps_as_one_segment():
+    # translit.segment_ipa cuts eɪ as one segment; a map of e and ɪ apart reads "array" as areːi.
+    part = loom_fragment.fragment(resolve("ar-EG"))["contact"][0]
+    assert part["map"]["eɪ"] == "eː"
+
+
+def test_every_segment_of_the_donor_lexicon_has_a_map_entry():
+    from arbtok import translit
+    part = loom_fragment.fragment(resolve("ar-EG"))["contact"][0]
+    segments = {s for ipa in part["donor_words"].values()
+                for s in translit.segment_ipa(ipa.replace("ˈ", "").replace("ˌ", ""))}
+    assert segments - {"ŋ", "ː"} <= set(part["map"])
